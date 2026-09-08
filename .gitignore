@@ -77,3 +77,31 @@ Thumbs.db
 desktop.ini
 .DS_Store
 libdevice.10.bc
+
+# --- SEKRETY: siatka bezpieczeństwa, nie wygoda -----------------------------
+#  Powód wpisania tego bloku: 8.09.2026 na pendraku leżał token.txt (189 B,
+#  fine-grained PAT z prawem pisania do tego repo) i NIE był ignorowany.
+#  Jedno "git add -A" wysłałoby go na publiczne repozytorium.
+#
+#  Ten katalog jest wypalany na BD-R M-DISC, którego NIE DA SIĘ wymazać.
+#  Sekret, który tu przeleży do wypalenia, zostaje na płycie na zawsze —
+#  jedyne, co można zrobić, to unieważnić go po stronie GitHuba, ale karton
+#  z płytami zostaje z sekretem w środku.
+#
+#  Dlatego: sekrety NIE MIESZKAJĄ w katalogu projektu. Token trzyma
+#  Credential Manager (Windows) albo gh w keyringu, klucz SSH siedzi
+#  w ~/.ssh. Te wzorce są tylko po to, żeby pomyłka nie kosztowała repo.
+token.txt
+*token*.txt
+*.token
+.env
+.env.*
+*_pat.txt
+id_rsa
+id_ed25519
+cw_deploy
+*.pem
+*.ppk
+.netrc
+_netrc
+.git-credentials
