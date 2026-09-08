@@ -105,3 +105,23 @@ cw_deploy
 .netrc
 _netrc
 .git-credentials
+
+# --- NOTATKI ROBOCZE: mieszkają w I:\bvn, nie tutaj ------------------------
+#  Notatki z Obsidiana (zapisy rozmów, rozważania, ślepe uliczki) zaciemniają
+#  obraz repozytorium: czytający nie wie, co jest ustaleniem, a co porzuconym
+#  pomysłem. Kod i README mówią, jak jest; notatki mówią, jak się do tego
+#  dochodziło, i to jest materiał prywatny.
+#
+#  Reguła jest szeroka celowo. Wąska lista nazw już raz zawiodła — trzy
+#  notatki weszły do publicznego repo, bo .gitignore wymieniał tylko dwie
+#  konkretne (te od falownika). Łatwiej dopisać wyjątek dla dokumentacji,
+#  którą naprawdę chcemy wersjonować, niż pamiętać o każdej nowej notatce.
+#
+#  Dokumentacja projektu, jeśli powstanie, idzie do docs/ i jest wyjęta niżej.
+*.md
+!README.md
+!docs/**/*.md
+
+# Poprzednie wpisy na konkretne nazwy notatek od falownika są teraz
+# nadmiarowe (łapie je *.md), ale zostawione świadomie: mówią, skąd te
+# pliki się tu wzięły.
