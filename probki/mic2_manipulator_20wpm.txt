@@ -1,7 +1,8 @@
 # OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
 
 nadane:        litery zgodnie z definicja, odstepy przypadkowe (w odczycie rozpoznawalne CQ, SQ2BVN, 73)
-nadajnik:      IC-7300MK2
+nadajnik:      IC-7300MK2  (nadawanie wlasne, SQ2BVN)
+odbiornik:     nie dotyczy — nagranie tonu kontrolnego nadajnika
 klucz:         manipulator (paddle) — elementy poprawne, przerwy ludzkie
 tempo zadane:  nieodnotowane przy nagrywaniu
 pasmo:         ?

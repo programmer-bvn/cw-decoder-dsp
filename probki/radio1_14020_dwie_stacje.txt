@@ -1,7 +1,8 @@
 # OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
 
 nadane:        nieznane — odbior z pasma
-nadajnik:      IC-7300MK2
+nadajnik:      NIEZNANY — obce stacje, sprzet nieokreslony
+odbiornik:     IC-7300MK2  (odbior wlasny)
 klucz:         nieznany (obce stacje)
 tempo zadane:  nieokreslone (dwie stacje naraz)
 pasmo:         14.020 MHz
