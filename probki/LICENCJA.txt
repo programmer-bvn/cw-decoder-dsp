@@ -1,0 +1,60 @@
+LICENCJA NAGRAŃ — CC0 1.0 (domena publiczna)
+============================================
+
+Dotyczy nagrań w tym katalogu i ich opisów: probki/*.wav, probki/*.txt
+oraz archiwów probki-*.zip udostępnianych w wydaniach.
+
+NIE dotyczy kodu dekodera — kod jest na GPL-3.0, patrz LICENSE
+w katalogu głównym.
+
+
+CO TO ZNACZY
+------------
+
+Autor, Mariusz Lisowski (SQ2BVN), w zakresie dozwolonym prawem zrzeka
+się wszelkich praw autorskich i praw pokrewnych do tych nagrań i
+przekazuje je do domeny publicznej.
+
+Możesz je kopiować, zmieniać, rozpowszechniać i wykorzystywać, w tym
+komercyjnie, bez pytania o zgodę, bez opłat i bez obowiązku podania
+autora.
+
+Pełny tekst: https://creativecommons.org/publicdomain/zero/1.0/
+
+
+DLACZEGO CC0, A NIE CC-BY
+-------------------------
+
+Bo to jest zbiór do trenowania i sprawdzania modeli, a nie utwór do
+cytowania. Wymóg podania autora przy każdym użyciu byłby kłopotem
+dokładnie dla tych, którym ma służyć — kto składa zbiór z kilku
+źródeł, musiałby pilnować atrybucji dla każdego pliku osobno. Nie o to
+tu chodzi.
+
+Podanie źródła jest oczywiście miłe i pozwala innym trafić na
+oryginał, ale nie jest warunkiem.
+
+
+CZEGO TA LICENCJA NIE ROZSTRZYGA
+--------------------------------
+
+Plik radio1_14020_dwie_stacje to ODBIÓR transmisji obcych stacji
+amatorskich na 14,020 MHz. Zrzeczenie się praw dotyczy nagrania
+wykonanego przez autora — nie może dotyczyć samych transmisji, bo
+autor nie jest ich nadawcą.
+
+W praktyce krótkofalarskiej publikowanie nagrań z pasma jest normą, a
+znaki wywoławcze są publiczne z natury licencji amatorskiej. Jeśli
+jednak ktoś rozpoznaje w tym nagraniu swoją stację i chce, żeby
+zniknęło — wystarczy napisać, zostanie usunięte. To kwestia zwyczaju
+w eterze, nie prawa autorskiego.
+
+
+CZEGO NIE OBIECUJE
+------------------
+
+Nagrania są udostępnione JAK SĄ, bez żadnych gwarancji. Tor
+nagrywania (mikrofon komputera przy głośniku) jest ich znanym słabym
+miejscem i jest opisany w każdej metryczce. Zbiór zawiera jeden
+egzemplarz nadajnika, więc nie jest reprezentatywny dla sprzętu
+w ogóle.
