@@ -1,0 +1,42 @@
+# =============================================================================
+#  Zakończenia linii — to NIE jest kosmetyka
+#
+#  Skrypty .sh MUSZĄ mieć LF. Jeśli git wypakuje setenv.sh albo noc.sh
+#  z CRLF, bash wywali się komunikatem w rodzaju
+#      /bin/bash^M: bad interpreter: No such file or directory
+#  albo, gorzej, wykona się do połowy z dziwnymi błędami. Ten projekt
+#  chodzi na Windows i w WSL naprzemiennie, więc bez tego pliku prędzej
+#  czy później by się to zdarzyło.
+#
+#  Skrypty .bat odwrotnie — cmd.exe bezpieczniej obsługuje CRLF,
+#  szczególnie przy wieloliniowych blokach if/choice.
+# =============================================================================
+
+# Domyślnie: git normalizuje w repozytorium do LF i tak wypakowuje.
+* text=auto eol=lf
+
+# Wyjątek dla Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Bezwarunkowo LF
+*.sh text eol=lf
+
+# Binaria — bez żadnej normalizacji, inaczej git zniszczyłby zawartość
+*.wav binary
+*.flac binary
+*.ogg binary
+*.png binary
+*.jpg binary
+*.pdf binary
+*.keras binary
+*.h5 binary
+*.tflite binary
+*.xmodel binary
+*.npz binary
+*.npy binary
+*.whl binary
+*.tar.gz binary
+*.tgz binary
+*.bc binary

@@ -1,0 +1,27 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        litery zgodnie z definicja, odstepy przypadkowe (tresc nieodnotowana)
+nadajnik:      IC-7300MK2
+klucz:         manipulator (paddle) — elementy poprawne, przerwy ludzkie
+tempo zadane:  nieodnotowane przy nagrywaniu
+pasmo:         ?
+filtr:         ?
+tor:           mikrofon PC (glosnik -> powietrze -> mikrofon) — ZLE, nastepne przez USB audio albo karte SD
+uwagi:         Przypadek, ktory modeluje GAP_JITTER: timing elementow maszynowo poprawny, przerwy miedzyznakowe losowe.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        44100 Hz, 2 kan., 257.5 s
+szczyt obrazu: 19.6 dB   (korekta poziomu -2.6 dB do celu 17 dB)
+tlo:           -24.1 dB   kontrast 43.7 dB
+szerokosc:     75 Hz (3 z 32 pasm w granicach 10 dB)
+ton:           mediana 700 Hz, zakres 598-737 Hz, w zakresie czytelnym 96% czasu
+tempo:         12.0 WPM (najkrotszy element 100 ms)
+elementy [ms]: 10pct 100, mediana 120, 90pct 280   stosunek 2.80
+elementow:     647, klucz 46% czasu
+
+ocena:
+  - tempo 12 WPM POZA zakresem treningu (13-27 WPM)

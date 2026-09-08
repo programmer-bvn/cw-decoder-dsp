@@ -1,0 +1,79 @@
+# =============================================================================
+#  Co NIE idzie do repozytorium i dlaczego
+#
+#  Zasada: wersjonujemy to, co jest ŹRÓDŁEM albo HISTORIĄ. Nie wersjonujemy
+#  tego, co da się z nich odtworzyć, ani tego, co jest za duże dla gita.
+# =============================================================================
+
+# --- środowiska: odtwarzalne z requirements.txt, tysiące małych plików ---
+.venv/
+venv_gpu/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- zbiory treningowe: 800 MB, generowane w minuty ---
+# Odtworzenie: python train_rtx.py generate --n 200000
+# Odcisk front-endu w pliku pilnuje zgodności z config.py, więc nie ma
+# ryzyka, że odtworzony zbiór będzie inny.
+*.npz
+*.npy
+
+# --- wagi modeli: 12 MB każde, binarne, odtwarzalne jedną nocą treningu ---
+# UWAGA: log.csv i state.json z runs/ SĄ wersjonowane (patrz niżej) —
+# historia treningu to tekst, kilkadziesiąt kB, i jej nie odtworzysz.
+*.keras
+*.h5
+*.tflite
+*.xmodel
+
+# --- koła pipa ---
+*.whl
+
+# --- NAGRANIA: 106 MB, a mic1 sam ma 45 MB ---
+# GitHub ma limit 100 MB na plik i repozytorium powinno zostać małe.
+# Nagrania to jedyna NIEODTWARZALNA rzecz w tym projekcie, więc ich
+# miejscem jest BD-R, nie git.
+#
+# Ale opisy probki/*.txt ZOSTAJĄ w repo: mają po 1,5 kB, zawierają
+# zarówno część ręczną (co nadane, jakim kluczem, jakim torem), jak
+# i pomiary (ton, tempo, szerokość, kontrast). To metadane, bez których
+# nagrania są bezużyteczne, a bez nagrań nadal mówią, co zmierzono.
+probki/*.wav
+probki/*.flac
+probki/*.ogg
+*.wav
+*.flac
+!probki/*.txt
+
+# --- wyniki narzędzi: wykresy, X-Ray, logi przebiegów ---
+out/*.png
+out/*.txt
+out/*.err
+out/*.html
+out/xray_all/
+out/xray30k/
+out/xray_lab/
+
+# --- historię treningu ZOSTAWIAMY (wyjątki od reguł powyżej) ---
+!runs/**/log.csv
+!runs/**/state.json
+!out/noc_*.log
+
+# --- zgłoszenia od operatorów: zawierają audio i znaki wywoławcze ---
+# Trafiają do biblioteki próbek po przejrzeniu, nie wprost do repo.
+zgloszenia/
+
+# --- notatki z INNEGO projektu, które trafiły tu przez katalog ---
+# Dotyczą falownika, nie dekodera CW. Zostają na dysku (są udostępnione
+# i czytelne), ale nie mają czego szukać w repozytorium tego projektu.
+# Czyściej byłoby przenieść je do własnego katalogu.
+trawersacja w sterna.md
+obraz ochrony.md
+
+# --- śmieci systemowe ---
+Thumbs.db
+desktop.ini
+.DS_Store
+libdevice.10.bc

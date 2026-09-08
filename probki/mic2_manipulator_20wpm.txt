@@ -1,0 +1,29 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        litery zgodnie z definicja, odstepy przypadkowe (w odczycie rozpoznawalne CQ, SQ2BVN, 73)
+nadajnik:      IC-7300MK2
+klucz:         manipulator (paddle) — elementy poprawne, przerwy ludzkie
+tempo zadane:  nieodnotowane przy nagrywaniu
+pasmo:         ?
+filtr:         ?
+tor:           mikrofon PC (glosnik -> powietrze -> mikrofon) — ZLE, nastepne przez USB audio albo karte SD
+uwagi:         NAJLEPSZE dopasowanie do treningu, jakie mamy: 20 WPM i 751 Hz.
+               UWAGA: w t=0-8, 105-135 i 180-210 s nagranie nie zawiera kluczowanego
+               sygnalu (poziom ciagly zamiast skokow) — to nie jest CW.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        44100 Hz, 2 kan., 236.6 s
+szczyt obrazu: 29.7 dB   (korekta poziomu -12.7 dB do celu 17 dB)
+tlo:           -18.9 dB   kontrast 48.8 dB
+szerokosc:     75 Hz (3 z 32 pasm w granicach 10 dB)
+ton:           mediana 750 Hz, zakres 621-825 Hz, w zakresie czytelnym 97% czasu
+tempo:         20.0 WPM (najkrotszy element 60 ms)
+elementy [ms]: 10pct 60, mediana 100, 90pct 220   stosunek 3.67
+elementow:     641, klucz 36% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 29.7 dB dochodzi do DB_MAX=24; potrzeba -13 dB

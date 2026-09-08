@@ -1,0 +1,29 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN
+nadajnik:      IC-7300MK2
+klucz:         pamiec automatu IC-7300MK2 — timing IDEALNY
+tempo zadane:  nieodnotowane przy nagrywaniu
+pasmo:         ?
+filtr:         ?
+tor:           mikrofon PC (glosnik -> powietrze -> mikrofon) — ZLE, nastepne przez USB audio albo karte SD
+uwagi:         Sygnal wzorcowy: brak rozjazdu klucza, brak chirpu, brak zaniku.
+               Model uczony na 20 WPM nie odczytal z syntetycznego powtorzenia NIC —
+               jedyna zmienna bylo tempo. To wykazalo, ze WPM_JITTER=0 bylo bledem.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        44100 Hz, 2 kan., 31.6 s
+szczyt obrazu: 29.3 dB   (korekta poziomu -12.3 dB do celu 17 dB)
+tlo:           -13.4 dB   kontrast 42.8 dB
+szerokosc:     75 Hz (3 z 32 pasm w granicach 10 dB)
+ton:           mediana 750 Hz, zakres 680-758 Hz, w zakresie czytelnym 100% czasu
+tempo:         15.0 WPM (najkrotszy element 80 ms)
+elementy [ms]: 10pct 80, mediana 100, 90pct 220   stosunek 2.75
+elementow:     105, klucz 50% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 29.3 dB dochodzi do DB_MAX=24; potrzeba -12 dB

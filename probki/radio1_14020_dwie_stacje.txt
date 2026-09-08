@@ -1,0 +1,34 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        nieznane — odbior z pasma
+nadajnik:      IC-7300MK2
+klucz:         nieznany (obce stacje)
+tempo zadane:  nieokreslone (dwie stacje naraz)
+pasmo:         14.020 MHz
+filtr:         ?
+tor:           mikrofon PC (glosnik -> powietrze -> mikrofon) — ZLE, nastepne przez USB audio albo karte SD
+uwagi:         NIE NADAJE SIE do dekodowania. Dwie stacje 55 Hz od siebie (845 i 790 Hz),
+               ton rozlany na 200 Hz, tlo podniesione o 15 dB, pionowe smugi trzaskow.
+               Zachowane jako przyklad materialu, ktorego zaden front-end nie odkreci.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        44100 Hz, 2 kan., 103.6 s
+szczyt obrazu: 23.6 dB   (korekta poziomu -6.6 dB do celu 17 dB)
+tlo:           1.2 dB   kontrast 18.1 dB
+szerokosc:     200 Hz (8 z 32 pasm w granicach 10 dB)
+ton:           mediana 839 Hz, zakres 754-847 Hz, w zakresie czytelnym 44% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 80, 90pct 200   stosunek 10.00
+elementow:     484, klucz 38% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 23.6 dB dochodzi do DB_MAX=24; potrzeba -7 dB
+  - ton ROZLANY na 200 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - niski kontrast 18 dB (tło 1 dB)
+  - ton w zakresie czytelnym tylko 44% czasu (mediana 839 Hz) — konieczne przestrojenie
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)
+  - stosunek długości elementów 10.0 (kropka:kreska powinno dać ok. 3) — możliwe dwie stacje albo trzaski
