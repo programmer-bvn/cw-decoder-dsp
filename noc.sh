@@ -239,3 +239,74 @@ echo "    ./z_hdd.bat  (z Windows)  albo skopiuj runs/ i out/*.log"
 echo
 echo "Pełne logi: $LOGI/noc_${STEMPEL}*.log"
 echo "============================================================"
+
+# --- 7. WYPCHNIĘCIE HISTORII TRENINGU ------------------------------------
+#  Po co: rano masz wynik na GitHubie, zanim dotkniesz pendraka. Jeśli
+#  dysk w maszynie stęknie w nocy, log.csv i state.json są już poza nią.
+#
+#  CO trafia do commita: TYLKO historia treningu (runs/**/log.csv,
+#  runs/**/state.json, out/noc_*.log). Świadomie NIE "git add -A" —
+#  nocny skrypt bez nadzoru nie ma prawa zacommitować przypadkowych
+#  zmian w kodzie, które zostały w drzewie roboczym z wieczora.
+#
+#  KIEDY jest pomijany: gdy nie ma katalogu .git (kopia robocza zrobiona
+#  przez na_hdd.bat nie jest repozytorium) albo gdy nie ma zdalnego
+#  "origin". W obu przypadkach to NIE błąd — ta maszyna po prostu nie
+#  jest ustawiona do wypychania i trening ma się liczyć tak samo.
+#
+#  BatchMode=yes jest KLUCZOWE. Bez niego ssh przy nieznanym odcisku
+#  hosta albo kluczu z hasłem czeka na odpowiedź z terminala, którego
+#  w nocy nie ma — i skrypt wisi do rana zamiast wypisać błąd.
+#
+#  Klucz: deploy key TEGO repozytorium, nie klucz konta. Ścieżkę można
+#  nadpisać zmienną CW_DEPLOY_KEY.
+# -------------------------------------------------------------------------
+echo
+echo "--- wypchnięcie na GitHub ---"
+
+if [ ! -d .git ]; then
+    echo "to nie jest repozytorium git — pomijam"
+elif ! git remote get-url origin >/dev/null 2>&1; then
+    echo "brak zdalnego 'origin' — pomijam"
+    echo "  ustawienie: git remote add origin git@github.com:<konto>/<repo>.git"
+elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
+    echo "repozytorium bez ani jednego commita — pomijam"
+    echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
+else
+    KLUCZ="${CW_DEPLOY_KEY:-$HOME/.ssh/cw_deploy}"
+    if [ -f "$KLUCZ" ]; then
+        export GIT_SSH_COMMAND="ssh -i $KLUCZ -o IdentitiesOnly=yes -o BatchMode=yes"
+        echo "klucz: $KLUCZ"
+    else
+        export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
+        echo "brak $KLUCZ — próbuję domyślnej tożsamości ssh"
+    fi
+
+    git add -- 'runs/**/log.csv' 'runs/**/state.json' "$LOGI"/noc_*.log 2>/dev/null
+
+    if git diff --cached --quiet; then
+        echo "nic nowego w historii treningu — nie commituję"
+    else
+        # core.hooksPath wyłączony: hook, który w nocy zapyta o cokolwiek,
+        # zatrzymałby skrypt tak samo jak ssh bez BatchMode.
+        if git -c core.hooksPath=/dev/null commit -q \
+               -m "trening $STEMPEL: historia przebiegów dpu i gru"; then
+            echo "commit: $(git log -1 --format='%h %s')"
+        else
+            echo "commit NIE przeszedł — patrz wyżej"
+        fi
+    fi
+
+    GALAZ="$(git rev-parse --abbrev-ref HEAD)"
+    if git push origin "$GALAZ" 2>&1 | sed 's/^/  /'; then
+        echo "wypchnięte na origin/$GALAZ"
+    else
+        echo "PUSH NIE PRZESZEDŁ. Commit lokalnie JEST, więc nic nie zginęło."
+        echo "Najczęstsze powody, w tej kolejności:"
+        echo "  1. klucz nie dodany w repo jako Deploy key z 'Allow write access'"
+        echo "  2. brak github.com w ~/.ssh/known_hosts"
+        echo "     -> ssh-keyscan github.com >> ~/.ssh/known_hosts"
+        echo "  3. WSL ma inny HOME niż Windows — klucza tu po prostu nie ma"
+        echo "Sprawdzenie: ssh -i \"\$KLUCZ\" -o IdentitiesOnly=yes -T git@github.com"
+    fi
+fi
