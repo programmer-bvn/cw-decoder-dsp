@@ -1,12 +1,29 @@
 #!/bin/bash
 # =============================================================================
-#  noc.sh  --  cała noc treningu bez nadzoru
+#  noc.sh  --  kolejka pomiarów bez nadzoru, na całą noc
 #
 #  Uruchomienie (w WSL) — bez niczego przed tym:
 #
-#      ./noc.sh                          # 200 tys., 120 epok, dpu + gru
-#      ./noc.sh 200000 120               # jawnie: próbki i epoki
-#      ./noc.sh 200000 120 256 moj.npz   # własny plik zbioru
+#      ./noc.sh
+#      ./noc.sh 200000 40                       # próbki i epoki
+#      ./noc.sh 200000 40 256 moj.npz           # własny plik zbioru
+#      ./noc.sh 200000 40 256 moj.npz 60 5000   # większy pomiar koperty
+#
+#  CO ROBI, PO KOLEI
+#      0. ładuje środowisko SAM (nie trzeba source setenv.sh)
+#      1. karta -- przerywa, jeśli jej nie widzi
+#      2. diag.py
+#      3. zbiór -- generuje, jeśli brak albo niekompletny
+#      4. trening dpu  -> runs/cw2      (wdrażalny na KV260)
+#      5. trening gru  -> runs/gru1     (odniesienie: koszt braku rekurencji)
+#      6. koperta i błędy dla dpu
+#      7. koperta i błędy dla gru
+#      8. out/RANO.txt -- kilkanaście linii do przeczytania po powrocie
+#      9. commit + paczka git bundle + próba pushu
+#
+#  Etapy 1-3 PRZERYWAJĄ przy awarii, bo bez nich nic nie ma sensu.
+#  Od etapu 4 awaria JEDNEGO nie zabija pozostałych: jeśli 'gru' padnie,
+#  koperta dla 'dpu' i tak się policzy.
 #
 #  ZMIERZONE 8/9.09.2026 na RTX 3050, nie szacowane. Poprzednia wersja
 #  tego nagłówka mówiła 119 ms/krok i była zmyślona — pomyliłem się
@@ -60,6 +77,13 @@ set -u
 N_PROBEK="${1:-200000}"
 EPOK="${2:-40}"
 BATCH="${3:-256}"
+
+# Rozmiar pomiaru koperty. Domyślne 40 próbek na komórkę siatki 9x7 to
+# 2520 obrazów -- kilkadziesiąt sekund. Błędy z 3000 próbek pełnego modelu
+# kanału dają w kubełkach widoczności po kilkaset sztuk, czyli dość, żeby
+# różnica 15 punktów procentowych nie była szumem.
+KOPERTA_N="${5:-40}"
+KOPERTA_BLEDY="${6:-3000}"
 
 # Nazwa domyślna zgodna z tym, co generuje train_rtx.py bez --out.
 # Dzięki temu istniejący zbiór jest UŻYWANY, a nie generowany od nowa —
@@ -210,15 +234,43 @@ if [ "$GENERUJ" = "1" ]; then
     tail -12 "$LOGI/noc_${STEMPEL}_gen.log"
 fi
 
-# --- 4-5. DWA PRZEBIEGI --------------------------------------------------
-# Kolejność nie jest przypadkowa: 'dpu' pierwszy, bo to model, który da się
-# wdrożyć na KV260. Gdyby noc się urwała, ma się liczyć ten właściwy.
-trenuj () {
-    local ARCH="$1" RUN="$2"
+# =============================================================================
+#  KOLEJKA POMIARÓW
+#
+#  Dlaczego kolejka, a nie dwa treningi: epoka trwa 23 s, więc 40 epok to
+#  15 minut. Okno nocne ma 12 godzin. Wąskim gardłem nie jest moc, a to,
+#  że przy pracy w przerwach między inną robotą jest JEDEN strzał na dobę.
+#  Więc jedna noc musi odpowiedzieć na wszystkie otwarte pytania, a nie
+#  na jedno.
+#
+#  ZASADA: od tego miejsca awaria etapu NIE przerywa skryptu. Etapy 1-3
+#  (karta, diag, zbiór) przerywają, bo bez nich nic nie ma sensu. Dalej
+#  każdy etap jest niezależny — jeśli 'gru' się wywali, koperta dla 'dpu'
+#  ma się i tak policzyć.
+# =============================================================================
+
+# Stan etapów do podsumowania. Format: "nazwa|wynik|szczegół".
+STAN=()
+
+etap () {
+    local NAZWA="$1"; shift
     echo
     echo "============================================================"
-    echo " TRENING  arch=$ARCH  ->  $RUN     $(date '+%H:%M')"
+    echo " $NAZWA     $(date '+%H:%M')"
     echo "============================================================"
+    if "$@"; then
+        STAN+=("$NAZWA|OK|")
+        return 0
+    fi
+    local RC=$?
+    echo "  NIE UDAŁO SIĘ (kod $RC) — lecę dalej"
+    STAN+=("$NAZWA|BŁĄD|kod $RC")
+    return 0
+}
+
+# --- TRENING -------------------------------------------------------------
+trenuj () {
+    local ARCH="$1" RUN="$2"
 
     if [ -f "$RUN/state.json" ] && python - "$RUN/state.json" "$EPOK" <<'PY'
 import json, sys
@@ -244,61 +296,135 @@ PY
         > "$LOG" 2>&1
     local RC=$?
 
-    # Postęp epok bez zaśmiecania: same wiersze z walidacją.
     grep -a "val_accuracy" "$LOG" | tail -3
     echo
     grep -aE "Dokładność na walidacji|klasa 0|znaki:|wzięty za ciszę" "$LOG" || true
-
-    if [ $RC -ne 0 ]; then
-        echo "  UWAGA: trening zakończył się kodem $RC — patrz $LOG"
-    fi
-    return 0
+    return $RC
 }
 
-trenuj dpu runs/cw2
-trenuj gru runs/gru1
+# --- KOPERTA I BŁĘDY -----------------------------------------------------
+#  To odpowiada na dwa pytania, których dokładność walidacyjna nie dotyka:
+#  w jakim zakresie tempa i tonu model czyta, oraz czy gubienie elementów
+#  bierze się z obcinania okna 2,56 s, czy z niezdolności sieci do
+#  zliczania. Drugie rozstrzyga się przez widoczność znaku w oknie —
+#  patrz opis w tools/koperta.py.
+koperta () {
+    local ARCH="$1" RUN="$2"
+    if [ ! -f "$RUN/best.keras" ]; then
+        echo "  brak $RUN/best.keras — nie ma czego mierzyć"
+        return 1
+    fi
+    local WYNIK="$LOGI/koperta_${ARCH}_${STEMPEL}.txt"
+    python -m tools.koperta --model "$RUN/best.keras" \
+        --n "$KOPERTA_N" --n-bledy "$KOPERTA_BLEDY" --out "$WYNIK" \
+        > "$LOGI/noc_${STEMPEL}_koperta_${ARCH}.log" 2>&1
+    local RC=$?
+    if [ -f "$WYNIK" ]; then
+        sed -n '/^KOPERTA/,/kropka = ZERO/p' "$WYNIK"
+        echo
+        sed -n '/^WYROK/,/^$/p' "$WYNIK"
+    else
+        tail -12 "$LOGI/noc_${STEMPEL}_koperta_${ARCH}.log"
+    fi
+    return $RC
+}
 
-# --- 6. PODSUMOWANIE -----------------------------------------------------
-echo
-echo "============================================================"
-echo " PODSUMOWANIE  $(date '+%Y-%m-%d %H:%M')"
-echo "============================================================"
-python - <<'PY'
+etap "TRENING dpu  -> runs/cw2"   trenuj dpu runs/cw2
+etap "TRENING gru  -> runs/gru1"  trenuj gru runs/gru1
+etap "KOPERTA dpu"                koperta dpu runs/cw2
+etap "KOPERTA gru"                koperta gru runs/gru1
+
+# --- PODSUMOWANIE DLA CZŁOWIEKA -----------------------------------------
+#  out/RANO.txt: kilkanaście linii do przeczytania po ciemku, po powrocie
+#  od innej roboty. Pełne logi zostają obok, ale nie po to, żeby ich
+#  szukać o 23:00.
+RANO="$LOGI/RANO.txt"
+
+{
+    echo "============================================================"
+    echo " NOC $(date '+%Y-%m-%d')  --  co wyszło"
+    echo "============================================================"
+    echo
+    echo "ETAPY"
+    for w in "${STAN[@]}"; do
+        NAZWA="${w%%|*}"; RESZTA="${w#*|}"
+        WYNIK="${RESZTA%%|*}"; SZCZ="${RESZTA#*|}"
+        printf "  %-28s %-6s %s\n" "$NAZWA" "$WYNIK" "$SZCZ"
+    done
+    echo
+} > "$RANO"
+
+python - "$RANO" runs/cw2 runs/gru1 <<'PY' || true
 import json
+import sys
 from pathlib import Path
 
-for run, opis in (("runs/cw2", "dpu (wdrażalny na KV260)"),
-                  ("runs/gru1", "gru (odniesienie, NIE wdrażalny)")):
+rano = Path(sys.argv[1])
+w = ["WYNIKI TRENINGU", ""]
+
+for run, opis in ((sys.argv[2], "dpu (wdrażalny na KV260)"),
+                  (sys.argv[3], "gru (odniesienie, NIE wdrażalny)")):
     p = Path(run) / "state.json"
     if not p.exists():
-        print(f"{run:12s} {opis:34s} brak wyniku")
+        w.append(f"  {run:12s} {opis:34s} brak wyniku")
         continue
     s = json.load(open(p, encoding="utf-8"))
     h = s.get("history", {})
-    va = h.get("val_accuracy", [])
-    ac = h.get("accuracy", [])
-    best = s.get("best_val_acc", -1)
-    print(f"{run:12s} {opis}")
-    print(f"             epok {s.get('epoch', 0)}, "
-          f"najlepsza walidacja {best*100:.2f}%"
-          + (f" (epoka {va.index(max(va))+1})" if va else ""))
-    if va:
-        print(f"             val_accuracy koniec {va[-1]*100:.2f}%, "
-              f"accuracy treningowa {ac[-1]*100:.2f}%")
-        if ac and ac[-1] > 0.99:
-            print("             UWAGA: accuracy treningowa 100% = model "
-                  "zapamiętał zbiór,\n                    a nie nauczył się "
-                  "zadania. Potrzeba więcej danych.")
+    va, ac, vl = (h.get("val_accuracy", []), h.get("accuracy", []),
+                  h.get("val_loss", []))
+    w.append(f"  {run}  {opis}")
+    w.append(f"      epok {s.get('epoch', 0)}, "
+             f"najlepsza walidacja {s.get('best_val_acc', -1) * 100:.2f}%"
+             + (f" (epoka {va.index(max(va)) + 1})" if va else ""))
+    if vl:
+        i = vl.index(min(vl)) + 1
+        w.append(f"      val_loss: minimum {min(vl):.4f} w epoce {i}, "
+                 f"koniec {vl[-1]:.4f}")
+        # Ten warunek jest tu, bo to najczęstszy sposób zmarnowania nocy:
+        # trening biegnie dalej, a od pewnej epoki tylko zapamiętuje zbiór.
+        if len(vl) > i + 5 and vl[-1] > min(vl) * 1.2:
+            w.append(f"      ZAPAMIĘTYWANIE: val_loss rośnie od epoki {i}."
+                     f" Epoki po {i + 5} nic nie wniosły.")
+    if ac and ac[-1] > 0.995:
+        w.append("      accuracy treningowa ~100% = model zapamiętał zbiór."
+                 " Potrzeba WIĘCEJ DANYCH, nie epok.")
+
+w.append("")
+with open(rano, "a", encoding="utf-8") as f:
+    f.write("\n".join(w) + "\n")
 PY
 
+# Wyroki z koperty — po jednej linii sedem, bez powtarzania całych tabel.
+{
+    echo "KOPERTA I PRZYCZYNA BŁĘDÓW"
+    echo
+    for A in dpu gru; do
+        F="$LOGI/koperta_${A}_${STEMPEL}.txt"
+        if [ -f "$F" ]; then
+            echo "  --- $A ---"
+            grep -aE "^  czyta \(" "$F" | sed 's/^/  /' || true
+            sed -n '/^WYROK/,/^$/p' "$F" | sed '1,2d;/^$/d' | sed 's/^/  /'
+            echo
+        else
+            echo "  --- $A --- brak pomiaru"
+            echo
+        fi
+    done
+    echo "PEŁNE LOGI"
+    echo "  $GLOWNY"
+    for F in "$LOGI"/noc_${STEMPEL}_*.log "$LOGI"/koperta_*_${STEMPEL}.txt; do
+        [ -f "$F" ] && echo "  $F"
+    done
+    echo
+    echo "Na pendraka:  bvn_z.bat  (z Windows)"
+} >> "$RANO"
+
 echo
-echo "Do zabrania na pendraka:"
-echo "    ./z_hdd.bat  (z Windows)  albo skopiuj runs/ i out/*.log"
-echo
-echo "Pełne logi: $LOGI/noc_${STEMPEL}*.log"
+echo "============================================================"
+cat "$RANO"
 echo "============================================================"
 
-# --- 7. HISTORIA TRENINGU: commit, paczka, ewentualny push --------------
+# --- HISTORIA TRENINGU: commit, paczka, ewentualny push -----------------
 #  Po co: rano wynik ma być poza maszyną, która go policzyła. Jeśli dysk
 #  stęknie w nocy, log.csv i state.json są już gdzie indziej.
 #
@@ -307,16 +433,16 @@ echo "============================================================"
 #  Wkładanie go tu oznaczałoby ~/.git-credentials, czyli sekret czystym
 #  tekstem na dysku. Zamiast tego `git bundle` pakuje commity do JEDNEGO
 #  pliku, ten wraca na pendraku razem z wynikami, a wypycha go maszyna,
-#  która poświadczenia ma. Cała historia tego repo to ~230 kB.
+#  która poświadczenia ma. Cała historia tego repo to ~212 kB.
 #
 #  Push jest próbowany mimo to — jeśli jest deploy key z prawem zapisu,
-#  wypchnie się od razu i paczka będzie tylko nadmiarowa. Nie jest to
-#  jednak droga krytyczna: niepowodzenie pushu NIE psuje nocy.
+#  wypchnie się od razu. Nie jest to droga krytyczna: niepowodzenie
+#  pushu NIE psuje nocy.
 #
-#  CO trafia do commita: TYLKO historia treningu (runs/**/log.csv,
-#  runs/**/state.json, out/noc_*.log). Świadomie NIE "git add -A" —
-#  skrypt bez nadzoru nie ma prawa wciągnąć do historii zmian w kodzie
-#  zostawionych w drzewie roboczym z wieczora.
+#  CO trafia do commita: TYLKO historia treningu i pomiary (runs/**/log.csv,
+#  runs/**/state.json, out/*.log, out/koperta_*.txt, out/RANO.txt).
+#  Świadomie NIE "git add -A" — skrypt bez nadzoru nie ma prawa wciągnąć
+#  do historii zmian w kodzie zostawionych w drzewie roboczym z wieczora.
 # -------------------------------------------------------------------------
 echo
 echo "--- historia treningu ---"
@@ -324,12 +450,13 @@ echo "--- historia treningu ---"
 if [ ! -d .git ]; then
     echo "to nie jest repozytorium git — pomijam"
     echo "  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki"
-    echo "   wracają przez z_hdd.bat i to wystarcza)"
+    echo "   wracają przez bvn_z.bat i to wystarcza)"
 elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
     echo "repozytorium bez ani jednego commita — pomijam"
     echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
 else
-    git add -- 'runs/**/log.csv' 'runs/**/state.json' "$LOGI"/noc_*.log 2>/dev/null
+    git add -- 'runs/**/log.csv' 'runs/**/state.json' \
+               "$LOGI"/noc_*.log "$LOGI"/koperta_*.txt "$RANO" 2>/dev/null
 
     if git diff --cached --quiet; then
         echo "nic nowego w historii treningu — nie commituję"
@@ -337,7 +464,7 @@ else
         # core.hooksPath wyłączony: hook, który w nocy zapyta o cokolwiek,
         # zatrzymałby skrypt tak samo jak ssh bez BatchMode.
         if git -c core.hooksPath=/dev/null commit -q \
-               -m "trening $STEMPEL: historia przebiegów"; then
+               -m "trening $STEMPEL: historia przebiegów i pomiary"; then
             echo "commit: $(git log -1 --format='%h %s')"
         else
             echo "commit NIE przeszedł — patrz wyżej"
@@ -347,7 +474,6 @@ else
     GALAZ="$(git rev-parse --abbrev-ref HEAD)"
     PACZKA="$LOGI/historia_${STEMPEL}.bundle"
 
-    # --- paczka: zawsze, bo nie wymaga niczego ---------------------------
     if git bundle create "$PACZKA" "$GALAZ" >/dev/null 2>&1; then
         echo "paczka: $PACZKA ($(du -h "$PACZKA" | cut -f1))"
         PACZKA_OK=1
@@ -356,7 +482,6 @@ else
         PACZKA_OK=0
     fi
 
-    # --- push: próba, nie wymóg -----------------------------------------
     if ! git remote get-url origin >/dev/null 2>&1; then
         echo "push: brak zdalnego 'origin' — pomijam"
     else
@@ -367,7 +492,7 @@ else
             export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
         fi
         # GIT_TERMINAL_PROMPT=0: bez tego git po HTTPS bez poświadczeń
-        # czeka na login i hasło z terminala, którego w nocy nie ma.
+        # czeka na login z terminala, którego w nocy nie ma.
         if GIT_TERMINAL_PROMPT=0 git push origin "$GALAZ" >/dev/null 2>&1; then
             echo "push: wypchnięte na origin/$GALAZ"
         else
@@ -375,7 +500,7 @@ else
             if [ "$PACZKA_OK" = "1" ]; then
                 echo
                 echo "  Rano, z Windows, z katalogu repozytorium na pendraku:"
-                echo "      git fetch \"<ścieżka>/$(basename "$PACZKA")\" $GALAZ"
+                echo "      git fetch \"out/$(basename "$PACZKA")\" $GALAZ"
                 echo "      git merge --ff-only FETCH_HEAD"
                 echo "      git push origin $GALAZ"
                 echo
@@ -385,3 +510,7 @@ else
         fi
     fi
 fi
+
+echo
+echo "Koniec: $(date '+%Y-%m-%d %H:%M')"
+echo "Do przeczytania: $RANO"
