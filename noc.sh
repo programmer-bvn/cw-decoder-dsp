@@ -8,12 +8,28 @@
 #      ./noc.sh 200000 120               # jawnie: próbki i epoki
 #      ./noc.sh 200000 120 256 moj.npz   # własny plik zbioru
 #
-#  DOBÓR ROZMIARU DO OKNA CZASOWEGO. Przy 119 ms/krok i batchu 256:
-#      200 tys. -> 782 kroki/epokę  -> 1,6 min/epokę
-#      400 tys. -> 1563 kroki       -> 3,1 min/epokę
-#  Architektura 'gru' jest cięższa, licz około 1,5x. Dwa przebiegi po
-#  120 epok na 200 tys. to ok. 8 h; na 400 tys. byłoby 15 h i nie
-#  zmieściłoby się w nocy.
+#  ZMIERZONE 8/9.09.2026 na RTX 3050, nie szacowane. Poprzednia wersja
+#  tego nagłówka mówiła 119 ms/krok i była zmyślona — pomyliłem się
+#  czterokrotnie, co doprowadziło do domyślnych 120 epok.
+#
+#      200 tys., batch 256  ->  719 kroków/epokę, 31 ms/krok
+#                           ->  23 s/epokę
+#
+#  DLACZEGO DOMYŚLNIE 40 EPOK, A NIE 120. Z log.csv przebiegu 'dpu':
+#      val_loss ma MINIMUM w epoce 16 (0,1361) i potem tylko rośnie,
+#      do 0,2130 w setnej. val_accuracy stoi od 20. epoki.
+#      Epoki 17-100 dały +0,3 punktu procentowego i podniosły val_loss
+#      o 57%, przy dokładności treningowej 99,98%.
+#  Czyli po 20. epoce model już tylko zapamiętuje zbiór. 40 epok daje
+#  zapas na wolniejszą zbieżność 'gru' i nic nie traci.
+#
+#  Wąskim gardłem NIE JEST moc obliczeniowa, a DANE: 200 tys. stałych
+#  obrazów to za mało na 624 tys. parametrów przy tej zmienności. Dłuższy
+#  trening tego nie naprawia — naprawi to generowanie w locie albo
+#  większy zbiór.
+#
+#  Skoro epoka trwa 23 s, w oknie nocnym mieści się nie jeden trening,
+#  a KOLEJKA pomiarów. Dwa przebiegi po 40 epok to około 40 minut.
 #
 #  Ten skrypt WOLNO uruchamiać przez ./ i NIE trzeba nic robić przed nim.
 #
@@ -42,7 +58,7 @@
 set -u
 
 N_PROBEK="${1:-200000}"
-EPOK="${2:-120}"
+EPOK="${2:-40}"
 BATCH="${3:-256}"
 
 # Nazwa domyślna zgodna z tym, co generuje train_rtx.py bez --out.
