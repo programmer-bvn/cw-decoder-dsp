@@ -282,48 +282,37 @@ echo
 echo "Pełne logi: $LOGI/noc_${STEMPEL}*.log"
 echo "============================================================"
 
-# --- 7. WYPCHNIĘCIE HISTORII TRENINGU ------------------------------------
-#  Po co: rano masz wynik na GitHubie, zanim dotkniesz pendraka. Jeśli
-#  dysk w maszynie stęknie w nocy, log.csv i state.json są już poza nią.
+# --- 7. HISTORIA TRENINGU: commit, paczka, ewentualny push --------------
+#  Po co: rano wynik ma być poza maszyną, która go policzyła. Jeśli dysk
+#  stęknie w nocy, log.csv i state.json są już gdzie indziej.
+#
+#  DLACZEGO PACZKA, A NIE SAM PUSH. W WSL nie ma Credential Managera
+#  Windows, więc token, którym pcha maszyna z Windows, tutaj nie istnieje.
+#  Wkładanie go tu oznaczałoby ~/.git-credentials, czyli sekret czystym
+#  tekstem na dysku. Zamiast tego `git bundle` pakuje commity do JEDNEGO
+#  pliku, ten wraca na pendraku razem z wynikami, a wypycha go maszyna,
+#  która poświadczenia ma. Cała historia tego repo to ~230 kB.
+#
+#  Push jest próbowany mimo to — jeśli jest deploy key z prawem zapisu,
+#  wypchnie się od razu i paczka będzie tylko nadmiarowa. Nie jest to
+#  jednak droga krytyczna: niepowodzenie pushu NIE psuje nocy.
 #
 #  CO trafia do commita: TYLKO historia treningu (runs/**/log.csv,
 #  runs/**/state.json, out/noc_*.log). Świadomie NIE "git add -A" —
-#  nocny skrypt bez nadzoru nie ma prawa zacommitować przypadkowych
-#  zmian w kodzie, które zostały w drzewie roboczym z wieczora.
-#
-#  KIEDY jest pomijany: gdy nie ma katalogu .git (kopia robocza zrobiona
-#  przez na_hdd.bat nie jest repozytorium) albo gdy nie ma zdalnego
-#  "origin". W obu przypadkach to NIE błąd — ta maszyna po prostu nie
-#  jest ustawiona do wypychania i trening ma się liczyć tak samo.
-#
-#  BatchMode=yes jest KLUCZOWE. Bez niego ssh przy nieznanym odcisku
-#  hosta albo kluczu z hasłem czeka na odpowiedź z terminala, którego
-#  w nocy nie ma — i skrypt wisi do rana zamiast wypisać błąd.
-#
-#  Klucz: deploy key TEGO repozytorium, nie klucz konta. Ścieżkę można
-#  nadpisać zmienną CW_DEPLOY_KEY.
+#  skrypt bez nadzoru nie ma prawa wciągnąć do historii zmian w kodzie
+#  zostawionych w drzewie roboczym z wieczora.
 # -------------------------------------------------------------------------
 echo
-echo "--- wypchnięcie na GitHub ---"
+echo "--- historia treningu ---"
 
 if [ ! -d .git ]; then
     echo "to nie jest repozytorium git — pomijam"
-elif ! git remote get-url origin >/dev/null 2>&1; then
-    echo "brak zdalnego 'origin' — pomijam"
-    echo "  ustawienie: git remote add origin git@github.com:<konto>/<repo>.git"
+    echo "  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki"
+    echo "   wracają przez z_hdd.bat i to wystarcza)"
 elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
     echo "repozytorium bez ani jednego commita — pomijam"
     echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
 else
-    KLUCZ="${CW_DEPLOY_KEY:-$HOME/.ssh/cw_deploy}"
-    if [ -f "$KLUCZ" ]; then
-        export GIT_SSH_COMMAND="ssh -i $KLUCZ -o IdentitiesOnly=yes -o BatchMode=yes"
-        echo "klucz: $KLUCZ"
-    else
-        export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
-        echo "brak $KLUCZ — próbuję domyślnej tożsamości ssh"
-    fi
-
     git add -- 'runs/**/log.csv' 'runs/**/state.json' "$LOGI"/noc_*.log 2>/dev/null
 
     if git diff --cached --quiet; then
@@ -332,7 +321,7 @@ else
         # core.hooksPath wyłączony: hook, który w nocy zapyta o cokolwiek,
         # zatrzymałby skrypt tak samo jak ssh bez BatchMode.
         if git -c core.hooksPath=/dev/null commit -q \
-               -m "trening $STEMPEL: historia przebiegów dpu i gru"; then
+               -m "trening $STEMPEL: historia przebiegów"; then
             echo "commit: $(git log -1 --format='%h %s')"
         else
             echo "commit NIE przeszedł — patrz wyżej"
@@ -340,15 +329,43 @@ else
     fi
 
     GALAZ="$(git rev-parse --abbrev-ref HEAD)"
-    if git push origin "$GALAZ" 2>&1 | sed 's/^/  /'; then
-        echo "wypchnięte na origin/$GALAZ"
+    PACZKA="$LOGI/historia_${STEMPEL}.bundle"
+
+    # --- paczka: zawsze, bo nie wymaga niczego ---------------------------
+    if git bundle create "$PACZKA" "$GALAZ" >/dev/null 2>&1; then
+        echo "paczka: $PACZKA ($(du -h "$PACZKA" | cut -f1))"
+        PACZKA_OK=1
     else
-        echo "PUSH NIE PRZESZEDŁ. Commit lokalnie JEST, więc nic nie zginęło."
-        echo "Najczęstsze powody, w tej kolejności:"
-        echo "  1. klucz nie dodany w repo jako Deploy key z 'Allow write access'"
-        echo "  2. brak github.com w ~/.ssh/known_hosts"
-        echo "     -> ssh-keyscan github.com >> ~/.ssh/known_hosts"
-        echo "  3. WSL ma inny HOME niż Windows — klucza tu po prostu nie ma"
-        echo "Sprawdzenie: ssh -i \"\$KLUCZ\" -o IdentitiesOnly=yes -T git@github.com"
+        echo "UWAGA: nie udało się zrobić paczki git bundle"
+        PACZKA_OK=0
+    fi
+
+    # --- push: próba, nie wymóg -----------------------------------------
+    if ! git remote get-url origin >/dev/null 2>&1; then
+        echo "push: brak zdalnego 'origin' — pomijam"
+    else
+        KLUCZ="${CW_DEPLOY_KEY:-$HOME/.ssh/cw_deploy}"
+        if [ -f "$KLUCZ" ]; then
+            export GIT_SSH_COMMAND="ssh -i $KLUCZ -o IdentitiesOnly=yes -o BatchMode=yes"
+        else
+            export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
+        fi
+        # GIT_TERMINAL_PROMPT=0: bez tego git po HTTPS bez poświadczeń
+        # czeka na login i hasło z terminala, którego w nocy nie ma.
+        if GIT_TERMINAL_PROMPT=0 git push origin "$GALAZ" >/dev/null 2>&1; then
+            echo "push: wypchnięte na origin/$GALAZ"
+        else
+            echo "push: NIE przeszedł — to normalne w WSL i nic nie zginęło"
+            if [ "$PACZKA_OK" = "1" ]; then
+                echo
+                echo "  Rano, z Windows, z katalogu repozytorium na pendraku:"
+                echo "      git fetch \"<ścieżka>/$(basename "$PACZKA")\" $GALAZ"
+                echo "      git merge --ff-only FETCH_HEAD"
+                echo "      git push origin $GALAZ"
+                echo
+                echo "  Albo raz na zawsze: deploy key z 'Allow write access'"
+                echo "  w Settings -> Deploy keys, wtedy push idzie stąd sam."
+            fi
+        fi
     fi
 fi

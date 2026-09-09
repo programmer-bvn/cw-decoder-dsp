@@ -36,7 +36,8 @@ echo ===========================================================================
 echo  zrodlo: %ZRODLO%
 echo  cel:    %CEL%
 echo.
-echo  kopiowane:     runs\ (modele, log.csv, state.json), out\*.png, kod
+echo  kopiowane:     runs\ (modele, log.csv, state.json), out\ (logi nocne,
+echo                 wykresy, paczki .bundle), kod .py .md .bat .sh
 echo  NIE kopiowane: *.npz (zbior, 800 MB), .venv, __pycache__
 echo.
 
@@ -67,7 +68,13 @@ if exist "%ZRODLO%\runs" (
 rem --- WYKRESY I OBRAZY: krzywe uczenia, X-Ray. Male, warto miec.
 echo [2/3] out (wykresy, X-Ray)...
 if exist "%ZRODLO%\out" (
-    robocopy "%ZRODLO%\out" "%CEL%out" *.png *.txt *.html *.csv %OPCJE%
+    rem  *.log     -- logi nocne. NAJWAZNIEJSZY plik do przeczytania rano.
+    rem              Bez tego wracaly tylko wtedy, gdy spakowalo sie caly
+    rem              katalog tarem, czyli przypadkiem.
+    rem  *.bundle  -- commity z nocy. W WSL nie ma Credential Managera,
+    rem              wiec noc.sh nie wypchnie ich sam; paczka wraca tu
+    rem              i wypycha ja maszyna, ktora token ma.
+    robocopy "%ZRODLO%\out" "%CEL%out" *.png *.txt *.html *.csv *.log *.err *.bundle %OPCJE%
 ) else (
     echo   brak out\ -- pomijam
 )
@@ -76,7 +83,14 @@ rem --- KOD: gdyby cos bylo poprawiane na HDD w trakcie treningu.
 rem     Tu NIE nadpisujemy zawsze -- na pendraku moze byc nowsza wersja.
 rem     Robocopy skopiuje tylko to, co sie rozni.
 echo [3/3] kod zmieniony na HDD...
-robocopy "%ZRODLO%" "%CEL%." *.py *.md *.bat %OPCJE% /XD .venv venv_gpu __pycache__ out runs .git /XF *.npz *.whl *.pyc
+rem  *.sh dodane: setenv, noc.sh i skrypty ze srodowisko/ poprawia sie
+rem  na maszynie z karta, bo tam widac skutek. Bez tego poprawki zostawaly
+rem  na HDD i ginely przy nastepnym na_hdd.bat.
+robocopy "%ZRODLO%" "%CEL%." *.py *.md *.bat *.sh %OPCJE% /XD .venv venv_gpu __pycache__ out runs .git /XF *.npz *.whl *.pyc
+
+rem  srodowisko/ osobno -- robocopy bez /S nie wchodzi w podkatalogi,
+rem  a to wlasnie tam sa skrypty, ktore uruchamiaja karte.
+if exist "%ZRODLO%\srodowisko" robocopy "%ZRODLO%\srodowisko" "%CEL%srodowisko" *.sh *.md %OPCJE%
 
 echo.
 echo ===========================================================================
