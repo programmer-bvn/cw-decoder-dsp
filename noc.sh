@@ -2,7 +2,7 @@
 # =============================================================================
 #  noc.sh  --  cała noc treningu bez nadzoru
 #
-#  Uruchomienie (w WSL, po `source setenv.sh`):
+#  Uruchomienie (w WSL) — bez niczego przed tym:
 #
 #      ./noc.sh                          # 200 tys., 120 epok, dpu + gru
 #      ./noc.sh 200000 120               # jawnie: próbki i epoki
@@ -15,9 +15,13 @@
 #  120 epok na 200 tys. to ok. 8 h; na 400 tys. byłoby 15 h i nie
 #  zmieściłoby się w nocy.
 #
-#  Ten skrypt WOLNO uruchamiać przez ./ — inaczej niż setenv.sh, bo nie
-#  zmienia środowiska powłoki, tylko odpala trening. Ale środowisko musi
-#  już być załadowane: `source setenv.sh` PRZED nim.
+#  Ten skrypt WOLNO uruchamiać przez ./ i NIE trzeba nic robić przed nim.
+#
+#  Dlaczego to działa, choć setenv.sh trzeba sourcować: wykonanie przez ./
+#  tworzy powłokę potomną, a zmienne ustawione w niej giną razem z nią.
+#  Ale trening dzieje się WEWNĄTRZ tej powłoki, więc środowisko jest
+#  potrzebne dokładnie tyle, ile ona żyje. Dlatego noc.sh sourcuje je SAM
+#  (etap 0) i tryb awarii "zapomniałem source" przestaje istnieć.
 #
 #  CO ROBI, W TEJ KOLEJNOŚCI
 #    1. Sprawdza kartę i PRZERYWA, jeśli jej nie widzi. Najpierw, zanim
@@ -62,13 +66,51 @@ echo " epoki:  $EPOK   batch: $BATCH"
 echo " log:    $GLOWNY"
 echo
 
-# --- 0. czy środowisko jest załadowane -----------------------------------
+# --- 0. ŚRODOWISKO — ładowane przez ten skrypt ---------------------------
+#  Kolejność szukania: $CW_SETENV, potem wersja dla maszyny z kartą, potem
+#  ogólna. Sourcujemy tylko wtedy, gdy środowisko nie jest już aktywne —
+#  żeby dało się je nadpisać z zewnątrz, gdy ktoś wie, co robi.
+echo "--- środowisko ---"
+_gotowe=0
+if command -v python >/dev/null 2>&1 && python -c "import tensorflow" 2>/dev/null; then
+    _gotowe=1
+    echo "już aktywne — nie ruszam"
+fi
+
+if [ "$_gotowe" = "0" ]; then
+    for _s in "${CW_SETENV:-}" "srodowisko/rtx3050_setenv.sh" "setenv.sh"; do
+        if [ -n "$_s" ] && [ -f "$_s" ]; then
+            echo "ładuję $_s"
+            # shellcheck disable=SC1090
+            source "$_s" || true
+            break
+        fi
+    done
+fi
+
 if ! command -v python >/dev/null 2>&1; then
-    echo "BŁĄD: nie ma 'python' w PATH."
-    echo "Najpierw:  source setenv.sh"
+    echo
+    echo "PRZERWANO: nie ma 'python' w PATH i nie znalazłem czego wysourcować."
+    echo "Szukałem: \$CW_SETENV, srodowisko/rtx3050_setenv.sh, setenv.sh"
+    echo "Konfiguracja od zera:  ./srodowisko/setup_gpu_env.sh"
     exit 1
 fi
+
 echo "python: $(command -v python)  ($(python --version 2>&1))"
+
+# Wersja Pythona jest tu sprawdzana ODDZIELNIE, bo to najtańsza możliwa
+# diagnoza: TensorFlow ma koła tylko dla cp310-cp313, a WSL domyślnie
+# podaje 3.14. Bez tego objawem jest "No module named tensorflow" albo
+# pip bez pasującej wersji — komunikaty, które nie wskazują przyczyny.
+case "$(python --version 2>&1)" in
+    *3.1[0-3]*) : ;;
+    *) echo
+       echo "PRZERWANO: TensorFlow nie ma koła dla tej wersji Pythona."
+       echo "Potrzebny 3.10-3.13 (PyPI ma cp310-cp313)."
+       echo "To NIE jest kwestia sterowników NVIDIA — te są niezależne"
+       echo "od Pythona. Bramką jest wyłącznie dostępność koła."
+       exit 1 ;;
+esac
 
 # --- 1. KARTA — sprawdzamy PRZED wszystkim -------------------------------
 echo
