@@ -456,16 +456,72 @@ wyłącznie kolejnością. Uśrednienie po czasie zrównuje U z D.
 
 ## ZMIERZONA granica kompetencji modelu
 
-Model po 200 epokach, **98,68% dokładności walidacyjnej na syntetyku**,
-sprawdzony na sygnale IDEALNYM (bez zaniku, chirpu i rozjazdu klucza):
+**Uwaga na daty.** Liczby w tej sekcji pochodzą z DWÓCH modeli i DWÓCH
+zbiorów. Zestawianie ich wprost daje fałszywy obraz — i właśnie dlatego
+są tu rozdzielone.
 
-| | zakres, w którym czyta | poza nim |
+### Model obecny (9.09.2026)
+
+Zbiór realistyczny: 200 tys. próbek, pełny model kanału, tempo 13–27 WPM.
+Architektura `dpu`, 100 epok, batch 256, mixed float16.
+
+| | wynik |
+|---|---|
+| dokładność walidacyjna | **97,51%** (najlepsza w epoce 71) |
+| klasa 0 (puste radio) | 98,9% |
+| znaki | 97,3% |
+| znak wzięty za ciszę | 0,1% |
+| **stary model na TYM SAMYM zbiorze** | **86,56%** |
+
+Ostatni wiersz jest jedynym uczciwym porównaniem: **86,56% → 97,51%**.
+Poprzednie 98,68% dotyczyło zbioru bez modelu kanału i o jednym tempie,
+więc różnica 98,68 → 97,51 nie jest pogorszeniem, tylko zmianą zadania
+na trudniejsze.
+
+**Koperta tempa i tonu tego modelu NIE JEST jeszcze zmierzona.** Liczby
+18–22 WPM i 670–830 Hz niżej należą do modelu poprzedniego i nie wolno
+ich przypisywać obecnemu.
+
+Co logi treningu mówią o granicy:
+
+- **Zapamiętywanie od 16. epoki.** `val_loss` osiąga minimum 0,1361
+  w epoce 16 i rośnie do 0,2130 w setnej, przy dokładności treningowej
+  99,98%. Epoki 17–100 dały +0,3 punktu procentowego i nic poza tym.
+  Wąskim gardłem są DANE, nie moc obliczeniowa: epoka trwa 23 s, więc
+  użyteczny trening zajął osiem minut. Stały zbiór 200 tys. obrazów jest
+  za mały na 624 tys. parametrów przy tej zmienności — model go zapamiętuje.
+- **Dominujący błąd to ZGUBIONY ELEMENT.** Z tabeli pomyłek:
+  `6 -....` → `B -...`, `5 .....` → `H ....`, `4 ....-` → `V ...-`,
+  `G --.` → `M --`, `D -..` → `N -.`, `0 -----` → `O ---`. Rzadziej
+  wstawienie (`I ..` → `S ...`, `E .` → `I ..`) i zamiana kreska/kropka
+  (`1 .----` ↔ `2 ..---`, `8 ---..` ↔ `7 --...`).
+
+  Dwie możliwe przyczyny i NIE WIADOMO jeszcze która:
+  obcinanie znaku na krawędzi okna 2,56 s, albo niezdolność samego CNN
+  do zliczania powtórzeń w czasie. Rozróżnia je jeden pomiar — rozkład
+  błędów w funkcji WPM. Jeśli gubienie kumuluje się przy niskim tempie
+  (dłuższe elementy, mniej mieści się w oknie), to okno. Jeśli jest
+  płaskie — to zliczanie. Bez tej liczby przebudowa architektury byłaby
+  strzelaniem.
+
+### Model poprzedni (do 8.09.2026) — HISTORIA, nie stan obecny
+
+Ten model uczył się na zbiorze z `WPM_JITTER = 0`, czyli o jednym tempie
+i bez modelu kanału. Osiągnął 98,68% na walidacji i **86,56% na zbiorze
+realistycznym**. Jego wagi zostały usunięte właśnie dlatego, że wysoka
+liczba przy nazwie pliku wprowadzała w błąd.
+
+Sprawdzony na sygnale IDEALNYM (bez zaniku, chirpu i rozjazdu klucza):
+
+| | zakres, w którym czytał | poza nim |
 |---|---|---|
 | tempo | **18–22 WPM** | **zero zdarzeń** |
 | ton | **670–830 Hz** | **zero zdarzeń** |
 
-Nie „gorzej" — zero. To najważniejsza liczba w tym projekcie i wyjaśnia,
-dlaczego wysoka dokładność walidacyjna nic nie mówiła o pracy na pasmie.
+Nie „gorzej" — zero. To była najważniejsza liczba w tym projekcie i ona
+wyjaśnia, dlaczego wysoka dokładność walidacyjna nic nie mówiła o pracy
+na pasmie. Trzy przyczyny opisane niżej zostały zmierzone na TYM modelu;
+poprawki weszły do `config.py` i model obecny uczył się już z nimi.
 
 ### Trzy przyczyny, każda zmierzona osobno
 
