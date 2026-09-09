@@ -47,7 +47,12 @@ if not exist "%ZRODLO%\dsp\config.py" (
     exit /b 1
 )
 
-if /I not "%TRYB%"=="test" (
+rem  TRYB "auto": bez pytania. Potrzebny dla noc.bat, ktory ma dzialac
+rem  bez nadzoru -- wtykasz pendraka, Enter, i idziesz do innej roboty.
+rem  Z reki zostaje pytanie, bo to jedyny moment, w ktorym mozna sie
+rem  zorientowac, ze cel jest zly, PRZED zapisem.
+if /I "%TRYB%"=="auto" echo  *** TRYB AUTO -- bez pytania ***
+if /I not "%TRYB%"=="test" if /I not "%TRYB%"=="auto" (
     choice /C TN /N /M "Kopiowac na pendraka? [T/N] "
     if errorlevel 2 (
         echo przerwane
