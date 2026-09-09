@@ -93,6 +93,85 @@ LOGI="out"
 mkdir -p "$LOGI"
 
 STEMPEL="$(date +%Y%m%d_%H%M)"
+
+# =============================================================================
+#  CZARNA SKRZYNKA
+#
+#  Po co: "sprawdź nvidia-smi" dopisane do logu jest bezużyteczne, kiedy
+#  wracasz o 23:00 — wtedy stan maszyny jest już inny. Dowody trzeba
+#  zebrać W MOMENCIE awarii, dopóki skrypt jeszcze działa.
+#
+#  Wywoływana raz na starcie (stan odniesienia) i za każdym razem, gdy
+#  etap się nie uda. Wszystko idzie do osobnego pliku, nie na ekran —
+#  ekran ma zostać czytelny.
+# =============================================================================
+SKRZYNKA="$LOGI/noc_${STEMPEL}_srodowisko.log"
+
+czarna_skrzynka () {
+    local POWOD="$1"
+    {
+        echo
+        echo "########################################################"
+        echo "# $POWOD     $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "########################################################"
+        echo
+        echo "--- powloka i katalog ---"
+        echo "pwd:    $(pwd)"
+        echo "user:   $(id -un) (uid $(id -u))"
+        echo "bash:   $BASH_VERSION"
+        echo "argv:   $0 $*"
+        echo
+        echo "--- python ---"
+        echo "which:  $(command -v python 2>&1)"
+        echo "wersja: $(python --version 2>&1)"
+        echo "VIRTUAL_ENV: ${VIRTUAL_ENV:-<brak>}"
+        echo
+        echo "--- LD_LIBRARY_PATH (po jednym na wiersz) ---"
+        echo "${LD_LIBRARY_PATH:-<pusty>}" | tr ':' '\n' | sed 's/^/  /'
+        echo
+        echo "--- XLA_FLAGS ---"
+        echo "  ${XLA_FLAGS:-<brak>}"
+        echo
+        echo "--- nvidia-smi ---"
+        if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi 2>&1
+        else
+            echo "  nvidia-smi NIE ISTNIEJE w PATH"
+            echo "  (w WSL przychodzi z /usr/lib/wsl/lib — jeśli go nie ma,"
+            echo "   sterownik po stronie Windows nie jest przekazany)"
+        fi
+        echo
+        echo "--- biblioteki CUDA po jednej ---"
+        if [ -x srodowisko/gpu_libs.sh ]; then
+            ./srodowisko/gpu_libs.sh 2>&1
+        else
+            python - <<'PYLIB' 2>&1
+import ctypes
+for lib in ("libcuda.so.1", "libcudart.so.12", "libcublas.so.12",
+            "libcudnn.so.9", "libnvJitLink.so.12"):
+    try:
+        ctypes.CDLL(lib)
+        print(f"  [ OK ] {lib}")
+    except OSError as e:
+        print(f"  [BRAK] {lib} -> {e}")
+PYLIB
+        fi
+        echo
+        echo "--- pamiec ---"
+        free -h 2>&1 || true
+        echo
+        echo "--- miejsce na dysku ---"
+        df -h . 2>&1 || true
+        echo
+        echo "--- limity ---"
+        ulimit -a 2>&1 || true
+        echo
+        echo "--- najwieksze pliki w katalogu ---"
+        ls -lS 2>/dev/null | head -8
+    } >> "$SKRZYNKA" 2>&1
+}
+
+czarna_skrzynka "STAN ODNIESIENIA (start)"
 GLOWNY="$LOGI/noc_${STEMPEL}.log"
 
 # Wszystko na ekran I do pliku jednocześnie.
@@ -168,9 +247,31 @@ PY
 then
     echo
     echo "PRZERWANO: karta nie jest widziana, a bez niej ta noc nic nie da."
-    echo "Diagnostyka:"
-    echo "    nvidia-smi"
-    echo "    python train_rtx.py train --require-gpu   (wypisze powód)"
+    echo
+    # Dowody zbieramy TERAZ, bo rano tego stanu już nie będzie.
+    echo "zbieram dowody do $SKRZYNKA ..."
+    czarna_skrzynka "AWARIA ETAPU 1: karta nie widziana"
+    python train_rtx.py train --require-gpu \
+        > "$LOGI/noc_${STEMPEL}_karta.log" 2>&1 || true
+    {
+        echo
+        echo "--- train_rtx.py --require-gpu (pelny powod) ---"
+        cat "$LOGI/noc_${STEMPEL}_karta.log"
+    } >> "$SKRZYNKA" 2>&1
+    echo
+    echo "Najczestsze przyczyny, w kolejnosci:"
+    echo "  1. brak katalogow nvidia/*/lib w LD_LIBRARY_PATH"
+    echo "     -> source srodowisko/rtx3050_setenv.sh"
+    echo "  2. Python poza 3.10-3.13 (TensorFlow nie ma kola)"
+    echo "  3. sterownik po stronie Windows -> nvidia-smi"
+    echo
+    echo "--- ostatnie 25 wierszy z train_rtx.py --require-gpu ---"
+    tail -25 "$LOGI/noc_${STEMPEL}_karta.log" || true
+    echo
+    # Wskazanie pliku MUSI byc ostatnie na ekranie. Inaczej ginie pod
+    # surowym Tracebackiem i po ciemku nie wiadomo, gdzie zajrzec.
+    echo "PELNY STAN MASZYNY W MOMENCIE AWARII:"
+    echo "    $SKRZYNKA"
     exit 1
 fi
 
@@ -184,8 +285,16 @@ if [ -f diag.py ]; then
         echo "BŁĄD: diag.py nie przeszedł. Szczegóły w"
         echo "      $LOGI/noc_${STEMPEL}_diag.log"
         tail -12 "$LOGI/noc_${STEMPEL}_diag.log"
+        czarna_skrzynka "AWARIA ETAPU 2: diag.py nie przeszedł"
+        {
+            echo
+            echo "--- diag.py: linie z bledami ---"
+            grep -anE "BLAD|BŁĄD|FAIL|Traceback|Error" \
+                "$LOGI/noc_${STEMPEL}_diag.log" || true
+        } >> "$SKRZYNKA" 2>&1
         echo
         echo "PRZERWANO. Trening na niespójnym łańcuchu to zmarnowana noc."
+        echo "Środowisko w momencie awarii: $SKRZYNKA"
         exit 1
     fi
 else
@@ -224,11 +333,26 @@ else
 fi
 
 if [ "$GENERUJ" = "1" ]; then
+    # Miejsce sprawdzamy PRZED, bo generowanie 800 MB na pelnym dysku
+    # konczy sie po kilku minutach i noc jest stracona. Zapas 2 GB:
+    # zbior 200 tys. to ~800 MB, plus modele i logi.
+    WOLNE_MB=$(df -Pm . | awk 'NR==2 {print $4}')
+    echo "wolne miejsce: ${WOLNE_MB} MB"
+    if [ "${WOLNE_MB:-0}" -lt 2048 ]; then
+        echo
+        echo "PRZERWANO: mniej niz 2 GB wolnego, a zbior potrzebuje ~800 MB"
+        echo "plus modele i logi."
+        czarna_skrzynka "AWARIA ETAPU 3: brak miejsca (${WOLNE_MB} MB)"
+        echo "Szczegoly: $SKRZYNKA"
+        exit 1
+    fi
     echo "generuję $N_PROBEK próbek..."
     if ! python train_rtx.py generate --n "$N_PROBEK" --out "$ZBIOR" \
             > "$LOGI/noc_${STEMPEL}_gen.log" 2>&1; then
         echo "BŁĄD generowania, szczegóły w $LOGI/noc_${STEMPEL}_gen.log"
         tail -15 "$LOGI/noc_${STEMPEL}_gen.log"
+        czarna_skrzynka "AWARIA ETAPU 3: generowanie zbioru"
+        echo "Środowisko w momencie awarii: $SKRZYNKA"
         exit 1
     fi
     tail -12 "$LOGI/noc_${STEMPEL}_gen.log"
@@ -252,19 +376,51 @@ fi
 # Stan etapów do podsumowania. Format: "nazwa|wynik|szczegół".
 STAN=()
 
+# Log konkretnego etapu ustawia sam etap przez tę zmienną — RANO.txt ma
+# wtedy podać ŚCIEŻKĘ, a nie kazać szukać. Bez tego "zbadaj czemu nie
+# działa" oznacza przeglądanie katalogu out/ po ciemku.
+ETAP_LOG=""
+
 etap () {
     local NAZWA="$1"; shift
+    ETAP_LOG=""
+    local T0=$SECONDS
     echo
     echo "============================================================"
     echo " $NAZWA     $(date '+%H:%M')"
     echo "============================================================"
+
     if "$@"; then
-        STAN+=("$NAZWA|OK|")
+        local MIN=$(( (SECONDS - T0) / 60 ))
+        echo "  OK, ${MIN} min"
+        STAN+=("$NAZWA|OK|${MIN} min")
         return 0
     fi
     local RC=$?
-    echo "  NIE UDAŁO SIĘ (kod $RC) — lecę dalej"
-    STAN+=("$NAZWA|BŁĄD|kod $RC")
+    local MIN=$(( (SECONDS - T0) / 60 ))
+
+    # Dowody TERAZ, nie rano. To jest cała różnica między logiem, który
+    # mówi "nie wyszło", i logiem, z którego wiadomo dlaczego.
+    czarna_skrzynka "AWARIA: $NAZWA (kod $RC, po ${MIN} min)"
+    if [ -n "$ETAP_LOG" ] && [ -f "$ETAP_LOG" ]; then
+        {
+            echo
+            echo "--- $ETAP_LOG: ostatnie 40 wierszy ---"
+            tail -40 "$ETAP_LOG"
+            echo
+            echo "--- $ETAP_LOG: wiersze z bledami ---"
+            grep -anE "Error|Traceback|BLAD|BŁĄD|OOM|out of memory|Killed" \
+                "$ETAP_LOG" | tail -20 || true
+        } >> "$SKRZYNKA" 2>&1
+        echo "  NIE UDAŁO SIĘ (kod $RC, ${MIN} min) — dowody w:"
+        echo "      $ETAP_LOG"
+        echo "      $SKRZYNKA"
+        STAN+=("$NAZWA|BŁĄD|kod $RC, log: $ETAP_LOG")
+    else
+        echo "  NIE UDAŁO SIĘ (kod $RC, ${MIN} min) — dowody w $SKRZYNKA"
+        STAN+=("$NAZWA|BŁĄD|kod $RC, log: $SKRZYNKA")
+    fi
+    echo "  lecę dalej — pozostałe etapy są niezależne"
     return 0
 }
 
@@ -285,6 +441,7 @@ PY
     fi
 
     local LOG="$LOGI/noc_${STEMPEL}_${ARCH}.log"
+    ETAP_LOG="$LOG"
     # --fresh TYLKO gdy nie ma stanu. Przy wznowieniu po przerwaniu
     # chcemy kontynuować, a nie zaczynać od zera.
     local SWIEZY=""
@@ -315,6 +472,7 @@ koperta () {
         return 1
     fi
     local WYNIK="$LOGI/koperta_${ARCH}_${STEMPEL}.txt"
+    ETAP_LOG="$LOGI/noc_${STEMPEL}_koperta_${ARCH}.log"
     python -m tools.koperta --model "$RUN/best.keras" \
         --n "$KOPERTA_N" --n-bledy "$KOPERTA_BLEDY" --out "$WYNIK" \
         > "$LOGI/noc_${STEMPEL}_koperta_${ARCH}.log" 2>&1
@@ -410,10 +568,30 @@ PY
             echo
         fi
     done
+    # Sekcja tylko wtedy, gdy jest o czym mówić — pusty nagłówek
+    # "co się nie udało" o 23:00 tylko dezorientuje.
+    if printf '%s\n' "${STAN[@]}" | grep -q "|BŁĄD|"; then
+        echo "CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ"
+        echo
+        for w in "${STAN[@]}"; do
+            case "$w" in
+                *"|BŁĄD|"*)
+                    echo "  ${w%%|*}"
+                    echo "      ${w##*|}"
+                    ;;
+            esac
+        done
+        echo
+        echo "  Stan maszyny w momencie każdej awarii (nvidia-smi,"
+        echo "  LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):"
+        echo "      $SKRZYNKA"
+        echo
+    fi
+
     echo "PEŁNE LOGI"
     echo "  $GLOWNY"
     for F in "$LOGI"/noc_${STEMPEL}_*.log "$LOGI"/koperta_*_${STEMPEL}.txt; do
-        [ -f "$F" ] && echo "  $F"
+        [ -f "$F" ] && printf "  %-46s %s\n" "$F" "$(du -h "$F" | cut -f1)"
     done
     echo
     echo "Na pendraka:  bvn_z.bat  (z Windows)"
