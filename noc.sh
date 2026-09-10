@@ -5,9 +5,16 @@
 #  Uruchomienie (w WSL) — bez niczego przed tym:
 #
 #      ./noc.sh
-#      ./noc.sh 200000 40                       # próbki i epoki
-#      ./noc.sh 200000 40 256 moj.npz           # własny plik zbioru
-#      ./noc.sh 200000 40 256 moj.npz 60 5000   # większy pomiar koperty
+#      ./noc.sh 200000 40                       # próbki na czesc, epoki
+#      ./noc.sh 200000 40 256 '' 40 3000 10     # 10 czesci = 2 mln probek
+#      ./noc.sh 200000 40 256 '' 40 3000 5 1    # ostatnia 1 = tez gru
+#
+#  Pozycje: probki_na_czesc  epoki  batch  wzorzec_zbioru
+#           koperta_n  koperta_bledy  czesci  trenuj_gru
+#
+#  Pusty wzorzec ('') znaczy "wylicz z rozmiaru" -- wtedy zbior i katalogi
+#  przebiegow nazywaja sie od LACZNEJ liczby probek, wiec nowy eksperyment
+#  nigdy nie wchodzi w katalog starego.
 #
 #  CO ROBI, PO KOLEI
 #      0. ładuje środowisko SAM (nie trzeba source setenv.sh)
@@ -85,10 +92,44 @@ BATCH="${3:-256}"
 KOPERTA_N="${5:-40}"
 KOPERTA_BLEDY="${6:-3000}"
 
+# ILE CZESCI ZBIORU. Zmierzone 9/10.09: oba modele zapamietuja zbior od
+# epoki 13-15, a rozklad bledow jest plaski -- nie ma jednej choroby, jest
+# za malo danych na 624 tys. parametrow.
+#
+# Generowania W LOCIE nie da sie zrobic: idzie 238 probek/s na 11 procesach,
+# a karta konsumuje 8000/s. Epoka trwalaby 13 minut zamiast 23 sekund.
+# Wiec dane robi sie zawczasu, w kilku czesciach, i skleja przy wczytaniu.
+#
+# 5 czesci po 200 tys. = 1 mln probek, 4 GB w pamieci (maszyna ma 15 GB),
+# generowanie ~70 min, epoka ~115 s, 40 epok ~77 min.
+CZESCI="${7:-5}"
+
+# GRU domyslnie WYLACZONE. Noc 9/10.09 dala 97,51% dla obu architektur,
+# przy czterokrotnie dluzszym treningu i WEZSZEJ kopercie tonu dla gru.
+# Pytanie "czy rekurencja pomaga" jest zamkniete -- nie pomaga. Wlaczyc
+# mozna osma pozycja, gdy zmieni sie cos, co moze ten wynik odwrocic.
+TRENUJ_GRU="${8:-0}"
+
 # Nazwa domyślna zgodna z tym, co generuje train_rtx.py bez --out.
 # Dzięki temu istniejący zbiór jest UŻYWANY, a nie generowany od nowa —
 # 800 MB i kilka minut do stracenia przy 12-godzinnym oknie na trening.
-ZBIOR="${4:-morse_dataset.npz}"
+ZBIOR="${4:-}"
+
+# Nazwa zbioru i katalogow przebiegow WYNIKA Z ROZMIARU. Dzieki temu nowy
+# eksperyment nigdy nie wchodzi w katalog starego -- inaczej noc.sh zobaczy
+# ukonczone 40 epok w runs/cw2 i pominie trening, mimo ze dane sa inne.
+# Przy okazji stary przebieg zostaje do porownania, a to jest caly sens:
+# ta sama architektura, 5x wiecej danych.
+LACZNIE=$(( N_PROBEK * CZESCI ))
+if [ -z "$ZBIOR" ]; then
+    if [ "$CZESCI" -gt 1 ]; then
+        ZBIOR="czesci/morse_${N_PROBEK}_*.npz"
+    else
+        ZBIOR="morse_dataset.npz"
+    fi
+fi
+RUN_DPU="runs/dpu_${LACZNIE}"
+RUN_GRU="runs/gru_${LACZNIE}"
 LOGI="out"
 mkdir -p "$LOGI"
 
@@ -305,31 +346,49 @@ fi
 echo
 echo "--- zbiór ---"
 POTRZEBNE="chirp sag hum agc_tau fist_drift gap_jitter"
+echo "wzorzec: $ZBIOR   (${CZESCI} x ${N_PROBEK} = ${LACZNIE} próbek)"
 GENERUJ=1
-if [ -f "$ZBIOR" ]; then
-    if python - "$ZBIOR" $POTRZEBNE <<'PY'
+# Sprawdzamy KAZDA czesc, nie tylko pierwsza: jedna uszkodzona albo
+# wygenerowana przed modelem kanalu zatruje caly sklejony zbior, a objawem
+# byloby tylko dziwne zachowanie modelu.
+if python - "$ZBIOR" "$CZESCI" $POTRZEBNE <<'PY'
 import sys
+from glob import glob
 import numpy as np
-p, wymagane = sys.argv[1], sys.argv[2:]
-try:
-    d = np.load(p, allow_pickle=False)
-except Exception as e:
-    print("nie moge otworzyc:", e); sys.exit(1)
-brak = [k for k in wymagane if k not in d.files]
-print(f"{p}: {len(d['y'])} probek | meta: {str(d['meta'])}")
-if brak:
-    print("BRAKUJE kolumn modelu kanalu:", " ".join(brak))
-    print("-> zbior powstal PRZED modelem kanalu, generuje od nowa")
+wzor, ile_ma_byc, wymagane = sys.argv[1], int(sys.argv[2]), sys.argv[3:]
+pliki = sorted(glob(wzor))
+if not pliki:
+    print(f"{wzor}: brak plikow"); sys.exit(1)
+if len(pliki) < ile_ma_byc:
+    print(f"{wzor}: jest {len(pliki)} czesci, ma byc {ile_ma_byc}")
     sys.exit(2)
-print("kolumny modelu kanalu: wszystkie obecne")
+razem = 0
+ziarna = []
+for p in pliki:
+    try:
+        d = np.load(p, allow_pickle=False)
+    except Exception as e:
+        print(f"{p}: nie moge otworzyc: {e}"); sys.exit(1)
+    brak = [k for k in wymagane if k not in d.files]
+    if brak:
+        print(f"{p}: BRAKUJE kolumn modelu kanalu: {' '.join(brak)}")
+        print("-> czesc powstala PRZED modelem kanalu, generuje od nowa")
+        sys.exit(2)
+    m = str(d["meta"])
+    razem += len(d["y"])
+    if "seed=" in m:
+        ziarna.append(m.split("seed=")[1].split(";")[0])
+    print(f"  {p}: {len(d['y'])} probek | {m}")
+if len(set(ziarna)) < len(ziarna):
+    print("BLAD: czesci maja POWTORZONE ziarna -- to te same dane w kilku")
+    print("plikach, czyli 'wiecej danych' byloby zludzeniem.")
+    sys.exit(2)
+print(f"razem {razem} probek w {len(pliki)} czesciach, ziarna rozne")
 sys.exit(0)
 PY
-    then
-        GENERUJ=0
-        echo "zbiór aktualny — nie generuję"
-    fi
-else
-    echo "$ZBIOR nie istnieje"
+then
+    GENERUJ=0
+    echo "zbiór aktualny — nie generuję"
 fi
 
 if [ "$GENERUJ" = "1" ]; then
@@ -337,17 +396,24 @@ if [ "$GENERUJ" = "1" ]; then
     # konczy sie po kilku minutach i noc jest stracona. Zapas 2 GB:
     # zbior 200 tys. to ~800 MB, plus modele i logi.
     WOLNE_MB=$(df -Pm . | awk 'NR==2 {print $4}')
-    echo "wolne miejsce: ${WOLNE_MB} MB"
-    if [ "${WOLNE_MB:-0}" -lt 2048 ]; then
+    # 800 MB na kazde 200 tys. probek, plus 2 GB zapasu na modele i logi.
+    POTRZEBA_MB=$(( LACZNIE / 200000 * 820 + 2048 ))
+    echo "wolne miejsce: ${WOLNE_MB} MB, potrzeba ~${POTRZEBA_MB} MB"
+    if [ "${WOLNE_MB:-0}" -lt "$POTRZEBA_MB" ]; then
         echo
-        echo "PRZERWANO: mniej niz 2 GB wolnego, a zbior potrzebuje ~800 MB"
-        echo "plus modele i logi."
+        echo "PRZERWANO: za malo miejsca na dysku."
         czarna_skrzynka "AWARIA ETAPU 3: brak miejsca (${WOLNE_MB} MB)"
         echo "Szczegoly: $SKRZYNKA"
         exit 1
     fi
-    echo "generuję $N_PROBEK próbek..."
-    if ! python train_rtx.py generate --n "$N_PROBEK" --out "$ZBIOR" \
+    if [ "$CZESCI" -gt 1 ]; then
+        echo "generuję $CZESCI części po $N_PROBEK próbek (~14 min każda)..."
+        GEN_ARG="--shards $CZESCI --out czesci/morse_${N_PROBEK}.npz"
+    else
+        echo "generuję $N_PROBEK próbek..."
+        GEN_ARG="--out $ZBIOR"
+    fi
+    if ! python train_rtx.py generate --n "$N_PROBEK" $GEN_ARG \
             > "$LOGI/noc_${STEMPEL}_gen.log" 2>&1; then
         echo "BŁĄD generowania, szczegóły w $LOGI/noc_${STEMPEL}_gen.log"
         tail -15 "$LOGI/noc_${STEMPEL}_gen.log"
@@ -487,10 +553,18 @@ koperta () {
     return $RC
 }
 
-etap "TRENING dpu  -> runs/cw2"   trenuj dpu runs/cw2
-etap "TRENING gru  -> runs/gru1"  trenuj gru runs/gru1
-etap "KOPERTA dpu"                koperta dpu runs/cw2
-etap "KOPERTA gru"                koperta gru runs/gru1
+etap "TRENING dpu -> $RUN_DPU"  trenuj dpu "$RUN_DPU"
+etap "KOPERTA dpu"              koperta dpu "$RUN_DPU"
+
+if [ "$TRENUJ_GRU" = "1" ]; then
+    etap "TRENING gru -> $RUN_GRU"  trenuj gru "$RUN_GRU"
+    etap "KOPERTA gru"              koperta gru "$RUN_GRU"
+else
+    echo
+    echo "gru POMINIETE (osma pozycja = 1, zeby wlaczyc)."
+    echo "Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym"
+    echo "treningu i węższej kopercie tonu dla gru. Pytanie zamknięte."
+fi
 
 # --- PODSUMOWANIE DLA CZŁOWIEKA -----------------------------------------
 #  out/RANO.txt: kilkanaście linii do przeczytania po ciemku, po powrocie
@@ -512,7 +586,7 @@ RANO="$LOGI/RANO.txt"
     echo
 } > "$RANO"
 
-python - "$RANO" runs/cw2 runs/gru1 <<'PY' || true
+python - "$RANO" "$RUN_DPU" "$RUN_GRU" <<'PY' || true
 import json
 import sys
 from pathlib import Path
@@ -558,6 +632,7 @@ PY
     echo
     for A in dpu gru; do
         F="$LOGI/koperta_${A}_${STEMPEL}.txt"
+        [ "$A" = "gru" ] && [ "$TRENUJ_GRU" != "1" ] && continue
         if [ -f "$F" ]; then
             echo "  --- $A ---"
             grep -aE "^  czyta \(" "$F" | sed 's/^/  /' || true

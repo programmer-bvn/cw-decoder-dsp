@@ -1135,28 +1135,97 @@ def check_dpu_compatible(model, verbose: bool = True) -> list[str]:
 # =============================================================================
 # DANE DO TRENINGU
 # =============================================================================
-def load_dataset(path: Path):
-    if not path.exists():
-        raise SystemExit(f"nie ma zbioru: {path}\n"
-                         f"Najpierw: python {Path(__file__).name} generate --n 200000")
-    data = np.load(path, allow_pickle=False)
+def _pliki_zbioru(spec: str) -> list:
+    """Wzorzec -> lista plikow. Jeden plik dziala jak wczesniej, wzorzec
+    z gwiazdka skleja kilka czesci w jeden zbior.
+
+    PO CO CZESCI. Zmierzone: generowanie idzie 238 probek/s (11 procesow),
+    a karta konsumuje 8000/s. Generowanie w locie zaglodziloby GPU 34-krotnie
+    -- epoka trwalaby 13 minut zamiast 23 sekund. Wiec dane robi sie
+    ZAWCZASU, a jedyny sposob na wiecej danych bez czekania to trzymac je
+    w kilku plikach i skleic przy wczytaniu.
+    """
+    from glob import glob
+    p = Path(spec)
+    if p.is_file():
+        return [p]
+    trafienia = sorted(Path(x) for x in glob(spec))
+    if not trafienia:
+        raise SystemExit(
+            f"nie ma zbioru: {spec}\n"
+            f"Najpierw: python {Path(__file__).name} generate --n 200000\n"
+            f"albo w czesciach: python {Path(__file__).name} generate "
+            f"--n 200000 --shards 5 --out czesci/morse.npz")
+    return trafienia
+
+
+def _sprawdz_odcisk(data, gdzie: Path):
     fp = str(data["fingerprint"]) if "fingerprint" in data else ""
     if fp and fp != FINGERPRINT:
         a = dict(kv.split("=", 1) for kv in fp.split(";") if "=" in kv)
         b = dict(kv.split("=", 1) for kv in FINGERPRINT.split(";") if "=" in kv)
         diffs = [f"  {k}: zbiór={a.get(k,'-')}  skrypt={b.get(k,'-')}"
                  for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)]
-        raise SystemExit("Zbiór powstał na innych parametrach front-endu:\n"
+        raise SystemExit(f"{gdzie} powstal na innych parametrach front-endu:\n"
                          + "\n".join(diffs)
                          + "\n\nWygeneruj zbiór od nowa albo przywróć te "
                            "wartości w sekcji KONFIGURACJA.")
-    # Opis zbioru (n, seed, wpm, realism) idzie do stanu treningu, żeby
-    # wznowienie wykryło podmianę zbioru. Odcisk front-endu tego NIE
-    # wykrywa: zmiana WPM_JITTER, chirpu czy przydźwięku daje inne dane,
-    # ale front-end jest ten sam, więc odcisk się zgadza.
-    meta = str(data["meta"]) if "meta" in data else ""
-    return (np.asarray(data["X"]), np.asarray(data["y"]).astype(np.int32),
-            meta)
+
+
+def _wolna_pamiec_mb() -> float:
+    """MemAvailable z /proc/meminfo. Zwraca -1, gdy nie da sie odczytac."""
+    try:
+        with open("/proc/meminfo", encoding="ascii") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    return float(line.split()[1]) / 1024.0
+    except Exception:
+        pass
+    return -1.0
+
+
+def load_dataset(spec):
+    pliki = _pliki_zbioru(str(spec))
+
+    # Sprawdzenie pamieci PRZED wczytaniem. Sklejenie dziesieciu czesci po
+    # 800 MB to 8 GB -- na maszynie z 15 GB zmiesci sie, na mniejszej nie,
+    # a objawem bylby zabity proces bez zadnego komunikatu (OOM killer).
+    lacznie_mb = sum(p.stat().st_size for p in pliki) / 1024 / 1024
+    wolne_mb = _wolna_pamiec_mb()
+    if len(pliki) > 1:
+        print(f"zbiór w {len(pliki)} częściach, razem {lacznie_mb:.0f} MB")
+    if wolne_mb > 0 and lacznie_mb > 0.6 * wolne_mb:
+        raise SystemExit(
+            f"PRZERWANO: zbiór ma {lacznie_mb:.0f} MB, a wolnej pamięci jest "
+            f"{wolne_mb:.0f} MB.\n"
+            f"Sklejenie zabiłoby proces bez komunikatu (OOM killer).\n"
+            f"Weź mniej części albo mniejsze --n.")
+
+    Xs, ys, metki = [], [], []
+    for p in pliki:
+        data = np.load(p, allow_pickle=False)
+        _sprawdz_odcisk(data, p)
+        Xs.append(np.asarray(data["X"]))
+        ys.append(np.asarray(data["y"]).astype(np.int32))
+        metki.append(str(data["meta"]) if "meta" in data else "")
+
+    if len(pliki) == 1:
+        return Xs[0], ys[0], metki[0]
+
+    X = np.concatenate(Xs)
+    del Xs                      # 8 GB nie moze lezec w dwoch kopiach
+    y = np.concatenate(ys)
+
+    # Opis zbioru idzie do stanu treningu, zeby wznowienie wykrylo podmiane
+    # danych. Musi byc DETERMINISTYCZNY dla tego samego zestawu czesci --
+    # inaczej kazde uruchomienie wygladaloby jak zmiana zbioru i kasowaloby
+    # najlepszy wynik. Odcisk front-endu tego nie wykrywa: zmiana
+    # WPM_JITTER czy chirpu daje inne dane przy tym samym front-endzie.
+    ziarna = sorted({m.split("seed=")[1].split(";")[0]
+                     for m in metki if "seed=" in m})
+    meta = (f"czesci={len(pliki)};n={len(y)};seeds={','.join(ziarna)};"
+            f"wpm={WPM};realism=1")
+    return X, y, meta
 
 
 def stratified_split(y: np.ndarray, val_fraction: float, seed: int):
@@ -1364,7 +1433,7 @@ def train(args):
         print("--mixed pominięte: brak GPU")
 
     # --- dane ---
-    X, y, ds_meta = load_dataset(Path(args.dataset))
+    X, y, ds_meta = load_dataset(args.dataset)
     print(f"opis zbioru: {ds_meta or '(brak)'}")
     print(f"zbiór: {X.shape} {X.dtype} ({X.nbytes/1024/1024:.0f} MB)")
     tr, va = stratified_split(y, args.val, args.seed)
@@ -1459,12 +1528,18 @@ def main(argv=None):
     g.add_argument("--n", type=int, default=200000)
     g.add_argument("--out", type=Path, default=Path("morse_dataset.npz"))
     g.add_argument("--seed", type=int, default=SEED)
+    g.add_argument("--shards", type=int, default=1,
+                   help="ile osobnych czesci po --n probek kazda. Kazda "
+                        "dostaje inne ziarno, wiec dane sa naprawde rozne. "
+                        "Trening sklei je przez wzorzec, np. --dataset "
+                        "'czesci/morse_*.npz'")
     g.add_argument("--workers", type=int, default=None)
     g.add_argument("--no-realism", action="store_true",
                    help="bez modelu kanału (QSB/QRM/QRN/dryf/fist)")
 
     t = sub.add_parser("train", help="trenuj (domyślnie wznawia)")
-    t.add_argument("--dataset", type=Path, default=Path("morse_dataset.npz"))
+    t.add_argument("--dataset", default="morse_dataset.npz",
+                   help="plik zbioru albo WZORZEC, np. 'czesci/morse_*.npz'")
     t.add_argument("--run", type=Path, default=Path("runs/cw1"),
                    help="katalog stanu: last.keras, best.keras, state.json")
     t.add_argument("--arch", choices=("dpu", "gru"), default="dpu",
@@ -1511,8 +1586,22 @@ def main(argv=None):
             return 2
 
     if args.cmd == "generate":
-        generate(args.n, args.out, seed=args.seed,
-                 realism=not args.no_realism, workers=args.workers)
+        if args.shards <= 1:
+            generate(args.n, args.out, seed=args.seed,
+                     realism=not args.no_realism, workers=args.workers)
+        else:
+            # Kazda czesc z INNYM ziarnem -- inaczej powstalyby identyczne
+            # pliki i "wiecej danych" byloby zludzeniem.
+            baza = args.out.with_suffix("")
+            for k in range(args.shards):
+                cel = Path(f"{baza}_{k:02d}.npz")
+                if cel.exists():
+                    print(f"[{k+1}/{args.shards}] {cel} juz jest — pomijam")
+                    continue
+                print(f"\n[{k+1}/{args.shards}] {cel}")
+                generate(args.n, cel, seed=args.seed + 1000 * k,
+                         realism=not args.no_realism, workers=args.workers)
+            print(f"\nGotowe. Trening: --dataset '{baza}_*.npz'")
     else:
         train(args)
 
