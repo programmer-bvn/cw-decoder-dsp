@@ -104,7 +104,7 @@ if errorlevel 1 (
     echo       Instalacja:    wsl --install -d Ubuntu
     echo.
     echo       Trening idzie tylko z Linuksa -- karta nie jest widziana
-       echo       z samego Windows.
+    echo       z samego Windows.
     goto :koniec_blad
 )
 

@@ -1,4 +1,4 @@
-#!bash
+#!/bin/bash
 # Wejście do środowiska bash jako root:  wsl -u root
 #
 # UWAGA — TEN PLIK TRZEBA ZAŁADOWAĆ, NIE URUCHOMIĆ:
