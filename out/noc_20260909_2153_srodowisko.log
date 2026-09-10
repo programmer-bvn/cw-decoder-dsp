@@ -1,0 +1,115 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-09-09 21:53:51
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python
+wersja: Python 3.12.13
+VIRTUAL_ENV: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cusparse/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cusolver/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/curand/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cufft/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cublas/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/nvjitlink/lib
+  
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+
+--- XLA_FLAGS ---
+  <brak>
+
+--- nvidia-smi ---
+Wed Sep  9 21:53:53 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 610.57.01              KMD Version: 610.88        CUDA UMD Version: 13.3     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   29C    P8              8W /   70W |     453MiB /   6144MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              25      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788983637.615819    1026 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+=== biblioteki dynamiczne (ctypes) ===
+  [ OK ] libcuda.so.1           sterownik NVIDIA (po stronie Windows, przez WSL)
+  [ OK ] libcudart.so.12        CUDA runtime
+  [ OK ] libcublas.so.12        cuBLAS — mnożenie macierzy
+  [ OK ] libcudnn.so.9          cuDNN — splot; bez tego nie ma sieci splotowej
+  [ OK ] libcusparse.so.12      cuSPARSE
+  [ OK ] libnvJitLink.so.12     nvJitLink — kompilacja JIT
+  [ OK ] libcufft.so.11         cuFFT
+  [ OK ] libcurand.so.10        cuRAND
+  [ OK ] libcusolver.so.11      cuSOLVER
+
+=== rejestracja karty w TensorFlow ===
+  TensorFlow 2.21.0, Python 3.12.13
+  karty: ['/physical_device:GPU:0']
+
+Środowisko w porządku.
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       589Mi        15Gi       3.5Mi       207Mi        15Gi
+Swap:          4.0Gi          0B       4.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+C:\             953G  225G  729G  24% /mnt/c
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 63775
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 63775
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 1380736
+-rwxrwxrwx 1 bvn bvn 832405678 Sep  8 18:54 morse_dataset.npz
+-rwxrwxrwx 1 bvn bvn 581240110 Sep  4 08:31 nvidia_cublas_cu12-12.9.2.10-py3-none-manylinux_2_27_x86_64.whl
+-rwxrwxrwx 1 bvn bvn     66852 Sep  8 10:14 train_rtx.py
+-rwxrwxrwx 1 bvn bvn     42500 Sep  7 09:45 diag.py
+-rwxrwxrwx 1 bvn bvn     27391 Sep  9 08:46 README.md
+-rwxrwxrwx 1 bvn bvn     26744 Sep  9 10:53 noc.sh
+-rwxrwxrwx 1 bvn bvn      7314 Sep  9 11:09 noc.bat

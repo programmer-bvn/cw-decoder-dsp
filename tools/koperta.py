@@ -298,9 +298,40 @@ def _wyrok(zebrane) -> list[str]:
     w.append(f"  znak w całości w oknie:  {traf_caly:5.1f}% trafień "
              f"({caly[1]} próbek)")
     w.append(f"  znak obcięty oknem:      {traf_obc:5.1f}% trafień "
-             f"({n_obc} próbek, {udzial:.0f}% zbioru)")
+             f"({n_obc} próbek, {udzial:.1f}% zbioru)")
     w.append("")
     roznica = traf_caly - traf_obc
+
+    # ZASTRZEŻENIE IDZIE PIERWSZE, NIE OSTATNIE.
+    # Pierwsza wersja tego wyroku ogłosiła "dominuje obcinanie okna" na
+    # podstawie porównania 2995 próbek z PIĘCIOMA. Przy n=5 różnica
+    # 37 punktów procentowych to szum, a mocne zdanie postawione przed
+    # zastrzeżeniem zostaje w głowie i tak.
+    #
+    # Dlaczego obcięć jest tak mało: etykietą jest ŚRODKOWY z trzech
+    # znaków, a nadanie wstawiane jest wyśrodkowane w klipie. Znak
+    # z etykiety jest więc wycentrowany z konstrukcji — za kadr wypadają
+    # jego sąsiedzi, nie on. To wynikało z radio.receive() i dało się
+    # przewidzieć bez pomiaru.
+    MIN_PROBEK = 30
+    MIN_UDZIAL = 2.0
+    if n_obc < MIN_PROBEK or udzial < MIN_UDZIAL:
+        w.append(f"  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.")
+        w.append(f"  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:")
+        w.append(f"  {n_obc} przypadków na {n_obc + caly[1]} ({udzial:.2f}%).")
+        w.append("")
+        w.append("  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie")
+        w.append("  ma. Nie jest ani potwierdzona, ani obalona — jest")
+        w.append("  NIEISTOTNA. Powód: etykietą jest środkowy z trzech")
+        w.append("  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak")
+        w.append("  z etykiety jest wycentrowany z konstrukcji.")
+        w.append("")
+        w.append("  Przyczyny błędów szukaj gdzie indziej: rozkład wobec")
+        w.append("  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,")
+        w.append("  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej")
+        w.append("  choroby, jest ogólny brak danych.")
+        return w
+
     if roznica >= 15.0:
         w.append(f"  Różnica {roznica:.0f} punktów procentowych. Dominuje")
         w.append("  OBCINANIE OKNA, nie niezdolność sieci do zliczania.")

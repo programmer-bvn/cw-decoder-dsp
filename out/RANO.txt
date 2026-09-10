@@ -1,0 +1,44 @@
+============================================================
+ NOC 2026-09-09  --  co wyszło
+============================================================
+
+ETAPY
+  TRENING dpu  -> runs/cw2     OK     16 min
+  TRENING gru  -> runs/gru1    OK     60 min
+  KOPERTA dpu                  OK     1 min
+  KOPERTA gru                  OK     1 min
+
+WYNIKI TRENINGU
+
+  runs/cw2  dpu (wdrażalny na KV260)
+      epok 40, najlepsza walidacja 97.51% (epoka 39)
+      val_loss: minimum 0.1224 w epoce 15, koniec 0.2055
+      ZAPAMIĘTYWANIE: val_loss rośnie od epoki 15. Epoki po 20 nic nie wniosły.
+      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
+  runs/gru1  gru (odniesienie, NIE wdrażalny)
+      epok 40, najlepsza walidacja 97.51% (epoka 34)
+      val_loss: minimum 0.1294 w epoce 13, koniec 0.1912
+      ZAPAMIĘTYWANIE: val_loss rośnie od epoki 13. Epoki po 18 nic nie wniosły.
+      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 650-850 Hz
+
+  --- gru ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 650-750 Hz
+
+PEŁNE LOGI
+  out/noc_20260909_2153.log
+  out/noc_20260909_2153_diag.log                 12K
+  out/noc_20260909_2153_dpu.log                  3.2M
+  out/noc_20260909_2153_gen.log                  20K
+  out/noc_20260909_2153_gru.log                  6.4M
+  out/noc_20260909_2153_koperta_dpu.log          8.0K
+  out/noc_20260909_2153_koperta_gru.log          8.0K
+  out/noc_20260909_2153_srodowisko.log           8.0K
+  out/koperta_dpu_20260909_2153.txt              4.0K
+  out/koperta_gru_20260909_2153.txt              4.0K
+
+Na pendraka:  bvn_z.bat  (z Windows)

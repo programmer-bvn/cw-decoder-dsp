@@ -480,7 +480,7 @@ koperta () {
     if [ -f "$WYNIK" ]; then
         sed -n '/^KOPERTA/,/kropka = ZERO/p' "$WYNIK"
         echo
-        sed -n '/^WYROK/,/^$/p' "$WYNIK"
+        awk '/^WYROK/{b=1} b&&/^[A-ZŁŻŚĆ]{3,}/&&!/^WYROK/{exit} b' "$WYNIK"
     else
         tail -12 "$LOGI/noc_${STEMPEL}_koperta_${ARCH}.log"
     fi
@@ -561,7 +561,7 @@ PY
         if [ -f "$F" ]; then
             echo "  --- $A ---"
             grep -aE "^  czyta \(" "$F" | sed 's/^/  /' || true
-            sed -n '/^WYROK/,/^$/p' "$F" | sed '1,2d;/^$/d' | sed 's/^/  /'
+            awk '/^WYROK/{b=1;next} b&&/^[A-ZŁŻŚĆ]{3,}/{exit} b' "$F"                 | sed '/^[[:space:]]*$/d;s/^/  /'
             echo
         else
             echo "  --- $A --- brak pomiaru"

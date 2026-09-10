@@ -1,0 +1,71 @@
+======================================================================
+ KOPERTA I BŁĘDY: runs/gru1/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x7 komórek po 40 próbek; błędy z 3000 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .     12     60      5      .      .
+     13            .      .     80    100     10      .      .
+     15            .      .      2    100      .      .      .
+     18            .      .      5     95      .      .      .
+     20            .      .      .     98      .      .      .
+     22            .      .     45    100      2      .      .
+     25            .      .     60    100      .      .      .
+     27            .      .     50    100      2      .      .
+     30            .      .     30    100      8      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  czyta (>= 50%): tempo 10-30 WPM, ton 650-750 Hz
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              2      0.0%          50.0%
+  90-100%             3     66.7%          33.3%
+  cały (100%)      2995     97.2%           0.5%
+
+WYROK
+
+  znak w całości w oknie:   97.2% trafień (2995 próbek)
+  znak obcięty oknem:       40.0% trafień (5 próbek, 0% zbioru)
+
+  Różnica 57 punktów procentowych. Dominuje
+  OBCINANIE OKNA, nie niezdolność sieci do zliczania.
+  Lekarstwem jest CTC albo szersze pole widzenia,
+  a NIE rekurencja dla samego zliczania.
+
+  UWAGA: obciętych jest tylko 0% zbioru, więc
+  nawet duża różnica tłumaczy mały ułamek wszystkich błędów.
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+  12-14         423    96.9%      0.7%    0.2%    1.9%       0.9%
+  15-17         645    98.1%      0.6%    0.5%    0.6%       0.2%
+  18-20         669    96.7%      0.6%    0.4%    1.8%       0.0%
+  21-23         605    96.7%      0.3%    0.7%    1.0%       0.0%
+  24-26         658    97.1%      0.5%    0.5%    1.2%       0.0%
+
+NAJCZĘSTSZE POMYŁKI
+
+  9 ----.  -> 1 .----       2x   kropka/kreska
+  0 -----  -> X -..-        2x   zgubiony element
+  I ..     -> E .           2x   zgubiony element
+  1 .----  -> 2 ..---       2x   kropka/kreska
+  T -      -> E .           2x   kropka/kreska
+  S ...    -> 5 .....       2x   inne
+  A .-     -> 5 .....       1x   inne
+  5 .....  -> 4 ....-       1x   kropka/kreska
+  1 .----  -> 0 -----       1x   kropka/kreska
+  K -.-    -> Q --.-        1x   wstawiony element
+  Q --.-   -> Y -.--        1x   kropka/kreska
+  Y -.--   -> J .---        1x   kropka/kreska
+

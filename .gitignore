@@ -61,6 +61,13 @@ out/xray_lab/
 !runs/**/state.json
 !out/noc_*.log
 
+# Pomiary i podsumowanie nocy ZOSTAJA. Sa male (po kilka kB), a bez
+# modelu nieodtwarzalne -- koperta powstaje z konkretnych wag, ktore
+# przy nastepnym --fresh znikaja. Raz juz stracilem koperte 18-22 WPM
+# razem z modelem, bo mierzylem ja dorazie i nigdzie nie zapisalem.
+!out/RANO.txt
+!out/koperta_*.txt
+
 # --- zgłoszenia od operatorów: zawierają audio i znaki wywoławcze ---
 # Trafiają do biblioteki próbek po przejrzeniu, nie wprost do repo.
 zgloszenia/
