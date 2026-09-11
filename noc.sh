@@ -100,9 +100,19 @@ KOPERTA_BLEDY="${6:-3000}"
 # a karta konsumuje 8000/s. Epoka trwalaby 13 minut zamiast 23 sekund.
 # Wiec dane robi sie zawczasu, w kilku czesciach, i skleja przy wczytaniu.
 #
-# 5 czesci po 200 tys. = 1 mln probek, 4 GB w pamieci (maszyna ma 15 GB),
-# generowanie ~70 min, epoka ~115 s, 40 epok ~77 min.
-CZESCI="${7:-5}"
+# TYMCZASOWO 2, NIE 5. Noc 10/11.09: 5 czesci (1 mln probek) padlo po
+# minucie treningu, a kod wyjscia zginal przez blad w etap(). Sa dwie
+# mozliwe przyczyny i log z HDD je rozroznia:
+#   - OOM killer: X[idx] robi KOPIE, wiec 1 mln probek istnieje w trzech
+#     egzemplarzach po ~3,8 GB. Objaw: "Killed", kod 137.
+#   - limit 2 GB na stala w TensorFlow: from_tensor_slices na tablicy
+#     3,8 GB przekracza twardy limit protobufa NIEZALEZNIE od ilosci RAM.
+#     Objaw: "Cannot create a tensor proto whose content is larger than 2GB".
+# Druga przyczyna nie da sie naprawic pamiecia, wiec do czasu przeczytania
+# logu idziemy na 2 czesci (400 tys., 1,6 GB danych, ~1,5 GB w tf.data) --
+# bezpieczne przy obu hipotezach i wciaz DWA RAZY wiecej danych niz
+# w nocy 9/10.09, ktora dala 97,51%.
+CZESCI="${7:-2}"
 
 # GRU domyslnie WYLACZONE. Noc 9/10.09 dala 97,51% dla obu architektur,
 # przy czterokrotnie dluzszym treningu i WEZSZEJ kopercie tonu dla gru.
@@ -241,8 +251,18 @@ if [ "$_gotowe" = "0" ]; then
     for _s in "${CW_SETENV:-}" "srodowisko/rtx3050_setenv.sh" "setenv.sh"; do
         if [ -n "$_s" ] && [ -f "$_s" ]; then
             echo "ładuję $_s"
+            # set +u NA CZAS SOURCOWANIA — inaczej cała ta poprawka nie
+            # działa. ZDARZYŁO SIĘ 10.09: venv_gpu/bin/activate odwołuje
+            # się do $LD_LIBRARY_PATH, gdy ta jest jeszcze nieustawiona
+            # (tę linię dopisuje setup_gpu_env.sh), a przy set -u to jest
+            # błąd krytyczny:
+            #     activate: line 77: LD_LIBRARY_PATH: unbound variable
+            # Skrypt padał w pierwszej sekundzie i trzeba było ładować
+            # środowisko z ręki — czyli dokładnie to, co miało zniknąć.
+            set +u
             # shellcheck disable=SC1090
             source "$_s" || true
+            set -u
             break
         fi
     done
@@ -456,14 +476,21 @@ etap () {
     echo " $NAZWA     $(date '+%H:%M')"
     echo "============================================================"
 
-    if "$@"; then
-        local MIN=$(( (SECONDS - T0) / 60 ))
+    # Kod wyjścia MUSI być zdjęty od razu po wywołaniu.
+    # ZDARZYŁO SIĘ 10.09: było "if "$@"; then ... fi" i dopiero potem
+    # "local RC=$?". Instrukcja "if" bez gałęzi else, której warunek jest
+    # fałszywy, kończy się statusem 0 — więc każda awaria była raportowana
+    # jako "kod 0". Log mówił "NIE UDAŁO SIĘ (kod 0)", co jest sprzeczne
+    # samo w sobie i nic nie wnosi.
+    "$@"
+    local RC=$?
+    local MIN=$(( (SECONDS - T0) / 60 ))
+
+    if [ "$RC" -eq 0 ]; then
         echo "  OK, ${MIN} min"
         STAN+=("$NAZWA|OK|${MIN} min")
         return 0
     fi
-    local RC=$?
-    local MIN=$(( (SECONDS - T0) / 60 ))
 
     # Dowody TERAZ, nie rano. To jest cała różnica między logiem, który
     # mówi "nie wyszło", i logiem, z którego wiadomo dlaczego.

@@ -1,0 +1,149 @@
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert# cd CLAU/
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# ./noc.sh
+============================================================
+ NOC TRENINGOWA  2026-09-10 18:32
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260910_1832.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/activate: line 77: LD_LIBRARY_PATH: unbound variable
+root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# . setenv.sh
+Środowisko RTX 3050 załadowane.
+  projekt:  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU
+  python:   /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python (Python 3.12.13)
+  katalogi CUDA na LD_LIBRARY_PATH: 11
+
+Sprawdzenie karty:
+  python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+((venv_gpu) ) root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# ./libsRTX3050.sh.sh
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789058016.284781     850 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+=== TEST CT YPES ===
+[ OK ] libcuda.so.1
+[ OK ] libcudart.so.12
+[ OK ] libcublas.so.12
+[ OK ] libcudnn.so.9
+[ OK ] libcusparse.so.12
+[ OK ] libnvJitLink.so.12
+[ OK ] libcufft.so.11
+[ OK ] libcurand.so.10
+[ OK ] libcusolver.so.11
+
+=== TEST TENSORFLOW GPU ===
+Wykryte GPU: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+((venv_gpu) ) root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# ./noc.sh
+============================================================
+ NOC TRENINGOWA  2026-09-10 18:34
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260910_1834.log
+
+--- środowisko ---
+już aktywne — nie ruszam
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789058134.556615     964 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 61/61 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (5 x 200000 = 1000000 próbek)
+czesci/morse_200000_*.npz: brak plikow
+wolne miejsce: 740629 MB, potrzeba ~6148 MB
+generuję 5 części po 200000 próbek (~14 min każda)...
+QRM 35%   QRN 30%   QSB>0.3 42%
+
+[5/5] czesci/morse_200000_04.npz
+generuję 200000 próbek na 11 procesach (400 kawałków po 500)
+  200000/200000  819s  pozostało ~0s
+
+Zapisano czesci/morse_200000_04.npz  (794 MB, uint8)
+klasa 0 (puste radio): 30030 (15.0%)
+znaki: min 4614, max 4851 na klasę
+QRM 35%   QRN 30%   QSB>0.3 43%
+
+Gotowe. Trening: --dataset 'czesci/morse_200000_*.npz'
+
+============================================================
+ TRENING dpu -> runs/dpu_1000000     19:45
+============================================================
+
+wagi klas: klasa 0 -> 0.180, znaki -> 1.145
+  NIE UDAŁO SIĘ (kod 0, 1 min) — dowody w:
+      out/noc_20260910_1834_dpu.log
+      out/noc_20260910_1834_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+============================================================
+ KOPERTA dpu     19:48
+============================================================
+  brak runs/dpu_1000000/best.keras — nie ma czego mierzyć
+  NIE UDAŁO SIĘ (kod 0, 0 min) — dowody w out/noc_20260910_1834_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-09-10  --  co wyszło
+============================================================
+
+ETAPY
+  TRENING dpu -> runs/dpu_1000000 BŁĄD kod 0, log: out/noc_20260910_1834_dpu.log
+  KOPERTA dpu                  BŁĄD kod 0, log: out/noc_20260910_1834_srodowisko.log
+
+WYNIKI TRENINGU
+
+  runs/dpu_1000000 dpu (wdrażalny na KV260)           brak wyniku
+  runs/gru_1000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu --- brak pomiaru
+
+CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ
+
+  TRENING dpu -> runs/dpu_1000000
+      kod 0, log: out/noc_20260910_1834_dpu.log
+  KOPERTA dpu
+      kod 0, log: out/noc_20260910_1834_srodowisko.log
+
+  Stan maszyny w momencie każdej awarii (nvidia-smi,
+  LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):
+      out/noc_20260910_1834_srodowisko.log
+
+PEŁNE LOGI
+  out/noc_20260910_1834.log
+  out/noc_20260910_1834_diag.log                 12K
+  out/noc_20260910_1834_dpu.log                  8.0K
+  out/noc_20260910_1834_gen.log                  88K
+  out/noc_20260910_1834_srodowisko.log           24K
+
+Na pendraka:  bvn_z.bat  (z Windows)
+============================================================
+
+--- historia treningu ---
+to nie jest repozytorium git — pomijam
+  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki
+   wracają przez bvn_z.bat i to wystarcza)
+
+Koniec: 2026-09-10 19:48
+Do przeczytania: out/RANO.txt
+((venv_gpu) ) root@DESKTOP-JS7996U:/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#

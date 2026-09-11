@@ -101,7 +101,11 @@ fi
 echo "[4/5] dopisuję LD_LIBRARY_PATH i XLA_FLAGS do aktywacji venv"
 if ! grep -q "XLA_FLAGS" "$ENV_NAME/bin/activate"; then
     {
-        echo 'export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH'
+        # ${LD_LIBRARY_PATH:-}, nie $LD_LIBRARY_PATH. Skrypt, ktory
+        # sourcuje activate przy wlaczonym "set -u", wywala sie na
+        # nieustawionej zmiennej: "LD_LIBRARY_PATH: unbound variable".
+        # Tak padl noc.sh 10.09 i noc przepadla.
+        echo 'export LD_LIBRARY_PATH=/usr/lib/wsl/lib:${LD_LIBRARY_PATH:-}'
         echo "export XLA_FLAGS=--xla_gpu_cuda_data_dir=$NVCC_DIR"
     } >> "$ENV_NAME/bin/activate"
 fi

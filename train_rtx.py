@@ -1194,12 +1194,29 @@ def load_dataset(spec):
     wolne_mb = _wolna_pamiec_mb()
     if len(pliki) > 1:
         print(f"zbiór w {len(pliki)} częściach, razem {lacznie_mb:.0f} MB")
-    if wolne_mb > 0 and lacznie_mb > 0.6 * wolne_mb:
+
+    # SZCZYT, NIE ROZMIAR PLIKU. Pierwsza wersja tego strażnika porównywała
+    # z wolną pamięcią sam rozmiar danych i przepuściła 1 mln próbek na
+    # maszynie z 15 GB — po czym trening padł po minucie.
+    #
+    # Skąd mnożnik. Na drodze do model.fit() te same obrazy istnieją
+    # w kilku kopiach naraz:
+    #   1x  sklejone X po np.concatenate
+    #   1x  X[idx] w make_pipeline — indeksowanie tablicą ROBI KOPIĘ
+    #   1x  to samo przeniesione do tf.data
+    # czyli około trzykrotności, zanim cokolwiek policzy się na karcie.
+    SZCZYT = 3.0
+    potrzeba_mb = lacznie_mb * SZCZYT
+    if wolne_mb > 0 and potrzeba_mb > 0.8 * wolne_mb:
         raise SystemExit(
-            f"PRZERWANO: zbiór ma {lacznie_mb:.0f} MB, a wolnej pamięci jest "
-            f"{wolne_mb:.0f} MB.\n"
-            f"Sklejenie zabiłoby proces bez komunikatu (OOM killer).\n"
-            f"Weź mniej części albo mniejsze --n.")
+            f"PRZERWANO: zbiór ma {lacznie_mb:.0f} MB, ale w drodze do "
+            f"model.fit() istnieje w ~{SZCZYT:.0f} kopiach, czyli potrzeba "
+            f"~{potrzeba_mb:.0f} MB.\n"
+            f"Wolnej pamięci jest {wolne_mb:.0f} MB.\n"
+            f"Bez tego sprawdzenia proces zostałby zabity przez OOM killer "
+            f"BEZ KOMUNIKATU, po kilkudziesięciu sekundach treningu.\n"
+            f"Weź mniej części: przy {wolne_mb:.0f} MB bezpieczne jest "
+            f"około {wolne_mb * 0.8 / SZCZYT / 820:.0f} x 200 tys. próbek.")
 
     Xs, ys, metki = [], [], []
     for p in pliki:
