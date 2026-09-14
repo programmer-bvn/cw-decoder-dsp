@@ -1219,7 +1219,14 @@ def load_dataset(spec):
             f"Bez tego sprawdzenia proces zostałby zabity przez OOM killer "
             f"BEZ KOMUNIKATU, po kilkudziesięciu sekundach treningu.\n"
             f"Weź mniej części: przy {wolne_mb:.0f} MB bezpieczne jest "
-            f"około {wolne_mb * 0.8 / SZCZYT / 820:.0f} x 200 tys. próbek.")
+            f"około {wolne_mb * 0.8 / SZCZYT / 820:.0f} x 200 tys. próbek.\n"
+            f"\nALBO PODNIEŚ LIMIT PAMIĘCI WSL — to częsta przyczyna.\n"
+            f"WSL2 bierze domyślnie POŁOWĘ pamięci hosta, więc maszyna\n"
+            f"z 32 GB daje tutaj tylko ~15 GB. W pliku\n"
+            f"C:\\Users\\<użytkownik>\\.wslconfig po stronie Windows:\n"
+            f"    [wsl2]\n"
+            f"    memory=24GB\n"
+            f"potem 'wsl --shutdown'. Szczegóły: srodowisko/README.md")
 
     Xs, ys, metki = [], [], []
     for p in pliki:

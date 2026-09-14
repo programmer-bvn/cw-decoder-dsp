@@ -59,6 +59,51 @@ startu, nie podłączenia w trakcie. Trzeba zamontować z ręki —
 **Litera dysku zmienia się między maszynami.** Na jednej D888 jest pod `D:`,
 na innej pod `I:`. Skrypt przyjmuje literę jako argument i nie zgaduje.
 
+## 4. WSL widzi POŁOWĘ pamięci maszyny
+
+To nie jest oczywiste i łatwo na tym stracić noc. WSL2 domyślnie ogranicza
+swoją maszynę wirtualną do **50% pamięci hosta**. Na maszynie z 32 GB
+`free -h` w WSL pokazuje `15Gi` — i to jest prawdziwy limit dla treningu,
+nie pomyłka odczytu.
+
+Skutek: strażnik pamięci w `train_rtx.py` liczy z tego, co widzi WSL, więc
+przy domyślnym ustawieniu przepuści około **1,2 mln próbek**, choć maszyna
+uniosłaby dwa razy tyle.
+
+Podniesienie limitu — plik `C:\Users\<użytkownik>\.wslconfig` po stronie
+**Windows**, nie w WSL:
+
+```ini
+[wsl2]
+memory=24GB
+processors=11
+swap=8GB
+```
+
+Potem, z Windows:
+
+```
+wsl --shutdown
+```
+
+Bez `--shutdown` zmiana nie wchodzi — maszyna wirtualna musi wstać od nowa.
+Sprawdzenie po ponownym wejściu: `free -h` ma pokazać około `23Gi`.
+
+Nie dawaj całych 32 GB. Windows i sterownik karty też potrzebują pamięci,
+a gdy jej zabraknie po stronie hosta, objawem będzie zamulenie całego
+systemu, nie czytelny błąd.
+
+| limit WSL | bezpieczny zbiór |
+|---|---|
+| 15 GB (domyślnie z 32 GB) | ~1,2 mln próbek |
+| 24 GB | ~1,8 mln próbek |
+| 28 GB | ~2,2 mln próbek |
+
+Pamięć KARTY to osobna sprawa i `.wslconfig` jej nie dotyczy: RTX 3050 ma
+zmierzone 6144 MiB i tyle zostanie. Dlatego zbiór musi leżeć w RAM-ie, a
+nie na karcie — patrz `tf.device("/cpu:0")` w `make_pipeline` i historia
+dwóch straconych nocy w komentarzu tamże.
+
 ---
 
 ## Kolejność
