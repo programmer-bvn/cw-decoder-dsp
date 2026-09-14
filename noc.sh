@@ -100,19 +100,17 @@ KOPERTA_BLEDY="${6:-3000}"
 # a karta konsumuje 8000/s. Epoka trwalaby 13 minut zamiast 23 sekund.
 # Wiec dane robi sie zawczasu, w kilku czesciach, i skleja przy wczytaniu.
 #
-# TYMCZASOWO 2, NIE 5. Noc 10/11.09: 5 czesci (1 mln probek) padlo po
-# minucie treningu, a kod wyjscia zginal przez blad w etap(). Sa dwie
-# mozliwe przyczyny i log z HDD je rozroznia:
-#   - OOM killer: X[idx] robi KOPIE, wiec 1 mln probek istnieje w trzech
-#     egzemplarzach po ~3,8 GB. Objaw: "Killed", kod 137.
-#   - limit 2 GB na stala w TensorFlow: from_tensor_slices na tablicy
-#     3,8 GB przekracza twardy limit protobufa NIEZALEZNIE od ilosci RAM.
-#     Objaw: "Cannot create a tensor proto whose content is larger than 2GB".
-# Druga przyczyna nie da sie naprawic pamiecia, wiec do czasu przeczytania
-# logu idziemy na 2 czesci (400 tys., 1,6 GB danych, ~1,5 GB w tf.data) --
-# bezpieczne przy obu hipotezach i wciaz DWA RAZY wiecej danych niz
-# w nocy 9/10.09, ktora dala 97,51%.
-CZESCI="${7:-2}"
+# 5 czesci po 200 tys. = 1 mln probek. Generowanie ~70 min, epoka ~115 s.
+#
+# Bylo tymczasowo 2, bo trening padal na wiekszych zbiorach. Przyczyna
+# znaleziona 11.09 i naprawiona: tf.data.from_tensor_slices umieszczalo
+# CALY zbior w pamieci KARTY (6 GB), nie w RAM systemu (15 GB). Stad
+# 200 tys. dzialalo, a 400 tys. juz nie. Teraz dane sa jawnie na CPU.
+#
+# W RAM: ~4 GB danych, szczyt ~8 GB w trakcie budowy potoku. Straznik
+# w load_dataset przerwie z wyliczona bezpieczna liczba czesci, jesli
+# maszyna ma mniej pamieci.
+CZESCI="${7:-5}"
 
 # GRU domyslnie WYLACZONE. Noc 9/10.09 dala 97,51% dla obu architektur,
 # przy czterokrotnie dluzszym treningu i WEZSZEJ kopercie tonu dla gru.

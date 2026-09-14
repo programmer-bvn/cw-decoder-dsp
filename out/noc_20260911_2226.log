@@ -1,0 +1,110 @@
+============================================================
+ NOC TRENINGOWA  2026-09-11 22:26
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260911_2226.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+venv:   /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   11 katalogów w LD_LIBRARY_PATH
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789158425.265040     639 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 61/61 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (2 x 200000 = 400000 próbek)
+czesci/morse_200000_00.npz: BRAKUJE kolumn modelu kanalu: chirp sag hum agc_tau fist_drift gap_jitter
+-> czesc powstala PRZED modelem kanalu, generuje od nowa
+wolne miejsce: 735086 MB, potrzeba ~3688 MB
+generuję 2 części po 200000 próbek (~14 min każda)...
+========================================================================
+DEKODER CW — GENEROWANIE ZBIORU
+========================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms  klas=37
+------------------------------------------------------------------------
+[1/2] czesci/morse_200000_00.npz juz jest — pomijam
+[2/2] czesci/morse_200000_01.npz juz jest — pomijam
+
+Gotowe. Trening: --dataset 'czesci/morse_200000_*.npz'
+
+============================================================
+ TRENING dpu -> runs/dpu_400000     22:28
+============================================================
+
+wagi klas: klasa 0 -> 0.180, znaki -> 1.145
+  NIE UDAŁO SIĘ (kod 1, 1 min) — dowody w:
+      out/noc_20260911_2226_dpu.log
+      out/noc_20260911_2226_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+============================================================
+ KOPERTA dpu     22:31
+============================================================
+  brak runs/dpu_400000/best.keras — nie ma czego mierzyć
+  NIE UDAŁO SIĘ (kod 1, 0 min) — dowody w out/noc_20260911_2226_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-09-11  --  co wyszło
+============================================================
+
+ETAPY
+  TRENING dpu -> runs/dpu_400000 BŁĄD kod 1, log: out/noc_20260911_2226_dpu.log
+  KOPERTA dpu                  BŁĄD kod 1, log: out/noc_20260911_2226_srodowisko.log
+
+WYNIKI TRENINGU
+
+  runs/dpu_400000 dpu (wdrażalny na KV260)           brak wyniku
+  runs/gru_400000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu --- brak pomiaru
+
+CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ
+
+  TRENING dpu -> runs/dpu_400000
+      kod 1, log: out/noc_20260911_2226_dpu.log
+  KOPERTA dpu
+      kod 1, log: out/noc_20260911_2226_srodowisko.log
+
+  Stan maszyny w momencie każdej awarii (nvidia-smi,
+  LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):
+      out/noc_20260911_2226_srodowisko.log
+
+PEŁNE LOGI
+  out/noc_20260911_2226.log
+  out/noc_20260911_2226_diag.log                 12K
+  out/noc_20260911_2226_dpu.log                  8.0K
+  out/noc_20260911_2226_gen.log                  4.0K
+  out/noc_20260911_2226_srodowisko.log           24K
+
+Na pendraka:  bvn_z.bat  (z Windows)
+============================================================
+
+--- historia treningu ---
+to nie jest repozytorium git — pomijam
+  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki
+   wracają przez bvn_z.bat i to wystarcza)
+
+Koniec: 2026-09-11 22:31
+Do przeczytania: out/RANO.txt

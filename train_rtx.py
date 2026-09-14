@@ -1202,10 +1202,13 @@ def load_dataset(spec):
     # Skąd mnożnik. Na drodze do model.fit() te same obrazy istnieją
     # w kilku kopiach naraz:
     #   1x  sklejone X po np.concatenate
-    #   1x  X[idx] w make_pipeline — indeksowanie tablicą ROBI KOPIĘ
-    #   1x  to samo przeniesione do tf.data
-    # czyli około trzykrotności, zanim cokolwiek policzy się na karcie.
-    SZCZYT = 3.0
+    #   1x  X[tr] — indeksowanie tablicą ROBI KOPIĘ
+    #   1x  to samo przeniesione do tf.data (na CPU, nie na kartę)
+    #
+    # Oryginał jest zwalniany zaraz po wycięciu części treningowej, więc
+    # trzy kopie nie istnieją JEDNOCZEŚNIE: szczyt to dwie i chwilowa
+    # nadwyżka na czas kopiowania. Stąd 2,5 zamiast 3.
+    SZCZYT = 2.5
     potrzeba_mb = lacznie_mb * SZCZYT
     if wolne_mb > 0 and potrzeba_mb > 0.8 * wolne_mb:
         raise SystemExit(
@@ -1286,10 +1289,32 @@ def make_pipeline(X, y, idx, batch: int, training: bool,
     pamięci przy dużych zbiorach.
     """
     import tensorflow as tf
-    parts = [X[idx], y[idx]]
+    Xs = X if idx is None else X[idx]
+    ys = y if idx is None else y[idx]
+    parts = [Xs, ys]
     if weights is not None:
-        parts.append(weights[y[idx]])
-    ds = tf.data.Dataset.from_tensor_slices(tuple(parts))
+        parts.append(weights[ys])
+
+    # tf.device("/cpu:0") JEST TU KLUCZOWE, NIE OZDOBNE.
+    #
+    # ZDARZYŁO SIĘ 10/11.09 i zabrało dwie noce: from_tensor_slices tworzy
+    # stałą na URZĄDZENIU DOMYŚLNYM, a gdy widziana jest karta, domyślnym
+    # jest GPU. Czyli CAŁY zbiór ląduje w pamięci karty, nie w RAM-ie.
+    #
+    #     RTX 3050:  6144 MiB          system: 15 GB
+    #     200 tys. próbek:  790 MB     mieści się -> wszystko działało
+    #     400 tys. próbek: 1,6 GB      nie mieści -> FailedPreconditionError:
+    #                                  "Failed to allocate scratch buffer
+    #                                   for device 0"
+    #
+    # Komunikat nie mówi ani o zbiorze, ani o pamięci karty, więc łatwo
+    # szukać nie tam. Ja szukałem w dwóch złych miejscach: w OOM killerze
+    # systemu i w limicie 2 GB na protobuf. Obie hipotezy były błędne.
+    #
+    # Z jawnym CPU dane leżą w RAM-ie, a tf.data przesyła na kartę
+    # partiami po 256 obrazów, czyli po 1 MB.
+    with tf.device("/cpu:0"):
+        ds = tf.data.Dataset.from_tensor_slices(tuple(parts))
 
     def prep(img, label, *rest):
         img = tf.expand_dims(tf.cast(img, tf.float32) / 255.0, -1)
@@ -1461,8 +1486,14 @@ def train(args):
         print(f"wagi klas: klasa 0 -> {w[0]:.3f}, "
               f"znaki -> {w[1:][w[1:]>0].mean():.3f}")
 
-    ds_tr = make_pipeline(X, y, tr, args.batch, True, weights=w)
+    # Kolejność NIE jest przypadkowa. Walidacja (mała) powstaje z pełnego X,
+    # potem wycinamy część treningową i ZWALNIAMY oryginał — inaczej przy
+    # milionie próbek w pamięci leżą naraz trzy tablice: X (4,1 GB),
+    # kopia X[tr] (3,8 GB) i to samo przeniesione do tf.data.
     ds_va = make_pipeline(X, y, va, args.batch, False)
+    Xtr, ytr = X[tr], y[tr]
+    del X
+    ds_tr = make_pipeline(Xtr, ytr, None, args.batch, True, weights=w)
 
     # --- model: wznowienie albo świeży ---
     saver = StateSaver(run_dir, keras)

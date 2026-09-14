@@ -1,0 +1,79 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1789158612.149114     802 cpu_allocator_impl.cc:82] Allocation of 3768328192 exceeds 10% of free system memory.
+W0000 00:00:1789158627.089844     802 bfc_allocator.cc:502] Allocator (GPU_0_bfc) ran out of memory trying to allocate 1.0KiB (rounded to 1280)requested by op ScratchBuffer
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+W0000 00:00:1789158627.098787     802 bfc_allocator.cc:513] ****************************************************************************************************
+W0000 00:00:1789158627.100696     802 local_rendezvous.cc:412] Local rendezvous is aborting with status: FAILED_PRECONDITION: Failed to allocate scratch buffer for device 0
+========================================================================
+DEKODER CW — TRENING
+========================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms  klas=37
+------------------------------------------------------------------------
+TensorFlow 2.21.0   Keras 3.15.1   numpy 2.5.2   Python 3.12.13
+interpreter: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python
+format zapisu modelu: .keras
+GPU WIDZIANE: GPU:0
+------------------------------------------------------------------------
+mixed_float16 włączone (Ampere i nowsze liczą tak ~2x szybciej)
+zbiór w 5 częściach, razem 3969 MB
+opis zbioru: czesci=5;n=1000000;seeds=12345,13345,14345,15345,16345;wpm=20.0;realism=1
+zbiór: (1000000, 128, 32) uint8 (3906 MB)
+podział warstwowy: trening=920002  walidacja=79998
+wagi klas: klasa 0 -> 0.180, znaki -> 1.145
+Traceback (most recent call last):
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/train_rtx.py", line 1627, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/train_rtx.py", line 1623, in main
+    train(args)
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/train_rtx.py", line 1464, in train
+    ds_tr = make_pipeline(X, y, tr, args.batch, True, weights=w)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/train_rtx.py", line 1292, in make_pipeline
+    ds = tf.data.Dataset.from_tensor_slices(tuple(parts))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/data/ops/dataset_ops.py", line 827, in from_tensor_slices
+    return from_tensor_slices_op._from_tensor_slices(tensors, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/data/ops/from_tensor_slices_op.py", line 25, in _from_tensor_slices
+    return _TensorSliceDataset(tensors, name=name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/data/ops/from_tensor_slices_op.py", line 33, in __init__
+    element = structure.normalize_element(element)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/data/util/structure.py", line 134, in normalize_element
+    ops.convert_to_tensor(t, name="component_%d" % i, dtype=dtype))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/profiler/trace.py", line 183, in wrapped
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/ops.py", line 757, in convert_to_tensor
+    return tensor_conversion_registry.convert(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/tensor_conversion_registry.py", line 234, in convert
+    ret = conversion_func(value, dtype=dtype, name=name, as_ref=as_ref)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/constant_tensor_conversion.py", line 29, in _constant_tensor_conversion_function
+    return constant_op.constant(v, dtype=dtype, name=name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/ops/weak_tensor_ops.py", line 142, in wrapper
+    return op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/constant_op.py", line 276, in constant
+    return _constant_impl(value, dtype, shape, name, verify_shape=False,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/constant_op.py", line 288, in _constant_impl
+    return _constant_eager_impl(ctx, value, dtype, shape, verify_shape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/constant_op.py", line 301, in _constant_eager_impl
+    t = convert_to_eager_tensor(value, ctx, dtype)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/constant_op.py", line 108, in convert_to_eager_tensor
+    return ops.EagerTensor(value, ctx.device_name, dtype)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tensorflow.python.framework.errors_impl.FailedPreconditionError: {{function_node __wrapped____EagerConst_device_/job:localhost/replica:0/task:0/device:GPU:0}} Failed to allocate scratch buffer for device 0
+W0000 00:00:1789158631.379851     802 local_rendezvous.cc:412] Local rendezvous is aborting with status: ABORTED: Shutdown
