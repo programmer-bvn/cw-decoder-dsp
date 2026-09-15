@@ -1328,7 +1328,10 @@ def make_pipeline(X, y, idx, batch: int, training: bool,
         return (img, label, rest[0]) if rest else (img, label)
 
     if training:
-        ds = ds.shuffle(min(len(idx), 50000), reshuffle_each_iteration=True)
+        # len(ys), NIE len(idx). Przy idx=None (dane podane wprost,
+        # bez indeksowania) idx to None i len() sie wywala. Zostawiony
+        # ogon po dodaniu obslugi idx=None -- zabral noc 14/15.09.
+        ds = ds.shuffle(min(len(ys), 50000), reshuffle_each_iteration=True)
     return (ds.map(prep, num_parallel_calls=tf.data.AUTOTUNE)
               .batch(batch).prefetch(tf.data.AUTOTUNE))
 

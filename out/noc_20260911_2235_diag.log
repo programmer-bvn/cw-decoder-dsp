@@ -1,0 +1,198 @@
+======================================================================
+DIAGNOSTYKA ŁAŃCUCHA DSP
+======================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s, 50 ramek/s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms ton=750+/-80Hz  klas=37
+
+TEST 1: timing kluczowania
+--------------------------
+  [OK ] PARIS ma 43 jednostki (50 minus przerwa końcowa)
+         oczekiwano 43, otrzymano 43
+  [OK ] długość obwiedni zgodna z 1.2/WPM
+         oczekiwano 20640 próbek, otrzymano 20640 (kropka = 480.0 próbek = 60 ms)
+  [OK ] każdy element ma długość 1 lub 3 jednostek
+         zmierzone długości: [1, 3], największe odchylenie 0.0000 jednostki
+
+TEST 2: obieg zamknięty tekst -> obwiednia -> tekst
+---------------------------------------------------
+  [OK ] 'SOS' przy 20 WPM
+         odczytano 'SOS'
+  [OK ] 'CQ DE SP1ABC' przy 25 WPM
+         odczytano 'CQ DE SP1ABC'
+  [OK ] 'PARIS' przy 12 WPM
+         odczytano 'PARIS'
+  [OK ] 'EEE' przy 30 WPM
+         odczytano 'EEE'
+
+TEST 3: normalizacja dB
+-----------------------
+  [OK ] normalize_db -> denormalize_db odtwarza decybele
+         największy błąd 2.50e-06 dB
+  [OK ] wartości poza zakresem są obcinane do 0 i 1
+         DB_MIN-20 -> 0.000 (oczekiwano 0.0), DB_MAX+20 -> 1.000 (oczekiwano 1.0)
+
+TEST 4: skala bezwzględna (kontrola błędu z v5.5)
+-------------------------------------------------
+  [OK ] szczyt tego samego tonu nie zależy od reszty klipu
+         klip cichy: 0.8918, klip z silnym sygnałem 2500 Hz: 0.8918, różnica 0.0000
+         Przy ref=np.max albo top_db=80 różnica byłaby rzędu 0,3-0,5 —
+         i model widziałby inny obraz w zależności od tła.
+  [OK ] tło szumowe wypada na dolnym końcu skali
+         tło -29.1 dB, DB_MIN=-30.0 dB
+
+TEST 5: wycinanie okna
+----------------------
+  [OK ] okno ma zadaną liczbę ramek
+         otrzymano (128, 32), oczekiwano (128, 32)
+  [OK ] okno jest wycięte ze środka
+         pierwsza ramka = 36, oczekiwano 36
+  [OK ] krótszy obraz jest dopełniony zerami i wycentrowany
+         kształt (128, 32), brzeg=0.0, środek=1.0
+
+TEST 6: Waterfall daje ten sam obraz co plik
+--------------------------------------------
+  [OK ] bufor audio zawiera dokładnie ogon strumienia
+         bufor=20320 próbek, największa różnica 0.00e+00
+  [OK ] ostatnie 100 ramek na żywo zgadza się z obrazem z pliku
+         największa różnica 0.00e+00
+         Bufor OBRAZU zamiast bufora audio dawał tu ~0,1-0,3, i to najbardziej przy zmianach klucza.
+  [OK ] Waterfall zgłasza gotowość po wypełnieniu bufora
+         filled=20320/20320
+
+TEST 7: położenie tonu w pasmie mel
+-----------------------------------
+  [OK ] ton 670 Hz trafia w pasmo 10 (651 Hz)
+         odchyłka -19 Hz
+  [OK ] ton 750 Hz trafia w pasmo 14 (751 Hz)
+         odchyłka +1 Hz
+  [OK ] ton 830 Hz trafia w pasmo 17 (826 Hz)
+         odchyłka -4 Hz
+  [OK ] pasmo obejmuje cały rozrzut tonu generatora
+         pasmo 400-1200 Hz, ton 670-830 Hz
+
+TEST 8: odcisk front-endu
+-------------------------
+  [OK ] odcisk zgodny z samym sobą przechodzi
+  [OK ] zmiana DB_MIN jest wykrywana
+         komunikat: DB_MIN: zbiór testowy=-60.0  config.py=-30.0
+
+TEST 9: klip generatora
+-----------------------
+  [OK ] klipy bez sygnału mają etykietę 0 (9 sztuk)
+  [OK ] sygnał jest widoczny w oknie sieci (kontrast > 10 dB)
+         31/31 klipów z sygnałem; kontrast min=20.3 dB, średnio=40.2 dB
+  [OK ] znak docelowy z przerwami mieści się w oknie sieci
+         najdłuższy znak '0' = ----- = 19 jednostek, z przerwami 25 jednostek = 1.50s
+         okno sieci = 2.56s  (zapas +1.06s)
+  [OK ] NAJNIŻSZE tempo w zbiorze (13 WPM) mieści się w oknie
+         zakres tempa: 13-27 WPM
+         przy 13 WPM najdłuższy znak z przerwami zajmuje 2.31s, okno ma 2.56s
+         granica dla tego okna: 11.7 WPM — niżej trzeba zwiększyć IMG_FRAMES (teraz 128)
+  [OK ] zbiór ma rozrzut tempa (WPM_JITTER > 0)
+         WPM_JITTER = 7.0
+         Przy zerze model czyta wyłącznie 20 WPM. Prawdziwi operatorzy pracują w 13-27 WPM,
+         a kropka przy 15 WPM ma 80 ms zamiast 60 ms — o trzecią dłużej niż wszystko, co widział.
+         (informacyjnie: całe nadanie 3 najdłuższych znaków = 3.78s, czyli sąsiedzi są przycięci — to zamierzone)
+
+TEST 10: model kanału radiowego
+-------------------------------
+  [OK ] szum o nachyleniu +0 ma zadany RMS
+         oczekiwano 0.0200, otrzymano 0.0200
+  [OK ] szum o nachyleniu -1 ma zadany RMS
+         oczekiwano 0.0200, otrzymano 0.0200
+  [OK ] szum o nachyleniu +1 ma zadany RMS
+         oczekiwano 0.0200, otrzymano 0.0200
+  [OK ] szum różowy ma widmo mocy opadające jak 1/f
+         nachylenie -0.97 dekady/dekadę, oczekiwano -1.00
+  [OK ] QSB o głębokości 0.0 daje zmierzony spadek 0.00
+  [OK ] QSB o głębokości 0.3 daje zmierzony spadek 0.27
+  [OK ] QSB o głębokości 0.6 daje zmierzony spadek 0.55
+  [OK ] trzask podnosi wiele pasm w jednej ramce (kreska pionowa)
+         najwięcej pasm wzrosłych w jednej ramce: 28 z 32; ramek z ponad połową pasm: 1
+  [OK ] ton skupia energię w kilku pasmach, trzask rozkłada po wszystkich
+         6 najmocniejszych pasm z 32 mieści: ton 46% przyrostu, trzask 27%
+         Liczenie pasm powyżej progu tego nie rozdziela — ton podnosi ponad próg 21 z 32 pasm z powodu rozmycia widmowego.
+  [OK ] druga stacja jest widoczna w oknie sieci za każdym razem
+         widoczna w 16/16 prób; przyrost energii min 22.4, mediana 48.7
+  [OK ] receive() zwraca pełny opis parametrów klipu
+         brakuje: nic; długość 32000 (oczekiwano 32000)
+  [OK ] tor wejściowy nie przepuszcza poziomu powyżej pełnej skali
+
+TEST 11: rozjazd ręcznego klucza (fist)
+---------------------------------------
+  [OK ] rozjazd 20% nadal daje poprawny odczyt klasycznym dekoderem
+         12 z 12 prób poprawnie
+  [OK ] rozjazd 45% faktycznie psuje odczyt (dowód, że parametr działa)
+         7 z 12 prób odczytanych błędnie
+
+TEST 11b: wady nadajnika (trzecia litera RST)
+---------------------------------------------
+  [OK ] ton spada w trakcie kreski (chirp)
+         początek 746.2 Hz, koniec 725.6 Hz, spadek 20.6 Hz
+         Zadano chirp_hz=25; pełny spadek wymaga kreski dłuższej niż kilka stałych czasowych.
+         To opisuje trzecia litera raportu RST (Tone).
+  [OK ] bez chirpu ton jest stały
+         zmiana 0.00 Hz (oczekiwano poniżej 1 Hz)
+  [OK ] chirp wraca na początku każdej kreski (a dryf by nie wrócił)
+         ton na początku kolejnych kresek: 748, 747, 747, 748 Hz
+         Rozrzut 0.5 Hz — gdyby to był dryf, rosłby monotonicznie.
+  [OK ] amplituda kreski spada (to samo zapadanie zasilania)
+         spadek -2.32 dB przy zadanym sag_db=3.0
+  [OK ] przydźwięk widoczny na obwiedni przy 100 Hz
+         szczyt modulacji obwiedni przy 101.5 Hz
+
+TEST 11c: wolne błądzenie tempa (klucz sztorcowy)
+-------------------------------------------------
+  [OK ] wolne błądzenie daje SKORELOWANE długości elementów
+         autokorelacja kolejnych kropek: szum niezależny +0.14, wolne błądzenie +0.83
+         (40 i 40 kropek)
+         Klucz ręczny zwalnia i przyspiesza w skali sekund, więc kolejne elementy MUSZĄ być podobne.
+         Szum niezależny dawał sygnał nerwowy, ale o stałym tempie średnim — czego na kluczu nie ma.
+  [OK ] przerwy międzyznakowe mają własny rozjazd
+         18 przerw międzyznakowych, 2.34-7.03 jednostki (odchylenie 1.36)
+         Przy manipulatorze elementy idą równo, a przerwy zależą od tego, jak szybko operator myśli.
+
+TEST 12: zgodność train_rtx.py z projektem
+------------------------------------------
+  [OK ] odcisk front-endu identyczny
+  [OK ] stałe generatora i kanału identyczne
+         33 stałe zgodne
+  [OK ] obrazy z tego samego ziarna identyczne co do bitu
+         6 ziaren, największa różnica 0.00e+00
+
+TEST 13: zgodność modelu z DPU na KV260
+---------------------------------------
+  [OK ] architektura 'dpu' używa tylko warstw obsługiwanych przez DPUCZDX8G
+         29 warstw, wszystkie z listy dozwolonych; 624517 parametrów
+  [OK ] architektura 'gru' jest wykrywana jako niewdrażalna
+         wykryte warstwy poza listą: ['Bidirectional']
+         DPUCZDX8G nie obsługuje rekurencji — RNN w Vitis AI ma osobne nakładki (U25, U50LV), których na Zynq nie ma.
+  [OK ] zasięg widzenia pokrywa najdłuższy znak z przerwami
+         zasięg 110 ramek = 2.20s, potrzeba 75 ramek = 1.50s (znak '0' z przerwami)
+  [OK ] kształt wejścia modelu zgodny z config.INPUT_SHAPE
+         model (128, 32, 1), config (128, 32, 1)
+
+TEST 14: front-end bez librosy (dsp/melref.py)
+----------------------------------------------
+  [OK ] krawędzie pasm mel zgodne z librosą (skala Slaneya)
+         największa różnica 0.00e+00 Hz
+         Skala HTK (1127*ln(1+f/700)) dałaby tu różnicę kilkudziesięciu herców — filtrbank tf.signal jest w HTK i NIE jest wymienny.
+  [OK ] macierz filtrbanku zgodna z librosą (norm=slaney)
+         największa różnica 2.45e-09, wartość szczytowa 0.0395
+         Trójkąty mają jednakowe POLE, nie jednakową wysokość — tf.signal ma wysokość 1 i tego nie robi.
+  [OK ] STFT zgodny z librosą przy dopełnieniu ZERAMI
+         pad_mode=constant: różnica względna 3.94e-16
+         pad_mode=reflect:  różnica względna 1.13e+00  <- nie pasuje
+         Rodzaj dopełnienia zmieniał się między wersjami librosy, więc jest sprawdzany, a nie zakładany.
+  [OK ] obraz z melref identyczny z niezależnym rachunkiem librosy
+         największa różnica 1.19e-07 = 6.44e-06 dB = 3.04e-05 kroku uint8 (8 ziaren)
+         To zapas float32, nie różnica metody. melref jest ścieżką
+         PRODUKCYJNĄ (woła ją frontend) i wzorcem do przepisania na C
+         dla KV260; librosa jest tu tylko niezależnym rachunkiem.
+  [OK ] frontend liczy front-end przez melref (bez librosy)
+         różnica 0.00e+00 — powinna być dokładnie 0, bo to ten sam kod
+
+======================================================================
+WYNIK: 61/61 kontroli przeszło
+======================================================================

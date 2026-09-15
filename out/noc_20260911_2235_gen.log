@@ -1,0 +1,11 @@
+========================================================================
+DEKODER CW — GENEROWANIE ZBIORU
+========================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms  klas=37
+------------------------------------------------------------------------
+[1/2] czesci/morse_200000_00.npz juz jest — pomijam
+[2/2] czesci/morse_200000_01.npz juz jest — pomijam
+
+Gotowe. Trening: --dataset 'czesci/morse_200000_*.npz'

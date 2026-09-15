@@ -1,15 +1,15 @@
 ============================================================
- NOC 2026-09-11  --  co wyszło
+ NOC 2026-09-14  --  co wyszło
 ============================================================
 
 ETAPY
-  TRENING dpu -> runs/dpu_400000 BŁĄD kod 1, log: out/noc_20260911_2226_dpu.log
-  KOPERTA dpu                  BŁĄD kod 1, log: out/noc_20260911_2226_srodowisko.log
+  TRENING dpu -> runs/dpu_1000000 BŁĄD kod 1, log: out/noc_20260914_1901_dpu.log
+  KOPERTA dpu                  BŁĄD kod 1, log: out/noc_20260914_1901_srodowisko.log
 
 WYNIKI TRENINGU
 
-  runs/dpu_400000 dpu (wdrażalny na KV260)           brak wyniku
-  runs/gru_400000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+  runs/dpu_1000000 dpu (wdrażalny na KV260)           brak wyniku
+  runs/gru_1000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
@@ -17,20 +17,20 @@ KOPERTA I PRZYCZYNA BŁĘDÓW
 
 CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ
 
-  TRENING dpu -> runs/dpu_400000
-      kod 1, log: out/noc_20260911_2226_dpu.log
+  TRENING dpu -> runs/dpu_1000000
+      kod 1, log: out/noc_20260914_1901_dpu.log
   KOPERTA dpu
-      kod 1, log: out/noc_20260911_2226_srodowisko.log
+      kod 1, log: out/noc_20260914_1901_srodowisko.log
 
   Stan maszyny w momencie każdej awarii (nvidia-smi,
   LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):
-      out/noc_20260911_2226_srodowisko.log
+      out/noc_20260914_1901_srodowisko.log
 
 PEŁNE LOGI
-  out/noc_20260911_2226.log
-  out/noc_20260911_2226_diag.log                 12K
-  out/noc_20260911_2226_dpu.log                  8.0K
-  out/noc_20260911_2226_gen.log                  4.0K
-  out/noc_20260911_2226_srodowisko.log           24K
+  out/noc_20260914_1901.log
+  out/noc_20260914_1901_diag.log                 8.0K
+  out/noc_20260914_1901_dpu.log                  4.0K
+  out/noc_20260914_1901_gen.log                  4.0K
+  out/noc_20260914_1901_srodowisko.log           12K
 
 Na pendraka:  bvn_z.bat  (z Windows)

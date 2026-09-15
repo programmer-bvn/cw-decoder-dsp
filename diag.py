@@ -877,6 +877,122 @@ def test_melref():
 
 
 # ==========================================================================
+
+# ==========================================================================
+# TEST 15: ŚCIEŻKA DANYCH TRENINGOWYCH
+#
+#  Istnieje, bo TRZY NOCE Z RZĘDU przepadły na błędach w tej właśnie
+#  ścieżce, a każdy z nich dałoby się złapać w kilka sekund:
+#
+#    10/11.09  from_tensor_slices umieszczało zbiór w pamięci KARTY
+#              (6 GB) zamiast w RAM. 200 tys. się mieściło, 400 tys. nie.
+#    11/12.09  to samo, bo szukałem przyczyny w dwóch złych miejscach.
+#    14/15.09  po dodaniu obsługi idx=None został ogon "len(idx)"
+#              w ds.shuffle -> TypeError po 40 minutach generowania zbioru.
+#
+#  Wspólna cecha: awaria wychodziła DOPIERO po wygenerowaniu zbioru, czyli
+#  po godzinie. Ten test uruchamia tę samą ścieżkę na 64 próbkach.
+# ==========================================================================
+def test_sciezka_danych():
+    section("TEST 15: ścieżka danych treningowych")
+    import importlib.util
+    import tempfile
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent / "train_rtx.py"
+    if not path.exists():
+        check("train_rtx.py istnieje", False, f"brak pliku {path}")
+        return
+
+    spec = importlib.util.spec_from_file_location("_dane", path)
+    sa = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sa)
+
+    n = 64
+    rng = np.random.default_rng(1)
+    X = rng.integers(0, 256, (n, C.IMG_FRAMES, C.IMG_BINS), dtype=np.uint8)
+    y = rng.integers(0, C.N_CLASSES, n).astype(np.int32)
+    w = np.ones(C.N_CLASSES, dtype=np.float32)
+
+    # --- 15a. potok z indeksami (tak działa walidacja) ---
+    def jedna_partia(ds):
+        for partia in ds.take(1):
+            return partia
+        return None
+
+    try:
+        idx = np.arange(0, n, 2)
+        ds = sa.make_pipeline(X, y, idx, 8, True, weights=w)
+        p = jedna_partia(ds)
+        ok = p is not None and tuple(p[0].shape) == (8, C.IMG_FRAMES,
+                                                     C.IMG_BINS, 1)
+        check("potok z indeksami daje partię o poprawnym kształcie", ok,
+              "" if ok else f"dostałem {None if p is None else p[0].shape}")
+    except Exception as e:
+        check("potok z indeksami", False, f"{type(e).__name__}: {e}")
+
+    # --- 15b. potok BEZ indeksów (idx=None; tak działa trening po
+    #          zwolnieniu oryginału) — tu siedział błąd z 14/15.09 ---
+    try:
+        ds = sa.make_pipeline(X, y, None, 8, True, weights=w)
+        p = jedna_partia(ds)
+        ok = p is not None and tuple(p[0].shape) == (8, C.IMG_FRAMES,
+                                                     C.IMG_BINS, 1)
+        check("potok bez indeksów (idx=None) daje partię", ok,
+              "" if ok else f"dostałem {None if p is None else p[0].shape}")
+    except Exception as e:
+        check("potok bez indeksów (idx=None)", False,
+              f"{type(e).__name__}: {e}")
+
+    # --- 15c. obrazy trafiają do zakresu [0,1] i typu float32 ---
+    try:
+        ds = sa.make_pipeline(X, y, None, 8, False)
+        p = jedna_partia(ds)
+        img = p[0].numpy()
+        ok = (img.dtype == np.float32 and img.min() >= 0.0
+              and img.max() <= 1.0)
+        check("obrazy w potoku: float32 w [0,1]", ok,
+              "" if ok else f"dtype={img.dtype} zakres=[{img.min():.3f}, "
+                            f"{img.max():.3f}]")
+    except Exception as e:
+        check("obrazy w potoku", False, f"{type(e).__name__}: {e}")
+
+    # --- 15d. dane NIE leżą w pamięci karty ---
+    #  To była przyczyna dwóch nocy. Zbiór ma leżeć w RAM, a na kartę mają
+    #  iść partie. Sprawdzamy, na czym stoi tensor z from_tensor_slices.
+    try:
+        import tensorflow as tf
+        with tf.device("/cpu:0"):
+            t = tf.constant(X)
+        ok = "CPU" in t.device.upper()
+        check("dane zbioru stoją na CPU, nie na karcie", ok,
+              "" if ok else f"urządzenie: {t.device}")
+    except Exception as e:
+        check("umiejscowienie danych", False, f"{type(e).__name__}: {e}")
+
+    # --- 15e. wczytywanie zbioru z WZORCA (kilka części) ---
+    try:
+        with tempfile.TemporaryDirectory() as kat:
+            kat = Path(kat)
+            for k, ziarno in enumerate((111, 222)):
+                np.savez(kat / f"cz_{k:02d}.npz", X=X, y=y,
+                         fingerprint=sa.FINGERPRINT,
+                         meta=f"n={n};seed={ziarno};wpm={sa.WPM};realism=1")
+            Xs, ys, meta = sa.load_dataset(str(kat / "cz_*.npz"))
+            ok = len(ys) == 2 * n and Xs.shape[0] == 2 * n
+            check("wzorzec skleja części", ok,
+                  "" if ok else f"dostałem {len(ys)} zamiast {2*n}")
+            # Opis MUSI być powtarzalny — inaczej każde uruchomienie
+            # wygląda jak podmiana zbioru i kasuje najlepszy wynik.
+            _, _, meta2 = sa.load_dataset(str(kat / "cz_*.npz"))
+            check("opis sklejonego zbioru jest powtarzalny", meta == meta2,
+                  "" if meta == meta2 else f"{meta}\n{meta2}")
+            check("opis wymienia oba ziarna", "111" in meta and "222" in meta,
+                  meta)
+    except Exception as e:
+        check("wczytywanie z wzorca", False, f"{type(e).__name__}: {e}")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -887,7 +1003,7 @@ def main() -> int:
              test_window, test_waterfall, test_tone_in_band, test_fingerprint,
              test_generator_clip, test_radio, test_fist, test_nadajnik,
              test_fist_drift, test_standalone,
-             test_dpu_model, test_melref)
+             test_dpu_model, test_melref, test_sciezka_danych)
 
     for t in tests:
         try:
