@@ -68,6 +68,11 @@ out/xray_lab/
 !out/RANO.txt
 !out/koperta_*.txt
 
+# Odczyty prawdziwych nagran ZOSTAJA. To jedyny pomiar mowiacy o pracy
+# na antenie, a nie o syntetyku -- i jedyny, ktorego nie da sie odtworzyc
+# bez modelu i bez nagran (te sa poza repo, 106 MB).
+!out/nagrania_*.txt
+
 # --- zgłoszenia od operatorów: zawierają audio i znaki wywoławcze ---
 # Trafiają do biblioteki próbek po przejrzeniu, nie wprost do repo.
 zgloszenia/

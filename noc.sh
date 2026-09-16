@@ -24,9 +24,13 @@
 #      4. trening dpu  -> runs/cw2      (wdrażalny na KV260)
 #      5. trening gru  -> runs/gru1     (odniesienie: koszt braku rekurencji)
 #      6. koperta i błędy dla dpu
-#      7. koperta i błędy dla gru
+#      7. ODCZYT PRAWDZIWYCH NAGRAŃ z probki/ i porównanie z nadanym
 #      8. out/RANO.txt -- kilkanaście linii do przeczytania po powrocie
 #      9. commit + paczka git bundle + próba pushu
+#
+#  Etap 7 jest jedynym, który mówi o pracy NA ANTENIE. Dokładność
+#  walidacyjna dotyczy syntetyku: pierwszy model tego projektu miał
+#  98,68% i na paśmie dawał fragmenty.
 #
 #  Etapy 1-3 PRZERYWAJĄ przy awarii, bo bez nich nic nie ma sensu.
 #  Od etapu 4 awaria JEDNEGO nie zabija pozostałych: jeśli 'gru' padnie,
@@ -578,12 +582,49 @@ koperta () {
     return $RC
 }
 
+# --- ODCZYT PRAWDZIWYCH NAGRAŃ ------------------------------------------
+#  To jest jedyny etap, który mówi coś o pracy na antenie. Dokładność
+#  walidacyjna dotyczy syntetyku — pierwszy model tego projektu miał
+#  98,68% i na paśmie dawał fragmenty, a model z 15.09 ma 98,73% i dopóki
+#  nikt nie puści go na nagraniu z radia, ta liczba znaczy tyle samo.
+#
+#  Nagrania są na HDD, bo na_hdd.bat kopiuje CAŁY katalog probki/, razem
+#  z .wav. W repozytorium ich nie ma (106 MB) — do pobrania w wydaniu
+#  probki-v1.
+nagrania () {
+    local ARCH="$1" RUN="$2"
+    if [ ! -f "$RUN/best.keras" ]; then
+        echo "  brak $RUN/best.keras — nie ma czym odczytywać"
+        return 1
+    fi
+    if ! ls probki/*.wav >/dev/null 2>&1; then
+        echo "  brak nagrań w probki/ — pomijam"
+        echo "  (na_hdd.bat kopiuje je z pendraka; jeśli ich tam nie ma,"
+        echo "   pobierz wydanie probki-v1 albo wgraj z BD-R)"
+        return 1
+    fi
+    local WYNIK="$LOGI/nagrania_${ARCH}_${STEMPEL}.txt"
+    ETAP_LOG="$LOGI/noc_${STEMPEL}_nagrania_${ARCH}.log"
+    python -m tools.nagrania --model "$RUN/best.keras" --out "$WYNIK" \
+        > "$ETAP_LOG" 2>&1
+    local RC=$?
+    if [ -f "$WYNIK" ]; then
+        grep -aE "^(mic|radio|  odczyt:|  w całości|  w kolejności|RAZEM)" \
+            "$WYNIK" | sed 's/^/  /'
+    else
+        tail -12 "$ETAP_LOG"
+    fi
+    return $RC
+}
+
 etap "TRENING dpu -> $RUN_DPU"  trenuj dpu "$RUN_DPU"
 etap "KOPERTA dpu"              koperta dpu "$RUN_DPU"
+etap "NAGRANIA dpu"             nagrania dpu "$RUN_DPU"
 
 if [ "$TRENUJ_GRU" = "1" ]; then
     etap "TRENING gru -> $RUN_GRU"  trenuj gru "$RUN_GRU"
     etap "KOPERTA gru"              koperta gru "$RUN_GRU"
+    etap "NAGRANIA gru"             nagrania gru "$RUN_GRU"
 else
     echo
     echo "gru POMINIETE (osma pozycja = 1, zeby wlaczyc)."
@@ -688,6 +729,22 @@ PY
         echo
     fi
 
+    # Odczyt z prawdziwego radia idzie PRZED lista logow, bo to jest
+    # liczba, po ktora sie tu zaglada. Reszta to droga do niej.
+    for A in dpu gru; do
+        F="$LOGI/nagrania_${A}_${STEMPEL}.txt"
+        [ -f "$F" ] || continue
+        echo "PRAWDZIWE NAGRANIA ($A)"
+        echo
+        grep -aE "^(mic|radio)" "$F" | sed 's/^/  /'
+        echo
+        grep -aE "^  (odczyt|nadane|w całości|w kolejności):" "$F" \
+            | sed 's/^/  /' | head -24
+        echo
+        grep -a "^RAZEM" "$F" | sed 's/^/  /'
+        echo
+    done
+
     echo "PEŁNE LOGI"
     echo "  $GLOWNY"
     for F in "$LOGI"/noc_${STEMPEL}_*.log "$LOGI"/koperta_*_${STEMPEL}.txt; do
@@ -734,7 +791,8 @@ elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
     echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
 else
     git add -- 'runs/**/log.csv' 'runs/**/state.json' \
-               "$LOGI"/noc_*.log "$LOGI"/koperta_*.txt "$RANO" 2>/dev/null
+               "$LOGI"/noc_*.log "$LOGI"/koperta_*.txt \
+               "$LOGI"/nagrania_*.txt "$RANO" 2>/dev/null
 
     if git diff --cached --quiet; then
         echo "nic nowego w historii treningu — nie commituję"
