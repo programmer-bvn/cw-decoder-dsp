@@ -460,27 +460,72 @@ wyłącznie kolejnością. Uśrednienie po czasie zrównuje U z D.
 zbiorów. Zestawianie ich wprost daje fałszywy obraz — i właśnie dlatego
 są tu rozdzielone.
 
-### Model obecny (9.09.2026)
+### Model obecny (15.09.2026)
 
-Zbiór realistyczny: 200 tys. próbek, pełny model kanału, tempo 13–27 WPM.
-Architektura `dpu`, 100 epok, batch 256, mixed float16.
+Zbiór realistyczny: **1 mln próbek** w 5 częściach, pełny model kanału,
+tempo 13–27 WPM. Architektura `dpu`, 40 epok, batch 256, mixed float16.
+Trening 81 minut na RTX 3050.
 
-| | wynik |
+| | 200 tys. | **1 mln** |
+|---|---|---|
+| dokładność walidacyjna | 97,51% | **98,73%** |
+| błędy | 2,49% | **1,27%** |
+| `val_loss` minimum | 0,1224 (epoka 15) | **0,0637 (epoka 13)** |
+
+Pięć razy więcej danych zmniejszyło błąd **o połowę**. To odpowiedź na
+pytanie postawione po nocy 9/10.09: rozkład błędów był płaski, więc nie
+było jednej choroby do wyleczenia — był ogólny brak danych.
+
+Dla porządku, jedyne uczciwe porównanie z modelem sprzed modelu kanału:
+ten stary osiągał **86,56%** na tym samym zbiorze realistycznym. Jego
+98,68% dotyczyło zbioru o jednym tempie i bez zakłóceń.
+
+#### Koperta — zmierzona
+
+Sygnał idealny, siatka 9×7, po 40 próbek na komórkę (`tools/koperta.py`):
+
+| | zakres, w którym czyta |
 |---|---|
-| dokładność walidacyjna | **97,51%** (najlepsza w epoce 71) |
-| klasa 0 (puste radio) | 98,9% |
-| znaki | 97,3% |
-| znak wzięty za ciszę | 0,1% |
-| **stary model na TYM SAMYM zbiorze** | **86,56%** |
+| tempo | **10–30 WPM**, przy 750 Hz od 98 do 100% |
+| ton | **670–830 Hz**, pewnie tylko przy 750 Hz |
 
-Ostatni wiersz jest jedynym uczciwym porównaniem: **86,56% → 97,51%**.
-Poprzednie 98,68% dotyczyło zbioru bez modelu kanału i o jednym tempie,
-więc różnica 98,68 → 97,51 nie jest pogorszeniem, tylko zmianą zadania
-na trudniejsze.
+Problem tempa, który zabił pierwszy model (czytał tylko 18–22 WPM), jest
+rozwiązany — `WPM_JITTER = 7.0`.
 
-**Koperta tempa i tonu tego modelu NIE JEST jeszcze zmierzona.** Liczby
-18–22 WPM i 670–830 Hz niżej należą do modelu poprzedniego i nie wolno
-ich przypisywać obecnemu.
+#### Ton: więcej danych = WĘŻSZA koperta
+
+To jest wynik, którego się nie spodziewałem i trzeba go zapisać:
+
+| ton | model na 200 tys. | model na 1 mln |
+|---|---|---|
+| 650 Hz | 40–82% | **0–20%** |
+| 850 Hz | 5–25% | **0–2%** |
+
+650 i 850 Hz leżą **poza** zakresem treningowym (`TONE_CENTER=750`,
+`TONE_SPREAD=80`, czyli 670–830). Model na 200 tys. był niedouczony i
+trochę wylewał się poza ten zakres. Model na milionie dopasował się do
+rozkładu ściśle i poza nim milczy.
+
+To nie jest regres, tylko ten sam kompromis selektywność–odporność, który
+jest w tym projekcie wybrany świadomie: wąski trening ignoruje obcą stację
+obok. Ale ma konsekwencję, o której trzeba pamiętać przy wdrożeniu —
+**zależność od `dsp/tune.py` wzrosła**. Pętla dostrajania przestała być
+wygodą i stała się warunkiem działania. Rozstrojenie o 100 Hz bez
+przestrojenia front-endu daje teraz zero, nie „gorzej".
+
+#### Co zostało
+
+- **Model nadal zapamiętuje zbiór**, tylko później: `val_loss` ma minimum
+  w epoce 13 i potem rośnie. Dźwignia „więcej danych" nie jest wyczerpana.
+- **Rozkład błędów jest płaski i mały.** Najczęstsza pomyłka ma DWA
+  wystąpienia na 3000 próbek, reszta po jednym. Nie ma pojedynczej wady
+  do naprawienia.
+- **Obcinanie okna jest nieistotne** — 5 przypadków na 3000 (0,17%).
+  Etykietą jest środkowy z trzech znaków, a nadanie wstawiane jest
+  wyśrodkowane, więc znak z etykiety jest wycentrowany z konstrukcji.
+- **Rekurencja nie pomaga.** Noc 9/10.09: `dpu` i `gru` dały identyczne
+  97,51%, przy czterokrotnie dłuższym treningu i węższej kopercie tonu
+  dla `gru`. KV260 z DPUCZDX8G zostaje; U25/U50LV niepotrzebne.
 
 Co logi treningu mówią o granicy:
 

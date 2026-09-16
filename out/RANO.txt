@@ -1,36 +1,46 @@
 ============================================================
- NOC 2026-09-14  --  co wyszło
+ NOC 2026-09-15  --  co wyszło
 ============================================================
 
 ETAPY
-  TRENING dpu -> runs/dpu_1000000 BŁĄD kod 1, log: out/noc_20260914_1901_dpu.log
-  KOPERTA dpu                  BŁĄD kod 1, log: out/noc_20260914_1901_srodowisko.log
+  TRENING dpu -> runs/dpu_1000000 OK     81 min
+  KOPERTA dpu                  OK     1 min
 
 WYNIKI TRENINGU
 
-  runs/dpu_1000000 dpu (wdrażalny na KV260)           brak wyniku
+  runs/dpu_1000000  dpu (wdrażalny na KV260)
+      epok 40, najlepsza walidacja 98.73% (epoka 39)
+      val_loss: minimum 0.0637 w epoce 13, koniec 0.1211
+      ZAPAMIĘTYWANIE: val_loss rośnie od epoki 13. Epoki po 18 nic nie wniosły.
+      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
   runs/gru_1000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
-  --- dpu --- brak pomiaru
-
-CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ
-
-  TRENING dpu -> runs/dpu_1000000
-      kod 1, log: out/noc_20260914_1901_dpu.log
-  KOPERTA dpu
-      kod 1, log: out/noc_20260914_1901_srodowisko.log
-
-  Stan maszyny w momencie każdej awarii (nvidia-smi,
-  LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):
-      out/noc_20260914_1901_srodowisko.log
+  --- dpu ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 650-850 Hz
+    znak w całości w oknie:   98.7% trafień (2995 próbek)
+    znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+    NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+    Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+    5 przypadków na 3000 (0.17%).
+    Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+    ma. Nie jest ani potwierdzona, ani obalona — jest
+    NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+    znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+    z etykiety jest wycentrowany z konstrukcji.
+    Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+    tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+    a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+    choroby, jest ogólny brak danych.
 
 PEŁNE LOGI
-  out/noc_20260914_1901.log
-  out/noc_20260914_1901_diag.log                 8.0K
-  out/noc_20260914_1901_dpu.log                  4.0K
-  out/noc_20260914_1901_gen.log                  4.0K
-  out/noc_20260914_1901_srodowisko.log           12K
+  out/noc_20260915_1823.log
+  out/noc_20260915_1823_diag.log                 8.0K
+  out/noc_20260915_1823_dpu.log                  2.7M
+  out/noc_20260915_1823_gen.log                  4.0K
+  out/noc_20260915_1823_koperta_dpu.log          8.0K
+  out/noc_20260915_1823_srodowisko.log           4.0K
+  out/koperta_dpu_20260915_1823.txt              4.0K
 
 Na pendraka:  bvn_z.bat  (z Windows)
