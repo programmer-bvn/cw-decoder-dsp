@@ -81,21 +81,47 @@ rem     exFAT ma rozdzielczosc 2 s i nie trzyma strefy czasowej, wiec
 rem     porownanie czasow bywa zawodne -- wlasnie na tym stracilismy
 rem     pliki przy przenoszeniu. Kod ma kilkaset kB, kopiowanie za kazdym
 rem     razem nic nie kosztuje, a daje pewnosc.
+rem --- JESLI CEL JEST REPOZYTORIUM, NIE NADPISUJEMY KODU.
+rem     robocopy z /IS /IT nadpisuje pliki BEZWARUNKOWO, wiec w drzewie
+rem     roboczym gita zrobilby z kazdego pliku zmiane -- nawet gdy tresc
+rem     jest ta sama, bo zmienia znaczniki czasu, a przy roznicy choc
+rem     jednego bajtu skasowalby poprawke zrobiona po tamtej stronie.
+rem     Tam kod odswieza sie przez 'git pull --ff-only'.
+rem     Ustawienie repozytorium: ./srodowisko/hdd_repo.sh
+rem UWAGA NA %ERRORLEVEL% W NAWIASACH. cmd.exe rozwija zmienne przy
+rem PARSOWANIU calego bloku, a nie przy wykonaniu, wiec
+rem     if ... ( robocopy ... & set RC=%ERRORLEVEL% )
+rem zapisuje kod SPRZED bloku. Dlatego ponizej sa skoki, a nie nawiasy.
+rem Ten sam blad siedzial tu wczesniej przy RC2 i powodowal, ze awaria
+rem kopiowania nagran nigdy nie byla wykrywana.
+if exist "%CEL%\.git" goto :bez_kodu
 echo [1/2] kod...
 robocopy "%ZRODLO%." "%CEL%" *.py *.md *.txt *.sh *.cfg *.bat %OPCJE% /IS /IT %WYKLUCZ_KAT% %WYKLUCZ_PLIK%
 set RC1=%ERRORLEVEL%
+goto :po_kodzie
+
+:bez_kodu
+echo [1/2] kod... POMIJAM -- cel jest repozytorium git
+echo        odswiezenie kodu tam:  git pull --ff-only
+set RC1=0
+
+:po_kodzie
 
 rem --- PROBKI: nagrania, tylko rozniace sie. To 110 MB i nie zmieniaja
 rem     sie czesto; kopiowanie za kazdym razem zajechaloby pendraka
-rem     odczytami bez potrzeby.
+rem     odczytami bez potrzeby. Nagran NIE MA w repozytorium, wiec ta
+rem     czesc dziala tak samo, gdy cel jest repozytorium.
 echo [2/2] probki (nagrania)...
-if exist "%ZRODLO%probki" (
-    robocopy "%ZRODLO%probki" "%CEL%\probki" %OPCJE%
-    set RC2=%ERRORLEVEL%
-) else (
-    echo   brak katalogu probki -- pomijam
-    set RC2=0
-)
+if not exist "%ZRODLO%probki" goto :bez_probek
+robocopy "%ZRODLO%probki" "%CEL%\probki" %OPCJE%
+set RC2=%ERRORLEVEL%
+goto :po_probkach
+
+:bez_probek
+echo   brak katalogu probki -- pomijam
+set RC2=0
+
+:po_probkach
 
 echo.
 echo ===========================================================================

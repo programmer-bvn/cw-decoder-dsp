@@ -784,8 +784,11 @@ echo "--- historia treningu ---"
 
 if [ ! -d .git ]; then
     echo "to nie jest repozytorium git — pomijam"
-    echo "  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki"
-    echo "   wracają przez bvn_z.bat i to wystarcza)"
+    echo "  Wyniki wracają przez bvn_z.bat i to wystarcza, ale można mieć"
+    echo "  DRUGĄ DROGĘ, niezależną od pendraka. Jednorazowo, tutaj:"
+    echo "      ./srodowisko/hdd_repo.sh"
+    echo "  Ustawia ten katalog jako repozytorium NIE DOTYKAJĄC plików"
+    echo "  (git reset --mixed, nie clone), więc modele i zbiór zostają."
 elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
     echo "repozytorium bez ani jednego commita — pomijam"
     echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
