@@ -165,8 +165,17 @@ Noc 9/10.09.2026, ten sam zbiór, te same 40 epok:
 | `gru` (rekurencyjna) | 97,51% | 60 min | 650–750 Hz |
 
 Identyczny wynik, czterokrotnie dłuższy trening, **węższa** koperta.
-Rekurencja nie pomaga, więc brak warstw rekurencyjnych w DPUCZDX8G nie
-jest ograniczeniem: **KV260 zostaje, U25/U50LV niepotrzebne.**
+
+**ZAKRES TEGO WNIOSKU — dopisane 17.09.** Pomiar dotyczy głowicy
+„jeden znak z okna" i **tylko jej**. W dekoderze sekwencyjnym (CTC)
+rekurencja ma inne zadanie: modeluje ciąg, a nie pojedynczy znak, więc
+z tego wyniku nie wolno wnioskować, że tam też nic nie da. Referencyjny
+dekoder AG1LE używa dwóch warstw LSTM właśnie w tej roli.
+
+Wniosek sprzętowy zostaje więc warunkowy: **przy obecnej architekturze
+KV260 wystarcza**. Gdyby projekt poszedł w CTC z rekurencją, pytanie
+o DPUCZDX8G wraca — choć CTC daje się zbudować także na samych splotach,
+bez żadnej warstwy rekurencyjnej, więc i to nie jest przesądzone.
 
 ### Generowanie danych w locie
 
@@ -195,6 +204,48 @@ Hipoteza o obcinaniu okna została **sprawdzona i odrzucona**: obcięcie
 występuje w 5 przypadkach na 3000 (0,17%), bo etykietą jest środkowy
 z trzech znaków, a nadanie wstawiane jest wyśrodkowane. Przyczyna leży
 gdzie indziej i nie jest jeszcze ustalona.
+
+### Dekoder sekwencyjny (CTC) — jest gotowy kod odniesienia
+
+Wraca przy każdym problemie z powtórzeniami i przy gubieniu znaków, więc
+warto mieć zebrane, co o nim wiadomo.
+
+**Dlaczego to jest właściwa droga, a nie kolejne obejście.** CTC uczy
+sieć etykietować CAŁY ciąg zamiast wybierać jeden znak z okna. Scalanie
+powtórzeń jest jego wbudowaną własnością, nie dodatkiem — w TF1 widać to
+wprost w parametrze `ctc_merge_repeated=True`. Czyli `CCQQQCCCC`, lutowe
+`last_char` i wrześniowy próg 0,35 s to trzy objawy jednego braku.
+
+**Kod odniesienia leży na D888:** `AG1LE/LSTM_morse-master.zip`,
+plik `MorseDecoder.py`. Działający CTC na TF1:
+
+```python
+tf.compat.v1.nn.ctc_loss(labels=..., inputs=self.ctcIn3dTBC,
+                         sequence_length=..., ctc_merge_repeated=True)
+tf.nn.ctc_greedy_decoder(inputs=self.ctcIn3dTBC, sequence_length=...)
+```
+
+**Architektura (klasyczny CRNN, ten sam co w rozpoznawaniu pisma):**
+
+```
+5 warstw splotowych   jadra 5,5,3,3,3   kanaly 1->32->64->128->128->256
+pooling               (2,2)(2,2)(1,2)(1,2)(1,2)
+                      czas /4, czestotliwosc /32
+squeeze osi czestotliwosci  ->  sekwencja w czasie
+2 warstwy LSTM po 256 jednostek
+CTC
+```
+
+Warto zauważyć, jak dobrany jest pooling: częstotliwość jest zgniatana
+32-krotnie, a czas tylko 4-krotnie. Oś czasu musi zostać, bo to po niej
+biegnie sekwencja — i to jest różnica wobec naszej obecnej sieci, która
+spłaszcza obie osie do jednego wektora.
+
+**Czego ten kod NIE rozwiązuje.** Model AG1LE był uruchomiony w tym
+projekcie jako pierwszy punkt odniesienia i działał, ale był nieodporny
+na szum, zmianę tempa i zmianę tonu — czyli dokładnie na to, czemu służy
+nasz model kanału w `dsp/radio.py`. Do wzięcia jest struktura wyjścia,
+nie cały pomysł.
 
 ### Model zapamiętuje zbiór
 
