@@ -70,7 +70,23 @@ Skutek: strażnik pamięci w `train_rtx.py` liczy z tego, co widzi WSL, więc
 przy domyślnym ustawieniu przepuści około **1,2 mln próbek**, choć maszyna
 uniosłaby dwa razy tyle.
 
-Podniesienie limitu — plik `C:\Users\<użytkownik>\.wslconfig` po stronie
+Podniesienie limitu — skryptem, z Windows:
+
+```
+srodowisko\wslconfig.bat        24 GB
+srodowisko\wslconfig.bat 28     inna wartość
+```
+
+Skrypt **nie nadpisuje istniejącego pliku**: `.wslconfig` dotyczy
+wszystkich dystrybucji na maszynie i może zawierać ustawienia, o których
+nie wie. Gdy plik już jest, pokazuje jego treść, mówi co dopisać
+i kończy. Nie ustawia też `processors` — domyślnie WSL dostaje wszystkie
+rdzenie i tak ma zostać, bo generowanie zbioru chodzi na jedenastu
+procesach, a każdy zabrany rdzeń to dłuższe generowanie.
+
+Na koniec pyta o `wsl --shutdown`, bo bez tego zmiana nie wchodzi.
+
+Albo z ręki, plik `C:\Users\<użytkownik>\.wslconfig` po stronie
 **Windows**, nie w WSL:
 
 ```ini
