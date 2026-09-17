@@ -186,6 +186,51 @@ przemiata tempo i ton po siatce i pokazuje, GDZIE model milknie.
 
 ---
 
+### Odjazd nośnej kończył dekodowanie — i nadal by kończył
+
+**Objaw, zaobserwowany na modelu AG1LE.** Dekodowanie idzie 1:1, po czym
+ton odjeżdża odrobinę w bok i odczyt się urywa. Nie pogarsza się — ustaje.
+
+**Dlaczego tak się dzieje.** Sieć uczona na wąskim rozkładzie tonu widzi
+przestrojony sygnał jako coś, czego nigdy nie widziała. Nie ma powodu
+zgadywać „to pewnie to samo, tylko wyżej" — dla niej to inny obraz.
+
+**To NIE jest wada, którą naprawia się treningiem.** Poszerzenie rozkładu
+tonu na całe 400–1200 Hz dałoby odporność, ale kosztem SELEKTYWNOŚCI:
+model przestałby ignorować obcą stację kilkadziesiąt herców obok, a na
+paśmie to jest częstszy przypadek niż rozstrojenie. Wybór jest świadomy.
+
+**Zabezpieczenie: `dsp/tune.py`.** Pętla śledząca ton przestraja sygnał
+PRZED front-endem, więc do sieci zawsze trafia ton nominalny. Zakresy:
+
+| | |
+|---|---|
+| zaczep | całe pasmo `FMIN`–`FMAX`, czyli 400–1200 Hz |
+| nadążanie | `CAPTURE_HZ = 12` Hz na krok 50 ms, czyli do **240 Hz/s** |
+| wybieg bez sygnału | `HOLD_S = 3` s |
+
+**Zmierzone na prawdziwych nagraniach** (16.09.2026, `tools/nagrania.py`):
+zaczep w **100% czasu na wszystkich czterech**, mediany tonu 700, 750,
+750 i 839 Hz. Czyli pętla robi dokładnie to, do czego jest.
+
+**DWIE RÓŻNE KOPERTY — i łatwo je pomylić.** `tools/koperta.py` podaje
+obraz sieci WPROST, bez przestrajania, więc jego 670–830 Hz to koperta
+**samej sieci**. Tolerancja CAŁEGO UKŁADU to 400–1200 Hz i wyznacza ją
+`tune.py`, nie model. Mieszanie tych dwóch liczb prowadzi albo do paniki
+(„model czyta tylko 160 Hz pasma"), albo do złudzenia („mamy 800 Hz
+zapasu"), zależnie od tego, którą się weźmie.
+
+**Pułapka, która właśnie się zacieśniła.** Zwiększenie zbioru z 200 tys.
+do 1 mln ZWĘZIŁO kopertę sieci: przy 650 Hz trafienia spadły z 40–82% do
+0–20%. Lepszy model to ostrzejsze milczenie poza rozkładem. Znaczy to,
+że **udział `tune.py` w działaniu układu rośnie z każdą poprawą modelu**.
+Gdy pętla zgubi zaczep, odczyt nie pogorszy się — zniknie, dokładnie tak
+jak w AG1LE. Stąd `lock_report()` podaje procent czasu z zaczepem i stąd
+ta liczba jest w raporcie z nagrań: to jest wskaźnik, który trzeba
+obserwować, a nie założyć.
+
+---
+
 ### Zbiór trafiał do pamięci karty zamiast do RAM
 
 **Objaw.** Trening padał po minucie na zbiorach większych niż 200 tys.
@@ -241,8 +286,13 @@ Zamiast tego zbiór powstaje zawczasu w kilku częściach.
 ### Model AG1LE na TF1
 
 Uruchomiony jako pierwszy punkt odniesienia tego projektu i **działał**.
-Odrzucony, bo był nieodporny na szum, zmianę tempa i zmianę tonu.
-Materiały w `AG1LE/` na D888.
+Operator: „dekodowało 1:1, ale delikatny odjazd czegoś w bok, np. nośnej,
+i po dekodowaniu". Odrzucony, bo był nieodporny na szum, zmianę tempa
+i zmianę tonu. Buildy i materiały w `AG1LE/` na D888.
+
+To „1:1 aż do odjazdu nośnej" jest ważniejsze niż samo odrzucenie —
+opisuje tryb awarii, który **mamy do dziś**, tylko obudowany
+zabezpieczeniem. Patrz niżej.
 
 ---
 
