@@ -114,6 +114,60 @@ parametrów, więc rozjazd jest wykrywany, a nie przemilczany.
 
 ---
 
+### Skalowanie względem klipu — tu stanął etap lutowy
+
+**Skąd się wziął obecny front-end.** Punktem wyjścia był wodospad:
+mel-spektrogram rysowany jako wąski pasek 128×32 z czasem na osi X.
+Operator opisuje te obrazy jako „wyglądające jak laska niewidomego" —
+długi pasek z segmentami, czytany wzrokiem. Cała interpretacja szła
+graficznie i to była dobra intuicja, bo telegrafista rozpoznaje wzór,
+a nie liczby.
+
+Etap stanął na **skalowaniu danych i sygnałów**. Przyczyna jest w dwóch
+linijkach `CW_decoder_luty_2026/Audio2Waterfall.py`:
+
+```python
+spec_db   = librosa.power_to_db(spec, ref=np.max)
+spec_norm = (spec_db - np.min(spec_db)) / (np.max(spec_db) - np.min(spec_db))
+```
+
+**Obie normalizacje są WZGLĘDEM SAMEGO KLIPU.** `ref=np.max` odnosi
+decybele do najgłośniejszego punktu w tym klipie, a min-max rozciąga
+kontrast do pełnej skali — również w obrębie klipu.
+
+Skutki, wszystkie zabójcze dla uczenia:
+
+- sygnał mocny i ledwo słyszalny dają **identyczny obrazek**, więc sieć
+  nie ma jak nauczyć się, co jest sygnałem, a co szumem tła;
+- ten sam sygnał fizyczny wygląda inaczej zależnie od tego, co jeszcze
+  jest w klipie — wystarczy jeden trzask, żeby przeskalować całą resztę;
+- „cisza" po rozciągnięciu kontrastu przestaje być cicha, bo sam szum
+  zostaje rozciągnięty na pełny zakres.
+
+**Gdzie to mieszka teraz.** Obecny front-end jest bezpośrednim potomkiem
+tamtego wodospadu — `n_mels=32`, `hop_length=160`, obraz 128×32, czas na
+osi X, wszystko to samo. Naprawiona jest wyłącznie skala:
+
+| | luty 2026 | teraz |
+|---|---|---|
+| odniesienie dB | `ref=np.max` (klip) | `DB_REF = 1.0` (bezwzględne) |
+| zakres | `min..max` klipu | `DB_MIN=-30`, `DB_MAX=24` (zmierzone) |
+| obcinanie | `top_db` domyślny | `top_db` nie istnieje |
+
+Dlatego w `dsp/config.py` przy `DB_MIN`/`DB_MAX` stoi adnotacja, że są
+ZMIERZONE, nie dobrane. I dlatego `diag.py` ma osobny TEST 4 na skalę
+bezwzględną — bo to jest ta jedna rzecz, której zepsucie nie daje błędu,
+tylko cicho psuje uczenie.
+
+**Wniosek ogólny.** Normalizacja „na obrazek" jest odruchem z widzenia
+komputerowego, gdzie jasność sceny naprawdę nie ma znaczenia. W radiu
+poziom sygnału JEST informacją. To samo nieporozumienie wróciło później
+w innej postaci: nagrania mikrofonowe przesterowane o 12 dB nasycały
+obraz przy `DB_MAX` — stąd `auto_gain_db()` w `wav2net`, które ustawia
+poziom PRZED front-endem, zamiast pozwolić front-endowi się dopasować.
+
+---
+
 ### Model czytał tylko 18–22 WPM
 
 **Objaw.** 98,68% na walidacji, a na paśmie fragmenty albo nic.
