@@ -269,10 +269,24 @@ zostaje w paśmie, że nadal wskazuje ton nadania, i że sam szum bez
 sygnału nie produkuje zaczepu byle gdzie.
 
 **Czego to NIE chroni.** Silne zakłócenie WEWNĄTRZ 400–1200 Hz — obca
-stacja, nośna — może przejąć pętlę i to nie jest błąd, tylko ta sama
-sytuacja, w której jest człowiek. Widać to na `radio1`: dwie stacje,
-mediana tonu 839 Hz. Odpowiedzią jest filtr w radiu, o którym operator
-mówi, że sensowne minimum to 250 Hz.
+stacja, nośna — może przejąć pętlę. To nie jest błąd, tylko ta sama
+sytuacja, w której jest człowiek. Widać to na `radio1`: dwie stacje
+55 Hz od siebie (790 i 845 Hz), mediana zaczepu 839 Hz — pętla wybrała
+mocniejszą, nie tę, której chcemy.
+
+**Odpowiedzią NIE jest zawężanie filtra.** Napisałem tak najpierw i było
+to błędne: przy odstępie 55 Hz filtr 250 Hz przepuszcza obie stacje,
+a zawężenie na tyle, żeby odciąć jedną, ucięłoby też drugą razem z jej
+wstęgami kluczowania. Operator w tej sytuacji używa **filtra notch** —
+wycina jedną konkretną częstotliwość i zostawia resztę pasma.
+
+To są dwa różne narzędzia do dwóch różnych przypadków:
+
+| | wąski filtr (250 Hz) | notch |
+|---|---|---|
+| co robi | przepuszcza okno wokół tonu | wycina jedną częstotliwość |
+| kiedy | zakłócenie DALEKO w paśmie | zakłócenie BLISKO sygnału |
+| na `radio1` | nie pomoże | to jest to |
 
 ---
 
@@ -395,6 +409,33 @@ projekcie jako pierwszy punkt odniesienia i działał, ale był nieodporny
 na szum, zmianę tempa i zmianę tonu — czyli dokładnie na to, czemu służy
 nasz model kanału w `dsp/radio.py`. Do wzięcia jest struktura wyjścia,
 nie cały pomysł.
+
+### Brak notcha — układ nie ma narzędzia, po które sięga operator
+
+**Luka.** QRM jest w modelu kanału (`QRM_PROB = 0.35`, amplituda do 0,35,
+czyli druga stacja bywa mocniejsza od naszej), więc sieć jest UCZONA to
+znosić. Ale w całym łańcuchu DSP nie ma ani jednego notcha — sprawdzone,
+słowo nie występuje w kodzie. Operator przy dwóch stacjach obok siebie
+sięga po notch; nasz układ nie ma czym.
+
+**Gdzie to by mieszkało.** W `dsp/tune.py`, obok przestrajania, bo tam
+już liczone są widma bloków i tam jest znany ton chciany. Algorytm
+oczywisty: po zaczepieniu na `f0` znaleźć pozostałe wąskie prążki
+w paśmie o wystarczającym SNR i wytłumić je pasmowo-zaporowo
+(`scipy.signal.iirnotch`; scipy jest już zależnością, `tune.retune`
+używa `hilbert`).
+
+**Trudność jest realna i warto ją nazwać przed pisaniem kodu.** Notch ma
+skończoną szerokość, a kluczowanie CW rozmywa nośną: przy 20 WPM kropka
+trwa 60 ms, więc wstęgi sięgają rzędu ±25 Hz. Przy odstępie 55 Hz notch
+musi być węższy niż jakieś 30 Hz, żeby nie zjadać wstęg sygnału
+chcianego. To jest do zmierzenia, nie do zgadnięcia — i mamy na czym:
+`radio1` jako przypadek prawdziwy oraz `radio.add_qrm` jako źródło
+przypadków syntetycznych o znanym odstępie.
+
+**Czego to NIE zastąpi.** Notch usuwa nośną zakłócającą, ale nie pomoże,
+gdy obie stacje są w tym samym miejscu widma albo gdy zakłócenie jest
+szerokopasmowe (QRN, trzaski). Tam zostaje sieć i model kanału.
 
 ### Model zapamiętuje zbiór
 
