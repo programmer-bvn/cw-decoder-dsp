@@ -60,6 +60,20 @@ Do zmierzenia z nagrania: przebieg częstotliwości chwilowej wewnątrz
 pojedynczej kreski (`dsp/tune.py` ma już do tego maszynerię) oraz
 obwiednia amplitudy elementu.
 
+**Skala analogowa NIE jest tu przeszkodą.** TS-520 ma przekładnię zębatą
+i skalę analogową, więc nie ustawi się go co do herca — ale wszystkie
+trzy wielkości są **względne wewnątrz sygnału**: o ile ton spada
+w trakcie kreski, o ile siada amplituda elementu, jak ton wędruje przez
+klip. Punkt wyjścia nie ma znaczenia, a samą częstotliwość i tak
+odczytujemy z nagrania przez `tune.py`, nie ze skali. `probki.py` robi
+tak od początku — dlatego w opisach stoi „mediana tonu 750 Hz" jako
+POMIAR, a nie jako założenie.
+
+Co więcej, niestabilność przekładni jest tu **materiałem, a nie wadą**:
+`DRIFT_HZ = 8.0` opisuje dokładnie to, czego analogowy VFO nie umie
+utrzymać. Jedyny warunek praktyczny to trafić tonem gdziekolwiek
+w 400–1200 Hz, żeby front-end i pętla śledząca go widziały.
+
 ### Trzy rodzaje timingu (źródła 3, 5, 6)
 
 Generator ma trzy osobne pokrętła i każde odpowiada innemu sposobowi
@@ -101,6 +115,24 @@ co się dzieje poza nią. Na paśmie rozstrojonych stacji jest pełno.
    droga do zmierzenia chirpu, sagu i dryfu.
 3. **Źródło 7 albo 2** — pasmo, ze szczególnym oczekiwaniem na stacje
    rozstrojone. Odczyt ze słuchu w `nadane:`, choćby częściowy.
+
+## Krzywa rozstrojenia — tylko IC-7300
+
+Osobna sprawa, którą łatwo pomylić z powyższym. Żeby zmierzyć, ILE
+dokładnie model traci przy rozstrojeniu o 100, 200 i 300 Hz, potrzeba
+nadajnika albo odbiornika, który przestraja się o ZNANĄ wartość. To
+wyklucza TS-520 z jego przekładnią i skalą analogową — tam nie da się
+powiedzieć „przekręciłem o 200 Hz".
+
+Robi się to na IC-7300MK2: VFO cyfrowe, krok zadawany co do herca, więc
+rozstrojenie jest znane z nastawy, a nie zgadywane z nagrania. Nadanie
+z pamięci (źródło 6 albo 8) daje przy tym pełną prawdę naziemną, więc
+wychodzi z tego krzywa — dokładność w funkcji rozstrojenia — a nie
+pojedynczy punkt.
+
+Nagrania z pasma tego nie zastąpią: rozstrojonych stacji jest tam pełno,
+ale nie wiadomo O ILE są rozstrojone ani co nadają. Mierzą co innego —
+czy pętla śledząca się zaczepia i czy odczyt ma sens.
 4. Reszta jako uzupełnienie macierzy.
 
 ## Jak dołożyć nagranie
