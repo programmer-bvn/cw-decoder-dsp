@@ -374,6 +374,90 @@ def _tabela_wpm(rodzaje, wpmy, widoki) -> list[str]:
     return w
 
 
+def _tabela_dlugosci(prawdy, pred) -> list[str]:
+    """Trafienia w funkcji DŁUGOŚCI KODU znaku.
+
+    Po co osobna tabela. Z odczytów prawdziwych nagrań widać, że gubione
+    są znaki KRÓTKIE (`S ...`, `N -.`, `E .`), a czytane DŁUGIE
+    (`Q --.-`, `2 ..---`, `B -...`). To jest obserwacja z zupy znaków,
+    więc słaba — tu jest ta sama rzecz policzona na 3000 próbek
+    z etykietą, gdzie wiadomo, co było nadane.
+
+    Jeśli trafienia rosną monotonicznie z długością kodu, hipoteza
+    „krótkie giną" jest potwierdzona i wiadomo, czego szukać: przy
+    jednoelementowym `E` w oknie 2,56 s jest 4-5 innych znaków, więc
+    „środkowy" jest najsłabiej określony. Jeśli zależności nie ma,
+    obserwacja z nagrań bierze się z czegoś innego — na przykład z tego,
+    że długie znaki po prostu częściej wygrywają przy scalaniu
+    powtórzeń, bo trwają dłużej i zbierają więcej okien.
+    """
+    from collections import defaultdict
+    ile = defaultdict(int)
+    traf = defaultdict(int)
+    najgorsze = defaultdict(lambda: [0, 0])      # znak -> [trafione, razem]
+
+    for t, p in zip(prawdy, pred):
+        n = len(C.MORSE_DICT.get(t, ""))
+        if not n:
+            continue
+        ile[n] += 1
+        najgorsze[t][1] += 1
+        if t == p:
+            traf[n] += 1
+            najgorsze[t][0] += 1
+
+    w = ["TRAFIENIA WOBEC DŁUGOŚCI KODU", ""]
+    w.append("  elementów   próbek   trafień   przykłady")
+    w.append("  " + "-" * 52)
+    # Pelne grupy, sprawdzone wobec C.MORSE_DICT: 2 + 4 + 8 + 12 + 10 = 36.
+    PRZYKLADY = {1: "E T", 2: "A I M N", 3: "D G K O R S U W",
+                 4: "B C F H J L P Q V X Y Z", 5: "cyfry 0-9"}
+    for n in sorted(ile):
+        proc = 100.0 * traf[n] / ile[n]
+        w.append(f"  {n:^9d} {ile[n]:8d}   {proc:6.1f}%   "
+                 f"{PRZYKLADY.get(n, '')}")
+
+    # Czy jest zależność? Porównujemy skrajne grupy, jeśli obie mają dość
+    # próbek — inaczej różnica byłaby szumem, jak przy wyroku o oknie.
+    krotkie = sum(traf[n] for n in ile if n <= 2)
+    krotkie_n = sum(ile[n] for n in ile if n <= 2)
+    dlugie = sum(traf[n] for n in ile if n >= 4)
+    dlugie_n = sum(ile[n] for n in ile if n >= 4)
+    w.append("")
+    if krotkie_n >= 100 and dlugie_n >= 100:
+        pk = 100.0 * krotkie / krotkie_n
+        pd = 100.0 * dlugie / dlugie_n
+        w.append(f"  krótkie (1-2 elementy): {pk:.1f}%  ({krotkie_n} próbek)")
+        w.append(f"  długie  (4-5 elementów): {pd:.1f}%  ({dlugie_n} próbek)")
+        roznica = pd - pk
+        if roznica >= 3.0:
+            w.append(f"  Różnica {roznica:.1f} pp na korzyść długich —")
+            w.append("  hipoteza 'krótkie giną' POTWIERDZONA na syntetyku.")
+        elif roznica <= -3.0:
+            w.append(f"  Różnica {-roznica:.1f} pp na korzyść KRÓTKICH —")
+            w.append("  odwrotnie, niż widać w odczytach z nagrań.")
+        else:
+            w.append(f"  Różnica tylko {abs(roznica):.1f} pp — zależności NIE MA.")
+            w.append("  Czyli gubienie krótkich znaków na nagraniach bierze się")
+            w.append("  nie z samej sieci, a z czegoś dalej: najpewniej z tego,")
+            w.append("  że długie znaki trwają dłużej, zbierają więcej okien")
+            w.append("  i wygrywają przy scalaniu powtórzeń.")
+    else:
+        w.append(f"  za mało próbek w skrajnych grupach "
+                 f"({krotkie_n} i {dlugie_n}) — podnieś --n-bledy")
+
+    # Pięć najgorzej czytanych znaków, z kodem — to mówi, czego szukać.
+    zle = sorted(((t, a / max(1, b), b) for t, (a, b) in najgorsze.items()
+                  if b >= 20), key=lambda x: x[1])[:5]
+    if zle:
+        w.append("")
+        w.append("  najgorzej czytane znaki:")
+        for t, p, b in zle:
+            w.append(f"    {t} {C.MORSE_DICT.get(t, '?'):6s} "
+                     f"{p*100:5.1f}%  ({b} próbek)")
+    return w
+
+
 def _najczestsze(prawdy, pred, ile: int = 12) -> list[str]:
     from collections import Counter
     c = Counter((t, p) for t, p in zip(prawdy, pred) if t != p)
@@ -434,6 +518,7 @@ def main(argv=None) -> int:
     tab, zebrane = _tabela_widocznosci(rodzaje, widoki)
     wiersze += tab + [""] + _wyrok(zebrane) + [""]
     wiersze += _tabela_wpm(rodzaje, wpmy, widoki) + [""]
+    wiersze += _tabela_dlugosci(prawdy, pred) + [""]
     wiersze += _najczestsze(prawdy, pred) + [""]
 
     tekst = "\n".join(wiersze)
