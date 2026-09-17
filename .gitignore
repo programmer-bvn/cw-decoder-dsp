@@ -132,7 +132,14 @@ _netrc
 #  Dokumentacja projektu, jeśli powstanie, idzie do docs/ i jest wyjęta niżej.
 *.md
 !README.md
+!HISTORIA.md
 !docs/**/*.md
+
+# Rozroznienie, ktore tu obowiazuje: DOKUMENT PROJEKTU zostaje, NOTATKA
+# ROBOCZA nie. README mowi, jak jest. HISTORIA mowi, co juz probowano
+# i czym sie skonczylo -- bez niej rozwiazanie znalezione w lutym zostalo
+# zgubione do wrzesnia. Notatki (zapisy rozmow, rozwazania, slepe uliczki)
+# mieszkaja w I:vn i sa materialem prywatnym.
 
 # Poprzednie wpisy na konkretne nazwy notatek od falownika są teraz
 # nadmiarowe (łapie je *.md), ale zostawione świadomie: mówią, skąd te
