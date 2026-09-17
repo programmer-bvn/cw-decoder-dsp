@@ -1,0 +1,39 @@
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/dpu_1000000/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt: CCQQQCCCCQQQQBBBVVVEQQ22BVVEQ22BVVPPSEEECCCQQCCQQESSQ2BVSSECQQQQQQQQCCCQQQCCCQQQEESQQQ22BBVSEEPPP2MMSESSEQ222BBVNEEERMMMEXKKSFFEECAALRLRREUUURSSSSSISE555599SSSSSSERRRRRMYRRIIUUAUARUUE4XQQTTQQTHIIIIIIBBYYDDGOSSSBYDGOOOSSEEXEED82F2P22MMSSSEEHSQ22BVV
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt: CCQECCMTTTTCQCQQBVV6SQ2BBBVNPPPSSSSEEE65SIQCCCQCQCCQQQQRQQDDDEESQQ22BBVVVNNNSQQ22EVVVVVXXP22KKBBSP2KBBSSSP22QKKBP222KKBPSSSEV7H333SS85VV4VVVVTEEEVVVVVVVEEIIIISAIUSSUAAAUUARRIIIUUUSSEEEEEAAPSSAIUUUUAQQCCCQQCCQQLZDLDEQ2BSQ2BSQ2BBNNSEE
+  nadane: CQ SQ2BVN 73
+  w całości:    1/3   (CQ)
+  w kolejności: 3/3   (CQ SQ2BVN 73)
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt: QCQQCQZZDZDDEEEQ2BQ2BBQ2BNNSS
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    3/6   (CQx2 DE)
+  w kolejności: 3/6   (CQx2 DE)
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt: OB5O8525885555858PZ55GG988999988895259999C699939CB8859905555EEE85952999969XX9F8855555HH99585555599555599988552587H557XQ788L3L570095999X509999999999998552999E99999969999L5999999955559999999999
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 4/9, w kolejności 6/9
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.

@@ -1,0 +1,196 @@
+============================================================
+ NOC TRENINGOWA  2026-09-16 17:44
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260916_1744.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+venv:   /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   11 katalogów w LD_LIBRARY_PATH
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789573464.472539     622 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 68/68 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (5 x 200000 = 1000000 próbek)
+czesci/morse_200000_00.npz: BRAKUJE kolumn modelu kanalu: chirp sag hum agc_tau fist_drift gap_jitter
+-> czesc powstala PRZED modelem kanalu, generuje od nowa
+wolne miejsce: 731260 MB, potrzeba ~6148 MB
+generuję 5 części po 200000 próbek (~14 min każda)...
+========================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms  klas=37
+------------------------------------------------------------------------
+[1/5] czesci/morse_200000_00.npz juz jest — pomijam
+[2/5] czesci/morse_200000_01.npz juz jest — pomijam
+[3/5] czesci/morse_200000_02.npz juz jest — pomijam
+[4/5] czesci/morse_200000_03.npz juz jest — pomijam
+[5/5] czesci/morse_200000_04.npz juz jest — pomijam
+
+Gotowe. Trening: --dataset 'czesci/morse_200000_*.npz'
+
+============================================================
+ TRENING dpu -> runs/dpu_1000000     17:46
+============================================================
+  w runs/dpu_1000000/state.json: epoka 40 z 40
+  ten przebieg jest już ukończony — pomijam
+  OK, 0 min
+
+============================================================
+ KOPERTA dpu     17:46
+============================================================
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .     20     50     10      .      .
+     13            .      .     78    100     52      .      .
+     15            .      .      .    100      .      .      .
+     18            .      .      .    100      .      .      .
+     20            .      .      .    100      .      .      .
+     22            .      .      8    100      2      .      .
+     25            .      .     18    100      2      .      .
+     27            .      .     20     98      2      .      .
+     30            .      .      .     98      2      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+WYROK
+
+  znak w całości w oknie:   98.7% trafień (2995 próbek)
+  znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  5 przypadków na 3000 (0.17%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+  OK, 1 min
+
+============================================================
+ NAGRANIA dpu     17:47
+============================================================
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+    odczyt: CCQQQCCCCQQQQBBBVVVEQQ22BVVEQ22BVVPPSEEECCCQQCCQQESSQ2BVSSECQQQQQQQQCCCQQQCCCQQQEESQQQ22BBVSEEPPP2MMSESSEQ222BBVNEEERMMMEXKKSFFEECAALRLRREUUURSSSSSISE555599SSSSSSERRRRRMYRRIIUUAUARUUE4XQQTTQQTHIIIIIIBBYYDDGOSSSBYDGOOOSSEEXEED82F2P22MMSSSEEHSQ22BVV
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+    odczyt: CCQECCMTTTTCQCQQBVV6SQ2BBBVNPPPSSSSEEE65SIQCCCQCQCCQQQQRQQDDDEESQQ22BBVVVNNNSQQ22EVVVVVXXP22KKBBSP2KBBSSSP22QKKBP222KKBPSSSEV7H333SS85VV4VVVVTEEEVVVVVVVEEIIIISAIUSSUAAAUUARRIIIUUUSSEEEEEAAPSSAIUUUUAQQCCCQQCCQQLZDLDEQ2BSQ2BSQ2BBNNSEE
+    w całości:    1/3   (CQ)
+    w kolejności: 3/3   (CQ SQ2BVN 73)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+    odczyt: QCQQCQZZDZDDEEEQ2BQ2BBQ2BNNSS
+    w całości:    3/6   (CQx2 DE)
+    w kolejności: 3/6   (CQx2 DE)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+    odczyt: OB5O8525885555858PZ55GG988999988895259999C699939CB8859905555EEE85952999969XX9F8855555HH99585555599555599988552587H557XQ788L3L570095999X509999999999998552999E99999969999L5999999955559999999999
+  RAZEM na nagraniach z zapisaną treścią: w całości 4/9, w kolejności 6/9
+  OK, 1 min
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-09-16  --  co wyszło
+============================================================
+
+ETAPY
+  TRENING dpu -> runs/dpu_1000000 OK     0 min
+  KOPERTA dpu                  OK     1 min
+  NAGRANIA dpu                 OK     1 min
+
+WYNIKI TRENINGU
+
+  runs/dpu_1000000  dpu (wdrażalny na KV260)
+      epok 40, najlepsza walidacja 98.73% (epoka 39)
+      val_loss: minimum 0.0637 w epoce 13, koniec 0.1211
+      ZAPAMIĘTYWANIE: val_loss rośnie od epoki 13. Epoki po 18 nic nie wniosły.
+      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
+  runs/gru_1000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 650-850 Hz
+    znak w całości w oknie:   98.7% trafień (2995 próbek)
+    znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+    NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+    Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+    5 przypadków na 3000 (0.17%).
+    Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+    ma. Nie jest ani potwierdzona, ani obalona — jest
+    NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+    znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+    z etykiety jest wycentrowany z konstrukcji.
+    Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+    tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+    a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+    choroby, jest ogólny brak danych.
+
+PRAWDZIWE NAGRANIA (dpu)
+
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+
+    odczyt: CCQQQCCCCQQQQBBBVVVEQQ22BVVEQ22BVVPPSEEECCCQQCCQQESSQ2BVSSECQQQQQQQQCCCQQQCCCQQQEESQQQ22BBVSEEPPP2MMSESSEQ222BBVNEEERMMMEXKKSFFEECAALRLRREUUURSSSSSISE555599SSSSSSERRRRRMYRRIIUUAUARUUE4XQQTTQQTHIIIIIIBBYYDDGOSSSBYDGOOOSSEEXEED82F2P22MMSSSEEHSQ22BVV
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    odczyt: CCQECCMTTTTCQCQQBVV6SQ2BBBVNPPPSSSSEEE65SIQCCCQCQCCQQQQRQQDDDEESQQ22BBVVVNNNSQQ22EVVVVVXXP22KKBBSP2KBBSSSP22QKKBP222KKBPSSSEV7H333SS85VV4VVVVTEEEVVVVVVVEEIIIISAIUSSUAAAUUARRIIIUUUSSEEEEEAAPSSAIUUUUAQQCCCQQCCQQLZDLDEQ2BSQ2BSQ2BBNNSEE
+    nadane: CQ SQ2BVN 73
+    w całości:    1/3   (CQ)
+    w kolejności: 3/3   (CQ SQ2BVN 73)
+    odczyt: QCQQCQZZDZDDEEEQ2BQ2BBQ2BNNSS
+    nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+    w całości:    3/6   (CQx2 DE)
+    w kolejności: 3/6   (CQx2 DE)
+    odczyt: OB5O8525885555858PZ55GG988999988895259999C699939CB8859905555EEE85952999969XX9F8855555HH99585555599555599988552587H557XQ788L3L570095999X509999999999998552999E99999969999L5999999955559999999999
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+  RAZEM na nagraniach z zapisaną treścią: w całości 4/9, w kolejności 6/9
+
+PEŁNE LOGI
+  out/noc_20260916_1744.log
+  out/noc_20260916_1744_diag.log                 8.0K
+  out/noc_20260916_1744_gen.log                  4.0K
+  out/noc_20260916_1744_koperta_dpu.log          8.0K
+  out/noc_20260916_1744_nagrania_dpu.log         8.0K
+  out/noc_20260916_1744_srodowisko.log           4.0K
+  out/koperta_dpu_20260916_1744.txt              4.0K
+
+Na pendraka:  bvn_z.bat  (z Windows)
+============================================================
+
+--- historia treningu ---
+to nie jest repozytorium git — pomijam
+  Wyniki wracają przez bvn_z.bat i to wystarcza, ale można mieć
+  DRUGĄ DROGĘ, niezależną od pendraka. Jednorazowo, tutaj:
+      ./srodowisko/hdd_repo.sh
+  Ustawia ten katalog jako repozytorium NIE DOTYKAJĄC plików
+  (git reset --mixed, nie clone), więc modele i zbiór zostają.
+
+Koniec: 2026-09-16 17:49
+Do przeczytania: out/RANO.txt

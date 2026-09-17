@@ -1,0 +1,85 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-09-16 17:44:17
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  
+wersja: ./noc.sh: line 179: python: command not found
+VIRTUAL_ENV: <brak>
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  <pusty>
+
+--- XLA_FLAGS ---
+  <brak>
+
+--- nvidia-smi ---
+Wed Sep 16 17:44:17 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   27C    P5             21W /   70W |     354MiB /   6144MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              32      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+BŁĄD: nie ma 'python' w PATH.
+Najpierw:  source srodowisko/rtx3050_setenv.sh
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       826Mi        14Gi       3.5Mi       808Mi        14Gi
+Swap:          4.0Gi          0B       4.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+C:\             953G  239G  715G  26% /mnt/c
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 63775
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 63775
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 9193242736178336
+-rwxrwxrwx 1 bvn bvn 832405678 Sep  9 22:10 morse_dataset.npz
+-rwxrwxrwx 1 bvn bvn 581240110 Sep  4 08:31 nvidia_cublas_cu12-12.9.2.10-py3-none-manylinux_2_27_x86_64.whl
+-rwxrwxrwx 1 bvn bvn     72178 Sep 15 08:07 train_rtx.py
+-rwxrwxrwx 1 bvn bvn     47739 Sep 15 08:08 diag.py
+-rwxrwxrwx 1 bvn bvn     34041 Sep 16 09:06 noc.sh
+-rwxrwxrwx 1 bvn bvn     29505 Sep 16 08:10 README.md
+-rwxrwxrwx 1 bvn bvn      7311 Sep 10 08:17 noc.bat

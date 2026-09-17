@@ -1,10 +1,11 @@
 ============================================================
- NOC 2026-09-15  --  co wyszło
+ NOC 2026-09-16  --  co wyszło
 ============================================================
 
 ETAPY
-  TRENING dpu -> runs/dpu_1000000 OK     81 min
+  TRENING dpu -> runs/dpu_1000000 OK     0 min
   KOPERTA dpu                  OK     1 min
+  NAGRANIA dpu                 OK     1 min
 
 WYNIKI TRENINGU
 
@@ -34,13 +35,35 @@ KOPERTA I PRZYCZYNA BŁĘDÓW
     a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
     choroby, jest ogólny brak danych.
 
+PRAWDZIWE NAGRANIA (dpu)
+
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+
+    odczyt: CCQQQCCCCQQQQBBBVVVEQQ22BVVEQ22BVVPPSEEECCCQQCCQQESSQ2BVSSECQQQQQQQQCCCQQQCCCQQQEESQQQ22BBVSEEPPP2MMSESSEQ222BBVNEEERMMMEXKKSFFEECAALRLRREUUURSSSSSISE555599SSSSSSERRRRRMYRRIIUUAUARUUE4XQQTTQQTHIIIIIIBBYYDDGOSSSBYDGOOOSSEEXEED82F2P22MMSSSEEHSQ22BVV
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    odczyt: CCQECCMTTTTCQCQQBVV6SQ2BBBVNPPPSSSSEEE65SIQCCCQCQCCQQQQRQQDDDEESQQ22BBVVVNNNSQQ22EVVVVVXXP22KKBBSP2KBBSSSP22QKKBP222KKBPSSSEV7H333SS85VV4VVVVTEEEVVVVVVVEEIIIISAIUSSUAAAUUARRIIIUUUSSEEEEEAAPSSAIUUUUAQQCCCQQCCQQLZDLDEQ2BSQ2BSQ2BBNNSEE
+    nadane: CQ SQ2BVN 73
+    w całości:    1/3   (CQ)
+    w kolejności: 3/3   (CQ SQ2BVN 73)
+    odczyt: QCQQCQZZDZDDEEEQ2BQ2BBQ2BNNSS
+    nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+    w całości:    3/6   (CQx2 DE)
+    w kolejności: 3/6   (CQx2 DE)
+    odczyt: OB5O8525885555858PZ55GG988999988895259999C699939CB8859905555EEE85952999969XX9F8855555HH99585555599555599988552587H557XQ788L3L570095999X509999999999998552999E99999969999L5999999955559999999999
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+  RAZEM na nagraniach z zapisaną treścią: w całości 4/9, w kolejności 6/9
+
 PEŁNE LOGI
-  out/noc_20260915_1823.log
-  out/noc_20260915_1823_diag.log                 8.0K
-  out/noc_20260915_1823_dpu.log                  2.7M
-  out/noc_20260915_1823_gen.log                  4.0K
-  out/noc_20260915_1823_koperta_dpu.log          8.0K
-  out/noc_20260915_1823_srodowisko.log           4.0K
-  out/koperta_dpu_20260915_1823.txt              4.0K
+  out/noc_20260916_1744.log
+  out/noc_20260916_1744_diag.log                 8.0K
+  out/noc_20260916_1744_gen.log                  4.0K
+  out/noc_20260916_1744_koperta_dpu.log          8.0K
+  out/noc_20260916_1744_nagrania_dpu.log         8.0K
+  out/noc_20260916_1744_srodowisko.log           4.0K
+  out/koperta_dpu_20260916_1744.txt              4.0K
 
 Na pendraka:  bvn_z.bat  (z Windows)

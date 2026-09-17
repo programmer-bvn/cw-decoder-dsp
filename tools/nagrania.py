@@ -109,14 +109,64 @@ def ile_w_kolejnosci(igla: str, stog: str) -> int:
     return n
 
 
-def odczytaj(sciezka: Path, model, min_conf: float, min_windows: int):
-    """Nagranie -> (odczyt, opis_pętli_tonu, wzmocnienie)."""
+def scal_po_czasie(zdarzenia: list, okno_s: float) -> list:
+    """Scala SĄSIEDNIE zdarzenia o tym samym znaku, jeśli dzieli je mniej
+    niż `okno_s`. Zostawia to o wyższej pewności.
+
+    PO CO. Okno sieci przesuwa się co 20 ms, a znak przy 20 WPM trwa około
+    pół sekundy — więc ten sam znak widzi kilkanaście kolejnych okien.
+    decode_stream scala tylko przebiegi SĄSIADUJĄCE w indeksie, a chwilowy
+    spadek pewności albo wtręt klasy 0 rozbija taki przebieg na kilka
+    zdarzeń. Stąd odczyty w rodzaju "CCQQQCCCCQQQQBBBVVV": informacja jest,
+    ale utopiona w powtórzeniach i dla człowieka nieczytelna.
+
+    PRÓG JEST ZMIERZONY, NIE ZGADNIĘTY. Ogranicza go od góry odstęp
+    DWÓCH TAKICH SAMYCH LITER OBOK SIEBIE (jak LL w HELLO) — scalenie
+    szersze niż ten odstęp zjadłoby podwojenie. Dla L (9 jednostek):
+
+        13 WPM   dwa L co 1108 ms
+        20 WPM   dwa L co  720 ms
+        27 WPM   dwa L co  533 ms
+        30 WPM   dwa L co  480 ms
+
+    Od dołu ogranicza go to, ile trwają powtórzenia z przesuwanego okna:
+    przy 20 WPM próg 0,15 s i 0,25 s NIE sklejał ich w całości, 0,35 s
+    sklejał. Stąd domyślne 0,35 — mieści się pod 480 ms nawet przy
+    30 WPM, więc jest bezpieczne w całym zakresie 13-30 WPM.
+
+    Przy wolnym nadawaniu zostaną resztki, bo tam znak trwa dłużej niż
+    próg. Pełne rozwiązanie to dekoder sekwencyjny CTC, który znosi całą
+    tę klasę problemu — scalanie jest obejściem, nie naprawą, i dlatego
+    siedzi w narzędziu POMIAROWYM, a nie w dekoderze produkcyjnym.
+
+    Dlatego to narzędzie pokazuje odczyt SUROWY i SCALONY obok siebie,
+    razem z obiema miarami — dopiero z tego widać, czy to pomaga na
+    prawdziwym materiale.
+    """
+    if okno_s <= 0 or not zdarzenia:
+        return zdarzenia
+    wynik = [zdarzenia[0]]
+    for z in zdarzenia[1:]:
+        p = wynik[-1]
+        if z[1] == p[1] and (z[0] - p[0]) < okno_s:
+            if z[2] > p[2]:                 # zostaje pewniejsze
+                wynik[-1] = z
+        else:
+            wynik.append(z)
+    return wynik
+
+
+def odczytaj(sciezka: Path, model, min_conf: float, min_windows: int,
+             scal_s: float = 0.0):
+    """Nagranie -> (odczyt_surowy, odczyt_scalony, opis_pętli, wzmocnienie)."""
     okna, srodki, wzm, lock = wav2net.wav_to_windows(
         sciezka, auto_gain=True, retune=True)
     zdarzenia, _, _, _ = wav2net.decode_stream(
         okna, srodki, model, min_conf=min_conf, min_windows=min_windows)
-    tekst = "".join(C.ALPHABET[i] for _, i, _, _ in zdarzenia)
-    return tekst, lock, wzm
+    surowy = "".join(C.ALPHABET[i] for _, i, _, _ in zdarzenia)
+    scalony = "".join(C.ALPHABET[i]
+                      for _, i, _, _ in scal_po_czasie(zdarzenia, scal_s))
+    return surowy, scalony, lock, wzm
 
 
 def main(argv=None) -> int:
@@ -127,6 +177,9 @@ def main(argv=None) -> int:
                     help="katalog z nagraniami i opisami")
     ap.add_argument("--min-conf", type=float, default=0.95)
     ap.add_argument("--min-windows", type=int, default=3)
+    ap.add_argument("--scal", type=float, default=0.35,
+                    help="scalaj powtorzenia tego samego znaku blizsze "
+                         "niz tyle sekund; 0 wylacza")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
 
@@ -155,13 +208,14 @@ def main(argv=None) -> int:
          ""]
 
     razem_tok, razem_pod, razem_kol = 0, 0, 0
+    razem_s_pod, razem_s_kol = 0, 0
 
     for wav in nagrania:
         opis = wav.with_suffix(".txt")
         chce = oczekiwane(opis)
         try:
-            tekst, lock, wzm = odczytaj(wav, model, a.min_conf,
-                                        a.min_windows)
+            surowy, scalony, lock, wzm = odczytaj(
+                wav, model, a.min_conf, a.min_windows, a.scal)
         except Exception as e:
             w.append(f"{wav.name}")
             w.append(f"  BŁĄD ODCZYTU: {type(e).__name__}: {e}")
@@ -170,7 +224,10 @@ def main(argv=None) -> int:
 
         w.append(f"{wav.name}   (korekta poziomu {wzm:+.1f} dB)")
         w.append(f"  ton: {lock}")
-        w.append(f"  odczyt: {tekst if tekst else '(nic)'}")
+        w.append(f"  odczyt surowy:  {surowy if surowy else '(nic)'}")
+        if a.scal > 0:
+            w.append(f"  po scaleniu {a.scal:.2f}s: "
+                     f"{scalony if scalony else '(nic)'}")
 
         if not chce:
             # Brak prawdy naziemnej to NIE jest brak wyniku. mic1 nadawano
@@ -182,28 +239,43 @@ def main(argv=None) -> int:
 
         # Zliczanie z KROTNOSCIA: jesli CQ nadano trzy razy, jedno
         # wystapienie w odczycie zalicza sie raz, nie trzy.
-        ile_chce = Counter(chce)
-        n_pod = n_kol = 0
-        znalezione_pod, znalezione_kol = [], []
-        for token, krotnosc in ile_chce.items():
-            p = min(krotnosc, ile_podciagow(token, tekst))
-            k = min(krotnosc, ile_w_kolejnosci(token, tekst))
-            n_pod += p
-            n_kol += k
-            if p:
-                znalezione_pod.append(f"{token}x{p}" if p > 1 else token)
-            if k:
-                znalezione_kol.append(f"{token}x{k}" if k > 1 else token)
+        def ocen(tekst):
+            ile_chce = Counter(chce)
+            n_pod = n_kol = 0
+            zn_pod, zn_kol = [], []
+            for token, krotnosc in ile_chce.items():
+                p = min(krotnosc, ile_podciagow(token, tekst))
+                k = min(krotnosc, ile_w_kolejnosci(token, tekst))
+                n_pod += p
+                n_kol += k
+                if p:
+                    zn_pod.append(f"{token}x{p}" if p > 1 else token)
+                if k:
+                    zn_kol.append(f"{token}x{k}" if k > 1 else token)
+            return n_pod, n_kol, zn_pod, zn_kol
 
+        n_pod, n_kol, zn_pod, zn_kol = ocen(surowy)
         razem_tok += len(chce)
         razem_pod += n_pod
         razem_kol += n_kol
 
         w.append(f"  nadane: {' '.join(chce)}")
         w.append(f"  w całości:    {n_pod}/{len(chce)}"
-                 + (f"   ({' '.join(znalezione_pod)})" if znalezione_pod else ""))
+                 + (f"   ({' '.join(zn_pod)})" if zn_pod else ""))
         w.append(f"  w kolejności: {n_kol}/{len(chce)}"
-                 + (f"   ({' '.join(znalezione_kol)})" if znalezione_kol else ""))
+                 + (f"   ({' '.join(zn_kol)})" if zn_kol else ""))
+
+        if a.scal > 0:
+            s_pod, s_kol, _, _ = ocen(scalony)
+            razem_s_pod += s_pod
+            razem_s_kol += s_kol
+            # Skrócenie odczytu jest tu osobną informacją: jeśli scalanie
+            # tnie długość o połowę, a miary nie spadają, to znaczy że
+            # wycięło same powtórzenia, nie treść.
+            ile_krocej = (100.0 * (1 - len(scalony) / max(1, len(surowy))))
+            w.append(f"  po scaleniu:  w całości {s_pod}/{len(chce)}, "
+                     f"w kolejności {s_kol}/{len(chce)}, "
+                     f"odczyt krótszy o {ile_krocej:.0f}%")
         w.append("")
 
     if razem_tok:
@@ -211,6 +283,10 @@ def main(argv=None) -> int:
         w.append(f"RAZEM na nagraniach z zapisaną treścią: "
                  f"w całości {razem_pod}/{razem_tok}, "
                  f"w kolejności {razem_kol}/{razem_tok}")
+        if a.scal > 0:
+            w.append(f"RAZEM po scaleniu {a.scal:.2f}s: "
+                     f"w całości {razem_s_pod}/{razem_tok}, "
+                     f"w kolejności {razem_s_kol}/{razem_tok}")
         w.append("")
         w.append("To jest liczba, która ma znaczenie. Dokładność walidacyjna")
         w.append("na syntetyku mówi o syntetyku — pierwszy model tego projektu")

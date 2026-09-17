@@ -1,0 +1,115 @@
+===========================================================================
+===========================================================================
+ zrodlo: D:\AI_DSP\
+ cel:    c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+
+ kopiowane:    *.py *.md *.txt *.sh requirements.txt
+ NIE kopiowane: .venv, __pycache__, out\, runs\, *.npz, *.whl
+
+ *** TRYB AUTO -- bez pytania ***
+[1/2] kod...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        12         0        12         0         0         1
+   Files :        50        29        21         0         0         0
+   Bytes :   480.3 k   292.2 k   188.1 k         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :           2ÿ720ÿ445 Bytes/sec.
+   Speed :             155,665 MegaBytes/min.
+   Ended : ˜roda, 16 wrze˜nia 2026 17:44:16
+
+[2/2] probki (nagrania)...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         9         0         9         0         0         0
+   Bytes :  105.86 m         0  105.86 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : ˜roda, 16 wrze˜nia 2026 17:44:16
+
+
+===========================================================================
+ GOTOWE.  Kod w c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+
+ Dalej, na HDD:
+     cd /d c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+     python diag.py
+     python train_rtx.py generate --n 200000
+     python train_rtx.py train --epochs 100 --batch 256 --mixed --require-gpu
+===========================================================================
+===========================================================================
+===========================================================================
+ zrodlo: c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+ cel:    D:\AI_DSP\
+
+ kopiowane:     runs\ (modele, log.csv, state.json), out\ (logi nocne,
+                wykresy, paczki .bundle), kod .py .md .bat .sh
+ NIE kopiowane: *.npz (zbior, 800 MB), .venv, __pycache__
+
+ *** TRYB AUTO -- bez pytania ***
+[1/3] runs (modele i logi treningu)...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         6         0         6         0         0         0
+   Files :        16         0        16         0         0         0
+   Bytes :   89.66 m         0   89.66 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : ˜roda, 16 wrze˜nia 2026 17:49:26
+
+[2/3] out (wykresy, X-Ray)...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         2         0         2         0         0         2
+   Files :        96         9        87         0         0        11
+   Bytes :   83.08 m    47.6 k   83.03 m         0         0    1.15 m
+   Times :   0:00:01   0:00:01                       0:00:00   0:00:00
+
+
+   Speed :              39ÿ936 Bytes/sec.
+   Speed :               2,285 MegaBytes/min.
+   Ended : ˜roda, 16 wrze˜nia 2026 17:49:27
+
+[3/3] kod zmieniony na HDD...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        12         0        12         0         0         1
+   Files :        44         0        44         0         0         0
+   Bytes :   470.8 k         0   470.8 k         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : ˜roda, 16 wrze˜nia 2026 17:49:27
+
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         7         0         7         0         0         0
+   Bytes :    25.6 k         0    25.6 k         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : ˜roda, 16 wrze˜nia 2026 17:49:27
+
+
+===========================================================================
+ GOTOWE.  Wyniki na pendraku: D:\AI_DSP\
+
+ Na koniec warto zrobic archiwum jednym plikiem (mniej zapisow do FAT):
+     tar czf AI_DSP_%DATE:~0,10%.tar.gz --exclude=.venv --exclude=__pycache__ echo          --exclude=*.npz --exclude=*.whl -C c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\.. AI_DSP
+===========================================================================
