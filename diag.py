@@ -993,6 +993,73 @@ def test_sciezka_danych():
         check("wczytywanie z wzorca", False, f"{type(e).__name__}: {e}")
 
 
+
+# ==========================================================================
+# TEST 16: PĘTLA TONU NIE UCIEKA NA SZUM POZA PASMEM
+#
+#  Istnieje z powodu konkretnej awarii z wcześniejszego podejścia (luty
+#  2026, dekoder na TF1). Operator: "miałem coś w rodzaju PLL na nośną,
+#  ale nie zawsze okno ustawiało się na sygnale — szczególnie jak szum
+#  na f{0..300} był silny, to przeskakiwało na szum zamiast być w oknie
+#  f{500-1200}".
+#
+#  Nasza pętla nie powinna tego robić, bo argmax liczy się WYŁĄCZNIE
+#  w paśmie FMIN..FMAX. Ale "nie powinna" to twierdzenie o kodzie, a nie
+#  pomiar — a właśnie takie twierdzenia lubią przestać być prawdziwe po
+#  refaktoryzacji. Stąd test.
+# ==========================================================================
+def test_tune_poza_pasmem():
+    section("TEST 16: pętla tonu wobec silnego szumu poza pasmem")
+    from dsp import tune
+
+    rng = np.random.default_rng(16)
+    sr = C.SR
+    n = C.CLIP_SAMPLES
+    t = np.arange(n) / sr
+
+    # Sygnał: zwykłe nadanie CW w środku pasma.
+    audio, _ = morse.synth_cw("SQ2BVN", wpm=20.0, tone=750.0, amp=0.30,
+                              sr=sr, rng=rng, return_spans=True)
+    klip = np.zeros(n, dtype=np.float32)
+    klip[:min(n, audio.size)] = audio[:min(n, audio.size)]
+
+    def mediana_tonu(x):
+        _, f = tune.track_tone(x, sr=sr)
+        f = f[np.isfinite(f)]
+        return float(np.median(f)) if f.size else float("nan")
+
+    # --- 16a. odniesienie: czysty sygnał ---
+    f0 = mediana_tonu(klip)
+    ok = np.isfinite(f0) and abs(f0 - 750.0) < 20.0
+    check("czysty sygnał: zaczep na 750 Hz", ok, f"zmierzone {f0:.0f} Hz")
+
+    # --- 16b. TA SAMA awaria co w lutym: mocny szum 0-300 Hz ---
+    # Dudnienie i przydźwięk sieci, 20 dB MOCNIEJSZE od nadania. Dokładnie
+    # przypadek, w którym tamten PLL przeskakiwał na szum.
+    dol = np.zeros(n, dtype=np.float32)
+    for f_hz in (50.0, 100.0, 150.0, 250.0):
+        dol += np.sin(2 * np.pi * f_hz * t).astype(np.float32)
+    dol *= 3.0 / max(1e-9, float(np.abs(dol).max()))     # 10x amplitudy CW
+
+    f1 = mediana_tonu(klip + dol)
+    w_pasmie = np.isfinite(f1) and C.FMIN <= f1 <= C.FMAX
+    check("szum 0-300 Hz o 20 dB silniejszy: zaczep ZOSTAJE w paśmie",
+          w_pasmie, f"zmierzone {f1:.0f} Hz, pasmo {C.FMIN:.0f}-{C.FMAX:.0f}")
+    check("i nadal wskazuje ton nadania", np.isfinite(f1)
+          and abs(f1 - 750.0) < 30.0, f"zmierzone {f1:.0f} Hz")
+
+    # --- 16c. sam szum poza pasmem, BEZ sygnału ---
+    # Poprawne zachowanie to BRAK zaczepu, nie zaczep byle gdzie.
+    # Milczenie jest tu lepsze od zmyślonej częstotliwości: wav2net
+    # przestraja według tej liczby, więc zmyślona przesunęłaby cały
+    # front-end w bok.
+    f2 = mediana_tonu(dol + 0.002 * rng.standard_normal(n).astype(np.float32))
+    brak_albo_w_pasmie = (not np.isfinite(f2)) or (C.FMIN <= f2 <= C.FMAX)
+    check("sam szum poza pasmem: brak zaczepu albo zaczep w paśmie",
+          brak_albo_w_pasmie,
+          "brak zaczepu" if not np.isfinite(f2) else f"zmierzone {f2:.0f} Hz")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1003,7 +1070,8 @@ def main() -> int:
              test_window, test_waterfall, test_tone_in_band, test_fingerprint,
              test_generator_clip, test_radio, test_fist, test_nadajnik,
              test_fist_drift, test_standalone,
-             test_dpu_model, test_melref, test_sciezka_danych)
+             test_dpu_model, test_melref, test_sciezka_danych,
+             test_tune_poza_pasmem)
 
     for t in tests:
         try:

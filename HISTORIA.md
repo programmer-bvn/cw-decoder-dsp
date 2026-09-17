@@ -231,6 +231,51 @@ obserwować, a nie założyć.
 
 ---
 
+### PLL na nośną uciekał na szum poniżej pasma
+
+**Objaw, luty 2026.** Operator: „miałem coś w rodzaju PLL na nośną, ale
+nie zawsze okno ustawiało się na sygnale — szczególnie jak szum na
+f{0..300} był silny, to przeskakiwało na szum zamiast być w oknie
+f{500–1200}".
+
+**Dlaczego to jest gorsze, niż wygląda.** Fałszywy zaczep nie daje gorszego
+odczytu, tylko przestraja cały front-end w bok — czyli działa jak celowe
+rozstrojenie odbiornika. Sieć dostaje wtedy pasmo, w którym nadania nie
+ma wcale. Objawem jest cisza, a przyczyna siedzi dwa moduły wcześniej.
+
+**Dlaczego nasza pętla tego nie robi.** `dsp/tune.py`, wybór prążka:
+
+```python
+band = (f >= fmin) & (f <= fmax)                    # 400-1200 Hz
+k = int(np.flatnonzero(band)[np.argmax(sp[band])])  # argmax TYLKO w paśmie
+```
+
+Szum poniżej 400 Hz **nie bierze udziału w wyborze**. Do tego trzy
+rzeczy, które się składają:
+
+- tło to **mediana mocy w paśmie**, więc silny szum podnosi także próg
+  i zamiast fałszywego zaczepu daje BRAK zaczepu — a milczenie jest tu
+  poprawnym zachowaniem, bo zmyślona częstotliwość przesunęłaby front-end;
+- okno analizy to Hann (listki boczne −31 dB, opadające 18 dB/oktawę),
+  więc przeciek z 50–100 Hz w okolice 400 Hz jest pomijalny;
+- po zaczepieniu wybór zawęża się do `CAPTURE_HZ = 12` Hz wokół bieżącej
+  estymaty, więc pojedynczy trzask nie porywa pętli.
+
+**To było twierdzenie o kodzie, nie pomiar** — a takie twierdzenia
+przestają być prawdziwe po refaktoryzacji, cicho. Dlatego 17.09 doszedł
+`diag.py` **TEST 16**: nadanie 750 Hz plus dudnienie i przydźwięk
+50/100/150/250 Hz o 20 dB silniejsze od niego. Sprawdza, że zaczep
+zostaje w paśmie, że nadal wskazuje ton nadania, i że sam szum bez
+sygnału nie produkuje zaczepu byle gdzie.
+
+**Czego to NIE chroni.** Silne zakłócenie WEWNĄTRZ 400–1200 Hz — obca
+stacja, nośna — może przejąć pętlę i to nie jest błąd, tylko ta sama
+sytuacja, w której jest człowiek. Widać to na `radio1`: dwie stacje,
+mediana tonu 839 Hz. Odpowiedzią jest filtr w radiu, o którym operator
+mówi, że sensowne minimum to 250 Hz.
+
+---
+
 ### Zbiór trafiał do pamięci karty zamiast do RAM
 
 **Objaw.** Trening padał po minucie na zbiorach większych niż 200 tys.
