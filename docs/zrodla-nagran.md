@@ -115,6 +115,7 @@ co się dzieje poza nią. Na paśmie rozstrojonych stacji jest pełno.
    droga do zmierzenia chirpu, sagu i dryfu.
 3. **Źródło 7 albo 2** — pasmo, ze szczególnym oczekiwaniem na stacje
    rozstrojone. Odczyt ze słuchu w `nadane:`, choćby częściowy.
+4. Reszta jako uzupełnienie macierzy.
 
 ## Krzywa rozstrojenia — tylko IC-7300
 
@@ -133,7 +134,6 @@ pojedynczy punkt.
 Nagrania z pasma tego nie zastąpią: rozstrojonych stacji jest tam pełno,
 ale nie wiadomo O ILE są rozstrojone ani co nadają. Mierzą co innego —
 czy pętla śledząca się zaczepia i czy odczyt ma sens.
-4. Reszta jako uzupełnienie macierzy.
 
 ## Jak dołożyć nagranie
 
