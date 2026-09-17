@@ -417,6 +417,32 @@ if [ "$GENERUJ" = "1" ]; then
     # Miejsce sprawdzamy PRZED, bo generowanie 800 MB na pelnym dysku
     # konczy sie po kilku minutach i noc jest stracona. Zapas 2 GB:
     # zbior 200 tys. to ~800 MB, plus modele i logi.
+    # PAMIEC SPRAWDZAMY PRZED GENEROWANIEM, NIE PO.
+    # Straznik w load_dataset odpala sie dopiero przy treningu, czyli po
+    # wygenerowaniu zbioru -- przy osmiu czesciach to 42 minuty w plecy,
+    # zanim padnie komunikat. Ten sam rachunek, tylko wczesniej.
+    RAM_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null)
+    RAM_POTRZEBA=$(awk -v n="$LACZNIE" 'BEGIN{printf "%d", n/200000*820*2.5}')
+    if [ -n "${RAM_MB:-}" ] && [ "$RAM_MB" -gt 0 ]; then
+        echo "pamięć: wolne ${RAM_MB} MB, zbiór potrzebuje ~${RAM_POTRZEBA} MB"
+        if [ "$RAM_POTRZEBA" -gt $(( RAM_MB * 8 / 10 )) ]; then
+            BEZPIECZNE=$(awk -v m="$RAM_MB" 'BEGIN{printf "%d", m*0.8/2.5/820}')
+            echo
+            echo "PRZERWANO PRZED GENEROWANIEM: zbiór się nie zmieści."
+            echo "  W drodze do model.fit() obrazy istnieją w ~2,5 kopiach."
+            echo "  Bezpieczna liczba części przy tej pamięci: ${BEZPIECZNE}"
+            echo
+            echo "  ALBO PODNIEŚ LIMIT WSL. WSL2 bierze domyślnie POŁOWĘ"
+            echo "  pamięci hosta, więc maszyna z 32 GB daje tu ~15 GB."
+            echo "  W C:\\Users\\<użytkownik>\\.wslconfig po stronie Windows:"
+            echo "      [wsl2]"
+            echo "      memory=24GB"
+            echo "  potem 'wsl --shutdown'. Szczegóły: srodowisko/README.md"
+            czarna_skrzynka "AWARIA ETAPU 3: za mało pamięci na ${CZESCI} części"
+            exit 1
+        fi
+    fi
+
     WOLNE_MB=$(df -Pm . | awk 'NR==2 {print $4}')
     # 800 MB na kazde 200 tys. probek, plus 2 GB zapasu na modele i logi.
     POTRZEBA_MB=$(( LACZNIE / 200000 * 820 + 2048 ))
