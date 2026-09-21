@@ -1,0 +1,85 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-09-17 17:59:29
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  
+wersja: ./noc.sh: line 179: python: command not found
+VIRTUAL_ENV: <brak>
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  <pusty>
+
+--- XLA_FLAGS ---
+  <brak>
+
+--- nvidia-smi ---
+Thu Sep 17 17:59:29 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   29C    P8              9W /   70W |     692MiB /   6144MiB |      7%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              30      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+BŁĄD: nie ma 'python' w PATH.
+Najpierw:  source srodowisko/rtx3050_setenv.sh
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            23Gi       676Mi        22Gi       3.5Mi       799Mi        22Gi
+Swap:          6.0Gi          0B       6.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+W:\             448G   62G  386G  14% /mnt/w
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 96087
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 96087
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 1375809
+-rwxrwxrwx 1 bvn bvn 832405678 Sep  9 22:10 morse_dataset.npz
+-rwxrwxrwx 1 bvn bvn 581240110 Sep  4 08:31 nvidia_cublas_cu12-12.9.2.10-py3-none-manylinux_2_27_x86_64.whl
+-rwxrwxrwx 1 bvn bvn     72178 Sep 15 08:07 train_rtx.py
+-rwxrwxrwx 1 bvn bvn     50859 Sep 17 08:48 diag.py
+-rwxrwxrwx 1 bvn bvn     35523 Sep 17 09:40 noc.sh
+-rwxrwxrwx 1 bvn bvn     29505 Sep 16 08:10 README.md
+-rwxrwxrwx 1 bvn bvn     20482 Sep 17 08:54 HISTORIA.md

@@ -460,21 +460,25 @@ wyłącznie kolejnością. Uśrednienie po czasie zrównuje U z D.
 zbiorów. Zestawianie ich wprost daje fałszywy obraz — i właśnie dlatego
 są tu rozdzielone.
 
-### Model obecny (15.09.2026)
+### Model obecny (17.09.2026)
 
-Zbiór realistyczny: **1 mln próbek** w 5 częściach, pełny model kanału,
+Zbiór realistyczny: **1,6 mln próbek** w 8 częściach, pełny model kanału,
 tempo 13–27 WPM. Architektura `dpu`, 40 epok, batch 256, mixed float16.
-Trening 81 minut na RTX 3050.
+Trening 120 minut na RTX 3050.
 
-| | 200 tys. | **1 mln** |
-|---|---|---|
-| dokładność walidacyjna | 97,51% | **98,73%** |
-| błędy | 2,49% | **1,27%** |
-| `val_loss` minimum | 0,1224 (epoka 15) | **0,0637 (epoka 13)** |
+| | 200 tys. | 1 mln | **1,6 mln** |
+|---|---|---|---|
+| dokładność walidacyjna | 97,51% | 98,73% | **98,95%** |
+| błędy | 2,49% | 1,27% | **1,05%** |
+| `val_loss` minimum | 0,1224 | 0,0637 | **0,0512** |
 
-Pięć razy więcej danych zmniejszyło błąd **o połowę**. To odpowiedź na
-pytanie postawione po nocy 9/10.09: rozkład błędów był płaski, więc nie
-było jednej choroby do wyleczenia — był ogólny brak danych.
+Błąd spada jak `n^-0,41` i wykładnik jest zgodny na obu krokach — patrz
+`HISTORIA.md`, wpis o prawie potęgowym. **Dźwignia jest jednak
+wyczerpana**: kolejne połowienie błędu wymagałoby 9,8 mln próbek, czyli
+100 GB w pamięci przy szczycie zużycia. Na tej maszynie mieści się
+najwyżej 2,1 mln, co dałoby około 0,94%.
+
+I nie tam leży problem — patrz niżej.
 
 Dla porządku, jedyne uczciwe porównanie z modelem sprzed modelu kanału:
 ten stary osiągał **86,56%** na tym samym zbiorze realistycznym. Jego
@@ -520,6 +524,32 @@ przestrojenia front-endu daje teraz zero, nie „gorzej".
 - **Rozkład błędów jest płaski i mały.** Najczęstsza pomyłka ma DWA
   wystąpienia na 3000 próbek, reszta po jednym. Nie ma pojedynczej wady
   do naprawienia.
+- **Hipoteza „sieć gubi znaki krótkie" jest OBALONA.** Zmierzone na 3000
+  próbek z etykietą: krótkie (1–2 elementy) 99,2%, długie (4–5) 98,6% —
+  różnica 0,6 pp NA KORZYŚĆ krótkich. Znaki krótkie giną nie w sieci,
+  tylko w DEKODOWANIU przesuwanym oknem, gdzie długi znak zbiera więcej
+  okien i wygrywa. To przekierowuje całą pracę z architektury na etap
+  dekodowania.
+
+#### Odczyt z prawdziwego radia
+
+To jedyna liczba mówiąca o pracy na antenie, mierzona przez
+`tools/nagrania.py` na nagraniach z `probki/`:
+
+| | w całości | w kolejności |
+|---|---|---|
+| odczyt surowy | 5/9 | 8/9 |
+| po scaleniu powtórzeń (0,35 s) | **7/9** | 8/9 |
+
+Na `mic3` (nadane `CQ CQ CQ DE SQ2BVN SQ2BVN`):
+
+```
+REQCQZCQZQZDDE I Q2BVVN SQ2BVVN I SQ2BVN PSE
+                        ^^^^^^^   ^^^^^^^
+```
+
+Znak wywoławczy wychodzi **w całości, dwa razy**. Model sprzed poprawek
+dawał `CCLQ2BVQ2BVQ2BVS` — bez `S` i bez `N`.
 - **Obcinanie okna jest nieistotne** — 5 przypadków na 3000 (0,17%).
   Etykietą jest środkowy z trzech znaków, a nadanie wstawiane jest
   wyśrodkowane, więc znak z etykiety jest wycentrowany z konstrukcji.

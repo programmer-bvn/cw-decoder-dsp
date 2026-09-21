@@ -86,11 +86,31 @@ POMIAROWYM. Próg jest zmierzony: od góry ogranicza go odstęp dwóch
 takich samych liter (480 ms przy 30 WPM), od dołu długość powtórzeń
 (0,25 s nie sklejało, 0,35 s sklejało).
 
-**Właściwa naprawa** to odtworzenie lutowej logiki na obwiedni
+**ZMIERZONY SKUTEK, 17.09.2026.** Scalanie działa i to wyraźnie:
+
+| | w całości | w kolejności |
+|---|---|---|
+| odczyt surowy | 5/9 | 8/9 |
+| po scaleniu 0,35 s | **7/9** | 8/9 |
+
+Na `mic3` (nadane `CQ CQ CQ DE SQ2BVN SQ2BVN`) odczyt po scaleniu to:
+
+```
+REQCQZCQZQZDDE I Q2BVVN SQ2BVVN I SQ2BVN PSE
+                        ^^^^^^^   ^^^^^^^
+```
+
+**Znak wywoławczy wychodzi w całości, dwa razy.** Dla porównania model
+sprzed poprawek dawał `CCLQ2BVQ2BVQ2BVS` — bez `S` i bez `N`. To jest
+pierwszy raz, kiedy ten projekt przeczytał znak z prawdziwego radia.
+
+**Właściwa naprawa** to nadal odtworzenie lutowej logiki na obwiedni
 kluczowania liczonej z audio przy tej samej rozdzielczości co ramki
 (20 ms) — wtedy „cisza" znowu staje się dostępna. Albo dekoder CTC,
 który znosi całą tę klasę problemu, bo etykietuje ciąg zamiast wybierać
-znak z okna.
+znak z okna. Scalanie po czasie zostaje obejściem — ale obejściem
+o zmierzonej wartości, więc jest czym uzasadnić przeniesienie go do
+`wav2net`.
 
 ---
 
@@ -311,6 +331,82 @@ godzinnym generowaniem zbioru. Wszystkie trzy błędy, które zabrały noce
 
 ---
 
+### „Znaki krótkie są gubione" — OBALONE pomiarem
+
+**Obserwacja, od której się zaczęło.** Na `mic3` odczyt zawierał `Q2B`,
+`Q2BB`, `Q2BNN` — brakowało `S` (`...`) i `N` (`-.`), a czytane były
+`Q` (`--.-`), `2` (`..---`), `B` (`-...`). Wniosek narzucał się sam:
+sieć gubi znaki krótkie.
+
+**Dlaczego to była słaba przesłanka.** Obserwacja pochodziła z zupy
+znaków na czterech nagraniach, z których tylko jedno ma pełną treść.
+Nie było wiadomo, ile razy krótki znak w ogóle wystąpił.
+
+**Pomiar, 17.09.2026** — `tools/koperta.py`, 3000 próbek Z ETYKIETĄ,
+pogrupowane po długości kodu:
+
+| elementów | próbek | trafień | znaki |
+|---|---|---|---|
+| 1 | 154 | 98,1% | E T |
+| 2 | 321 | **99,7%** | A I M N |
+| 3 | 678 | 99,1% | D G K O R S U W |
+| 4 | 1028 | 98,6% | B C F H J L P Q V X Y Z |
+| 5 | 819 | 98,5% | cyfry |
+
+Krótkie (1–2 elementy) **99,2%**, długie (4–5) **98,6%**. Różnica
+0,6 punktu procentowego — i to na korzyść KRÓTKICH.
+
+**Hipoteza jest obalona.** Sieć nie ma z krótkimi znakami żadnego
+problemu; jeśli już, czyta je odrobinę lepiej.
+
+**Gdzie więc naprawdę giną.** Nie w sieci, tylko DALEJ — w dekodowaniu
+przesuwanym oknem. Długi znak trwa dłużej, więc widzi go więcej okien,
+zbiera więcej zdarzeń i wygrywa przy scalaniu. Krótki znak, otoczony
+dłuższymi sąsiadami w oknie 2,56 s, przegrywa konkurencję o zdarzenie —
+choć sam w sobie jest rozpoznawany bez trudu.
+
+**Dlaczego to ważne.** Przekierowuje pracę. Gdyby hipoteza była prawdziwa,
+trzeba by zmieniać architekturę albo rozkład treningowy. Skoro jest
+fałszywa, cała poprawa leży w ETAPIE DEKODOWANIA — tam gdzie działa
+scalanie powtórzeń i gdzie działałby CTC.
+
+---
+
+### Więcej danych: prawo potęgowe i jego koniec
+
+**Zmierzone na trzech punktach:**
+
+| zbiór | dokładność | błąd | `val_loss` min |
+|---|---|---|---|
+| 200 tys. | 97,51% | 2,49% | 0,1224 |
+| 1 mln | 98,73% | 1,27% | 0,0637 |
+| 1,6 mln | 98,95% | **1,05%** | 0,0512 |
+
+Błąd spada jak `n^-0,41`, i wykładnik jest zgodny na obu krokach
+(0,418 przy pięciokrotnym zwiększeniu, 0,405 przy 1,6-krotnym). Trzy
+punkty to mało na prawo, ale zgodność jest uderzająca.
+
+**Co z tego wynika dla kolejnych kroków:**
+
+| cel | potrzeba danych | w pamięci (szczyt 2,5x) |
+|---|---|---|
+| błąd 0,75% | 3,6 mln | 37 GB |
+| błąd 0,50% | 9,8 mln | 100 GB |
+| błąd 0,25% | 53 mln | 543 GB |
+
+**Dźwignia jest wyczerpana na tej maszynie.** Przy limicie WSL 28 GB
+mieści się najwyżej 2,1 mln próbek, co dałoby około 0,94% — poprawa
+o jedną dziesiątą punktu. Dalej trzeba by przejść na zbiór mapowany
+z dysku (`np.load(mmap_mode='r')` na `.npy` zamiast `.npz` w RAM);
+miejsca jest 729 GB, więc to wykonalne, ale samo generowanie 9,8 mln
+próbek to jedenaście godzin, a trening kolejnych siedem.
+
+**I nie o to chodzi.** Błąd na syntetyku nie jest wąskim gardłem pracy
+na antenie — dowodzi tego wpis wyżej o znakach krótkich. Tam, gdzie
+projekt naprawdę traci, nie pomoże ani jedna próbka więcej.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
@@ -356,17 +452,6 @@ zabezpieczeniem. Patrz niżej.
 ---
 
 ## Otwarte
-
-### Znaki krótkie są gubione, długie czytane
-
-Na `mic3` (nadane `CQ CQ CQ DE SQ2BVN SQ2BVN`) odczyt zawiera `Q2B`,
-`Q2BB`, `Q2BNN` — brakuje `S` (`...`) i rozjeżdża się `N` (`-.`), a
-czytane są `Q` (`--.-`), `2` (`..---`), `B` (`-...`).
-
-Hipoteza o obcinaniu okna została **sprawdzona i odrzucona**: obcięcie
-występuje w 5 przypadkach na 3000 (0,17%), bo etykietą jest środkowy
-z trzech znaków, a nadanie wstawiane jest wyśrodkowane. Przyczyna leży
-gdzie indziej i nie jest jeszcze ustalona.
 
 ### Dekoder sekwencyjny (CTC) — jest gotowy kod odniesienia
 
