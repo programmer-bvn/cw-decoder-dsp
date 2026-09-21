@@ -88,6 +88,12 @@ def generate(n: int, seed: int, wpm: float, jitter: float,
     X = np.empty((n, C.IMG_FRAMES, C.IMG_BINS),
                  dtype=np.uint8 if store_u8 else np.float32)
     y = np.empty(n, dtype=np.int16)
+    # ETYKIETA NA KAŻDĄ RAMKĘ — dla architektur w pełni splotowych.
+    # Skalarne `y` zostaje obok, bo architektura "dpu" (jeden znak z okna)
+    # nadal na nim stoi i ma służyć jako punkt odniesienia. Jeden zbiór
+    # karmi obie, więc porównanie jest uczciwe.
+    # Koszt: 128 bajtów na próbkę przy 4096 bajtach obrazu, czyli +3%.
+    yf = np.empty((n, C.IMG_FRAMES), dtype=np.uint8)
     cols = {k: np.empty(n, dtype=np.float32) for k in _META_FIELDS}
     texts: list[str] = []
     n_clipped = 0
@@ -99,6 +105,12 @@ def generate(n: int, seed: int, wpm: float, jitter: float,
 
         X[i] = np.rint(img * 255.0).astype(np.uint8) if store_u8 else img
         y[i] = target
+        # Granice znaków są znane DOKŁADNIE, bo pochodzą z syntezy — po
+        # rozjeździe klucza, nie z nominalnego timingu. Dlatego wyrównanie
+        # etykiet do czasu mamy z konstrukcji i nie potrzeba CTC.
+        yf[i] = frontend.frame_labels(meta.get("spans", []),
+                                      float(meta.get("offset", 0.0)),
+                                      meta.get("text", ""))
 
         # Próbki audio -> ramki okna. Przeliczenie siedzi we frontend, bo
         # zależy od dopełniania w librosie i od wycinania okna — dwóch
@@ -122,6 +134,7 @@ def generate(n: int, seed: int, wpm: float, jitter: float,
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(out_path,
+             yf=yf,
              X=X, y=y,
              text=np.array(texts),
              fingerprint=C.fingerprint_str(),

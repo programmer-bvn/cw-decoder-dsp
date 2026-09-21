@@ -155,6 +155,72 @@ def sample_to_window_frame(sample: float,
     return sample / C.HOP_LENGTH - window_crop_start(n_samples)
 
 
+def frame_labels(spans, offset: float, text: str,
+                 n_samples: int = C.CLIP_SAMPLES,
+                 frames: int = C.IMG_FRAMES) -> np.ndarray:
+    """Granice znaków -> etykieta dla KAŻDEJ ramki okna sieci.
+
+    Zwraca wektor `frames` bajtów: numer klasy znaku dla ramek, w których
+    ten znak trwa, oraz 0 tam, gdzie żadnego znaku nie ma.
+
+    PO CO. Głowica „jeden znak z okna" wymusza centrowanie etykiety
+    (`LABEL_INDEX`) i głowicę zależną od pozycji, a przez to gubi znaki
+    w dekodowaniu przesuwanym oknem — zmierzone 17.09.2026. Etykieta na
+    ramkę znosi obie te rzeczy naraz: model mówi, co słyszy TERAZ,
+    a nie „co jest w środku okna".
+
+    NIE POTRZEBUJEMY DO TEGO CTC. CTC istnieje po to, żeby radzić sobie
+    z NIEZNANYM wyrównaniem etykiet do czasu. Nasze dane są syntetyczne,
+    a `morse.keying_envelope(..., return_spans=True)` zwraca faktyczne
+    granice każdego znaku PO rozjeździe klucza — wyrównanie mamy więc
+    z konstrukcji i wystarczy zwykła entropia krzyżowa po osi czasu.
+
+    KLASA 0 ZNACZY TU „ŻADNEGO ZNAKU W TEJ RAMCE", czyli obejmuje zarówno
+    puste radio, jak i przerwy MIĘDZY znakami. To rozszerzenie znaczenia,
+    nie zmiana: dla modelu jedno i drugie to „nie ma czego czytać".
+    Osobna klasa na przerwę zmieniłaby liczbę klas i odcisk front-endu,
+    a nie wnosi nic — przerwa międzyznakowa jest rozpoznawalna po tym,
+    że sąsiaduje ze znakami.
+
+    Ramka należy do znaku, gdy JEJ ŚRODEK wypada w granicach znaku.
+    Stąd `ceil` na początku i `floor` na końcu.
+    """
+    y = np.zeros(int(frames), dtype=np.uint8)
+    if not spans:
+        return y
+
+    for tag, a, b in spans:
+        if not (0 <= tag < len(text)):
+            continue
+        cid = C.CHAR_TO_ID.get(text[tag], 0)
+        if cid == 0:
+            continue
+
+        fa = sample_to_window_frame(float(a) + offset, n_samples)
+        fb = sample_to_window_frame(float(b) + offset, n_samples)
+        if not (np.isfinite(fa) and np.isfinite(fb)) or fb < fa:
+            continue
+
+        i0 = max(0, int(np.ceil(fa)))
+        i1 = min(int(frames), int(np.floor(fb)) + 1)
+
+        if i1 <= i0:
+            # Znak KRÓTSZY niż odstęp ramek albo wypadający między ich
+            # środkami. Bez tego zabezpieczenia zniknąłby z etykiet, a to
+            # gorsze niż nieprecyzyjna ramka: model uczyłby się, że w tym
+            # miejscu NIE MA znaku. "E" przy 30 WPM trwa 40 ms, czyli dwie
+            # ramki — więc normalnie to nie zachodzi, ale zachodziłoby
+            # przy szybszym nadawaniu niż trenowane.
+            srodek = int(round(0.5 * (fa + fb)))
+            if 0 <= srodek < int(frames):
+                y[srodek] = cid
+            continue
+
+        y[i0:i1] = cid
+
+    return y
+
+
 # --------------------------------------------------------------------------
 # CAŁA ŚCIEŻKA — jedyne wejście dla wszystkich narzędzi
 # --------------------------------------------------------------------------

@@ -367,7 +367,10 @@ fi
 # --- 3. ZBIÓR ------------------------------------------------------------
 echo
 echo "--- zbiór ---"
-POTRZEBNE="chirp sag hum agc_tau fist_drift gap_jitter"
+# yf = etykiety na ramke. Czesc bez nich powstala przed 21.09 i musi
+# byc wygenerowana od nowa, inaczej architektury w pelni splotowe nie
+# maja czego uczyc.
+POTRZEBNE="chirp sag hum agc_tau fist_drift gap_jitter yf"
 echo "wzorzec: $ZBIOR   (${CZESCI} x ${N_PROBEK} = ${LACZNIE} próbek)"
 GENERUJ=1
 # Sprawdzamy KAZDA czesc, nie tylko pierwsza: jedna uszkodzona albo

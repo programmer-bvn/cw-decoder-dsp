@@ -978,13 +978,13 @@ def test_sciezka_danych():
                 np.savez(kat / f"cz_{k:02d}.npz", X=X, y=y,
                          fingerprint=sa.FINGERPRINT,
                          meta=f"n={n};seed={ziarno};wpm={sa.WPM};realism=1")
-            Xs, ys, meta = sa.load_dataset(str(kat / "cz_*.npz"))
+            Xs, ys, _yf, meta = sa.load_dataset(str(kat / "cz_*.npz"))
             ok = len(ys) == 2 * n and Xs.shape[0] == 2 * n
             check("wzorzec skleja części", ok,
                   "" if ok else f"dostałem {len(ys)} zamiast {2*n}")
             # Opis MUSI być powtarzalny — inaczej każde uruchomienie
             # wygląda jak podmiana zbioru i kasuje najlepszy wynik.
-            _, _, meta2 = sa.load_dataset(str(kat / "cz_*.npz"))
+            _, _, _, meta2 = sa.load_dataset(str(kat / "cz_*.npz"))
             check("opis sklejonego zbioru jest powtarzalny", meta == meta2,
                   "" if meta == meta2 else f"{meta}\n{meta2}")
             check("opis wymienia oba ziarna", "111" in meta and "222" in meta,
@@ -1060,6 +1060,106 @@ def test_tune_poza_pasmem():
           "brak zaczepu" if not np.isfinite(f2) else f"zmierzone {f2:.0f} Hz")
 
 
+
+# ==========================================================================
+# TEST 17: ETYKIETY NA RAMKĘ SĄ WYRÓWNANE Z OBRAZEM
+#
+#  Najgroźniejszy możliwy błąd w etykietach na ramkę to PRZESUNIĘCIE:
+#  etykieta mówi „tu jest znak", a w obrazie sygnał zaczyna się dwie ramki
+#  dalej. Nic się nie wywala, model uczy się przesuniętej prawdy, a wynik
+#  jest po prostu gorszy bez widocznej przyczyny.
+#
+#  Ten projekt ma już taki przypadek za sobą: Waterfall trzymał obraz
+#  zamiast audio i dawał dwuramkowe przesunięcie wobec ścieżki plikowej.
+#
+#  Test sprawdza to NIEZALEŻNIE, zderzając dwie osobne ścieżki: energię
+#  policzoną z obrazu (`to_net_image`) i etykiety policzone z granic
+#  znaków (`frame_labels`). Szuka przesunięcia, przy którym zgadzają się
+#  najlepiej — i wymaga, żeby było to ZERO.
+# ==========================================================================
+def test_etykiety_ramek():
+    section("TEST 17: etykiety na ramkę wyrównane z obrazem")
+
+    rng = np.random.default_rng(17)
+
+    # Bez modelu kanału: chcemy mierzyć wyrównanie, a nie odporność na
+    # zanik, który mógłby wygasić sygnał akurat tam, gdzie stoi etykieta.
+    audio, meta = radio.receive("ABC", rng, n_samples=C.CLIP_SAMPLES,
+                                realism=False)
+    img = frontend.to_net_image(audio)
+    yf = frontend.frame_labels(meta.get("spans", []),
+                               float(meta.get("offset", 0.0)),
+                               meta.get("text", ""))
+
+    check("etykieta ma długość okna", yf.shape == (C.IMG_FRAMES,),
+          f"{yf.shape} zamiast ({C.IMG_FRAMES},)")
+
+    ile_znak = int((yf > 0).sum())
+    check("część ramek ma znak, część nie", 0 < ile_znak < C.IMG_FRAMES,
+          f"ramek ze znakiem: {ile_znak}/{C.IMG_FRAMES}")
+    if not (0 < ile_znak < C.IMG_FRAMES):
+        return
+
+    # Energia w ramce: maksimum po pasmach mel. Ton jest wąskopasmowy,
+    # więc maksimum jest tu lepsze od średniej — średnia rozmyłaby go
+    # po 32 pasmach, z których zajęte jest kilka.
+    energia = img.max(axis=1)
+
+    def rozdzial(przes: int) -> float:
+        """Różnica energii: ramki z etykietą minus ramki bez, przy
+        etykiecie przesuniętej o `przes`."""
+        e = np.roll(energia, przes)
+        ma = yf > 0
+        if ma.all() or (~ma).all():
+            return -1.0
+        return float(e[ma].mean() - e[~ma].mean())
+
+    przesuniecia = list(range(-6, 7))
+    wyniki = {p: rozdzial(p) for p in przesuniecia}
+    najlepsze = max(wyniki, key=wyniki.get)
+
+    check("najlepsze wyrównanie to przesunięcie ZERO", najlepsze == 0,
+          "najlepsze przy " + str(najlepsze) + ", wartości: "
+          + " ".join(f"{p:+d}:{wyniki[p]:.3f}" for p in przesuniecia))
+
+    # Sam rozdział też musi być wyraźny: gdyby etykiety były losowe,
+    # różnica byłaby bliska zeru mimo poprawnego "najlepszego" przesunięcia.
+    check("ramki z etykietą są WYRAŹNIE jaśniejsze", wyniki[0] > 0.15,
+          f"różnica energii {wyniki[0]:.3f} (próg 0,15)")
+
+    # --- klasy w etykiecie odpowiadają nadanym znakom ---
+    obecne = sorted({int(v) for v in yf if v})
+    oczekiwane = sorted({C.CHAR_TO_ID[z] for z in "ABC"})
+    check("etykieta zawiera dokładnie nadane znaki",
+          obecne == oczekiwane,
+          f"w etykiecie {[C.ALPHABET[i] for i in obecne]}, "
+          f"nadano {list('ABC')}")
+
+    # --- cisza daje same zera ---
+    audio0, meta0 = radio.receive("", rng, n_samples=C.CLIP_SAMPLES,
+                                  realism=False)
+    yf0 = frontend.frame_labels(meta0.get("spans", []),
+                                float(meta0.get("offset", 0.0)),
+                                meta0.get("text", ""))
+    check("puste radio -> same zera", int(yf0.sum()) == 0,
+          f"suma {int(yf0.sum())}")
+
+    # --- standalone liczy to samo ---
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parent / "train_rtx.py"
+    if path.exists():
+        spec = importlib.util.spec_from_file_location("_fl", path)
+        sa = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sa)
+        yf_sa = sa.frame_labels(meta.get("spans", []),
+                                float(meta.get("offset", 0.0)),
+                                meta.get("text", ""))
+        check("train_rtx.py daje IDENTYCZNE etykiety",
+              bool(np.array_equal(yf, yf_sa)),
+              f"różnic: {int((yf != yf_sa).sum())} ramek")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1071,7 +1171,7 @@ def main() -> int:
              test_generator_clip, test_radio, test_fist, test_nadajnik,
              test_fist_drift, test_standalone,
              test_dpu_model, test_melref, test_sciezka_danych,
-             test_tune_poza_pasmem)
+             test_tune_poza_pasmem, test_etykiety_ramek)
 
     for t in tests:
         try:

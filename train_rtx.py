@@ -726,13 +726,15 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
         meta.update(tone=tone, amp=amp, wpm=wpm, fist=fist,
                     fist_drift=fist_drift, gap_jitter=gap_jit,
                     drift=drift, chirp=chirp, sag=sag, hum=hum,
-                    qsb=qsb, text=text, lab_a=lab_a, lab_b=lab_b)
+                    qsb=qsb, text=text, lab_a=lab_a, lab_b=lab_b,
+                    spans=spans, offset=offset)
     else:
         meta.update(tone=float("nan"), amp=0.0, wpm=WPM, fist=0.0,
                     fist_drift=0.0, gap_jitter=0.0,
                     drift=0.0, chirp=0.0, sag=0.0, hum=0.0,
                     qsb=0.0, text="",
-                    lab_a=float("nan"), lab_b=float("nan"))
+                    lab_a=float("nan"), lab_b=float("nan"),
+                    spans=[], offset=0)
 
     qrm = 0.0
     if realism and rng.random() < QRM_PROB:
@@ -915,6 +917,57 @@ def sample_to_window_frame(sample: float,
     return sample / HOP_LENGTH - window_crop_start(n_samples)
 
 
+
+def frame_labels(spans, offset: float, text: str,
+                 n_samples: int = CLIP_SAMPLES,
+                 frames: int = IMG_FRAMES) -> np.ndarray:
+    """Granice znaków -> etykieta dla KAŻDEJ ramki okna sieci.
+
+    Odpowiednik dsp.frontend.frame_labels. Zwraca `frames` bajtów: numer
+    klasy znaku tam, gdzie ten znak trwa, oraz 0 tam, gdzie żadnego nie ma.
+
+    NIE POTRZEBUJEMY DO TEGO CTC. CTC rozwiązuje problem NIEZNANEGO
+    wyrównania etykiet do czasu. Dane są syntetyczne, a granice znaków
+    pochodzą z syntezy PO rozjeździe klucza — wyrównanie mamy więc
+    z konstrukcji i wystarczy entropia krzyżowa po osi czasu.
+
+    Klasa 0 znaczy "żadnego znaku w tej ramce" i obejmuje zarówno puste
+    radio, jak i przerwy MIĘDZY znakami.
+
+    Ramka należy do znaku, gdy JEJ ŚRODEK wypada w jego granicach.
+    """
+    y = np.zeros(int(frames), dtype=np.uint8)
+    if not spans:
+        return y
+
+    for tag, a, b in spans:
+        if not (0 <= tag < len(text)):
+            continue
+        cid = CHAR_TO_ID.get(text[tag], 0)
+        if cid == 0:
+            continue
+
+        fa = sample_to_window_frame(float(a) + offset, n_samples)
+        fb = sample_to_window_frame(float(b) + offset, n_samples)
+        if not (np.isfinite(fa) and np.isfinite(fb)) or fb < fa:
+            continue
+
+        i0 = max(0, int(np.ceil(fa)))
+        i1 = min(int(frames), int(np.floor(fb)) + 1)
+
+        if i1 <= i0:
+            # Znak krótszy niż odstęp ramek. Bez tego zniknąłby z etykiet,
+            # a to gorsze niż nieprecyzyjna ramka: model uczyłby się, że
+            # w tym miejscu NIE MA znaku.
+            srodek = int(round(0.5 * (fa + fb)))
+            if 0 <= srodek < int(frames):
+                y[srodek] = cid
+            continue
+
+        y[i0:i1] = cid
+
+    return y
+
 def make_clip(rng: np.random.Generator, realism: bool = True):
     """Jeden klip + etykieta + opis. Etykietą jest ŚRODKOWY znak."""
     if rng.random() > SILENCE_FRACTION:
@@ -935,12 +988,19 @@ def _gen_chunk(args):
     rng = np.random.default_rng([seed, chunk_id])
     X = np.empty((count, IMG_FRAMES, IMG_BINS), dtype=np.uint8)
     y = np.empty(count, dtype=np.int16)
+    # Etykieta na KAZDA ramke, dla architektur w pelni splotowych.
+    # Skalarne y zostaje obok, bo architektura "dpu" nadal na nim stoi
+    # i sluzy jako punkt odniesienia. Koszt: +3% rozmiaru zbioru.
+    yf = np.empty((count, IMG_FRAMES), dtype=np.uint8)
     cols = {k: np.empty(count, dtype=np.float32) for k in META_FIELDS}
     texts = []
     for i in range(count):
         audio, target, meta = make_clip(rng, realism=realism)
         X[i] = np.rint(to_net_image(audio) * 255.0).astype(np.uint8)
         y[i] = target
+        yf[i] = frame_labels(meta.get("spans", []),
+                             float(meta.get("offset", 0.0)),
+                             meta.get("text", ""))
         for src, dst in (("lab_a", "lab_x0"), ("lab_b", "lab_x1")):
             v = meta.get(src, np.nan)
             meta[dst] = (np.nan if not np.isfinite(v)
@@ -948,7 +1008,7 @@ def _gen_chunk(args):
         for k in META_FIELDS:
             cols[k][i] = meta.get(k, np.nan)
         texts.append(meta["text"])
-    return X, y, cols, texts
+    return X, y, yf, cols, texts
 
 
 def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
@@ -964,12 +1024,13 @@ def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
     print(f"generuję {n} próbek na {workers} procesach "
           f"({len(chunks)} kawałków po {per})")
 
-    Xs, ys, colss, texts = [], [], [], []
+    Xs, ys, yfs, colss, texts = [], [], [], [], []
     t0 = time.time()
     done = 0
     with cf.ProcessPoolExecutor(max_workers=workers) as ex:
-        for X, y, cols, tx in ex.map(_gen_chunk, chunks):
-            Xs.append(X); ys.append(y); colss.append(cols); texts.extend(tx)
+        for X, y, yf, cols, tx in ex.map(_gen_chunk, chunks):
+            Xs.append(X); ys.append(y); yfs.append(yf)
+            colss.append(cols); texts.extend(tx)
             done += len(y)
             el = time.time() - t0
             print(f"\r  {done}/{n}  {el:.0f}s  "
@@ -977,10 +1038,11 @@ def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
     print()
 
     X = np.concatenate(Xs); y = np.concatenate(ys)
+    yf = np.concatenate(yfs)
     cols = {k: np.concatenate([c[k] for c in colss]) for k in META_FIELDS}
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(out_path, X=X, y=y, text=np.array(texts),
+    np.savez(out_path, X=X, y=y, yf=yf, text=np.array(texts),
              fingerprint=FINGERPRINT, dtype_note=STORE_DTYPE,
              meta=f"n={n};seed={seed};wpm={WPM};realism={int(realism)}",
              **cols)
@@ -1228,20 +1290,37 @@ def load_dataset(spec):
             f"    memory=24GB\n"
             f"potem 'wsl --shutdown'. Szczegóły: srodowisko/README.md")
 
-    Xs, ys, metki = [], [], []
+    Xs, ys, yfs, metki = [], [], [], []
+    bez_ramek = []
     for p in pliki:
         data = np.load(p, allow_pickle=False)
         _sprawdz_odcisk(data, p)
         Xs.append(np.asarray(data["X"]))
         ys.append(np.asarray(data["y"]).astype(np.int32))
+        # Etykiety na ramkę są NOWE. Części wygenerowane wcześniej ich nie
+        # mają i to NIE jest błąd — architektura "dpu" stoi na skalarnym y
+        # i ma dalej działać. Brak zgłasza dopiero ta architektura, która
+        # ich potrzebuje, i mówi wprost, co zrobić.
+        if "yf" in data.files:
+            yfs.append(np.asarray(data["yf"]))
+        else:
+            bez_ramek.append(p.name)
         metki.append(str(data["meta"]) if "meta" in data else "")
 
+    if bez_ramek:
+        print(f"bez etykiet na ramkę: {len(bez_ramek)} z {len(pliki)} części"
+              f" ({', '.join(bez_ramek[:3])}"
+              f"{', ...' if len(bez_ramek) > 3 else ''})")
+        yfs = []
+
     if len(pliki) == 1:
-        return Xs[0], ys[0], metki[0]
+        return Xs[0], ys[0], (yfs[0] if yfs else None), metki[0]
 
     X = np.concatenate(Xs)
     del Xs                      # 8 GB nie moze lezec w dwoch kopiach
     y = np.concatenate(ys)
+    yf = np.concatenate(yfs) if yfs else None
+    del yfs
 
     # Opis zbioru idzie do stanu treningu, zeby wznowienie wykrylo podmiane
     # danych. Musi byc DETERMINISTYCZNY dla tego samego zestawu czesci --
@@ -1252,7 +1331,7 @@ def load_dataset(spec):
                      for m in metki if "seed=" in m})
     meta = (f"czesci={len(pliki)};n={len(y)};seeds={','.join(ziarna)};"
             f"wpm={WPM};realism=1")
-    return X, y, meta
+    return X, y, yf, meta
 
 
 def stratified_split(y: np.ndarray, val_fraction: float, seed: int):
@@ -1485,7 +1564,7 @@ def train(args):
         print("--mixed pominięte: brak GPU")
 
     # --- dane ---
-    X, y, ds_meta = load_dataset(args.dataset)
+    X, y, yf, ds_meta = load_dataset(args.dataset)
     print(f"opis zbioru: {ds_meta or '(brak)'}")
     print(f"zbiór: {X.shape} {X.dtype} ({X.nbytes/1024/1024:.0f} MB)")
     tr, va = stratified_split(y, args.val, args.seed)
@@ -1654,8 +1733,21 @@ def main(argv=None):
             for k in range(args.shards):
                 cel = Path(f"{baza}_{k:02d}.npz")
                 if cel.exists():
-                    print(f"[{k+1}/{args.shards}] {cel} juz jest — pomijam")
-                    continue
+                    # Pomijamy tylko czesci KOMPLETNE. Czesc bez etykiet na
+                    # ramke (wygenerowana przed ich wprowadzeniem) musi
+                    # powstac od nowa -- inaczej zbior wyszedlby mieszany,
+                    # load_dataset wylaczylby etykiety dla CALOSCI, a powod
+                    # bylby widoczny dopiero w jednej linijce logu.
+                    try:
+                        with np.load(cel, allow_pickle=False) as d:
+                            ma_ramki = "yf" in d.files
+                    except Exception:
+                        ma_ramki = False
+                    if ma_ramki:
+                        print(f"[{k+1}/{args.shards}] {cel} juz jest — pomijam")
+                        continue
+                    print(f"[{k+1}/{args.shards}] {cel} BEZ etykiet na ramke"
+                          f" — generuje od nowa")
                 print(f"\n[{k+1}/{args.shards}] {cel}")
                 generate(args.n, cel, seed=args.seed + 1000 * k,
                          realism=not args.no_realism, workers=args.workers)
