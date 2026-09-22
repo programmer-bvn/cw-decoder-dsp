@@ -894,8 +894,18 @@ def to_net_image(audio: np.ndarray, sr: int = SR) -> np.ndarray:
 # =============================================================================
 # GENERATOR ZBIORU
 # =============================================================================
+# MUSI BYC IDENTYCZNE z _META_FIELDS w tools/generator.py. Pilnuje tego
+# TEST 12 w diag.py -- dopisany po tym, jak rozjazd tych dwoch list
+# przeslizgnal sie niezauwazony: standalone LICZYL chirp, sag, hum,
+# agc_tau, fist_drift i gap_jitter, ale ich nie zapisywal, bo nie bylo ich
+# na liscie. Skutek: noc.sh co noc uznawal zbior za przestarzaly, bo szukal
+# kolumn, ktorych nigdy tam nie bylo.
 META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb", "qrm", "qrn",
                "noise_rms", "noise_tilt", "peak",
+               # Wady nadajnika i odbiornika. Bez nich nie da sie
+               # odpowiedziec, czy model przewraca sie na chirpie, na
+               # przydzwieku, czy na ARW.
+               "fist_drift", "gap_jitter", "chirp", "sag", "hum", "agc_tau",
                # Położenie znaku z etykiety w ramkach okna sieci — X-Ray
                # rysuje po tym biały wskaźnik pod kafelkiem.
                "lab_x0", "lab_x1")
@@ -1738,15 +1748,24 @@ def main(argv=None):
                     # powstac od nowa -- inaczej zbior wyszedlby mieszany,
                     # load_dataset wylaczylby etykiety dla CALOSCI, a powod
                     # bylby widoczny dopiero w jednej linijce logu.
+                    # KOMPLETNA to taka, ktora ma WSZYSTKO, co dzis
+                    # zapisujemy: etykiety na ramke i wszystkie kolumny
+                    # opisu kanalu. Jedna definicja kompletnosci, ta sama
+                    # ktora sprawdza noc.sh -- inaczej czesc niepelna
+                    # bylaby pomijana w nieskonczonosc, a sprawdzenie
+                    # zglaszalo braki co noc.
+                    wymagane = ("yf",) + META_FIELDS
                     try:
                         with np.load(cel, allow_pickle=False) as d:
-                            ma_ramki = "yf" in d.files
-                    except Exception:
-                        ma_ramki = False
-                    if ma_ramki:
+                            brak = [w for w in wymagane if w not in d.files]
+                    except Exception as e:
+                        brak = [f"nie moge otworzyc: {e}"]
+                    if not brak:
                         print(f"[{k+1}/{args.shards}] {cel} juz jest — pomijam")
                         continue
-                    print(f"[{k+1}/{args.shards}] {cel} BEZ etykiet na ramke"
+                    print(f"[{k+1}/{args.shards}] {cel} NIEKOMPLETNA "
+                          f"(brak: {' '.join(brak[:6])}"
+                          f"{' ...' if len(brak) > 6 else ''})"
                           f" — generuje od nowa")
                 print(f"\n[{k+1}/{args.shards}] {cel}")
                 generate(args.n, cel, seed=args.seed + 1000 * k,

@@ -1,0 +1,103 @@
+======================================================================
+ KOPERTA I BŁĘDY: runs/dpu_1000000/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x7 komórek po 40 próbek; błędy z 3000 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .     20     50     10      .      .
+     13            .      .     78    100     52      .      .
+     15            .      .      .    100      .      .      .
+     18            .      .      .    100      .      .      .
+     20            .      .      .    100      .      .      .
+     22            .      .      8    100      2      .      .
+     25            .      .     18    100      2      .      .
+     27            .      .     20     98      2      .      .
+     30            .      .      .     98      2      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  czyta (>= 50%): tempo 10-30 WPM, ton 650-850 Hz
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              2     50.0%           0.0%
+  90-100%             3    100.0%           0.0%
+  cały (100%)      2995     98.7%           0.4%
+
+WYROK
+
+  znak w całości w oknie:   98.7% trafień (2995 próbek)
+  znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  5 przypadków na 3000 (0.17%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+  12-14         423    99.3%      0.0%    0.2%    0.2%       0.9%
+  15-17         645    98.6%      0.8%    0.3%    0.2%       0.2%
+  18-20         669    99.0%      0.4%    0.3%    0.1%       0.0%
+  21-23         605    98.7%      0.0%    0.7%    0.2%       0.0%
+  24-26         658    98.0%      0.6%    0.5%    0.5%       0.0%
+
+TRAFIENIA WOBEC DŁUGOŚCI KODU
+
+  elementów   próbek   trafień   przykłady
+  ----------------------------------------------------
+      1          154     96.8%   E T
+      2          321     99.4%   A I M N
+      3          678     99.1%   D G K O R S U W
+      4         1028     98.3%   B C F H J L P Q V X Y Z
+      5          819     98.8%   cyfry 0-9
+
+  krótkie (1-2 elementy): 98.5%  (475 próbek)
+  długie  (4-5 elementów): 98.5%  (1847 próbek)
+  Różnica tylko 0.0 pp — zależności NIE MA.
+  Czyli gubienie krótkich znaków na nagraniach bierze się
+  nie z samej sieci, a z czegoś dalej: najpewniej z tego,
+  że długie znaki trwają dłużej, zbierają więcej okien
+  i wygrywają przy scalaniu powtórzeń.
+
+  najgorzej czytane znaki:
+    T -       95.3%  (85 próbek)
+    R .-.     95.8%  (72 próbek)
+    Y -.--    96.3%  (81 próbek)
+    V ...-    96.9%  (96 próbek)
+    P .--.    97.7%  (88 próbek)
+
+NAJCZĘSTSZE POMYŁKI
+
+  H ....   -> S ...         2x   zgubiony element
+  A .-     -> V ...-        1x   inne
+  5 .....  -> Z --..        1x   zgubiony element
+  1 .----  -> M --          1x   inne
+  K -.-    -> Q --.-        1x   wstawiony element
+  R .-.    -> C -.-.        1x   wstawiony element
+  E .      ->   (cisza)     1x   wzięty za ciszę
+  9 ----.  -> 1 .----       1x   kropka/kreska
+  R .-.    -> B -...        1x   wstawiony element
+  4 ....-  -> V ...-        1x   zgubiony element
+  Z --..   -> X -..-        1x   kropka/kreska
+  Z --..   -> O ---         1x   zgubiony element
+

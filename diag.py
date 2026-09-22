@@ -672,6 +672,29 @@ def test_standalone():
     sa = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sa)
 
+    # --- 12z. te same kolumny opisu w obu sciezkach ---
+    # Dopisane po tym, jak rozjazd przeslizgnal sie niezauwazony przez
+    # tydzien: standalone LICZYL chirp, sag, hum, agc_tau, fist_drift
+    # i gap_jitter, ale ich nie zapisywal, bo nie bylo ich w META_FIELDS.
+    # Skutek byl cichy -- noc.sh co noc uznawal zbior za przestarzaly
+    # i szukal kolumn, ktorych nigdy tam nie bylo.
+    try:
+        from tools.generator import _META_FIELDS as moje
+        ich = tuple(sa.META_FIELDS)
+        brak_u_nich = [k for k in moje if k not in ich]
+        brak_u_mnie = [k for k in ich if k not in moje]
+        ok = not brak_u_nich and not brak_u_mnie
+        szczegol = ""
+        if brak_u_nich:
+            szczegol += "brak w train_rtx.py: " + " ".join(brak_u_nich)
+        if brak_u_mnie:
+            szczegol += ("\nbrak w tools/generator.py: "
+                         + " ".join(brak_u_mnie))
+        check("kolumny opisu IDENTYCZNE w obu ścieżkach", ok, szczegol)
+    except Exception as e:
+        check("kolumny opisu w obu ścieżkach", False,
+              f"{type(e).__name__}: {e}")
+
     # --- 12a. odcisk front-endu ---
     mine, theirs = C.fingerprint_str(), sa.FINGERPRINT
     if mine == theirs:
