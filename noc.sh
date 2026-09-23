@@ -305,6 +305,44 @@ fi
 
 echo "python: $(command -v python)  ($(python --version 2>&1))"
 
+# --- ILE KOSZTUJE SAM START ---------------------------------------------
+#  Import TensorFlow to kilka tysięcy drobnych plików. Gdy środowisko leży
+#  pod /mnt/ (czyli za drvfs — warstwą tłumaczącą WSL do dysku Windows),
+#  każdy z nich idzie przez tę warstwę i sam import potrafi trwać minuty.
+#  Objaw jest mylący: jeden rdzeń na 100%, karta bezczynna, wiatraki
+#  milczą — wygląda jak trening, który nie umie użyć karty, a to jeszcze
+#  nie zaczął się trening.
+#
+#  22.09 noc stanęła dokładnie na tym i została przerwana Ctrl+C
+#  w trakcie 'import wrapt' wewnątrz TensorFlow.
+#
+#  Ten pomiar NIE kosztuje nocy: zaraz po nim idzie sprawdzenie karty,
+#  które i tak importuje TensorFlow. Drugi import jest już z pamięci
+#  podręcznej, więc płacimy raz za coś, za co i tak byśmy zapłacili.
+#
+#  Liczba jest tu mierzona, a nie zakładana, bo to jedyny sposób, żeby
+#  wiedzieć, czy przeniesienie venv na natywny system plików WSL coś da.
+_venv_gdzie="$(python -c 'import sys; print(sys.prefix)' 2>/dev/null)"
+_t0=$(date +%s)
+python -c 'import tensorflow' >/dev/null 2>&1
+_timp=$(( $(date +%s) - _t0 ))
+echo "import tensorflow: ${_timp} s   (venv: ${_venv_gdzie})"
+case "$_venv_gdzie" in
+  /mnt/*)
+    if [ "$_timp" -ge 20 ]; then
+      echo
+      echo "  UWAGA: środowisko leży za drvfs i start kosztuje ${_timp} s."
+      echo "  Przeniesienie go na natywny system plików WSL zwykle skraca"
+      echo "  to do kilku sekund. Koszt ponosi się przy KAŻDYM etapie,"
+      echo "  bo każdy woła pythona od nowa."
+      echo "      export CW_VENV=\$HOME/venv_gpu"
+      echo "      ./srodowisko/setup_gpu_env.sh"
+      echo "  Potem to samo CW_VENV przed każdym ./noc.sh (albo do .bashrc)."
+      echo "  Dane i kod zostają na SSD — przenosi się TYLKO biblioteki."
+    fi
+    ;;
+esac
+
 # Wersja Pythona jest tu sprawdzana ODDZIELNIE, bo to najtańsza możliwa
 # diagnoza: TensorFlow ma koła tylko dla cp310-cp313, a WSL domyślnie
 # podaje 3.14. Bez tego objawem jest "No module named tensorflow" albo
@@ -699,6 +737,26 @@ nagrania () {
     fi
     return $RC
 }
+
+# --- PRZEPUSTOWOŚĆ ------------------------------------------------------
+#  Odpowiada na pytanie, które przez cały projekt było ZAŁOŻENIEM, a nie
+#  pomiarem: czy tempo treningu wyznacza karta, czy potok wejściowy.
+#  Liczba 8000 próbek/s, na której opierają się rachunki (m.in. odrzucenie
+#  generowania w locie), powstała z podzielenia czasu epoki przez liczbę
+#  próbek — czyli z pomiaru CAŁOŚCI, bez rozbicia na składniki.
+#
+#  Etap trwa pół minuty i rozbija to na trzy liczby: sam potok, sam model
+#  na karcie, oba naraz. Dopiero wtedy widać, które z nich rządzi.
+przepustowosc () {
+    ETAP_LOG="$LOGI/noc_${STEMPEL}_przepustowosc.log"
+    python -m tools.przepustowosc --batch "$BATCH" > "$ETAP_LOG" 2>&1
+    local RC=$?
+    grep -aE "próbek/s|WĄSKIM GARDŁEM|W PARZE|UWAGA:|bezczynnie" "$ETAP_LOG" \
+        | sed 's/^/  /' || tail -12 "$ETAP_LOG"
+    return $RC
+}
+
+etap "PRZEPUSTOWOSC"            przepustowosc
 
 etap "TRENING dpu -> $RUN_DPU"  trenuj dpu "$RUN_DPU"
 etap "KOPERTA dpu"              koperta dpu "$RUN_DPU"

@@ -1596,11 +1596,14 @@ def _do_float(img, label, *rest):
 
 def make_pipeline(X, y, idx, batch: int, training: bool,
                   weights: np.ndarray | None = None):
-    """tf.data; konwersja uint8 -> float32 dopiero w partii.
+    """tf.data; konwersja uint8 -> float32 dopiero po pocięciu na partie.
 
     Obrazy leżą jako uint8 (200 tys. próbek = 790 MB). W float32 byłoby
     3,1 GB, plus tyle samo na kopię przy podziale — stąd brały się braki
     pamięci przy dużych zbiorach.
+
+    Kolejność kroków jest opisana przy `return` i ma znaczenie dla
+    tempa treningu — nie wolno jej odwrócić.
     """
     import tensorflow as tf
     Xs = X if idx is None else X[idx]
@@ -1635,8 +1638,22 @@ def make_pipeline(X, y, idx, batch: int, training: bool,
         # bez indeksowania) idx to None i len() sie wywala. Zostawiony
         # ogon po dodaniu obslugi idx=None -- zabral noc 14/15.09.
         ds = ds.shuffle(min(len(ys), 50000), reshuffle_each_iteration=True)
-    return (ds.map(_do_float, num_parallel_calls=tf.data.AUTOTUNE)
-              .batch(batch).prefetch(tf.data.AUTOTUNE))
+    # NAJPIERW .batch(), POTEM .map() -- kolejnosc nie jest kosmetyczna.
+    #
+    # Do 23.09 bylo odwrotnie i docstring tej funkcji opisywal zamiar
+    # ("konwersja dopiero w partii"), a nie to, co kod robil. Przy
+    # .map().batch() rzutowanie i expand_dims wykonuja sie OSOBNO dla
+    # kazdej probki: 256 drobnych operacji na krok zamiast jednej na
+    # partie. Kazda z nich sama w sobie jest znikoma, ale narzut tf.data
+    # na wywolanie jest staly i to on zaczyna rzadzic.
+    #
+    # Objaw, ktory to zglosil: procesor na 100%, karta tylko w krotkich
+    # pikach. Czyli nie karta wyznaczala tempo 8500 probek/s, tylko potok
+    # wejsciowy -- a my przez caly czas braliśmy te liczbe za wydajnosc
+    # RTX 3050 i planowali wokol niej.
+    return (ds.batch(batch)
+              .map(_do_float, num_parallel_calls=tf.data.AUTOTUNE)
+              .prefetch(tf.data.AUTOTUNE))
 
 
 # =============================================================================
