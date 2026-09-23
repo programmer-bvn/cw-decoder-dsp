@@ -1023,16 +1023,49 @@ def _gen_chunk(args):
 
 def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
              workers: int | None = None) -> Path:
-    """Zbiór treningowy -> .npz. Równolegle na wszystkich rdzeniach."""
+    """Zbiór treningowy -> .npz. Równolegle, ale NIE na wszystkich rdzeniach."""
     import concurrent.futures as cf
 
-    workers = workers or max(1, (os.cpu_count() or 2) - 1)
+    # ILE ZOSTAWIĆ WOLNYCH RDZENI — i dlaczego to nie jest przesada.
+    #
+    # Było `cpu_count() - 1`, czyli 11 procesów na 12 wątkach. Wewnątrz
+    # WSL2 `os.cpu_count()` zwraca WSZYSTKIE logiczne procesory hosta, bo
+    # maszyna wirtualna domyślnie dostaje je wszystkie. Jeden wolny wątek
+    # zostawał więc nie systemowi Windows, tylko Linuksowi w środku —
+    # a host nie zostawał z niczym.
+    #
+    # Objaw zgłoszony 23.09: wszystkie rdzenie na 100% i ROZŁĄCZAJĄCE SIĘ
+    # WiFi. To nie jest kosmetyka. Nocna kolejka kończy się etapem 7:
+    # commit, paczka i push. Jeśli sieć pada w trakcie generowania i nie
+    # wraca, wyniki nie wyjeżdżają z maszyny — a właśnie po to ten etap
+    # istnieje. Ten projekt ma już zapisaną jedną taką awarię:
+    # "Could not resolve host: github.com" w out/git.log.
+    #
+    # DECYZJA: zostaje JEDEN wolny rdzeń, czyli maksymalne tempo.
+    # Podniosłem to chwilowo do dwóch po zgłoszeniu o WiFi i zostało
+    # cofnięte — ta maszyna nie robi nic poza mieleniem danych, więc
+    # rozłączona sieć w trakcie generowania nikomu nie przeszkadza.
+    # Sieć jest potrzebna dopiero w etapie 7 (commit, paczka, push),
+    # a ten idzie godziny później, gdy rdzenie są już wolne.
+    #
+    # Gdyby kiedyś ta maszyna miała robić coś jeszcze w trakcie:
+    #     generate --workers N            mniej procesów
+    #     .wslconfig -> processors=N      twardy limit po stronie Windows
+    #                                     (srodowisko/wslconfig.bat 24 N)
+    # Drugie jest skuteczniejsze, bo działa niezależnie od tego, co
+    # w maszynie wirtualnej akurat chodzi.
+    ZAPAS = 1
+    workers = workers or max(1, (os.cpu_count() or 4) - ZAPAS)
     per = 500
     chunks = [(i, min(per, n - i * per), seed, realism)
               for i in range((n + per - 1) // per)]
 
+    _rdzeni = os.cpu_count() or 0
     print(f"generuję {n} próbek na {workers} procesach "
           f"({len(chunks)} kawałków po {per})")
+    if _rdzeni:
+        print(f"  rdzeni widocznych: {_rdzeni}, wolnych: "
+              f"{_rdzeni - workers}")
 
     Xs, ys, yfs, colss, texts = [], [], [], [], []
     t0 = time.time()
