@@ -1,0 +1,20 @@
+============================================================
+ NOC TRENINGOWA  2026-09-22 19:48
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260922_1948.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+BŁĄD: nie znalazłem środowiska wirtualnego.
+Szukałem w:
+    $CW_VENV            = <nieustawione>
+    /mnt/d/AI_DSP/venv_gpu
+    /mnt/d/AI_DSP/.venv
+
+Utworzenie:  ./srodowisko/setup_gpu_env.sh
+
+PRZERWANO: nie ma 'python' w PATH i nie znalazłem czego wysourcować.
+Szukałem: $CW_SETENV, srodowisko/rtx3050_setenv.sh, setenv.sh
+Konfiguracja od zera:  ./srodowisko/setup_gpu_env.sh

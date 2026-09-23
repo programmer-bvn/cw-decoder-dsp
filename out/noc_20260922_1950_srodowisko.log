@@ -1,0 +1,107 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-09-22 19:50:23
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/d/AI_DSP
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python
+wersja: Python 3.12.13
+VIRTUAL_ENV: /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cusparse/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cusolver/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/curand/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cufft/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cublas/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+  /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/nvjitlink/lib
+  
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+
+--- XLA_FLAGS ---
+  <brak>
+
+--- nvidia-smi ---
+Tue Sep 22 19:50:26 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   26C    P8              9W /   70W |     382MiB /   6144MiB |      2%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              34      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790099439.011093     778 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+=== biblioteki dynamiczne (ctypes) ===
+  [ OK ] libcuda.so.1           sterownik NVIDIA (po stronie Windows, przez WSL)
+  [ OK ] libcudart.so.12        CUDA runtime
+  [ OK ] libcublas.so.12        cuBLAS — mnożenie macierzy
+  [ OK ] libcudnn.so.9          cuDNN — splot; bez tego nie ma sieci splotowej
+  [ OK ] libcusparse.so.12      cuSPARSE
+  [ OK ] libnvJitLink.so.12     nvJitLink — kompilacja JIT
+  [ OK ] libcufft.so.11         cuFFT
+  [ OK ] libcurand.so.10        cuRAND
+  [ OK ] libcusolver.so.11      cuSOLVER
+
+=== rejestracja karty w TensorFlow ===
+Traceback (most recent call last):
+  File "<stdin>", line 31, in <module>
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/__init__.py", line 49, in <module>
+    from tensorflow._api.v2 import __internal__
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/_api/v2/__internal__/__init__.py", line 8, in <module>
+    from tensorflow._api.v2.__internal__ import autograph
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/_api/v2/__internal__/autograph/__init__.py", line 8, in <module>
+    from tensorflow.python.autograph.core.ag_ctx import control_status_ctx # line: 34
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/autograph/core/ag_ctx.py", line 21, in <module>
+    from tensorflow.python.autograph.utils import ag_logging
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/autograph/utils/__init__.py", line 17, in <module>
+    from tensorflow.python.autograph.utils.context_managers import control_dependency_on_returns
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/autograph/utils/context_managers.py", line 19, in <module>
+    from tensorflow.python.framework import ops
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/ops.py", line 50, in <module>
+    from tensorflow.python.eager import context
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/eager/context.py", line 38, in <module>
+    from tensorflow.python.eager import execute
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/eager/execute.py", line 23, in <module>
+    from tensorflow.python.framework import tensor_shape
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/framework/tensor_shape.py", line 26, in <module>
+    from tensorflow.python.saved_model import nested_structure_coder
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/saved_model/nested_structure_coder.py", line 38, in <module>
+    from tensorflow.python.util import nest
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/util/nest.py", line 95, in <module>
+    from tensorflow.python.util import nest_util
+  File "/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/lib/python3.12/site-packages/tensorflow/python/util/nest_util.py", line 30, in <module>
+    import wrapt as _wrapt
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1091, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1190, in get_data
+KeyboardInterrupt

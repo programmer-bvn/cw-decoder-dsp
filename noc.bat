@@ -39,7 +39,9 @@ setlocal
 
 set ZRODLO=%~dp0
 set CEL=%~1
-if "%CEL%"=="" set CEL=c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+rem  Zmieniony 23.09: projekt przeniesiony na osobny SSD (D:).
+rem  Stara sciezka byla c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+if "%CEL%"=="" set CEL=d:\AI_DSP
 
 rem Uzytkownik WSL. Konfiguracja karty na tej maszynie powstala jako root
 rem (symlinki do /usr/lib/wsl/lib), wiec taki jest domyslny.

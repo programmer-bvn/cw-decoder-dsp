@@ -274,7 +274,14 @@ if ! command -v python >/dev/null 2>&1; then
     echo
     echo "PRZERWANO: nie ma 'python' w PATH i nie znalazłem czego wysourcować."
     echo "Szukałem: \$CW_SETENV, srodowisko/rtx3050_setenv.sh, setenv.sh"
-    echo "Konfiguracja od zera:  ./srodowisko/setup_gpu_env.sh"
+    echo
+    echo "Jeśli środowisko istnieje, ale w INNYM miejscu niż projekt"
+    echo "(np. projekt przeniesiony na inny dysk, a venv został):"
+    echo "    export CW_VENV=/sciezka/do/venv_gpu"
+    echo "    ./noc.sh ..."
+    echo
+    echo "Konfiguracja od zera, obok projektu:"
+    echo "    ./srodowisko/setup_gpu_env.sh"
     exit 1
 fi
 

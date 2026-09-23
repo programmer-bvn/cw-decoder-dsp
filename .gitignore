@@ -144,3 +144,21 @@ _netrc
 # Poprzednie wpisy na konkretne nazwy notatek od falownika są teraz
 # nadmiarowe (łapie je *.md), ale zostawione świadomie: mówią, skąd te
 # pliki się tu wzięły.
+
+# --- zrzuty ekranu i material obrazkowy ---
+# CW_inspector/ to 21 MB zrzutow z lutego 2026: material historyczny,
+# ktorego kod nie odtworzy, ale ktory nie jest kodem. Miejsce na BD-R,
+# nie w repozytorium. To samo dotyczy zrzutow lezacych w korzeniu.
+*.png
+!docs/**/*.png
+CW_inspector/
+
+# --- smieci z rozjechanych przekierowan w konsoli ---
+# Pliki o 0-12 bajtach, bez rozszerzenia, powstale z pomylek w rodzaju
+# "na_hdd.bat ... > HDD". Nie da sie ich zlapac wzorcem bez ryzyka
+# wyciecia czegos prawdziwego, wiec sa wymienione z nazwy.
+/HDD
+/PENDRAK
+/cel
+/tylko
+/wlasny

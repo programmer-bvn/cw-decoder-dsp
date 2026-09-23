@@ -50,7 +50,18 @@ if [ -z "$_venv" ]; then
     echo "    $_katalog/venv_gpu"
     echo "    $_katalog/.venv"
     echo
-    echo "Utworzenie:  ./srodowisko/setup_gpu_env.sh"
+    echo "MASZ DWIE DROGI."
+    echo
+    echo "1. Środowisko jest gdzie indziej — wskaż je:"
+    echo "       export CW_VENV=/sciezka/do/venv_gpu"
+    echo "   Warto wpisać to na stałe do ~/.bashrc, inaczej trzeba"
+    echo "   pamiętać przy każdym uruchomieniu."
+    echo
+    echo "2. Środowiska nie ma tutaj — zrób je obok projektu:"
+    echo "       ./srodowisko/setup_gpu_env.sh"
+    echo "   To lepsze, gdy projekt leży na osobnym, szybkim dysku:"
+    echo "   kod, dane i biblioteki idą wtedy tym samym kanałem,"
+    echo "   a skrypty znajdują wszystko bez żadnej zmiennej."
     return 1
 fi
 
