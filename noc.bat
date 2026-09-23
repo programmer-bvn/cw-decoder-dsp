@@ -39,9 +39,18 @@ setlocal
 
 set ZRODLO=%~dp0
 set CEL=%~1
-rem  Zmieniony 23.09: projekt przeniesiony na osobny SSD (D:).
-rem  Stara sciezka byla c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
-if "%CEL%"=="" set CEL=d:\AI_DSP
+rem  UWAGA NA LITERY DYSKOW -- pomylilem sie tu 23.09 i warto wiedziec
+rem  dlaczego, bo pomylka byla grozna.
+rem
+rem      D:  to PENDRAK D888, a nie dysk roboczy
+rem      W:  to SSD, na ktorym naprawde stoi projekt
+rem      c:\Users\ADMIN\PyCharmMiscProject  jest LINKIEM na W:
+rem
+rem  Sciezka ponizej idzie wiec przez link i ladauje na SSD. Ustawienie
+rem  tu D: oznaczaloby kopiowanie pendraka SAM NA SIEBIE (zrodlo = cel)
+rem  i trening piszacy po exFAT -- czyli dokladnie to, czemu caly uklad
+rem  z na_hdd.bat ma zapobiegac.
+if "%CEL%"=="" set CEL=c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
 
 rem Uzytkownik WSL. Konfiguracja karty na tej maszynie powstala jako root
 rem (symlinki do /usr/lib/wsl/lib), wiec taki jest domyslny.

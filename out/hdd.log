@@ -1,0 +1,12 @@
+wsl: Failed to translate 'd:\AI_DSP'
+root@DESKTOP-JS7996U:~#
+root@DESKTOP-JS7996U:~#
+root@DESKTOP-JS7996U:~#
+root@DESKTOP-JS7996U:~# . ~/goto_CLAUD.sh
+libsRTX3050.sh.sh: command not found
+root@DESKTOP-JS7996U:/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# dd if=czesci/morse_200000_00.npz of=/dev/null bs=1M status=progress
+581959680 bytes (582 MB, 555 MiB) copied, 2.00282 s, 291 MB/s
+822+1 records in
+822+1 records out
+862807382 bytes (863 MB, 823 MiB) copied, 2.98926 s, 289 MB/s
+root@DESKTOP-JS7996U:/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#
