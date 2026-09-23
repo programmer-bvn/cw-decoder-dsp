@@ -162,3 +162,8 @@ CW_inspector/
 /cel
 /tylko
 /wlasny
+
+# --- odlozone na bok przez srodowisko/porzadki.sh ---
+# Doraźne skrypty z HDD, ktore nie sa ani kodem, ani wynikiem. Nie kasujemy
+# ich (czesto to jedyne kopie), ale nie maja jechac na pendraka i na plyte.
+stare/

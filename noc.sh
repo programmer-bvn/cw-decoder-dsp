@@ -733,6 +733,23 @@ RANO="$LOGI/RANO.txt"
         printf "  %-28s %-6s %s\n" "$NAZWA" "$WYNIK" "$SZCZ"
     done
     echo
+
+    # ŚMIECI W KORZENIU. Wypisywane tutaj, a nie tylko w osobnym skrypcie,
+    # bo inaczej nikt na nie nie patrzy -- a droga jest jednokierunkowa:
+    # doraźny skrypt zrobiony na HDD w trakcie szukania błędu jedzie
+    # z_hdd.bat na pendraka, a stamtąd na BD-R M-DISC, którego NIE DA SIĘ
+    # skasować. Pół godziny życia pliku, a zostaje na zawsze.
+    SMIECI="$(git status --porcelain --untracked-files=all . 2>/dev/null \
+              | sed -n 's/^?? //p' | grep -v '/' || true)"
+    if [ -n "$SMIECI" ]; then
+        echo "ŚMIECI W KORZENIU ($(printf '%s\n' "$SMIECI" | wc -l))"
+        echo "  Nie są ani kodem, ani wynikiem. Pojadą z_hdd.bat na"
+        echo "  pendraka, a stamtąd na płytę, której nie da się skasować."
+        printf '    %s\n' $SMIECI
+        echo "  ./srodowisko/porzadki.sh             co to właściwie jest"
+        echo "  ./srodowisko/porzadki.sh --przenies  odłóż do stare/"
+        echo
+    fi
 } > "$RANO"
 
 python - "$RANO" "$RUN_DPU" "$RUN_GRU" <<'PY' || true
