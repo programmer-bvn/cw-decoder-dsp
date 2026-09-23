@@ -1015,6 +1015,81 @@ def test_sciezka_danych():
     except Exception as e:
         check("wczytywanie z wzorca", False, f"{type(e).__name__}: {e}")
 
+    # --- 15f. zbiór NA RATY: części wczytywane po kolei ---
+    #  Sprawdza to, czego nie da się sprawdzić na maszynie bez karty,
+    #  a co potrafi wywrócić trening dopiero w DRUGIEJ epoce: czy potok
+    #  z from_generator wydaje dane także po wyczerpaniu pierwszego
+    #  przebiegu. Bez .repeat() Keras kończy tu "ran out of data" —
+    #  po kilkunastu minutach liczenia, w nocy, bez nikogo przy maszynie.
+    #
+    #  Drugie pytanie jest jeszcze ważniejsze: czy próbki walidacyjne nie
+    #  przeciekają do treningu. Gdyby przeciekały, val_accuracy byłaby
+    #  zawyżona i CAŁA seria pomiarów prowadziłaby na manowce, nie
+    #  zgłaszając niczego. Dlatego każdy obraz ma tu wpisany swój numer.
+    try:
+        import tensorflow as tf
+        with tempfile.TemporaryDirectory() as kat:
+            kat = Path(kat)
+            N_CZ, N_PR, BATCH = 3, 96, 8
+            for k in range(N_CZ):
+                ids = np.arange(k * N_PR, (k + 1) * N_PR)
+                Xk = np.zeros((N_PR, C.IMG_FRAMES, C.IMG_BINS), dtype=np.uint8)
+                Xk[:, 0, 0] = (ids // 256).astype(np.uint8)
+                Xk[:, 0, 1] = (ids % 256).astype(np.uint8)
+                yk = (np.arange(N_PR) % C.N_CLASSES).astype(np.int32)
+                yfk = np.zeros((N_PR, C.IMG_FRAMES), dtype=np.uint8)
+                np.savez(kat / f"cz_{k:02d}.npz", X=Xk, y=yk, yf=yfk,
+                         fingerprint=sa.FINGERPRINT,
+                         meta=f"n={N_PR};seed={100+k};wpm={sa.WPM};realism=1")
+
+            pliki = sorted(kat.glob("cz_*.npz"))
+            z = sa.ZbiorNaRaty(pliki, BATCH, 0.10, 7)
+
+            nr_val = set((z.Xv[:, 0, 0].astype(np.int64) * 256
+                          + z.Xv[:, 0, 1].astype(np.int64)).tolist())
+            check("walidacja pochodzi tylko z pierwszej części",
+                  all(v < N_PR for v in nr_val),
+                  f"spoza: {sorted(v for v in nr_val if v >= N_PR)[:5]}")
+
+            ds = z.dataset()
+            # DWIE epoki po tyle kroków, ile zapowiada zbiór. Pierwsza
+            # przejdzie zawsze; sens tego testu jest w drugiej.
+            widziane = [[], []]
+            it = iter(ds)
+            for e in range(2):
+                for _ in range(z.kroki):
+                    partia = next(it)
+                    img = partia[0].numpy()
+                    nr = (img[:, 0, 0] * 255.0).round().astype(np.int64) * 256 \
+                        + (img[:, 0, 1] * 255.0).round().astype(np.int64)
+                    widziane[e].extend(nr.tolist())
+            check("potok na raty wydaje dane także w DRUGIEJ epoce",
+                  len(widziane[1]) == z.kroki * BATCH,
+                  f"{len(widziane[1])} zamiast {z.kroki * BATCH}")
+            for e in (0, 1):
+                przeciek = set(widziane[e]) & nr_val
+                check(f"epoka {e+1}: walidacja NIE przecieka do treningu",
+                      not przeciek, f"przeciekło: {sorted(przeciek)[:5]}")
+            check("kolejne epoki losują inaczej",
+                  widziane[0] != widziane[1])
+
+            p = next(iter(ds))
+            ok = (len(p) == 3 and p[0].dtype == tf.float32
+                  and tuple(p[0].shape) == (BATCH, C.IMG_FRAMES,
+                                            C.IMG_BINS, 1))
+            check("partia na raty: (obraz, etykieta, waga) w dobrym kształcie",
+                  ok, f"elementów {len(p)}, kształt {tuple(p[0].shape)}, "
+                      f"typ {p[0].dtype}")
+
+            # Deklarowana liczba kroków musi się zgadzać z tym, co potok
+            # naprawdę wydaje w jednym przebiegu -- inaczej albo zabraknie
+            # danych, albo epoka po cichu urwie sie przed koncem.
+            jeden = sum(1 for _ in z._partie())
+            check("kroki zapowiedziane == kroki wydane", jeden == z.kroki,
+                  f"zapowiedziano {z.kroki}, wydano {jeden}")
+    except Exception as e:
+        check("zbiór na raty", False, f"{type(e).__name__}: {e}")
+
 
 
 # ==========================================================================

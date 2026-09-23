@@ -394,18 +394,107 @@ punkty to mało na prawo, ale zgodność jest uderzająca.
 | błąd 0,50% | 9,8 mln | 100 GB |
 | błąd 0,25% | 53 mln | 543 GB |
 
-**Dźwignia jest wyczerpana na tej maszynie.** Przy limicie WSL 28 GB
-mieści się najwyżej 2,1 mln próbek, co dałoby około 0,94% — poprawa
-o jedną dziesiątą punktu. Dalej trzeba by przejść na zbiór mapowany
-z dysku (`np.load(mmap_mode='r')` na `.npy` zamiast `.npz` w RAM);
-miejsca jest 729 GB, więc to wykonalne, ale samo generowanie 9,8 mln
-próbek to jedenaście godzin, a trening kolejnych siedem.
+~~**Dźwignia jest wyczerpana na tej maszynie.**~~ Było tak do 23.09:
+przy limicie WSL 28 GB mieściło się najwyżej 2,1 mln próbek, czyli
+około 0,94%. **Sufit pamięci został zdjęty** — patrz wpis niżej.
+Zostaje drugi, nieusuwalny koszt: generowanie 9,8 mln próbek to
+jedenaście godzin, a trening kolejnych siedem.
 
 **I nie o to chodzi.** Błąd na syntetyku nie jest wąskim gardłem pracy
 na antenie — dowodzi tego wpis wyżej o znakach krótkich. Tam, gdzie
 projekt naprawdę traci, nie pomoże ani jedna próbka więcej.
 
+
 ---
+
+### Sufit wielkości zbioru siedział w RAM-ie, nie w dysku
+
+**Objaw.** Przy zbiorze powyżej ~2,1 mln próbek trening nie ruszał:
+strażnik w `load_dataset` przerywał z rachunkiem pamięci, a bez strażnika
+proces ginął od OOM killera bez żadnego komunikatu. Prawo potęgowe
+(wpis wyżej) mówiło jednocześnie, że właśnie tam trzeba iść.
+
+**Przyczyna.** Cały zbiór szedł do pamięci naraz, a w drodze do
+`model.fit()` obrazy istnieją w około 2,5 kopiach. Nie było w tym błędu —
+było założenie, że zbiór musi leżeć w całości. Założenie z czasów, gdy
+dane mieściły się bez trudu.
+
+**Dlaczego nie naprawiono tego wcześniej.** Bo nie było wiadomo, czy to
+się opłaca. Wymiana części w trakcie epoki ma sens tylko wtedy, gdy
+czytanie z dysku jest tanie wobec liczenia na karcie, a tego nie da się
+zgadnąć — trzeba zmierzyć. Pomiar (22.09, `out/hdd.log`):
+
+    dd if=czesci/morse_200000_00.npz of=/dev/null bs=1M
+    862 MB w 2,99 s  =  289 MB/s
+
+Część 818 MB wczytuje się w 2,8 s. Przy dziesięciu częściach to 28 s na
+epokę wobec kilku minut samego liczenia — narzut rzędu procenta. **Gdyby
+dane leżały na pendraku (~40 MB/s), ta sama rotacja kosztowałaby 3,5
+minuty na epokę i nie byłaby warta zachodu.** Pomiar był warunkiem
+decyzji, a nie ciekawostką — i to jest tu rzecz do zapamiętania.
+
+**Co pomogło.** `ZbiorNaRaty` w `train_rtx.py`: części wczytywane po
+kolei, w pamięci leży jedna (~820 MB) plus zbiór walidacyjny. Sufit
+przenosi się z RAM-u na pojemność dysku, czyli z 2,1 mln na rząd
+wielkości więcej.
+
+Dwie decyzje w środku, obie nieoczywiste:
+
+- **Walidacja pochodzi z jednej części i zostaje w pamięci na stałe.**
+  Części różnią się ziarnem, nie rozkładem, więc jedna jest
+  reprezentatywna. Gdyby walidacja zmieniała się razem z częścią, skoki
+  krzywej `val_*` mówiłyby o podmianie danych, a nie o uczeniu —
+  i `ReduceLROnPlateau` reagowałby na szum.
+- **`.repeat()` w potoku jest konieczne**, choć epoka to dokładnie jeden
+  przebieg. Keras przy podanym `steps_per_epoch` nie odtwarza iteratora
+  na początku kolejnej epoki. Bez `.repeat()` pierwsza epoka policzyłaby
+  się normalnie, a druga wywróciła na `ran out of data` — po kilkunastu
+  minutach, w nocy, bez nikogo przy maszynie.
+
+**Gdzie mieszka.** `ZbiorNaRaty` w `train_rtx.py`, flaga `--rotacja`.
+W `noc.sh` dziewiąta pozycja `ROTACJA` (`auto` domyślnie: włącz, gdy
+zbiór się nie mieści — zamiast przerywać noc). Sprawdza to TEST 15f
+w `diag.py`, w tym najważniejsze: że próbki walidacyjne nie przeciekają
+do treningu przez dwie epoki. Gdyby przeciekały, `val_accuracy` byłaby
+zawyżona i cała seria pomiarów prowadziłaby na manowce, nie zgłaszając
+niczego.
+
+---
+
+### Skrypt `hdd_repo.sh` nie umiał dokończyć własnej przerwanej roboty
+
+**Objaw.** Na maszynie treningowej `git pull --ff-only` odpowiadał
+`There is no tracking information for the current branch`, a `hdd_repo.sh`
+uruchomiony po to, żeby to naprawić, mówił `To już jest repozytorium`
+i wychodził. Druga droga powrotu wyników — ta niezależna od pendraka —
+nie istniała, a komunikat brzmiał uspokajająco.
+
+**Przyczyna.** Pierwsze uruchomienie (22.09) doszło do `git fetch`
+i wywróciło się na `Could not resolve host: github.com` — maszyna nie
+miała w tym momencie sieci. Zostawiło repozytorium z `origin`, ale bez
+historii i bez śledzenia. Skrypt sprawdzał jedną rzecz: czy istnieje
+katalog `.git`. Istniał, więc od tej chwili każde uruchomienie wychodziło
+bez zrobienia czegokolwiek.
+
+**Co pomogło.** Zamiast pytać „czy jest `.git`", skrypt bada trzy
+warunki: jest `origin`, jest choć jeden commit, gałąź kogoś śledzi.
+Przy braku któregokolwiek kontynuuje zamiast wychodzić. Przy okazji:
+`git rev-parse --abbrev-ref HEAD` na gałęzi bez commitów wypisuje słowo
+`HEAD` **i jednocześnie zwraca błąd**, przez co w logu pod `gałąź: HEAD`
+stało osierocone `<brak>` z gałęzi awaryjnej.
+
+Doszedł też warunek STOP: gdyby na HDD leżały własne commity spoza
+`origin` (np. nocne z etapu 7), `reset --mixed` wypchnąłby je poza
+historię — pliki zostałyby, ale zapis o tym, co i kiedy zmierzono,
+przepadłby. Teraz skrypt się wtedy zatrzymuje i pokazuje, co to jest.
+
+**Ogólniejsza nauka.** Skrypt, który wywraca się w połowie, musi umieć
+rozpoznać własną niedokończoną robotę. Sprawdzanie „czy zrobione"
+po jednym śladzie (istnieje katalog) zamiast po **skutku** (działa to,
+o co chodziło) daje właśnie taki układ: cicho zepsuty i odporny na
+powtórzenie.
+
+**Gdzie mieszka.** `srodowisko/hdd_repo.sh`.
 
 ## Sprawdzone i odrzucone
 

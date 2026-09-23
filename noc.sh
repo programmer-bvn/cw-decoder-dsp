@@ -122,6 +122,24 @@ CZESCI="${7:-5}"
 # mozna osma pozycja, gdy zmieni sie cos, co moze ten wynik odwrocic.
 TRENUJ_GRU="${8:-0}"
 
+# ROTACJA CZESCI. Do 22.09 caly zbior szedl do RAM-u naraz i to RAM
+# wyznaczal sufit wielkosci danych: przy 2,5 kopiach w drodze do
+# model.fit() maszyna z 24 GB miesci okolo 2,1 mln probek. Prawo skalowania
+# (blad ~ n^-0,41) mowi, ze to za malo, zeby zejsc wyraznie ponizej 1%.
+#
+# Z rotacja czesci wczytuja sie PO KOLEI i w pamieci lezy jedna. Oplaca sie
+# to dzieki pomiarowi z out/hdd.log: 289 MB/s, czyli czesc 818 MB wchodzi
+# w 2,8 s. Przy dziesieciu czesciach to 28 s na epoke -- procent narzutu.
+#
+#   auto  wlacz, gdy zbior NIE MIESCI SIE w pamieci (domyslnie)
+#   1     wlacz zawsze
+#   0     nigdy; zbyt duzy zbior przerywa noc, tak jak dawniej
+#
+# "auto" jest domyslne, bo to zachowanie bezobslugowe: zamiast przerwac
+# noc komunikatem o pamieci, maszyna po prostu liczy inaczej i rano sa
+# wyniki. Przerwana noc to noc stracona.
+ROTACJA="${9:-auto}"
+
 # Nazwa domyślna zgodna z tym, co generuje train_rtx.py bez --out.
 # Dzięki temu istniejący zbiór jest UŻYWANY, a nie generowany od nowa —
 # 800 MB i kilka minut do stracenia przy 12-godzinnym oknie na trening.
@@ -373,6 +391,31 @@ fi
 
 # --- 3. ZBIÓR ------------------------------------------------------------
 echo
+# --- czy zbiór zmieści się w pamięci naraz ---
+#  Rachunek ten sam, co w load_dataset: 820 MB na 200 tys. próbek razy 2,5
+#  kopii w drodze do model.fit(). Liczony TUTAJ, a nie dopiero przy
+#  treningu, bo przy ośmiu częściach komunikat o pamięci padłby po 42
+#  minutach generowania.
+ROTACJA_ARG=""
+RAM_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null)
+RAM_POTRZEBA=$(awk -v n="$LACZNIE" 'BEGIN{printf "%d", n/200000*820*2.5}')
+MIESCI=1
+if [ -n "${RAM_MB:-}" ] && [ "$RAM_MB" -gt 0 ] \
+   && [ "$RAM_POTRZEBA" -gt $(( RAM_MB * 8 / 10 )) ]; then
+    MIESCI=0
+fi
+
+if [ "$ROTACJA" = "1" ] || { [ "$ROTACJA" = "auto" ] && [ "$MIESCI" = "0" ]; }
+then
+    ROTACJA_ARG="--rotacja"
+    echo "ROTACJA CZĘŚCI WŁĄCZONA"
+    echo "  zbiór ${LACZNIE} próbek potrzebowałby ~${RAM_POTRZEBA} MB naraz,"
+    echo "  wolne jest ${RAM_MB:-?} MB. Części pójdą po kolei — w pamięci"
+    echo "  będzie leżeć jedna (~820 MB) plus walidacja."
+    echo "  Koszt przy zmierzonych 289 MB/s: ~3 s na część na epokę."
+    echo
+fi
+
 echo "--- zbiór ---"
 # yf = etykiety na ramke. Czesc bez nich powstala przed 21.09 i musi
 # byc wygenerowana od nowa, inaczej architektury w pelni splotowe nie
@@ -431,9 +474,8 @@ if [ "$GENERUJ" = "1" ]; then
     # Straznik w load_dataset odpala sie dopiero przy treningu, czyli po
     # wygenerowaniu zbioru -- przy osmiu czesciach to 42 minuty w plecy,
     # zanim padnie komunikat. Ten sam rachunek, tylko wczesniej.
-    RAM_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null)
-    RAM_POTRZEBA=$(awk -v n="$LACZNIE" 'BEGIN{printf "%d", n/200000*820*2.5}')
-    if [ -n "${RAM_MB:-}" ] && [ "$RAM_MB" -gt 0 ]; then
+    # RAM_MB i RAM_POTRZEBA sa juz policzone wyzej, przy decyzji o rotacji.
+    if [ -n "${RAM_MB:-}" ] && [ "$RAM_MB" -gt 0 ] && [ -z "$ROTACJA_ARG" ]; then
         echo "pamięć: wolne ${RAM_MB} MB, zbiór potrzebuje ~${RAM_POTRZEBA} MB"
         if [ "$RAM_POTRZEBA" -gt $(( RAM_MB * 8 / 10 )) ]; then
             BEZPIECZNE=$(awk -v m="$RAM_MB" 'BEGIN{printf "%d", m*0.8/2.5/820}')
@@ -441,6 +483,10 @@ if [ "$GENERUJ" = "1" ]; then
             echo "PRZERWANO PRZED GENEROWANIEM: zbiór się nie zmieści."
             echo "  W drodze do model.fit() obrazy istnieją w ~2,5 kopiach."
             echo "  Bezpieczna liczba części przy tej pamięci: ${BEZPIECZNE}"
+            echo
+            echo "  TO PRZERWANIE JEST WYBOREM: ROTACJA=0 w dziewiątej"
+            echo "  pozycji. Przy domyślnym 'auto' noc policzyłaby się"
+            echo "  z rotacją części zamiast się zatrzymać."
             echo
             echo "  ALBO PODNIEŚ LIMIT WSL. WSL2 bierze domyślnie POŁOWĘ"
             echo "  pamięci hosta, więc maszyna z 32 GB daje tu ~15 GB."
@@ -580,7 +626,8 @@ PY
 
     python train_rtx.py train \
         --dataset "$ZBIOR" --run "$RUN" --arch "$ARCH" \
-        --epochs "$EPOK" --batch "$BATCH" --mixed --require-gpu $SWIEZY \
+        --epochs "$EPOK" --batch "$BATCH" --mixed --require-gpu \
+        $SWIEZY $ROTACJA_ARG \
         > "$LOG" 2>&1
     local RC=$?
 

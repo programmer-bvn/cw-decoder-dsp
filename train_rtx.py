@@ -1290,8 +1290,13 @@ def load_dataset(spec):
             f"Wolnej pamięci jest {wolne_mb:.0f} MB.\n"
             f"Bez tego sprawdzenia proces zostałby zabity przez OOM killer "
             f"BEZ KOMUNIKATU, po kilkudziesięciu sekundach treningu.\n"
-            f"Weź mniej części: przy {wolne_mb:.0f} MB bezpieczne jest "
-            f"około {wolne_mb * 0.8 / SZCZYT / 820:.0f} x 200 tys. próbek.\n"
+            f"NAJPROSTSZE WYJŚCIE: --rotacja. Części wczytują się wtedy\n"
+            f"po kolei i w pamięci leży tylko jedna. Kosztuje to około\n"
+            f"3 s na część na epokę przy zmierzonych 289 MB/s, czyli\n"
+            f"kilkanaście sekund — a sufit przestaje być w RAM-ie.\n"
+            f"\nALBO weź mniej części: przy {wolne_mb:.0f} MB bez rotacji "
+            f"bezpieczne jest\nokoło "
+            f"{wolne_mb * 0.8 / SZCZYT / 820:.0f} x 200 tys. próbek.\n"
             f"\nALBO PODNIEŚ LIMIT PAMIĘCI WSL — to częsta przyczyna.\n"
             f"WSL2 bierze domyślnie POŁOWĘ pamięci hosta, więc maszyna\n"
             f"z 32 GB daje tutaj tylko ~15 GB. W pliku\n"
@@ -1344,6 +1349,195 @@ def load_dataset(spec):
     return X, y, yf, meta
 
 
+# =============================================================================
+#  ZBIÓR NA RATY — dane nigdy nie leżą w pamięci w całości
+#
+#  PO CO. Dotąd cały zbiór szedł do RAM-u naraz i to RAM wyznaczał sufit
+#  wielkości danych: przy 2,5 kopiach w drodze do model.fit() maszyna
+#  z 24 GB mieści około 2,1 mln próbek. Zmierzone prawo skalowania mówi,
+#  że błąd spada jak n^-0,41 — żeby zejść wyraźnie poniżej 1%, próbek
+#  trzeba kilka razy więcej, a RAM-u nie przybędzie.
+#
+#  DLACZEGO DOPIERO TERAZ. Wymiana części w trakcie epoki opłaca się tylko
+#  wtedy, gdy czytanie z dysku jest tanie wobec liczenia na karcie.
+#  Zmierzone 22.09 (out/hdd.log):
+#
+#      dd if=czesci/morse_200000_00.npz of=/dev/null bs=1M
+#      862 MB w 2,99 s  =  289 MB/s
+#
+#  Część 818 MB wczytuje się więc w ~2,8 s; przy dziesięciu częściach to
+#  28 s na epokę wobec kilku minut samego liczenia — narzut rzędu procenta.
+#  Gdyby dane leżały na pendraku (~40 MB/s), ta sama rotacja kosztowałaby
+#  3,5 minuty na epokę i nie byłaby warta zachodu. Ten pomiar był więc
+#  warunkiem sensowności, a nie ciekawostką.
+#
+#  CO ZOSTAJE W PAMIĘCI. Jedna część treningowa (818 MB) plus zbiór
+#  walidacyjny. Reszta czeka na dysku. Sufit przestaje być w RAM-ie
+#  i przenosi się na pojemność dysku.
+# =============================================================================
+class ZbiorNaRaty:
+    """Wczytuje części po kolei zamiast trzymać wszystkie naraz.
+
+    cel="znak"  — etykieta skalarna, jedna na okno (architektura dpu)
+    cel="ramki" — etykieta na każdą ramkę (architektura fcn, punkt 2)
+    """
+
+    def __init__(self, pliki, batch: int, val_frac: float, seed: int,
+                 cel: str = "znak", bez_wag: bool = False):
+        if not pliki:
+            raise SystemExit("zbiór na raty: pusta lista części")
+        self.pliki = list(pliki)
+        self.batch = int(batch)
+        self.cel = cel
+        self.seed = int(seed)
+        self._przebieg = 0
+
+        # --- przegląd WSZYSTKICH części, zanim ruszy trening ---
+        # Odciski i obecność etykiet sprawdzamy od razu. Inaczej część
+        # niezgodna wywróciłaby trening dopiero wtedy, gdy przyjdzie jej
+        # kolej — czyli w środku nocy, po godzinie liczenia. To kosztuje
+        # tyle, co odczyt samych etykiet: 800 kB na część.
+        self.liczby, ziarna = [], []
+        licznik = np.zeros(N_CLASSES, dtype=np.int64)
+        for p in self.pliki:
+            with np.load(p, allow_pickle=False) as d:
+                _sprawdz_odcisk(d, p)
+                if cel == "ramki" and "yf" not in d.files:
+                    raise SystemExit(
+                        f"{p} nie ma etykiet na ramkę (yf), a architektura "
+                        f"ich wymaga.\nWygeneruj tę część od nowa.")
+                yk = np.asarray(d["y"]).astype(np.int32)
+                self.liczby.append(int(yk.shape[0]))
+                licznik += np.bincount(yk, minlength=N_CLASSES)
+                m = str(d["meta"]) if "meta" in d.files else ""
+                if "seed=" in m:
+                    ziarna.append(m.split("seed=")[1].split(";")[0])
+
+        # --- walidacja: z PIERWSZEJ części i tylko z niej ---
+        # Części różnią się ziarnem, nie rozkładem, więc jedna wystarcza,
+        # żeby walidacja była reprezentatywna. Zysk jest taki, że zbiór
+        # walidacyjny leży w pamięci przez cały trening i każda epoka jest
+        # porównywana do TEGO SAMEGO. Gdyby walidacja zmieniała się razem
+        # z częścią, skoki krzywej mówiłyby o podmianie danych, a nie
+        # o uczeniu — i ReduceLROnPlateau reagowałby na szum.
+        with np.load(self.pliki[0], allow_pickle=False) as d:
+            X0 = np.asarray(d["X"])
+            y0 = np.asarray(d["y"]).astype(np.int32)
+            yf0 = np.asarray(d["yf"]) if cel == "ramki" else None
+        self.ksztalt = tuple(X0.shape[1:])
+
+        n_all = int(sum(self.liczby))
+        ile = int(round(val_frac * n_all))
+        gora = int(0.4 * len(y0))
+        if ile > gora:
+            print(f"walidacja: {val_frac:.0%} z {n_all} to {ile} próbek, "
+                  f"a bierzemy je z jednej części ({len(y0)}). "
+                  f"Ograniczam do {gora}.")
+            ile = gora
+        _, va = stratified_split(y0, ile / len(y0), seed)
+
+        maska = np.ones(len(y0), dtype=bool)
+        maska[va] = False
+        self.maska0 = maska
+        self.Xv = X0[va]
+        self.yv_znak = y0[va]
+        self.yv = yf0[va] if cel == "ramki" else self.yv_znak
+        del X0, y0, yf0
+
+        licznik -= np.bincount(self.yv_znak, minlength=N_CLASSES)
+        self.wagi = None if bez_wag else wagi_z_licznika(licznik)
+
+        # Ile pełnych partii da JEDEN przebieg przez wszystkie części.
+        # Resztka krótsza od partii jest w danej epoce pomijana — przy
+        # losowaniu na nowo w każdej epoce pomijane są za każdym razem
+        # inne próbki, więc nic nie wypada ze zbioru na stałe.
+        self.kroki = sum(
+            (n - (0 if i else len(self.yv_znak))) // self.batch
+            for i, n in enumerate(self.liczby))
+
+        # Opis musi być DETERMINISTYCZNY dla tego samego zestawu części,
+        # inaczej wznowienie uznałoby każdy start za podmianę danych.
+        # "raty=1" jest tu celowo: podział na trening i walidację jest
+        # inny niż przy wczytaniu całości, więc val_accuracy z obu trybów
+        # nie są porównywalne i nie powinny trafić do jednego runu.
+        self.meta = (f"czesci={len(self.pliki)};n={n_all};"
+                     f"seeds={','.join(sorted(set(ziarna)))};"
+                     f"wpm={WPM};realism=1;raty=1;cel={cel}")
+
+        self.mb = sum(p.stat().st_size for p in self.pliki) / 1024 / 1024
+        najw = max(p.stat().st_size for p in self.pliki) / 1024 / 1024
+        print(f"zbiór NA RATY: {len(self.pliki)} części, razem "
+              f"{self.mb:.0f} MB, {n_all} próbek")
+        print(f"  w pamięci naraz: ~{najw:.0f} MB (część) + "
+              f"{self.Xv.nbytes/1024/1024:.0f} MB (walidacja)")
+        print(f"  walidacja: {len(self.yv_znak)} próbek z "
+              f"{self.pliki[0].name}, stała przez cały trening")
+        print(f"  kroków na epokę: {self.kroki}")
+
+    # -- części treningowe, jedna po drugiej ------------------------------
+    def _partie(self):
+        # tf.data woła ten generator OD NOWA w każdej epoce, więc licznik
+        # przebiegów daje inne losowanie za każdym razem, a jednocześnie
+        # cały przebieg jest odtwarzalny z ziarna.
+        self._przebieg += 1
+        rng = np.random.default_rng(self.seed * 1000 + self._przebieg)
+
+        for i in rng.permutation(len(self.pliki)):
+            i = int(i)
+            with np.load(self.pliki[i], allow_pickle=False) as d:
+                X = np.asarray(d["X"])
+                yk = np.asarray(d["y"]).astype(np.int32)
+                y = np.asarray(d["yf"]) if self.cel == "ramki" else yk
+            if i == 0:
+                X, y, yk = X[self.maska0], y[self.maska0], yk[self.maska0]
+
+            perm = rng.permutation(len(yk))
+            for a in range(0, len(perm) - self.batch + 1, self.batch):
+                sel = perm[a:a + self.batch]
+                if self.wagi is None:
+                    yield X[sel], y[sel]
+                else:
+                    yield X[sel], y[sel], self.wagi[yk[sel]]
+            del X, y, yk
+
+    def dataset(self):
+        import tensorflow as tf
+        H, W = self.ksztalt
+        sig = [tf.TensorSpec(shape=(None, H, W), dtype=tf.uint8)]
+        if self.cel == "ramki":
+            sig.append(tf.TensorSpec(shape=(None, self.yv.shape[1]),
+                                     dtype=tf.uint8))
+        else:
+            sig.append(tf.TensorSpec(shape=(None,), dtype=tf.int32))
+        if self.wagi is not None:
+            sig.append(tf.TensorSpec(shape=(None,), dtype=tf.float32))
+
+        # Partie powstają już w generatorze, więc tu NIE MA .batch().
+        # Gdyby było, tf.data pociąłby gotowe partie jeszcze raz.
+        #
+        # .repeat() JEST KONIECZNE, choć jedna epoka to dokładnie jeden
+        # przebieg przez wszystkie części. Powód siedzi w Kerasie: gdy
+        # podaje się steps_per_epoch, iterator NIE jest odtwarzany na
+        # początku kolejnej epoki — taki układ jest pomyślany pod zbiory
+        # nieskończone. Bez .repeat() pierwsza epoka policzyłaby się
+        # normalnie, a druga wywróciłaby się na "ran out of data": czyli
+        # w najgorszym możliwym momencie — po kilkunastu minutach, w nocy,
+        # bez nikogo przy maszynie.
+        #
+        # Z .repeat() generator jest wołany od nowa po wyczerpaniu (i przy
+        # okazji losuje inaczej, bo rośnie licznik przebiegów), a że kroki
+        # to dokładnie jeden pełny przebieg, granice epok i tak pokrywają
+        # się z granicami przebiegu przez części.
+        return (tf.data.Dataset
+                .from_generator(self._partie, output_signature=tuple(sig))
+                .repeat()
+                .map(_do_float, num_parallel_calls=tf.data.AUTOTUNE)
+                .prefetch(tf.data.AUTOTUNE))
+
+    def walidacja(self):
+        return make_pipeline(self.Xv, self.yv, None, self.batch, False)
+
+
 def stratified_split(y: np.ndarray, val_fraction: float, seed: int):
     """Podział warstwowy: każda klasa oddaje ten sam UDZIAŁ na walidację.
 
@@ -1369,11 +1563,35 @@ def class_weights(y: np.ndarray) -> np.ndarray:
     takim rozkładzie to "zawsze odpowiadaj 0" — daje 15% dokładności bez
     uczenia się czegokolwiek, i model dokładnie w to wpada.
     """
-    counts = np.bincount(y, minlength=N_CLASSES).astype(np.float64)
+    return wagi_z_licznika(np.bincount(y, minlength=N_CLASSES))
+
+
+def wagi_z_licznika(counts) -> np.ndarray:
+    """To samo, ale z gotowego licznika klas.
+
+    Potrzebne przy zbiorze na raty: tam żadna tablica y nie istnieje
+    w całości, więc licznik powstaje z sumowania części.
+    """
+    counts = np.asarray(counts).astype(np.float64)
+    n = counts.sum()
     present = counts > 0
     w = np.zeros(N_CLASSES, dtype=np.float32)
-    w[present] = len(y) / (present.sum() * counts[present])
+    w[present] = n / (present.sum() * counts[present])
     return w
+
+
+def _do_float(img, label, *rest):
+    """uint8 -> float32 [0,1] plus wymiar kanału.
+
+    JEDNA definicja dla obu dróg wczytywania: całości w pamięci
+    i zbioru na raty. Gdyby były dwie, mogłyby się rozjechać skalowaniem,
+    a to jest ten rodzaj różnicy, której nic nie zgłasza — model po prostu
+    uczyłby się na innych liczbach, niż dostaje przy pomiarze. Ten projekt
+    ma już taki przypadek za sobą przy odcisku front-endu.
+    """
+    import tensorflow as tf
+    img = tf.expand_dims(tf.cast(img, tf.float32) / 255.0, -1)
+    return (img, label, rest[0]) if rest else (img, label)
 
 
 def make_pipeline(X, y, idx, batch: int, training: bool,
@@ -1412,16 +1630,12 @@ def make_pipeline(X, y, idx, batch: int, training: bool,
     with tf.device("/cpu:0"):
         ds = tf.data.Dataset.from_tensor_slices(tuple(parts))
 
-    def prep(img, label, *rest):
-        img = tf.expand_dims(tf.cast(img, tf.float32) / 255.0, -1)
-        return (img, label, rest[0]) if rest else (img, label)
-
     if training:
         # len(ys), NIE len(idx). Przy idx=None (dane podane wprost,
         # bez indeksowania) idx to None i len() sie wywala. Zostawiony
         # ogon po dodaniu obslugi idx=None -- zabral noc 14/15.09.
         ds = ds.shuffle(min(len(ys), 50000), reshuffle_each_iteration=True)
-    return (ds.map(prep, num_parallel_calls=tf.data.AUTOTUNE)
+    return (ds.map(_do_float, num_parallel_calls=tf.data.AUTOTUNE)
               .batch(batch).prefetch(tf.data.AUTOTUNE))
 
 
@@ -1573,14 +1787,25 @@ def train(args):
     elif args.mixed:
         print("--mixed pominięte: brak GPU")
 
-    # --- dane ---
-    X, y, yf, ds_meta = load_dataset(args.dataset)
-    print(f"opis zbioru: {ds_meta or '(brak)'}")
-    print(f"zbiór: {X.shape} {X.dtype} ({X.nbytes/1024/1024:.0f} MB)")
-    tr, va = stratified_split(y, args.val, args.seed)
-    print(f"podział warstwowy: trening={len(tr)}  walidacja={len(va)}")
+    # --- dane: albo wszystko naraz, albo na raty ---
+    if args.rotacja:
+        zbior = ZbiorNaRaty(_pliki_zbioru(str(args.dataset)), args.batch,
+                            args.val, args.seed,
+                            bez_wag=args.no_class_weights)
+        ds_meta = zbior.meta
+        w = zbior.wagi
+        y_val = zbior.yv_znak
+        kroki = zbior.kroki
+    else:
+        X, y, yf, ds_meta = load_dataset(args.dataset)
+        print(f"opis zbioru: {ds_meta or '(brak)'}")
+        print(f"zbiór: {X.shape} {X.dtype} ({X.nbytes/1024/1024:.0f} MB)")
+        tr, va = stratified_split(y, args.val, args.seed)
+        print(f"podział warstwowy: trening={len(tr)}  walidacja={len(va)}")
+        w = None if args.no_class_weights else class_weights(y[tr])
+        y_val = y[va]
+        kroki = None
 
-    w = None if args.no_class_weights else class_weights(y[tr])
     if w is not None:
         print(f"wagi klas: klasa 0 -> {w[0]:.3f}, "
               f"znaki -> {w[1:][w[1:]>0].mean():.3f}")
@@ -1589,10 +1814,14 @@ def train(args):
     # potem wycinamy część treningową i ZWALNIAMY oryginał — inaczej przy
     # milionie próbek w pamięci leżą naraz trzy tablice: X (4,1 GB),
     # kopia X[tr] (3,8 GB) i to samo przeniesione do tf.data.
-    ds_va = make_pipeline(X, y, va, args.batch, False)
-    Xtr, ytr = X[tr], y[tr]
-    del X
-    ds_tr = make_pipeline(Xtr, ytr, None, args.batch, True, weights=w)
+    if args.rotacja:
+        ds_va = zbior.walidacja()
+        ds_tr = zbior.dataset()
+    else:
+        ds_va = make_pipeline(X, y, va, args.batch, False)
+        Xtr, ytr = X[tr], y[tr]
+        del X
+        ds_tr = make_pipeline(Xtr, ytr, None, args.batch, True, weights=w)
 
     # --- model: wznowienie albo świeży ---
     saver = StateSaver(run_dir, keras)
@@ -1634,7 +1863,7 @@ def train(args):
     if initial_epoch >= args.epochs:
         print(f"Zadana liczba epok ({args.epochs}) już osiągnięta "
               f"({initial_epoch}). Podnieś --epochs, żeby uczyć dalej.")
-        confusion_report(model, ds_va, y[va])
+        confusion_report(model, ds_va, y_val)
         return
 
     cbs = [
@@ -1654,13 +1883,14 @@ def train(args):
           "stan jest na dysku.\n")
 
     model.fit(ds_tr, validation_data=ds_va, epochs=args.epochs,
-              initial_epoch=initial_epoch, callbacks=cbs, verbose=1)
+              initial_epoch=initial_epoch, callbacks=cbs, verbose=1,
+              steps_per_epoch=kroki)
 
     best = find_model(run_dir, "best")
     if best is not None:
         print(f"\nnajlepszy model: {best}")
         model = keras.models.load_model(str(best))
-    confusion_report(model, ds_va, y[va])
+    confusion_report(model, ds_va, y_val)
 
 
 # =============================================================================
@@ -1696,6 +1926,11 @@ def main(argv=None):
     t.add_argument("--epochs", type=int, default=200)
     t.add_argument("--batch", type=int, default=256)
     t.add_argument("--val", type=float, default=0.08)
+    t.add_argument("--rotacja", action="store_true",
+                   help="wczytuj czesci PO KOLEI zamiast wszystkich naraz. "
+                        "W pamieci lezy wtedy jedna czesc zamiast calosci, "
+                        "wiec sufit wielkosci zbioru przestaje byc w RAM-ie. "
+                        "Kosztuje ~3 s na czesc na epoke (289 MB/s).")
     t.add_argument("--lr", type=float, default=1e-3)
     t.add_argument("--gru", type=int, default=96)
     t.add_argument("--dropout", type=float, default=0.3)
