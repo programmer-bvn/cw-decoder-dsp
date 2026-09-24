@@ -51,7 +51,7 @@ echo ===========================================================================
 echo  zrodlo: %ZRODLO%
 echo  cel:    %CEL%
 echo.
-echo  kopiowane:    *.py *.md *.txt *.sh requirements.txt
+echo  kopiowane:    *.py *.md *.txt *.sh *.cfg *.bat LICENSE .gitignore .gitattributes
 echo  NIE kopiowane: .venv, __pycache__, out\, runs\, *.npz, *.whl
 echo.
 
@@ -96,7 +96,18 @@ rem Ten sam blad siedzial tu wczesniej przy RC2 i powodowal, ze awaria
 rem kopiowania nagran nigdy nie byla wykrywana.
 if exist "%CEL%\.git" goto :bez_kodu
 echo [1/2] kod...
-robocopy "%ZRODLO%." "%CEL%" *.py *.md *.txt *.sh *.cfg *.bat %OPCJE% /IS /IT %WYKLUCZ_KAT% %WYKLUCZ_PLIK%
+rem  LICENSE, .gitignore i .gitattributes sa WYMIENIONE Z NAZWY, bo nie
+rem  maja rozszerzenia i zaden wzorzec *.cos ich nie lapie. Bez nich
+rem  kopia na HDD rozni sie od repozytorium w sposob, ktory szkodzi:
+rem    .gitignore   -- bez niego "git status" na HDD pokazuje tysiace
+rem                    nieśledzonych plikow (czesci/*.npz, venv_gpu),
+rem                    wiec kontrola roznic i porzadki.sh przestaja
+rem                    cokolwiek znaczyc
+rem    .gitattributes -- bez niego zakonczenia linii normalizuja sie
+rem                    inaczej po obu stronach i git pokazuje roznice
+rem                    w plikach, ktorych nikt nie ruszal
+rem    LICENSE      -- repozytorium jest publiczne na GPL-3.0
+robocopy "%ZRODLO%." "%CEL%" *.py *.md *.txt *.sh *.cfg *.bat LICENSE .gitignore .gitattributes %OPCJE% /IS /IT %WYKLUCZ_KAT% %WYKLUCZ_PLIK%
 set RC1=%ERRORLEVEL%
 goto :po_kodzie
 
