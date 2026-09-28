@@ -1,0 +1,44 @@
+((venv_gpu) ) root@DESKTOP-JS7996U:/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU# srodowisko/pomiar_dysku.sh
+===========================================================
+ DRVFS kontra natywny system plików WSL
+===========================================================
+  tutaj (projekt): /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU
+  tam   (domowy):  /root
+
+  system plików tutaj: v9fs      tam: ext2/ext3
+
+1. WIELE DROBNYCH PLIKÓW  (2000 plików po ~2 kB)
+   Tak wygląda import biblioteki: dużo otwarć, mało bajtów.
+
+   drvfs  zapis   7.40 s (   270 plik/s)   odczyt  11.51 s (    174 plik/s)
+   ext4   zapis   0.65 s (  3075 plik/s)   odczyt   0.91 s (   2190 plik/s)
+
+2. JEDEN DUŻY PLIK  (400 MB)
+
+   drvfs  257 MB/s
+   ext4   4.6 GB/s
+
+   (ta druga liczba bywa zawyżona: drop_caches czyści pamięć
+    podręczną Linuksa, ale VHDX z ext4 buforuje Windows i tego
+    stąd nie widać. Odczyt powyżej ~550 MB/s na SATA3 to znak,
+    że dane przyszły z RAM-u hosta, nie z dysku.)
+
+3. IMPORT TENSORFLOW  (kilkanaście tysięcy drobnych plików)
+
+   69.6 s   (venv: /mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu)
+
+   venv leży za drvfs. Jeśli powyżej jest kilkadziesiąt
+   sekund, a w punkcie 1 ext4 wygrywa wielokrotnie,
+   to przeniesienie SAMYCH BIBLIOTEK się opłaci:
+       export CW_VENV=$HOME/venv_gpu
+       ./srodowisko/setup_gpu_env.sh
+   Dane i kod zostają tam, gdzie są.
+
+===========================================================
+JAK TO CZYTAĆ. Jeśli w punkcie 1 ext4 jest wielokrotnie szybszy,
+a w punkcie 2 różnica jest niewielka — wąskim gardłem jest
+latencja na plik, nie przepustowość. Wtedy przenosi się to, co
+składa się z tysięcy małych plików (venv), a NIE to, co jest
+kilkoma wielkimi (zbiór treningowy).
+===========================================================
+((venv_gpu) ) root@DESKTOP-JS7996U:/mnt/c/users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU#

@@ -1059,7 +1059,13 @@ def test_sciezka_danych():
             for e in range(2):
                 for _ in range(z.kroki):
                     partia = next(it)
-                    img = partia[0].numpy()
+                    # Po _do_float obraz ma DODATKOWY wymiar kanału:
+                    # (partia, ramki, pasma, 1). Bez tego squeeze wychodzi
+                    # img[:, 0, 0] o kształcie (partia, 1), a nie (partia,),
+                    # i numery próbek robią się listami jednoelementowymi.
+                    # Objawem był "TypeError: unhashable type: 'list'"
+                    # dopiero przy set() — czyli trzy linijki dalej.
+                    img = np.squeeze(partia[0].numpy(), axis=-1)
                     nr = (img[:, 0, 0] * 255.0).round().astype(np.int64) * 256 \
                         + (img[:, 0, 1] * 255.0).round().astype(np.int64)
                     widziane[e].extend(nr.tolist())

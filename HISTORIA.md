@@ -496,6 +496,85 @@ powtórzenie.
 
 **Gdzie mieszka.** `srodowisko/hdd_repo.sh`.
 
+### Start środowiska kosztował 70 s, bo venv leżał za drvfs
+
+**Objaw.** Maszyna na 100% procesora, karta bezczynna, wiatraki milczą —
+i tak przez minuty, zanim cokolwiek się policzy. Wyglądało to jak trening,
+który nie umie użyć karty. 22.09 noc została przerwana Ctrl+C w trakcie
+`import wrapt` **wewnątrz** importu TensorFlow.
+
+**Zła droga, w którą poszedłem pierwszy.** Uznałem, że potok wejściowy
+głodzi kartę, i zacząłem szukać w `tf.data`. Nie miało to poparcia
+w danych: ostatni prawdziwy trening był 17.09, a przez kolejne dni
+chodziło wyłącznie generowanie (z założenia procesorowe) i importy.
+
+**Druga zła droga: zmierzyłem nie to.** `dd` dał 115 MB/s dla kopii
+i 1,7 GB/s dla odczytu z ext4. Ta druga liczba jest **powyżej fizycznego
+sufitu SATA3** (~550 MB/s) — `drop_caches` czyści pamięć podręczną
+Linuksa w środku, ale plik ext4 WSL-a to VHDX na dysku Windows i to host
+go buforuje. A przede wszystkim: import biblioteki nie jest ograniczony
+przepustowością, tylko **latencją na plik**, której sekwencyjny `dd`
+w ogóle nie dotyka.
+
+**Pomiar, który rozstrzygnął** (`srodowisko/pomiar_dysku.sh`, 24.09):
+
+| | drvfs (`v9fs`) | ext4 (WSL) | stosunek |
+|---|---|---|---|
+| zapis drobnych plików | 270 plik/s | 3075 plik/s | 11,4× |
+| odczyt drobnych plików | 174 plik/s | 2190 plik/s | **12,6×** |
+| jeden duży plik | 257 MB/s | 4,6 GB/s (zawyżone) | — |
+| **import TensorFlow** | **69,6 s** | — | — |
+
+Różnica siedzi w latencji na plik, nie w przepustowości. TensorFlow to
+kilkanaście tysięcy drobnych plików, a `/mnt/...` płaci narzut na każdym
+otwarciu osobno.
+
+**Co z tego wynika.** Przenosi się to, co składa się z tysięcy małych
+plików (`venv_gpu`), a **nie** to, co jest kilkoma wielkimi (zbiór
+treningowy — 257 MB/s w zupełności wystarcza rotacji części, która
+potrzebuje ~3 s na część). Koszt ponosi się przy KAŻDYM etapie nocy,
+bo każdy woła pythona od nowa.
+
+**Gdzie mieszka.** `srodowisko/pomiar_dysku.sh`; etap środowiska
+w `noc.sh` mierzy czas importu przy każdym uruchomieniu i ostrzega, gdy
+venv jest pod `/mnt/` i start przekracza 20 s. Przeniesienie:
+`export CW_VENV=$HOME/venv_gpu` i `./srodowisko/setup_gpu_env.sh`.
+
+---
+
+### Noc przepadła na kontroli drogi, której ta noc nie używała
+
+**Objaw.** 24.09 `diag.py` dał 82/83 i noc się zatrzymała przed
+treningiem. Jedyna nieudana kontrola dotyczyła zbioru **na raty**, przy
+zbiorze 1,6 mln próbek — który mieści się w pamięci, więc rotacja i tak
+nie miała być włączona.
+
+**Przyczyna, podwójna.** Sama awaria siedziała w **teście**, nie
+w mierzonym kodzie: po `_do_float` obraz ma dodatkowy wymiar kanału, więc
+`img[:, 0, 0]` daje kształt `(partia, 1)` zamiast `(partia,)`, numery
+próbek robią się listami jednoelementowymi i `set()` wywala
+`TypeError: unhashable type: 'list'`. Rzeczy istotne przeszły: walidacja
+nie przeciekała, a potok wydawał dane także w drugiej epoce.
+
+Druga połowa przyczyny jest w `noc.sh`: każda nieudana kontrola
+przerywała noc, niezależnie od tego, czy dotyczy drogi, którą ta noc
+w ogóle pojedzie.
+
+**Co pomogło.** Test poprawiony (`np.squeeze` przed indeksowaniem).
+W `noc.sh` decyzja o rotacji przeniesiona PRZED `diag.py`, żeby noc
+wiedziała, czego użyje, a nieudana kontrola zbioru na raty przy
+wyłączonej rotacji daje ostrzeżenie zamiast przerwania.
+
+**Czego NIE zmieniono i dlaczego.** Zasada „trening na niespójnym
+łańcuchu to zmarnowana noc" zostaje twarda. Wyjątek jest wąski,
+dopasowany po nazwie kontroli — gdy nazwa się zmieni, dopasowanie
+przestanie działać i noc się zatrzyma. Pomyłka idzie więc w tę stronę,
+w którą jest bezpieczniej.
+
+**Gdzie mieszka.** TEST 15f w `diag.py`, obsługa awarii diagu w `noc.sh`.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej

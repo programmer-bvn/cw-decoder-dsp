@@ -403,32 +403,6 @@ fi
 
 # --- 2. SPÓJNOŚĆ ŁAŃCUCHA ------------------------------------------------
 echo
-echo "--- diag.py ---"
-if [ -f diag.py ]; then
-    if python diag.py > "$LOGI/noc_${STEMPEL}_diag.log" 2>&1; then
-        tail -3 "$LOGI/noc_${STEMPEL}_diag.log"
-    else
-        echo "BŁĄD: diag.py nie przeszedł. Szczegóły w"
-        echo "      $LOGI/noc_${STEMPEL}_diag.log"
-        tail -12 "$LOGI/noc_${STEMPEL}_diag.log"
-        czarna_skrzynka "AWARIA ETAPU 2: diag.py nie przeszedł"
-        {
-            echo
-            echo "--- diag.py: linie z bledami ---"
-            grep -anE "BLAD|BŁĄD|FAIL|Traceback|Error" \
-                "$LOGI/noc_${STEMPEL}_diag.log" || true
-        } >> "$SKRZYNKA" 2>&1
-        echo
-        echo "PRZERWANO. Trening na niespójnym łańcuchu to zmarnowana noc."
-        echo "Środowisko w momencie awarii: $SKRZYNKA"
-        exit 1
-    fi
-else
-    echo "brak diag.py — pomijam (ale lepiej go mieć)"
-fi
-
-# --- 3. ZBIÓR ------------------------------------------------------------
-echo
 # --- czy zbiór zmieści się w pamięci naraz ---
 #  Rachunek ten sam, co w load_dataset: 820 MB na 200 tys. próbek razy 2,5
 #  kopii w drodze do model.fit(). Liczony TUTAJ, a nie dopiero przy
@@ -454,6 +428,68 @@ then
     echo
 fi
 
+echo "--- diag.py ---"
+if [ -f diag.py ]; then
+    if python diag.py > "$LOGI/noc_${STEMPEL}_diag.log" 2>&1; then
+        tail -3 "$LOGI/noc_${STEMPEL}_diag.log"
+    else
+        # KTÓRE kontrole nie przeszły. diag.py wypisuje je na końcu
+        # jako listę pod nagłówkiem "Nie przeszły:".
+        NIEPRZESZLY="$(awk '/^Nie przeszły:/{f=1;next} /^====/{f=0} f' \
+            "$LOGI/noc_${STEMPEL}_diag.log" | sed 's/^  - //')"
+
+        # CZY TO UNIEWAŻNIA TĘ NOC.
+        #
+        #  Zasada zostaje twarda: trening na niespójnym łańcuchu to noc
+        #  stracona, bo daje LICZBĘ, która wygląda wiarygodnie i jest
+        #  zła. Ale 24.09 noc przepadła na kontroli zbioru NA RATY,
+        #  przy 1,6 mln próbek — które mieszczą się w pamięci, więc
+        #  rotacja i tak nie miała być użyta. Zablokowana droga,
+        #  którą tej nocy nikt nie pojedzie, nie unieważnia pomiaru.
+        #  (Dodatkowo tamta awaria siedziała w samym teście, nie
+        #  w kodzie — ale noc nie ma jak tego odróżnić i nie powinna.)
+        #
+        #  Wyjątek jest WĄSKI i dopasowany PO NAZWIE kontroli. Gdy
+        #  nazwa się zmieni, dopasowanie przestanie działać i noc się
+        #  zatrzyma — czyli pomyłka w tę stronę, w którą bezpieczniej.
+        NIEISTOTNE=0
+        if [ -n "$NIEPRZESZLY" ] && [ -z "$ROTACJA_ARG" ]; then
+            RESZTA="$(printf '%s\n' "$NIEPRZESZLY" \
+                      | grep -av '^zbiór na raty$' || true)"
+            [ -z "$RESZTA" ] && NIEISTOTNE=1
+        fi
+
+        if [ "$NIEISTOTNE" = "1" ]; then
+            echo "UWAGA: diag.py nie przeszedł, ale WYŁĄCZNIE na kontroli"
+            echo "       zbioru na raty — a ta noc rotacji nie używa,"
+            echo "       bo ${LACZNIE} próbek mieści się w pamięci."
+            echo "       IDĘ DALEJ. Ale napraw to przed nocą, która"
+            echo "       rotacji BĘDZIE potrzebować — wtedy zatrzyma."
+            echo "       Szczegóły: $LOGI/noc_${STEMPEL}_diag.log"
+            czarna_skrzynka "OSTRZEŻENIE ETAPU 2: diag.py padł na drodze nieużywanej tej nocy"
+        else
+            echo "BŁĄD: diag.py nie przeszedł. Szczegóły w"
+            echo "      $LOGI/noc_${STEMPEL}_diag.log"
+            tail -12 "$LOGI/noc_${STEMPEL}_diag.log"
+            czarna_skrzynka "AWARIA ETAPU 2: diag.py nie przeszedł"
+            {
+                echo
+                echo "--- diag.py: linie z bledami ---"
+                grep -anE "BLAD|BŁĄD|FAIL|Traceback|Error" \
+                    "$LOGI/noc_${STEMPEL}_diag.log" || true
+            } >> "$SKRZYNKA" 2>&1
+            echo
+            echo "PRZERWANO. Trening na niespójnym łańcuchu to zmarnowana noc."
+            echo "Środowisko w momencie awarii: $SKRZYNKA"
+            exit 1
+        fi
+    fi
+else
+    echo "brak diag.py — pomijam (ale lepiej go mieć)"
+fi
+
+# --- 3. ZBIÓR ------------------------------------------------------------
+echo
 echo "--- zbiór ---"
 # yf = etykiety na ramke. Czesc bez nich powstala przed 21.09 i musi
 # byc wygenerowana od nowa, inaczej architektury w pelni splotowe nie
