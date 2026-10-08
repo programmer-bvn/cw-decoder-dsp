@@ -33,7 +33,7 @@ exec > >(tee -a "$LOG") 2>&1
 # pułapka mówi, w którym miejscu i gdzie szukać szczegółów.
 trap 'echo; echo "PRZERWANO (linia $LINENO) — pełny przebieg w $LOG"' ERR
 echo "log:    $LOG"
-echo "wersja: $(bash "$KATALOG/srodowisko/wersja.sh" pokaz 2>/dev/null || echo nieznana)"
+echo "kod:    $(git -C "$KATALOG" log -1 --format='%h %s' 2>/dev/null || echo nieznany)"
 echo "venv:   $ENV_NAME"
 
 echo "========================================================================"

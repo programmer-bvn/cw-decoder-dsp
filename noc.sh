@@ -26,7 +26,7 @@
 #      6. koperta i błędy dla dpu
 #      7. ODCZYT PRAWDZIWYCH NAGRAŃ z probki/ i porównanie z nadanym
 #      8. out/RANO.txt -- kilkanaście linii do przeczytania po powrocie
-#      9. commit + paczka git bundle + próba pushu
+#      9. commit wyników (push robi noc.bat z Windows)
 #
 #  Etap 7 jest jedynym, który mówi o pracy NA ANTENIE. Dokładność
 #  walidacyjna dotyczy syntetyku: pierwszy model tego projektu miał
@@ -302,35 +302,47 @@ echo "python: $(command -v python)  ($(python --version 2>&1))"
 #  sprzed tygodnia i nikt tego nie widział — padła na błędzie, którego
 #  poprawka od czterech dni leżała na GitHubie.
 #
-#  Sprawdzenie spisu jest TWARDE: niezgodny plik przerywa noc. Powody
-#  niezgodności to kod nieaktualny, poprawiony ręcznie na tej maszynie albo
-#  uszkodzony na exFAT pendraka — w każdym z tych przypadków wynik nocy
-#  nie dałby się przypisać żadnej wersji, czyli nie byłby pomiarem.
+#  Od 08.10 kod i noc są na jednej maszynie, w jednym repozytorium git
+#  (pendrak między pracą a domem odpadł), więc wersją jest commit. Spis
+#  odcisków z WERSJA.txt był potrzebny, dopóki na HDD nie było gita.
+#
+#  Niezacommitowane zmiany NIE przerywają nocy — decyzja operatora 08.10:
+#  zapomniany commit nie może kosztować nocy. Pełna różnica idzie za to do
+#  out/noc_<stempel>_kod.diff, razem z treścią nowych, niedodanych plików
+#  kodu, więc wynik da się przypisać do dokładnego kodu: commit + ten plik.
+#  out/ i runs/ są pominięte — to wyniki, nie kod.
 echo
 echo "--- paszport ---"
-KOD_SPRAWDZ="$(bash srodowisko/wersja.sh sprawdz 2>&1)"
-_rc=$?
-echo "$KOD_SPRAWDZ"
-KOD_WERSJA="$(bash srodowisko/wersja.sh pokaz)"
-if [ "$_rc" -ne 0 ]; then
-    echo
-    echo "PRZERWANO: kod na tej maszynie nie zgadza się ze spisem wersji."
-    echo "  Nieaktualny, poprawiony tutaj ręcznie albo uszkodzony przy"
-    echo "  kopiowaniu. Kod przychodzi WYŁĄCZNIE przez noc.bat (GitHub,"
-    echo "  a bez sieci pendrak) — tam trzeba poprawić, nie tutaj."
-    czarna_skrzynka "AWARIA ETAPU 0: kod niezgodny ze spisem wersji"
-    exit 1
-fi
-
-# Skąd przyszedł kod — zapisuje to noc.bat przy dostawie. Brak pliku znaczy,
-# że kod nie przyszedł przez noc.bat (np. ręczne kopiowanie): wersja jest
-# wtedy nadal pewna (spis wyżej), tylko źródło nieznane.
-if [ -f "$LOGI/dostawa_kodu.txt" ]; then
-    KOD_SKAD="$(tr -d '\r' < "$LOGI/dostawa_kodu.txt" | head -1)"
+KOD_DIFF=""
+if KOD_COMMIT="$(git rev-parse --short=12 HEAD 2>/dev/null)"; then
+    KOD_GALAZ="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    KOD_WERSJA="$KOD_COMMIT ($KOD_GALAZ)"
+    _zm="$(git status --porcelain --untracked-files=no -- . ':!out' ':!runs' 2>/dev/null)"
+    _nowe="$(git ls-files --others --exclude-standard -- '*.py' '*.sh' '*.bat' \
+             ':!out' ':!runs' 2>/dev/null)"
+    echo "commit:  $(git log -1 --format='%h %ad %s' --date=format:'%Y-%m-%d %H:%M')"
+    echo "gałąź:   $KOD_GALAZ"
+    if [ -z "$_zm" ] && [ -z "$_nowe" ]; then
+        echo "zmiany:  brak — kod = commit"
+    else
+        KOD_DIFF="$LOGI/noc_${STEMPEL}_kod.diff"
+        {
+            git diff HEAD -- . ':!out' ':!runs'
+            for _f in $_nowe; do git diff --no-index -- /dev/null "$_f"; done
+        } > "$KOD_DIFF" 2>/dev/null
+        _n=$(( $(printf '%s' "$_zm" | grep -c .) + $(printf '%s' "$_nowe" | grep -c .) ))
+        KOD_WERSJA="$KOD_WERSJA + zmiany w $_n plikach"
+        echo "zmiany:  $_n plików poza commitem — różnica w $KOD_DIFF"
+        [ -n "$_zm" ]   && printf '%s\n' "$_zm"   | sed 's/^/           /'
+        [ -n "$_nowe" ] && printf '%s\n' "$_nowe" | sed 's/^/        ?? /'
+    fi
 else
-    KOD_SKAD="nie przez noc.bat — źródło nieznane"
+    KOD_COMMIT=""
+    KOD_WERSJA="NIEZNANA — to nie jest repozytorium git"
+    echo "commit:  $KOD_WERSJA"
 fi
-echo "skąd:    $KOD_SKAD"
+# Dla train_rtx.py: zapisuje to w state.json i w zbiorze.
+export CW_KOD_COMMIT="$KOD_COMMIT" CW_KOD_DIFF="$KOD_DIFF"
 echo "venv:    ${CW_VENV_WYBRANY:-?}  (${CW_VENV_POWOD:-?})"
 # importlib.metadata czyta numery wersji BEZ importowania pakietów —
 # import TensorFlow tylko po to, żeby wypisać jego numer, kosztowałby czas.
@@ -782,9 +794,8 @@ koperta () {
 #  98,68% i na paśmie dawał fragmenty, a model z 15.09 ma 98,73% i dopóki
 #  nikt nie puści go na nagraniu z radia, ta liczba znaczy tyle samo.
 #
-#  Nagrania są na HDD, bo na_hdd.bat kopiuje CAŁY katalog probki/, razem
-#  z .wav. W repozytorium ich nie ma (106 MB) — do pobrania w wydaniu
-#  probki-v1.
+#  Nagrań .wav nie ma w repozytorium (106 MB) — leżą w probki/ na tej
+#  maszynie, a do pobrania są w wydaniu probki-v1.
 nagrania () {
     local ARCH="$1" RUN="$2"
     if [ ! -f "$RUN/best.keras" ]; then
@@ -793,8 +804,7 @@ nagrania () {
     fi
     if ! ls probki/*.wav >/dev/null 2>&1; then
         echo "  brak nagrań w probki/ — pomijam"
-        echo "  (na_hdd.bat kopiuje je z pendraka; jeśli ich tam nie ma,"
-        echo "   pobierz wydanie probki-v1 albo wgraj z BD-R)"
+        echo "  (pobierz wydanie probki-v1 albo wgraj z BD-R)"
         return 1
     fi
     local WYNIK="$LOGI/nagrania_${ARCH}_${STEMPEL}.txt"
@@ -857,7 +867,8 @@ RANO="$LOGI/RANO.txt"
     echo " NOC $(date '+%Y-%m-%d')  --  co wyszło"
     echo "============================================================"
     echo
-    echo "KOD:   wersja $KOD_WERSJA  ($KOD_SKAD)"
+    echo "KOD:   $KOD_WERSJA"
+    [ -n "$KOD_DIFF" ] && echo "       różnica od commita: $KOD_DIFF"
     echo "VENV:  ${CW_VENV_WYBRANY:-?}"
     echo
     echo "ETAPY"
@@ -867,23 +878,6 @@ RANO="$LOGI/RANO.txt"
         printf "  %-28s %-6s %s\n" "$NAZWA" "$WYNIK" "$SZCZ"
     done
     echo
-
-    # ŚMIECI W KORZENIU. Wypisywane tutaj, a nie tylko w osobnym skrypcie,
-    # bo inaczej nikt na nie nie patrzy -- a droga jest jednokierunkowa:
-    # doraźny skrypt zrobiony na HDD w trakcie szukania błędu jedzie
-    # z_hdd.bat na pendraka, a stamtąd na BD-R M-DISC, którego NIE DA SIĘ
-    # skasować. Pół godziny życia pliku, a zostaje na zawsze.
-    SMIECI="$(git status --porcelain --untracked-files=all . 2>/dev/null \
-              | sed -n 's/^?? //p' | grep -v '/' || true)"
-    if [ -n "$SMIECI" ]; then
-        echo "ŚMIECI W KORZENIU ($(printf '%s\n' "$SMIECI" | wc -l))"
-        echo "  Nie są ani kodem, ani wynikiem. Pojadą z_hdd.bat na"
-        echo "  pendraka, a stamtąd na płytę, której nie da się skasować."
-        printf '    %s\n' $SMIECI
-        echo "  ./srodowisko/porzadki.sh             co to właściwie jest"
-        echo "  ./srodowisko/porzadki.sh --przenies  odłóż do stare/"
-        echo
-    fi
 } > "$RANO"
 
 python - "$RANO" "$RUN_DPU" "$RUN_GRU" <<'PY' || true
@@ -985,7 +979,7 @@ PY
         [ -f "$F" ] && printf "  %-46s %s\n" "$F" "$(du -h "$F" | cut -f1)"
     done
     echo
-    echo "Na pendraka:  bvn_z.bat  (z Windows)"
+    echo "Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows"
 } >> "$RANO"
 
 echo
@@ -993,95 +987,49 @@ echo "============================================================"
 cat "$RANO"
 echo "============================================================"
 
-# --- HISTORIA TRENINGU: commit, paczka, ewentualny push -----------------
-#  Po co: rano wynik ma być poza maszyną, która go policzyła. Jeśli dysk
-#  stęknie w nocy, log.csv i state.json są już gdzie indziej.
+# --- HISTORIA TRENINGU: commit -----------------------------------------
+#  Po co: wynik ma trafić do historii i rano na GitHub, czyli poza maszynę,
+#  która go policzyła. Jeśli dysk stęknie, log.csv i state.json są gdzie
+#  indziej.
 #
-#  DLACZEGO PACZKA, A NIE SAM PUSH. W WSL nie ma Credential Managera
-#  Windows, więc token, którym pcha maszyna z Windows, tutaj nie istnieje.
-#  Wkładanie go tu oznaczałoby ~/.git-credentials, czyli sekret czystym
-#  tekstem na dysku. Zamiast tego `git bundle` pakuje commity do JEDNEGO
-#  pliku, ten wraca na pendraku razem z wynikami, a wypycha go maszyna,
-#  która poświadczenia ma. Cała historia tego repo to ~212 kB.
-#
-#  Push jest próbowany mimo to — jeśli jest deploy key z prawem zapisu,
-#  wypchnie się od razu. Nie jest to droga krytyczna: niepowodzenie
-#  pushu NIE psuje nocy.
+#  PUSH NIE STĄD, tylko z noc.bat po powrocie z WSL. Poświadczenia GitHuba
+#  ma Windows (Credential Manager) i ustawia je operator; w WSL ich nie ma
+#  i nie będzie — tutaj leżałyby czystym tekstem. Do 08.10 była tu paczka
+#  git bundle wożona pendrakiem do maszyny z poświadczeniami; od kiedy
+#  wszystko jest na jednej maszynie, nie ma czego wozić.
 #
 #  CO trafia do commita: TYLKO historia treningu i pomiary (runs/**/log.csv,
 #  runs/**/state.json, out/*.log, out/koperta_*.txt, out/RANO.txt).
-#  Świadomie NIE "git add -A" — skrypt bez nadzoru nie ma prawa wciągnąć
-#  do historii zmian w kodzie zostawionych w drzewie roboczym z wieczora.
+#  Świadomie NIE "git add -A", i commit idzie z listą ścieżek (tryb --only):
+#  skrypt bez nadzoru nie ma prawa wciągnąć do historii zmian w kodzie
+#  zostawionych z wieczora — także tych, które operator już dodał do indeksu.
+#  Ich ślad i tak jest w out/noc_<stempel>_kod.diff.
 # -------------------------------------------------------------------------
 echo
 echo "--- historia treningu ---"
 
-if [ ! -d .git ]; then
-    # Do 08.10 była tu rada "uruchom srodowisko/hdd_repo.sh". Była ZŁA:
-    # tamten skrypt zakładał tu .git, a na_hdd.bat na widok .git przestawał
-    # kopiować kod — i kod na tej maszynie zamarzał bez żadnego sygnału.
-    echo "to nie jest repozytorium git — pomijam (tak ma być)"
-    echo "  Wyniki wracają na pendraka przez bvn_z.bat, a z pendraka na"
-    echo "  GitHub. Kod przychodzi przez noc.bat. Tej maszynie git nie jest"
-    echo "  do niczego potrzebny — NIE zakładaj tu repozytorium."
-elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
-    echo "repozytorium bez ani jednego commita — pomijam"
-    echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"
+if [ -z "$KOD_COMMIT" ]; then
+    echo "brak repozytorium git albo commita — pomijam"
 else
-    git add -- 'runs/**/log.csv' 'runs/**/state.json' \
-               "$LOGI"/noc_*.log "$LOGI"/koperta_*.txt \
-               "$LOGI"/nagrania_*.txt "$RANO" 2>/dev/null
+    WYNIKI=( 'runs/**/log.csv' 'runs/**/state.json'
+             "$LOGI/noc_*.log" "$LOGI/noc_*_kod.diff" "$LOGI/koperta_*.txt"
+             "$LOGI/nagrania_*.txt" "$RANO" )
+    # Po jednym wzorcu, i commit z NAZWAMI plików, nie wzorcami: wzorzec,
+    # który nic nie łapie (np. brak *_kod.diff, gdy kod = commit, albo brak
+    # nagrań), wywraca CAŁE "git add" i cały commit — nic by nie weszło.
+    for _w in "${WYNIKI[@]}"; do git add -- "$_w" 2>/dev/null; done
+    mapfile -t DO_COMMITU < <(git diff --cached --name-only -- "${WYNIKI[@]}")
 
-    if git diff --cached --quiet; then
+    if [ "${#DO_COMMITU[@]}" -eq 0 ]; then
         echo "nic nowego w historii treningu — nie commituję"
+    # core.hooksPath wyłączony: hook, który w nocy zapyta o cokolwiek,
+    # zatrzymałby skrypt.
+    elif git -c core.hooksPath=/dev/null commit -q \
+             -m "trening $STEMPEL: historia przebiegów i pomiary" \
+             -- "${DO_COMMITU[@]}"; then
+        echo "commit: $(git log -1 --format='%h %s')"
     else
-        # core.hooksPath wyłączony: hook, który w nocy zapyta o cokolwiek,
-        # zatrzymałby skrypt tak samo jak ssh bez BatchMode.
-        if git -c core.hooksPath=/dev/null commit -q \
-               -m "trening $STEMPEL: historia przebiegów i pomiary"; then
-            echo "commit: $(git log -1 --format='%h %s')"
-        else
-            echo "commit NIE przeszedł — patrz wyżej"
-        fi
-    fi
-
-    GALAZ="$(git rev-parse --abbrev-ref HEAD)"
-    PACZKA="$LOGI/historia_${STEMPEL}.bundle"
-
-    if git bundle create "$PACZKA" "$GALAZ" >/dev/null 2>&1; then
-        echo "paczka: $PACZKA ($(du -h "$PACZKA" | cut -f1))"
-        PACZKA_OK=1
-    else
-        echo "UWAGA: nie udało się zrobić paczki git bundle"
-        PACZKA_OK=0
-    fi
-
-    if ! git remote get-url origin >/dev/null 2>&1; then
-        echo "push: brak zdalnego 'origin' — pomijam"
-    else
-        KLUCZ="${CW_DEPLOY_KEY:-$HOME/.ssh/cw_deploy}"
-        if [ -f "$KLUCZ" ]; then
-            export GIT_SSH_COMMAND="ssh -i $KLUCZ -o IdentitiesOnly=yes -o BatchMode=yes"
-        else
-            export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
-        fi
-        # GIT_TERMINAL_PROMPT=0: bez tego git po HTTPS bez poświadczeń
-        # czeka na login z terminala, którego w nocy nie ma.
-        if GIT_TERMINAL_PROMPT=0 git push origin "$GALAZ" >/dev/null 2>&1; then
-            echo "push: wypchnięte na origin/$GALAZ"
-        else
-            echo "push: NIE przeszedł — to normalne w WSL i nic nie zginęło"
-            if [ "$PACZKA_OK" = "1" ]; then
-                echo
-                echo "  Rano, z Windows, z katalogu repozytorium na pendraku:"
-                echo "      git fetch \"out/$(basename "$PACZKA")\" $GALAZ"
-                echo "      git merge --ff-only FETCH_HEAD"
-                echo "      git push origin $GALAZ"
-                echo
-                echo "  Albo raz na zawsze: deploy key z 'Allow write access'"
-                echo "  w Settings -> Deploy keys, wtedy push idzie stąd sam."
-            fi
-        fi
+        echo "commit NIE przeszedł — patrz wyżej"
     fi
 fi
 

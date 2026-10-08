@@ -40,8 +40,8 @@ fi
 # TYLKO W WSL. Ten pomiar zapisuje TYSIĄCE drobnych plików w katalogu
 # projektu — o to w nim chodzi. Na maszynie treningowej ląduje to na SSD
 # i nic nie szkodzi, ale uruchomiony omyłkowo na pendraku pisałby po
-# exFAT, który nie ma wear-levelingu. Cały układ z na_hdd.bat istnieje
-# właśnie po to, żeby takich zapisów na pendraku NIE było.
+# exFAT, który nie ma wear-levelingu — a takich zapisów na pendraku
+# projekt unika od początku.
 #
 # Zabezpieczenie dopisane po tym, jak sam odpaliłem go na pendraku
 # przy próbie na sucho. Wyszło 7 plików na sekundę i musiałem przerwać.

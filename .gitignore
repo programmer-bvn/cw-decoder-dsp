@@ -163,7 +163,8 @@ CW_inspector/
 /tylko
 /wlasny
 
-# --- odlozone na bok przez srodowisko/porzadki.sh ---
-# Doraźne skrypty z HDD, ktore nie sa ani kodem, ani wynikiem. Nie kasujemy
-# ich (czesto to jedyne kopie), ale nie maja jechac na pendraka i na plyte.
+# --- odlozone na bok ---
+# Doraźne skrypty, ktore nie sa ani kodem, ani wynikiem. Nie kasujemy ich
+# (czesto to jedyne kopie), ale nie naleza do repozytorium. (Do 08.10
+# odkladal je tu srodowisko/porzadki.sh -- usuniety razem z pendrakiem.)
 stare/

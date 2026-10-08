@@ -43,23 +43,7 @@ go nie ma.
 To nie ma nic wspólnego ze sterownikami NVIDIA — te są niezależne od
 Pythona. Bramką jest wyłącznie dostępność koła TensorFlow.
 
-## 3. Nośniki podłączone PO starcie WSL nie montują się same
-
-WSL montuje dyski obecne w momencie startu. Pendrak wetknięty później —
-a tak jest zawsze z D888 — nie pojawia się w `/mnt/`, i `wsl` odpowiada:
-
-```
-wsl: Failed to translate 'd:\AI_DSP'
-```
-
-`[automount] enabled=true` w `/etc/wsl.conf` tego nie załatwia, bo dotyczy
-startu, nie podłączenia w trakcie. Trzeba zamontować z ręki —
-`srodowisko/mount_pendrak.sh` to robi.
-
-**Litera dysku zmienia się między maszynami.** Na jednej D888 jest pod `D:`,
-na innej pod `I:`. Skrypt przyjmuje literę jako argument i nie zgaduje.
-
-## 4. WSL widzi POŁOWĘ pamięci maszyny
+## 3. WSL widzi POŁOWĘ pamięci maszyny
 
 To nie jest oczywiste i łatwo na tym stracić noc. WSL2 domyślnie ogranicza
 swoją maszynę wirtualną do **50% pamięci hosta**. Na maszynie z 32 GB
@@ -127,9 +111,6 @@ dwóch straconych nocy w komentarzu tamże.
 ```bash
 # raz na maszynę
 ./srodowisko/setup_gpu_env.sh
-
-# przy każdym uruchomieniu, jeśli pracujesz z pendraka
-sudo ./srodowisko/mount_pendrak.sh d
 
 # trening — ładuje środowisko sam
 ./noc.sh

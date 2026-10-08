@@ -192,10 +192,9 @@ def main(argv=None) -> int:
     nagrania = sorted(kat.glob("*.wav"))
     if not nagrania:
         print(f"BŁĄD: brak nagrań w {kat}/", file=sys.stderr)
-        print("Nagrania nie są w repozytorium (106 MB) — wracają na HDD",
+        print("Nagrania nie są w repozytorium (106 MB) — do pobrania",
               file=sys.stderr)
-        print("przez na_hdd.bat, a do pobrania są w wydaniu probki-v1.",
-              file=sys.stderr)
+        print("w wydaniu probki-v1 albo z płyty BD-R.", file=sys.stderr)
         return 1
 
     from dsp.model import load_model
