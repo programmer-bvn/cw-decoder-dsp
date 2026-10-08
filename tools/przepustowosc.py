@@ -26,9 +26,26 @@ Wnioskowanie jest wtedy jednoznaczne:
     C ~ B  i  B << A   ->  wąskim gardłem jest KARTA. Tak ma być.
     C << A i C << B    ->  traci się na styku (np. kopiowanie host->karta)
 
-Pomiar B celowo omija tf.data: partia leży już na karcie i jest liczona
-w kółko. To jest górna granica, jakiej ten model może dosięgnąć na tym
-sprzęcie — i jedyna uczciwa odpowiedź na pytanie „ile potrafi karta".
+Pomiar B omija potok: jedna gotowa partia float32 krąży w kółko. To jest
+górna granica, jakiej ten model może dosięgnąć na tym sprzęcie — i jedyna
+uczciwa odpowiedź na pytanie „ile potrafi karta".
+
+B I C IDĄ PRZEZ model.fit(), Z ROZGRZEWKĄ. Do 08.10 B liczyła własna
+pętla (GradientTape + apply_gradients), a C mierzyło całe fit() od
+pierwszego kroku. Noc 06.10 dała przez to (out/noc_20261006_0004_*):
+
+    B  2593 próbek/s  (98,7 ms/krok)   własna pętla, bez XLA
+    C  1275 próbek/s (200,7 ms/krok)   z kompilacją pierwszego kroku
+    trening tej samej nocy: 31 ms/krok, czyli ~8258 próbek/s
+
+Oba pomiary były 3–6 razy poniżej tego, co karta naprawdę robiła, i werdykt
+„karta jest wąskim gardłem" wyszedł dobry przypadkiem. Przyczyny:
+  - Keras 3 kompiluje krok treningowy przez XLA (jit_compile="auto"),
+    a własna pętla w tf.function — nie. To był pomiar INNEGO kodu.
+  - pierwszy krok fit() to budowa grafu i kompilacja XLA, kilka sekund;
+    rozłożone na 120 kroków podwaja czas kroku.
+Teraz oba liczy ten sam fit() co noc, a czas biegnie od końca kroków
+rozgrzewki do końca ostatniego (Stoper niżej).
 """
 from __future__ import annotations
 
@@ -55,6 +72,13 @@ def wczytaj_standalone():
     return mod
 
 
+def wypisz(nazwa: str, ile_krokow: int, na_krok: int, dt: float) -> float:
+    szybkosc = ile_krokow * na_krok / dt
+    print(f"  {nazwa:<34} {szybkosc:9.0f} próbek/s   "
+          f"({dt / ile_krokow * 1000:.1f} ms/krok)")
+    return szybkosc
+
+
 def zmierz(nazwa: str, krok, ile_krokow: int, na_krok: int,
            rozgrzewka: int = 10) -> float:
     """Zwraca próbki/s. Pierwsze kroki odrzucane.
@@ -68,11 +92,45 @@ def zmierz(nazwa: str, krok, ile_krokow: int, na_krok: int,
     t0 = time.perf_counter()
     for _ in range(ile_krokow):
         krok()
-    dt = time.perf_counter() - t0
-    szybkosc = ile_krokow * na_krok / dt
-    print(f"  {nazwa:<34} {szybkosc:9.0f} próbek/s   "
-          f"({dt / ile_krokow * 1000:.1f} ms/krok)")
-    return szybkosc
+    return wypisz(nazwa, ile_krokow, na_krok, time.perf_counter() - t0)
+
+
+def zmierz_fit(nazwa: str, model, ds, ile_krokow: int, na_krok: int,
+               rozgrzewka: int = 10) -> float:
+    """Próbki/s dla model.fit() — tego samego, który liczy noc.
+
+    Jedno fit() na rozgrzewka + ile_krokow kroków, a czas mierzy Stoper:
+    od końca ostatniego kroku rozgrzewki do końca ostatniego kroku. Dwa
+    osobne fit() (rozgrzewka, potem pomiar) byłyby prostsze, ale każde
+    fit() zaczyna od nowego iteratora, a nowy iterator najpierw napełnia
+    bufor shuffle (50 tys. próbek) — to też weszłoby do pomiaru.
+
+    float(logs["loss"]) w Stoperze czeka na wynik kroku. Bez tego czas
+    mierzyłby WYSŁANIE kroku na kartę, nie jego wykonanie. Noc i tak
+    czeka po każdym kroku (pasek postępu, CSVLogger), więc to jest
+    zgodne z tym, co dzieje się w nocy.
+    """
+    from tensorflow import keras
+
+    class Stoper(keras.callbacks.Callback):
+        def __init__(self):
+            super().__init__()
+            self.t = {}
+
+        def on_train_batch_end(self, krok, logs=None):
+            if logs and "loss" in logs:
+                float(logs["loss"])
+            self.t[krok] = time.perf_counter()
+
+    st = Stoper()
+    model.fit(ds, epochs=1, steps_per_epoch=rozgrzewka + ile_krokow,
+              verbose=0, callbacks=[st])
+    koniec = rozgrzewka + ile_krokow - 1
+    if koniec not in st.t or (rozgrzewka - 1) not in st.t:
+        raise RuntimeError(f"fit() nie doszedł do kroku {koniec + 1} — "
+                           f"za mało danych?")
+    return wypisz(nazwa, ile_krokow, na_krok,
+                  st.t[koniec] - st.t[rozgrzewka - 1])
 
 
 def main(argv=None) -> int:
@@ -138,47 +196,40 @@ def main(argv=None) -> int:
     print()
 
     # --- B. sam model -----------------------------------------------------
-    #  Partia LEŻY JUŻ NA KARCIE i jest liczona w kółko. Żadnego tf.data,
-    #  żadnego kopiowania z hosta. To górna granica tego modelu na tym
-    #  sprzęcie.
-    print("B. SAM MODEL (jedna partia w pamięci karty, w kółko)")
+    #  Jedna gotowa partia float32, ta sama w kółko — żadnego tasowania,
+    #  rzutowania ani cięcia na partie. Zostaje tylko kopiowanie partii
+    #  host->karta (4 MB na krok, ułamek milisekundy na PCIe), którego
+    #  przez tf.data nie da się ominąć.
+    print("B. SAM MODEL (jedna gotowa partia w kółko, przez model.fit)")
     # build_model sam woła compile() — nie robimy tego drugi raz, bo
     # powtórne compile kasuje stan optymalizatora.
     model = sa.build_model(arch=args.arch)
-    with tf.device("/GPU:0"):
-        xb = tf.constant(
-            np.expand_dims(X[:args.batch].astype(np.float32) / 255.0, -1))
-        yb = tf.constant(y[:args.batch])
-
-    # Strata liczona wprost, a nie przez model.compiled_loss: tamten
-    # atrybut zniknął w Kerasie 3, a tutaj chodzi o pomiar tempa, nie
-    # o wierne odtworzenie pętli Kerasa.
-    @tf.function
-    def krok_modelu():
-        with tf.GradientTape() as tape:
-            strata = tf.reduce_mean(
-                keras.losses.sparse_categorical_crossentropy(
-                    yb, model(xb, training=True)))
-        grad = tape.gradient(strata, model.trainable_variables)
-        model.optimizer.apply_gradients(zip(grad, model.trainable_variables))
-
+    xb = np.expand_dims(X[:args.batch].astype(np.float32) / 255.0, -1)
+    yb = y[:args.batch]
+    with tf.device("/cpu:0"):
+        ds_b = tf.data.Dataset.from_tensors((xb, yb)).repeat()
     try:
-        wyniki["model"] = zmierz("model na karcie", krok_modelu,
-                                 args.kroki, args.batch)
+        wyniki["model"] = zmierz_fit("model na karcie", model, ds_b,
+                                     args.kroki, args.batch)
     except Exception as e:
         print(f"  nie udało się: {type(e).__name__}: {e}")
         wyniki["model"] = 0.0
     print()
 
     # --- C. jedno i drugie ------------------------------------------------
+    #  Potok z wagami klas, jak w nocy (train_rtx.py, droga bez rotacji).
+    #  Model ŚWIEŻY: ten z B jest już skompilowany i rozgrzany, więc C nie
+    #  pokazałoby, czy rozgrzewka w ogóle coś odcina.
     print("C. TRENING (potok + model, czyli to, co widać w logu nocy)")
-    ds2 = sa.make_pipeline(X, y, None, args.batch, True)
-    t0 = time.perf_counter()
-    model.fit(ds2, epochs=1, steps_per_epoch=args.kroki, verbose=0)
-    dt = time.perf_counter() - t0
-    wyniki["trening"] = args.kroki * args.batch / dt
-    print(f"  {'trening':<34} {wyniki['trening']:9.0f} próbek/s   "
-          f"({dt / args.kroki * 1000:.1f} ms/krok)")
+    model = sa.build_model(arch=args.arch)
+    ds_c = sa.make_pipeline(X, y, None, args.batch, True,
+                            weights=sa.class_weights(y))
+    try:
+        wyniki["trening"] = zmierz_fit("trening", model, ds_c.repeat(),
+                                       args.kroki, args.batch)
+    except Exception as e:
+        print(f"  nie udało się: {type(e).__name__}: {e}")
+        wyniki["trening"] = 0.0
     print()
 
     # --- werdykt ----------------------------------------------------------
@@ -187,8 +238,8 @@ def main(argv=None) -> int:
     print(f" potok {a:.0f}/s   model {b:.0f}/s   trening {c:.0f}/s")
     print("=" * 70)
 
-    if b <= 0:
-        print("Pomiar modelu się nie udał — werdyktu nie wystawiam.")
+    if b <= 0 or c <= 0:
+        print("Pomiar B albo C się nie udał — werdyktu nie wystawiam.")
         return 1
 
     # Marginesy celowo szerokie: chodzi o rozstrzygnięcie "co rządzi",

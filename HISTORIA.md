@@ -575,6 +575,50 @@ w którą jest bezpieczniej.
 
 ---
 
+### Pomiar przepustowości mierzył inny kod niż noc
+
+**Objaw.** Noc 06.10, `out/noc_20261006_0004_przepustowosc.log`: „sam
+model na karcie" 2593 próbek/s (98,7 ms/krok), „trening" 1275 próbek/s
+(200,7 ms/krok). Ten sam trening tej samej nocy szedł 31 ms/krok, czyli
+~8258 próbek/s. Narzędzie, które miało rozstrzygnąć, co wyznacza tempo,
+pokazywało liczby 3–6 razy za niskie. Werdykt („karta") wyszedł dobry
+przypadkiem, a ostrzeżenie „traci się na styku" było fałszywe.
+
+**Przyczyna, podwójna.**
+- Pomiar B liczyła własna pętla (`tf.function` + `GradientTape`). Keras 3
+  w `model.fit()` kompiluje krok przez XLA (`jit_compile="auto"`), a ta
+  pętla nie. Czyli pomiar INNEGO kodu niż ten, który trenuje.
+- Pomiar C liczył całe `fit()` od pierwszego kroku, razem z budową grafu
+  i kompilacją XLA (kilka sekund rozłożone na 120 kroków).
+
+**Co pomogło.** B i C idą teraz przez to samo `model.fit()` co noc,
+z rozgrzewką 10 kroków. Czas mierzy callback od końca ostatniego kroku
+rozgrzewki do końca ostatniego kroku — w JEDNYM `fit()`, bo każde nowe
+`fit()` od nowa napełnia bufor shuffle (50 tys. próbek). Callback czyta
+`loss`, więc czeka na wykonanie kroku, a nie tylko na jego wysłanie.
+
+**Zmierzone 08.10, RTX 3050, partia 256, dwa przebiegi:**
+
+| | było (06.10) | jest | jest, powtórka |
+|---|---|---|---|
+| A. potok | 363 874/s | 340 717/s | 364 932/s |
+| B. model | 2 593/s | **8 954/s** (28,6 ms) | 8 904/s (28,8 ms) |
+| C. trening | 1 275/s | **8 741/s** (29,3 ms) | 8 669/s (29,5 ms) |
+
+C zgadza się z nocą (31 ms/krok — reszta to pasek postępu i walidacja).
+C ≈ B, a potok jest 40 razy szybszy: **wąskim gardłem jest karta**, teraz
+już z pomiaru, nie przypadkiem.
+
+**Ogólniejsza nauka.** Pomiar składnika ma używać tej samej ścieżki
+wykonania co całość. „Mniej więcej to samo" (własna pętla zamiast
+`fit()`) potrafi różnić się kompilatorem, a wtedy porównanie A–B–C nie
+ma sensu.
+
+**Gdzie mieszka.** `tools/przepustowosc.py` (`zmierz_fit`), etap
+PRZEPUSTOWOSC w `noc.sh`.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
