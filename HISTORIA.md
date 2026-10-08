@@ -381,10 +381,18 @@ scalanie powtórzeń i gdzie działałby CTC.
 | 200 tys. | 97,51% | 2,49% | 0,1224 |
 | 1 mln | 98,73% | 1,27% | 0,0637 |
 | 1,6 mln | 98,95% | **1,05%** | 0,0512 |
+| 4 mln (rotacja) | 99,34% | **0,66%** | 0,0288 |
 
 Błąd spada jak `n^-0,41`, i wykładnik jest zgodny na obu krokach
 (0,418 przy pięciokrotnym zwiększeniu, 0,405 przy 1,6-krotnym). Trzy
 punkty to mało na prawo, ale zgodność jest uderzająca.
+
+**Czwarty punkt, noc 06.10** (`out/RANO.txt`, `runs/dpu_4000000`, pierwszy
+trening na raty). Prawo przewidywało 0,72%, wyszło **0,66%**. Wykładnik
+między 1,6 a 4 mln to ≈ −0,51, więc krzywa nie wypłaszcza się, a nawet
+lekko przyspiesza. Walidacja przy rotacji pochodzi z jednej części
+(80 tys. próbek), stąd niepewność ±0,03 pkt. Na nagraniach: w kolejności
+8/9 (było 6/9 przy 1 mln), w całości 5/9 (było 4/9).
 
 **Co z tego wynika dla kolejnych kroków:**
 
@@ -494,7 +502,8 @@ po jednym śladzie (istnieje katalog) zamiast po **skutku** (działa to,
 o co chodziło) daje właśnie taki układ: cicho zepsuty i odporny na
 powtórzenie.
 
-**Gdzie mieszka.** `srodowisko/hdd_repo.sh`.
+**Gdzie mieszka.** Nigdzie: `hdd_repo.sh` usunięty 08.10 razem z całym
+przenoszeniem pendrakiem (wpis niżej o nocy 28.09). Nauka zostaje.
 
 ### Start środowiska kosztował 70 s, bo venv leżał za drvfs
 
@@ -619,6 +628,79 @@ PRZEPUSTOWOSC w `noc.sh`.
 
 ---
 
+### Noc 28.09 liczyła starym kodem i nic tego nie pokazało
+
+**Objaw.** Noc 28.09 (`out/noc_20260928_2349.log`) stanęła na `diag.py`
+82/83: `zbiór na raty`, `TypeError: unhashable type: 'list'`. To był
+dokładnie błąd z nocy 24.09, poprawiony już wtedy (wpis wyżej: „Noc
+przepadła na kontroli drogi, której ta noc nie używała"). Noc wykonała
+kod sprzed poprawki, a żaden log nie mówił, jaki kod się wykonał.
+
+**Przyczyna.** Kod żył w dwóch miejscach: powstawał na komputerze
+w pracy, a na maszynę treningową jechał pendrakiem przez `na_hdd.bat`.
+Na HDD powstał w międzyczasie katalog `.git` (`hdd_repo.sh`), a
+`na_hdd.bat` na jego widok przestawał kopiować kod, żeby nie nadpisać
+repozytorium. `git pull` tam też nie działał (wpis wyżej o `hdd_repo.sh`).
+Kod na HDD zamarzł, a skrypt kopiujący kończył się bez błędu.
+
+**Co pomogło, w dwóch krokach.**
+1. 05–08.10, gałąź `przebudowa-wersji`: paszport na starcie nocy.
+   Najpierw był to spis odcisków plików (`wersja.sh`, `WERSJA.txt`)
+   sprawdzany twardo, bo na HDD nie było działającego gita.
+2. 08.10 komputer w pracy odpadł i wszystko przeszło na maszynę
+   treningową: jedno repozytorium git tam, gdzie liczy noc. Przyczyna
+   zniknęła, bo nie ma już drugiej kopii kodu, która mogłaby się
+   rozjechać. Spis odcisków zastąpił commit. `na_hdd.bat`, `z_hdd.bat`,
+   `bvn*.bat`, `hdd_repo.sh`, `mount_pendrak.sh`, `porzadki.sh`,
+   `wersja.sh` i `git bundle` zostały usunięte.
+
+**Decyzja operatora, 08.10.** Kod niezgodny z commitem NIE zatrzymuje
+nocy. Zapomniany commit nie może kosztować nocy. Zamiast tego pełna
+różnica idzie do `out/noc_<stempel>_kod.diff`, więc wynik nadal da się
+przypisać do dokładnego kodu.
+
+**Ogólniejsza nauka.** Wynik, o którym nie wiadomo, jaki kod go policzył,
+nie jest pomiarem. Wersja musi stać przy wyniku, nie tylko w logu: logi
+giną, a model i zbiór są używane przez kolejne noce.
+
+**Gdzie mieszka.** Paszport w `noc.sh` (commit, gałąź, `*_kod.diff`).
+`train_rtx.py` `kod_wersja()` zapisuje wersję w każdej części zbioru
+(pole `kod`) i w `state.json` (lista `kod`: od której epoki jaka wersja).
+`noc.bat` robi `git push` z Windows, bo tylko tam są poświadczenia.
+
+---
+
+### Noc brała stary venv, choć nowy był gotowy
+
+**Objaw.** Ta sama noc 28.09: `już aktywne — nie ruszam`, venv spod
+`/mnt/c/...` i `import tensorflow: 61 s` przy każdym etapie. Szybki
+`~/venv_gpu` (2–3 s, wpis wyżej o drvfs) był już założony.
+
+**Przyczyna, podwójna.**
+- `noc.sh` miał skrót: jeśli w powłoce działa już Python z TensorFlow,
+  środowiska nie ruszał. W powłoce akurat był aktywny stary venv, więc
+  wygrał bez śladu w logu.
+- Rada „wpisz `export CW_VENV=...` do `.bashrc`" nie mogła zadziałać
+  z `noc.bat`. Ten uruchamia `wsl.exe -- ./noc.sh` bez interaktywnej
+  powłoki, a wtedy `~/.bashrc` w ogóle nie jest czytany. Przy ręcznym
+  `./noc.sh` działało, więc wyglądało na poprawne.
+
+**Co pomogło.** Środowisko wybiera ZAWSZE `srodowisko/rtx3050_setenv.sh`,
+bez skrótu, a ścieżka nie zależy od zmiennej. Kolejność: `$CW_VENV`, potem
+`~/venv_gpu`, potem venv projektu. Wygrywa pierwszy KOMPLETNY (ma
+`bin/activate` i zainstalowany tensorflow), sprawdzany po katalogu, nie
+importem. Poprzedni venv jest czyszczony z `PATH` i `LD_LIBRARY_PATH`.
+Paszport wypisuje wszystkich kandydatów i powód wyboru.
+
+**Ogólniejsza nauka.** Skrót „już działa, nie ruszam" zamienia jawny wybór
+w przypadkowy stan powłoki. Skrypt bezobsługowy ma za każdym razem ustalać
+środowisko tą samą regułą i mówić w logu, co wybrał.
+
+**Gdzie mieszka.** `srodowisko/rtx3050_setenv.sh`, etap 0 i paszport
+w `noc.sh`.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
@@ -739,6 +821,10 @@ szerokopasmowe (QRN, trzaski). Tam zostaje sieć i model kanału.
 `val_loss` ma minimum w epoce 13 i potem rośnie, przy dokładności
 treningowej bliskiej 100%. Pięciokrotne zwiększenie zbioru (200 tys. ->
 1 mln) zmniejszyło błąd o połowę, więc dźwignia nie jest wyczerpana.
+
+Przy 4 mln (06.10) to samo: minimum `val_loss` 0,0288 w epoce 15, na
+koniec 0,0574. Najlepsza dokładność w epoce 32, ale epoki po 20 dały
+niewiele. Wniosek: 20 epok zamiast 40, a zaoszczędzony czas na dane.
 
 ### Więcej danych zwęża kopertę tonu
 
