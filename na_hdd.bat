@@ -6,6 +6,10 @@ rem  Uzycie:
 rem      na_hdd.bat                     -> cel domyslny C:\AI_DSP
 rem      na_hdd.bat D:\praca\AI_DSP     -> wlasny cel
 rem      na_hdd.bat C:\AI_DSP test      -> tylko pokaz, co by zrobil
+rem      na_hdd.bat C:\AI_DSP auto D:\gh\cw-decoder-dsp-main\
+rem                                     -> kod z INNEGO miejsca niz pendrak
+rem                                        (tak robi noc.bat z archiwum
+rem                                        GitHuba); nagrania i tak z pendraka
 rem
 rem  DWIE RZECZY, KTORE TEN SKRYPT ROBI SWIADOMIE
 rem
@@ -34,6 +38,19 @@ set ZRODLO=%~dp0
 set CEL=%~1
 if "%CEL%"=="" set CEL=C:\AI_DSP
 set TRYB=%~2
+rem  Skad KOD. Domyslnie pendrak, tak jak dotad; noc.bat podaje tu
+rem  rozpakowane archiwum GitHuba, gdy jest siec i nowsza wersja.
+rem  NAGRANIA zawsze z pendraka (ZRODLO) -- nie ma ich w repozytorium.
+set KOD=%~3
+if "%KOD%"=="" set KOD=%ZRODLO%
+if not "%KOD:~-1%"=="\" set KOD=%KOD%\
+rem  "if not defined", NIE "if %KOD_WERSJA%==...": wewnatrz for cmd rozwija
+rem  %zmienne% RAZ, przy wczytaniu calej linii, wiec porownanie widzialo
+rem  wciaz wartosc poczatkowa i wygrywala OSTATNIA linia pliku. Zlapane
+rem  testem 08.10: zamiast numeru wersji wychodzil odcisk z konca spisu.
+set KOD_WERSJA=
+if exist "%KOD%WERSJA.txt" for /f "usebackq tokens=1" %%v in ("%KOD%WERSJA.txt") do if not defined KOD_WERSJA set "KOD_WERSJA=%%v"
+if not defined KOD_WERSJA set KOD_WERSJA=nieznana
 
 set OPCJE=/E /NFL /NDL /NJH /NP /R:2 /W:2
 set WYKLUCZ_KAT=/XD .venv venv_gpu __pycache__ out runs .git
@@ -48,16 +65,17 @@ if /I "%TRYB%"=="test" (
 echo ===========================================================================
 echo  KOD  ->  HDD
 echo ===========================================================================
-echo  zrodlo: %ZRODLO%
-echo  cel:    %CEL%
+echo  kod z:    %KOD%   (wersja %KOD_WERSJA%)
+echo  nagrania: %ZRODLO%probki
+echo  cel:      %CEL%
 echo.
 echo  kopiowane:    *.py *.md *.txt *.sh *.cfg *.bat LICENSE .gitignore .gitattributes
 echo  NIE kopiowane: .venv, __pycache__, out\, runs\, *.npz, *.whl
 echo.
 
-if not exist "%ZRODLO%dsp\config.py" (
-    echo BLAD: nie widze %ZRODLO%dsp\config.py
-    echo       Uruchom ten skrypt z katalogu projektu na pendraku.
+if not exist "%KOD%dsp\config.py" (
+    echo BLAD: nie widze %KOD%dsp\config.py
+    echo       Zrodlo kodu nie jest katalogiem projektu.
     exit /b 1
 )
 
@@ -81,20 +99,20 @@ rem     exFAT ma rozdzielczosc 2 s i nie trzyma strefy czasowej, wiec
 rem     porownanie czasow bywa zawodne -- wlasnie na tym stracilismy
 rem     pliki przy przenoszeniu. Kod ma kilkaset kB, kopiowanie za kazdym
 rem     razem nic nie kosztuje, a daje pewnosc.
-rem --- JESLI CEL JEST REPOZYTORIUM, NIE NADPISUJEMY KODU.
-rem     robocopy z /IS /IT nadpisuje pliki BEZWARUNKOWO, wiec w drzewie
-rem     roboczym gita zrobilby z kazdego pliku zmiane -- nawet gdy tresc
-rem     jest ta sama, bo zmienia znaczniki czasu, a przy roznicy choc
-rem     jednego bajtu skasowalby poprawke zrobiona po tamtej stronie.
-rem     Tam kod odswieza sie przez 'git pull --ff-only'.
-rem     Ustawienie repozytorium: ./srodowisko/hdd_repo.sh
+rem --- KOD KOPIUJEMY ZAWSZE, takze gdy na HDD lezy katalog .git.
+rem     Do 08.10 byl tu wyjatek: "cel jest repozytorium -> pomijam kod,
+rem     odswiezy go git pull". To byla PULAPKA. hdd_repo.sh zalozyl na HDD
+rem     pol-repozytorium, git pull nigdy nie zadzialal, a ten skrypt
+rem     grzecznie pomijal kod -- noc 28.09 liczyla kodem sprzed tygodnia
+rem     i nic tego nie zglosilo. Jedna droga dostawy kodu: ta.
+rem     Recznie poprawiony plik na HDD ZOSTANIE NADPISANY -- kod poprawia
+rem     sie w repozytorium, nie na maszynie, ktora go wykonuje.
 rem UWAGA NA %ERRORLEVEL% W NAWIASACH. cmd.exe rozwija zmienne przy
 rem PARSOWANIU calego bloku, a nie przy wykonaniu, wiec
 rem     if ... ( robocopy ... & set RC=%ERRORLEVEL% )
 rem zapisuje kod SPRZED bloku. Dlatego ponizej sa skoki, a nie nawiasy.
 rem Ten sam blad siedzial tu wczesniej przy RC2 i powodowal, ze awaria
 rem kopiowania nagran nigdy nie byla wykrywana.
-if exist "%CEL%\.git" goto :bez_kodu
 echo [1/2] kod...
 rem  LICENSE, .gitignore i .gitattributes sa WYMIENIONE Z NAZWY, bo nie
 rem  maja rozszerzenia i zaden wzorzec *.cos ich nie lapie. Bez nich
@@ -107,16 +125,8 @@ rem    .gitattributes -- bez niego zakonczenia linii normalizuja sie
 rem                    inaczej po obu stronach i git pokazuje roznice
 rem                    w plikach, ktorych nikt nie ruszal
 rem    LICENSE      -- repozytorium jest publiczne na GPL-3.0
-robocopy "%ZRODLO%." "%CEL%" *.py *.md *.txt *.sh *.cfg *.bat LICENSE .gitignore .gitattributes %OPCJE% /IS /IT %WYKLUCZ_KAT% %WYKLUCZ_PLIK%
+robocopy "%KOD%." "%CEL%" *.py *.md *.txt *.sh *.cfg *.bat LICENSE .gitignore .gitattributes %OPCJE% /IS /IT %WYKLUCZ_KAT% %WYKLUCZ_PLIK%
 set RC1=%ERRORLEVEL%
-goto :po_kodzie
-
-:bez_kodu
-echo [1/2] kod... POMIJAM -- cel jest repozytorium git
-echo        odswiezenie kodu tam:  git pull --ff-only
-set RC1=0
-
-:po_kodzie
 
 rem --- PROBKI: nagrania, tylko rozniace sie. To 110 MB i nie zmieniaja
 rem     sie czesto; kopiowanie za kazdym razem zajechaloby pendraka

@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+#  Zależności PROJEKTU — to, co importuje kod poza TensorFlow i CUDA
+#  (te instaluje osobno setup_gpu_env.sh, krok 2).
+#
+#  DLACZEGO NIE requirements.txt. Tamten plik to zrzut `pip freeze`
+#  z jednej maszyny: ma przypięte setki pakietów i ścieżkę do lokalnego
+#  koła (`nvidia-cublas-cu12 @ file:///mnt/c/...whl`), więc na innej maszynie
+#  wywraca się na tej jednej linii. 05.10 nowy venv ~/venv_gpu powstał bez
+#  librosy, bo setup_gpu_env.sh nie instalował niczego poza TensorFlow —
+#  noc padła na pierwszym imporcie w diag.py.
+#
+#  Lista ustalona z importów w kodzie (08.10): numpy, tensorflow, keras
+#  przychodzą z TensorFlow; reszta jest tutaj.
+# =============================================================================
+scipy
+matplotlib
+# 1.0.0 przeszła TEST 14 w diag.py (librosa jako wzorzec front-endu).
+librosa>=1.0,<2
+soundfile
+# sounddevice POMINIĘTE: potrzebny tylko do dekodowania na żywo z karty
+# dźwiękowej, nie do nocy. Bez systemowego PortAudio i tak by nie zadziałał.

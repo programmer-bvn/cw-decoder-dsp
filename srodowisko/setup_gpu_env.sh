@@ -15,12 +15,26 @@
 #
 #  Po zakończeniu środowisko ładuje się przez:
 #      source srodowisko/rtx3050_setenv.sh
+#
+#  LOG. Cały przebieg idzie też do out/setup_gpu_env_<data>.log. 05.10 ten
+#  skrypt "zakończył się błędem" i nie dało się już ustalić jakim — został
+#  tylko w oknie terminala.
 # =============================================================================
 
 set -e
 
 KATALOG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_NAME="${CW_VENV:-$KATALOG/venv_gpu}"
+
+mkdir -p "$KATALOG/out"
+LOG="$KATALOG/out/setup_gpu_env_$(date +%Y%m%d_%H%M).log"
+exec > >(tee -a "$LOG") 2>&1
+# Przy set -e skrypt kończy się w milczeniu na pierwszym błędzie — ta
+# pułapka mówi, w którym miejscu i gdzie szukać szczegółów.
+trap 'echo; echo "PRZERWANO (linia $LINENO) — pełny przebieg w $LOG"' ERR
+echo "log:    $LOG"
+echo "wersja: $(bash "$KATALOG/srodowisko/wersja.sh" pokaz 2>/dev/null || echo nieznana)"
+echo "venv:   $ENV_NAME"
 
 echo "========================================================================"
 echo " KONFIGURACJA TENSORFLOW GPU (WSL2)"
@@ -70,6 +84,10 @@ pip install tensorflow \
             nvidia-nvjitlink-cu12 \
             nvidia-cuda-nvcc-cu12 -q
 
+# --- 2b. zależności projektu ---------------------------------------------
+echo "[2b/5] instaluję zależności projektu (srodowisko/wymagania_projektu.txt)"
+pip install -r "$KATALOG/srodowisko/wymagania_projektu.txt" -q
+
 # Wersja Pythona w ścieżce site-packages NIE jest wpisywana na sztywno.
 SITE="$(ls -d "$ENV_NAME"/lib/python3.*/site-packages | head -1)"
 NVCC_DIR="$SITE/nvidia/cuda_nvcc"
@@ -118,4 +136,6 @@ echo "[5/5] sprawdzam"
 echo "========================================================================"
 echo " Gotowe. Przy każdym uruchomieniu:"
 echo "     source srodowisko/rtx3050_setenv.sh"
+echo " ~/venv_gpu jest znajdowany sam — żadnej zmiennej nie trzeba."
+echo " Log tego przebiegu: $LOG"
 echo "========================================================================"

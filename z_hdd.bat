@@ -8,10 +8,19 @@ rem      z_hdd.bat D:\praca\AI_DSP
 rem      z_hdd.bat C:\AI_DSP test      -> tylko pokaz, co by zrobil
 rem
 rem  Kierunek odwrotny do na_hdd.bat. To JEDYNY skrypt, ktory pisze na
-rem  pendraka, i pisze malo plikow: model, logi treningu, wykresy, kod
-rem  zmieniony na HDD. exFAT bez wear-levelingu nie lubi tysiacy malych
-rem  zapisow, wiec zbior treningowy (*.npz, 800 MB) i katalog venv tu
-rem  NIE ida -- jedno i drugie odtwarza sie na miejscu.
+rem  pendraka, i pisze malo plikow: modele, logi treningu, wykresy.
+rem  exFAT bez wear-levelingu nie lubi tysiacy malych zapisow, wiec zbior
+rem  treningowy (*.npz, 800 MB) i katalog venv tu NIE ida -- jedno i drugie
+rem  odtwarza sie na miejscu.
+rem
+rem  KODU Z HDD JUZ NIE WOZIMY (od 08.10). Wczesniej ten skrypt kopiowal
+rem  z powrotem "kod zmieniony na HDD" -- i to byla pompa smieci: kazdy
+rem  dorazny skrypt napisany na maszynie treningowej przy szukaniu bledu
+rem  (GPU_check.sh, libsRTX3050.sh.sh, dwie kopie setenv...) jechal na
+rem  pendraka, a stamtad na BD-R. Kod idzie teraz w JEDNA strone:
+rem  repozytorium (GitHub albo pendrak) -> HDD. Poprawke robi sie
+rem  w repozytorium, a noc.sh sprawdza spis wersji i niezgodny plik
+rem  zatrzyma noc.
 rem
 rem  Rowniez bez /MIR: nic na pendraku nie jest kasowane.
 rem ===========================================================================
@@ -37,8 +46,8 @@ echo  zrodlo: %ZRODLO%
 echo  cel:    %CEL%
 echo.
 echo  kopiowane:     runs\ (modele, log.csv, state.json), out\ (logi nocne,
-echo                 wykresy, paczki .bundle), kod .py .md .bat .sh
-echo  NIE kopiowane: *.npz (zbior, 800 MB), .venv, __pycache__
+echo                 wykresy, paczki .bundle)
+echo  NIE kopiowane: kod (idzie tylko w strone HDD), *.npz, .venv
 echo.
 
 if not exist "%ZRODLO%\dsp\config.py" (
@@ -63,7 +72,7 @@ if /I not "%TRYB%"=="test" if /I not "%TRYB%"=="auto" (
 rem --- MODELE I LOGI: to jedyny nieodtwarzalny wynik treningu.
 rem     Kopiujemy tylko rozniace sie, zeby nie przepisywac 12 MB modelu
 rem     przy kazdym uruchomieniu.
-echo [1/3] runs (modele i logi treningu)...
+echo [1/2] runs (modele i logi treningu)...
 if exist "%ZRODLO%\runs" (
     robocopy "%ZRODLO%\runs" "%CEL%runs" %OPCJE%
 ) else (
@@ -71,7 +80,7 @@ if exist "%ZRODLO%\runs" (
 )
 
 rem --- WYKRESY I OBRAZY: krzywe uczenia, X-Ray. Male, warto miec.
-echo [2/3] out (wykresy, X-Ray)...
+echo [2/2] out (logi nocne, wykresy, X-Ray)...
 if exist "%ZRODLO%\out" (
     rem  *.log     -- logi nocne. NAJWAZNIEJSZY plik do przeczytania rano.
     rem              Bez tego wracaly tylko wtedy, gdy spakowalo sie caly
@@ -84,18 +93,6 @@ if exist "%ZRODLO%\out" (
     echo   brak out\ -- pomijam
 )
 
-rem --- KOD: gdyby cos bylo poprawiane na HDD w trakcie treningu.
-rem     Tu NIE nadpisujemy zawsze -- na pendraku moze byc nowsza wersja.
-rem     Robocopy skopiuje tylko to, co sie rozni.
-echo [3/3] kod zmieniony na HDD...
-rem  *.sh dodane: setenv, noc.sh i skrypty ze srodowisko/ poprawia sie
-rem  na maszynie z karta, bo tam widac skutek. Bez tego poprawki zostawaly
-rem  na HDD i ginely przy nastepnym na_hdd.bat.
-robocopy "%ZRODLO%" "%CEL%." *.py *.md *.bat *.sh %OPCJE% /XD .venv venv_gpu __pycache__ out runs .git /XF *.npz *.whl *.pyc
-
-rem  srodowisko/ osobno -- robocopy bez /S nie wchodzi w podkatalogi,
-rem  a to wlasnie tam sa skrypty, ktore uruchamiaja karte.
-if exist "%ZRODLO%\srodowisko" robocopy "%ZRODLO%\srodowisko" "%CEL%srodowisko" *.sh *.md %OPCJE%
 
 echo.
 echo ===========================================================================
