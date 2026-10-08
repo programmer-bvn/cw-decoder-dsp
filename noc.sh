@@ -144,6 +144,11 @@ ROTACJA="${9:-auto}"
 # Dzięki temu istniejący zbiór jest UŻYWANY, a nie generowany od nowa —
 # 800 MB i kilka minut do stracenia przy 12-godzinnym oknie na trening.
 ZBIOR="${4:-}"
+# "-" = domyślny. Pusty argument '' NIE przechodzi przez noc.bat -> cmd ->
+# wsl.exe: znika po drodze i przesuwa wszystkie następne o jedno miejsce
+# (liczba części lądowała w miejscu liczby epok). Z Windows podaje się więc
+# kreskę, a z WSL można dalej pisać ''.
+[ "$ZBIOR" = "-" ] && ZBIOR=""
 
 # Nazwa zbioru i katalogow przebiegow WYNIKA Z ROZMIARU. Dzieki temu nowy
 # eksperyment nigdy nie wchodzi w katalog starego -- inaczej noc.sh zobaczy
@@ -256,54 +261,86 @@ echo " epoki:  $EPOK   batch: $BATCH"
 echo " log:    $GLOWNY"
 echo
 
-# --- 0. ŚRODOWISKO — ładowane przez ten skrypt ---------------------------
-#  Kolejność szukania: $CW_SETENV, potem wersja dla maszyny z kartą, potem
-#  ogólna. Sourcujemy tylko wtedy, gdy środowisko nie jest już aktywne —
-#  żeby dało się je nadpisać z zewnątrz, gdy ktoś wie, co robi.
+# --- 0. ŚRODOWISKO — ZAWSZE przez jedną regułę ---------------------------
+#  Do 05.10 był tu skrót: "jeśli python z TensorFlow już działa, nie
+#  ruszam". 28.09 przez ten skrót noc wzięła STARY venv spod /mnt/ (minuta
+#  na każdy import), bo akurat był aktywny w powłoce — a CW_VENV wskazujące
+#  nowy zostało zignorowane, bez śladu w logu.
+#
+#  Teraz środowisko wybiera ZAWSZE srodowisko/rtx3050_setenv.sh i wypisuje
+#  wszystkich kandydatów z ich stanem — z logu widać, które venvy są na
+#  maszynie i dlaczego wygrał ten, a nie inny. $CW_SETENV zostaje jako
+#  furtka na zupełnie inny skrypt. Stary setenv.sh z korzenia już NIE jest
+#  szukany: to doraźna kopia, która mogłaby po cichu wygrać.
 echo "--- środowisko ---"
-_gotowe=0
-if command -v python >/dev/null 2>&1 && python -c "import tensorflow" 2>/dev/null; then
-    _gotowe=1
-    echo "już aktywne — nie ruszam"
+_s="${CW_SETENV:-srodowisko/rtx3050_setenv.sh}"
+if [ ! -f "$_s" ]; then
+    echo "PRZERWANO: nie ma $_s"
+    exit 1
 fi
-
-if [ "$_gotowe" = "0" ]; then
-    for _s in "${CW_SETENV:-}" "srodowisko/rtx3050_setenv.sh" "setenv.sh"; do
-        if [ -n "$_s" ] && [ -f "$_s" ]; then
-            echo "ładuję $_s"
-            # set +u NA CZAS SOURCOWANIA — inaczej cała ta poprawka nie
-            # działa. ZDARZYŁO SIĘ 10.09: venv_gpu/bin/activate odwołuje
-            # się do $LD_LIBRARY_PATH, gdy ta jest jeszcze nieustawiona
-            # (tę linię dopisuje setup_gpu_env.sh), a przy set -u to jest
-            # błąd krytyczny:
-            #     activate: line 77: LD_LIBRARY_PATH: unbound variable
-            # Skrypt padał w pierwszej sekundzie i trzeba było ładować
-            # środowisko z ręki — czyli dokładnie to, co miało zniknąć.
-            set +u
-            # shellcheck disable=SC1090
-            source "$_s" || true
-            set -u
-            break
-        fi
-    done
-fi
-
-if ! command -v python >/dev/null 2>&1; then
+echo "ładuję $_s"
+# set +u NA CZAS SOURCOWANIA — ZDARZYŁO SIĘ 10.09: venv_gpu/bin/activate
+# odwołuje się do $LD_LIBRARY_PATH, gdy ta jest jeszcze nieustawiona, a przy
+# set -u to błąd krytyczny ("LD_LIBRARY_PATH: unbound variable").
+set +u
+# shellcheck disable=SC1090
+source "$_s"
+_rc=$?
+set -u
+if [ "$_rc" -ne 0 ] || ! command -v python >/dev/null 2>&1; then
+    # Bez tego sprawdzenia nieudany wybór venv przechodziłby niezauważony,
+    # jeśli w powłoce akurat działał jakiś inny Python z TensorFlow.
     echo
-    echo "PRZERWANO: nie ma 'python' w PATH i nie znalazłem czego wysourcować."
-    echo "Szukałem: \$CW_SETENV, srodowisko/rtx3050_setenv.sh, setenv.sh"
-    echo
-    echo "Jeśli środowisko istnieje, ale w INNYM miejscu niż projekt"
-    echo "(np. projekt przeniesiony na inny dysk, a venv został):"
-    echo "    export CW_VENV=/sciezka/do/venv_gpu"
-    echo "    ./noc.sh ..."
-    echo
-    echo "Konfiguracja od zera, obok projektu:"
-    echo "    ./srodowisko/setup_gpu_env.sh"
+    echo "PRZERWANO: nie udało się ustawić środowiska (kod $_rc) — powód wyżej."
     exit 1
 fi
 
 echo "python: $(command -v python)  ($(python --version 2>&1))"
+
+# --- PASZPORT: CO SIĘ WYKONUJE I Z CZYM ----------------------------------
+#  Do 05.10 log nie mówił, jaki kod uruchomił. 28.09 noc liczyła kodem
+#  sprzed tygodnia i nikt tego nie widział — padła na błędzie, którego
+#  poprawka od czterech dni leżała na GitHubie.
+#
+#  Sprawdzenie spisu jest TWARDE: niezgodny plik przerywa noc. Powody
+#  niezgodności to kod nieaktualny, poprawiony ręcznie na tej maszynie albo
+#  uszkodzony na exFAT pendraka — w każdym z tych przypadków wynik nocy
+#  nie dałby się przypisać żadnej wersji, czyli nie byłby pomiarem.
+echo
+echo "--- paszport ---"
+KOD_SPRAWDZ="$(bash srodowisko/wersja.sh sprawdz 2>&1)"
+_rc=$?
+echo "$KOD_SPRAWDZ"
+KOD_WERSJA="$(bash srodowisko/wersja.sh pokaz)"
+if [ "$_rc" -ne 0 ]; then
+    echo
+    echo "PRZERWANO: kod na tej maszynie nie zgadza się ze spisem wersji."
+    echo "  Nieaktualny, poprawiony tutaj ręcznie albo uszkodzony przy"
+    echo "  kopiowaniu. Kod przychodzi WYŁĄCZNIE przez noc.bat (GitHub,"
+    echo "  a bez sieci pendrak) — tam trzeba poprawić, nie tutaj."
+    czarna_skrzynka "AWARIA ETAPU 0: kod niezgodny ze spisem wersji"
+    exit 1
+fi
+
+# Skąd przyszedł kod — zapisuje to noc.bat przy dostawie. Brak pliku znaczy,
+# że kod nie przyszedł przez noc.bat (np. ręczne kopiowanie): wersja jest
+# wtedy nadal pewna (spis wyżej), tylko źródło nieznane.
+if [ -f "$LOGI/dostawa_kodu.txt" ]; then
+    KOD_SKAD="$(tr -d '\r' < "$LOGI/dostawa_kodu.txt" | head -1)"
+else
+    KOD_SKAD="nie przez noc.bat — źródło nieznane"
+fi
+echo "skąd:    $KOD_SKAD"
+echo "venv:    ${CW_VENV_WYBRANY:-?}  (${CW_VENV_POWOD:-?})"
+# importlib.metadata czyta numery wersji BEZ importowania pakietów —
+# import TensorFlow tylko po to, żeby wypisać jego numer, kosztowałby czas.
+echo "pakiety: $(python -c '
+import importlib.metadata as m
+w = []
+for p in ("tensorflow", "keras", "numpy", "scipy", "librosa"):
+    try: w.append(p + " " + m.version(p))
+    except Exception: w.append(p + " BRAK")
+print(", ".join(w))' 2>&1)"
 
 # --- ILE KOSZTUJE SAM START ---------------------------------------------
 #  Import TensorFlow to kilka tysięcy drobnych plików. Gdy środowisko leży
@@ -820,6 +857,9 @@ RANO="$LOGI/RANO.txt"
     echo " NOC $(date '+%Y-%m-%d')  --  co wyszło"
     echo "============================================================"
     echo
+    echo "KOD:   wersja $KOD_WERSJA  ($KOD_SKAD)"
+    echo "VENV:  ${CW_VENV_WYBRANY:-?}"
+    echo
     echo "ETAPY"
     for w in "${STAN[@]}"; do
         NAZWA="${w%%|*}"; RESZTA="${w#*|}"
@@ -977,12 +1017,13 @@ echo
 echo "--- historia treningu ---"
 
 if [ ! -d .git ]; then
-    echo "to nie jest repozytorium git — pomijam"
-    echo "  Wyniki wracają przez bvn_z.bat i to wystarcza, ale można mieć"
-    echo "  DRUGĄ DROGĘ, niezależną od pendraka. Jednorazowo, tutaj:"
-    echo "      ./srodowisko/hdd_repo.sh"
-    echo "  Ustawia ten katalog jako repozytorium NIE DOTYKAJĄC plików"
-    echo "  (git reset --mixed, nie clone), więc modele i zbiór zostają."
+    # Do 08.10 była tu rada "uruchom srodowisko/hdd_repo.sh". Była ZŁA:
+    # tamten skrypt zakładał tu .git, a na_hdd.bat na widok .git przestawał
+    # kopiować kod — i kod na tej maszynie zamarzał bez żadnego sygnału.
+    echo "to nie jest repozytorium git — pomijam (tak ma być)"
+    echo "  Wyniki wracają na pendraka przez bvn_z.bat, a z pendraka na"
+    echo "  GitHub. Kod przychodzi przez noc.bat. Tej maszynie git nie jest"
+    echo "  do niczego potrzebny — NIE zakładaj tu repozytorium."
 elif ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
     echo "repozytorium bez ani jednego commita — pomijam"
     echo "  pierwszy commit rób ręcznie, na oczy, nie w nocy"

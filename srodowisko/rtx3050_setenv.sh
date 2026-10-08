@@ -18,10 +18,13 @@
 #    - dopisuje do LD_LIBRARY_PATH katalogi bibliotek CUDA z pipa; bez tego
 #      linker ich nie znajdzie, TF cicho spadnie na CPU i noc jest stracona
 #
-#  ŚCIEŻKA DO VENV nie jest wpisana na sztywno — kolejno sprawdzane są:
+#  ŚCIEŻKA DO VENV nie jest wpisana na sztywno — kolejno sprawdzane są,
+#  i wygrywa PIERWSZY KOMPLETNY:
 #      1. $CW_VENV, jeśli ustawione
-#      2. venv_gpu w katalogu projektu (rodzic tego skryptu)
-#      3. .venv w katalogu projektu
+#      2. ~/venv_gpu — natywny system plików WSL
+#      3. venv_gpu w katalogu projektu (rodzic tego skryptu)
+#      4. .venv w katalogu projektu
+#  Uzasadnienie przy samym wyborze, niżej.
 # =============================================================================
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
@@ -38,34 +41,87 @@ _ten="${BASH_SOURCE[0]}"
 _katalog="$(cd "$(dirname "$_ten")/.." && pwd)"
 
 # --- gdzie jest venv -----------------------------------------------------
+#
+#  DLACZEGO ~/venv_gpu PRZED venv_gpu PROJEKTU. Zmierzone 24.09
+#  (srodowisko/pomiar_dysku.sh): pod /mnt/... drobne pliki czytają się
+#  12,6 razy wolniej niż na natywnym systemie plików WSL, a sam import
+#  TensorFlow trwał tam 57–70 s. Noc 06.10 z ~/venv_gpu: 2–3 s.
+#
+#  DLACZEGO BEZ ZMIENNEJ. noc.bat uruchamia noc.sh przez
+#  "wsl.exe -- ./noc.sh", czyli bez interaktywnej powłoki — ~/.bashrc
+#  nie jest wtedy czytany W OGÓLE. Rada "wpisz export CW_VENV do .bashrc"
+#  działała przy ręcznym ./noc.sh i nigdy przy nocy z noc.bat.
+#
+#  "KOMPLETNY" = ma bin/activate ORAZ zainstalowany tensorflow. Venv
+#  założony do połowy (np. setup_gpu_env.sh przerwał się na pip) jest
+#  POMIJANY z wyjaśnieniem, zamiast wygrać i wywrócić noc. Sprawdzenie idzie
+#  po katalogu, nie przez import — import przez drvfs to minuta.
+#
+#  Lista kandydatów jest wypisywana w całości. Gdy na maszynie są dwa
+#  venvy, z logu ma być widać oba, ich stan i który wygrał — inaczej nie
+#  da się sprawdzić, czy noc zachowała się prawidłowo.
 _venv=""
-for _k in "${CW_VENV:-}" "$_katalog/venv_gpu" "$_katalog/.venv"; do
-    if [ -n "$_k" ] && [ -f "$_k/bin/activate" ]; then _venv="$_k"; break; fi
+_powod=""
+_widziane=" "
+echo "kandydaci na venv (wygrywa pierwszy kompletny):"
+for _k in "${CW_VENV:-}" "$HOME/venv_gpu" "$_katalog/venv_gpu" "$_katalog/.venv"; do
+    [ -n "$_k" ] || continue
+    case "$_widziane" in *" $_k "*) continue ;; esac
+    _widziane="$_widziane$_k "
+    if [ ! -f "$_k/bin/activate" ]; then
+        _stan="brak"
+    elif ! ls -d "$_k"/lib/python3.*/site-packages/tensorflow >/dev/null 2>&1; then
+        _stan="NIEKOMPLETNY — jest venv, nie ma tensorflow"
+    elif [ -n "$_venv" ]; then
+        _stan="kompletny"
+    else
+        _venv="$_k"
+        if   [ "$_k" = "${CW_VENV:-}" ];   then _powod="wskazany przez CW_VENV"
+        elif [ "$_k" = "$HOME/venv_gpu" ]; then _powod="natywny system plików WSL"
+        else                                    _powod="obok projektu"
+        fi
+        _stan="kompletny  <-- WYBRANY ($_powod)"
+    fi
+    echo "    $_k: $_stan"
 done
 
+if [ -n "${CW_VENV:-}" ] && [ -n "$_venv" ] && [ "$_venv" != "$CW_VENV" ]; then
+    echo "UWAGA: CW_VENV=$CW_VENV się nie nadaje (stan wyżej) — biorę $_venv."
+fi
+
 if [ -z "$_venv" ]; then
-    echo "BŁĄD: nie znalazłem środowiska wirtualnego."
-    echo "Szukałem w:"
-    echo "    \$CW_VENV            = ${CW_VENV:-<nieustawione>}"
-    echo "    $_katalog/venv_gpu"
-    echo "    $_katalog/.venv"
     echo
-    echo "MASZ DWIE DROGI."
+    echo "BŁĄD: nie ma ANI JEDNEGO kompletnego środowiska wirtualnego."
     echo
-    echo "1. Środowisko jest gdzie indziej — wskaż je:"
-    echo "       export CW_VENV=/sciezka/do/venv_gpu"
-    echo "   Warto wpisać to na stałe do ~/.bashrc, inaczej trzeba"
-    echo "   pamiętać przy każdym uruchomieniu."
-    echo
-    echo "2. Środowiska nie ma tutaj — zrób je obok projektu:"
-    echo "       ./srodowisko/setup_gpu_env.sh"
-    echo "   To lepsze, gdy projekt leży na osobnym, szybkim dysku:"
-    echo "   kod, dane i biblioteki idą wtedy tym samym kanałem,"
-    echo "   a skrypty znajdują wszystko bez żadnej zmiennej."
+    echo "Założenie na natywnym systemie plików WSL (szybkie, zalecane):"
+    echo "    CW_VENV=\$HOME/venv_gpu ./srodowisko/setup_gpu_env.sh"
+    echo "Potem nic nie trzeba ustawiać — ~/venv_gpu jest znajdowany sam."
     return 1
 fi
 
+# --- wyłączenie POPRZEDNIEGO venv ----------------------------------------
+#  Gdy w powłoce był aktywny INNY venv, jego ścieżki zostają w PATH i —
+#  gorzej — w LD_LIBRARY_PATH. Nowy venv stanąłby pierwszy w PATH, ale
+#  biblioteki CUDA mogłyby się ładować ze starego: dwie wersje cuDNN
+#  w jednym procesie dają błędy, których nikt nie skojarzy z venv.
+#  Funkcja deactivate z tamtej powłoki tu nie istnieje (funkcje nie
+#  przechodzą do skryptu), więc czyścimy ręcznie, po prefiksie ścieżki.
+if [ -n "${VIRTUAL_ENV:-}" ] && [ "$VIRTUAL_ENV" != "$_venv" ]; then
+    _stary="$VIRTUAL_ENV"
+    echo "wyłączam poprzedni venv: $_stary"
+    PATH="$(printf '%s' "$PATH" | tr ':' '\n' \
+            | awk -v p="$_stary" 'index($0, p) != 1' | paste -sd: -)"
+    LD_LIBRARY_PATH="$(printf '%s' "${LD_LIBRARY_PATH:-}" | tr ':' '\n' \
+            | awk -v p="$_stary" 'index($0, p) != 1' | paste -sd: -)"
+    export PATH LD_LIBRARY_PATH
+    unset VIRTUAL_ENV
+fi
+
 source "$_venv/bin/activate"
+
+# Dla paszportu w noc.sh: który venv i dlaczego, bez zgadywania z PATH.
+export CW_VENV_WYBRANY="$_venv"
+export CW_VENV_POWOD="$_powod"
 
 # --- biblioteki CUDA z pipa ---------------------------------------------
 # Wersja Pythona NIE jest wpisana na sztywno: katalog site-packages nosi
@@ -105,4 +161,4 @@ case "$(python --version 2>&1)" in
 esac
 echo "CUDA:   $(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -c nvidia) katalogów w LD_LIBRARY_PATH"
 
-unset _ten _katalog _venv _k _sp _nvidia _lib _nvcc
+unset _ten _katalog _venv _k _sp _nvidia _lib _nvcc _powod _widziane _stan _stary

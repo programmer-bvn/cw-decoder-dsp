@@ -5,7 +5,11 @@ rem
 rem  Uzycie:
 rem      noc.bat                             cel domyslny, ustawienia domyslne
 rem      noc.bat C:\AI_DSP                   wlasny katalog roboczy na HDD
-rem      noc.bat C:\AI_DSP 200000 40         + argumenty dla noc.sh
+rem      noc.bat C:\AI_DSP 200000 20 256 - 40 3000 50
+rem                                          + argumenty dla noc.sh
+rem
+rem  PUSTY ARGUMENT = KRESKA "-", nie "". Pusty argument znika po drodze
+rem  przez cmd i wsl.exe i przesuwa wszystkie nastepne o jedno miejsce.
 rem
 rem  PO CO TO ISTNIEJE
 rem  Praca idzie w przerwach miedzy inna robota: wtykasz pendraka, klepiesz
@@ -15,10 +19,16 @@ rem  katalogu, odpalic noc.sh, a rano jeszcze zgrac wyniki. Piec operacji
 rem  zamiast jednej, kazda z wlasna okazja do pomylki.
 rem
 rem  CO ROBI, PO KOLEI
-rem      1. kopiuje kod z pendraka na HDD           (na_hdd.bat, tryb auto)
+rem      0. wybiera, SKAD wziac kod: GitHub, a bez sieci -- pendrak
+rem      1. kopiuje kod na HDD                      (na_hdd.bat, tryb auto)
 rem      2. uruchamia noc.sh w WSL na kopii z HDD
 rem      3. zgrywa wyniki z HDD na pendraka         (z_hdd.bat, tryb auto)
 rem      4. wypisuje out\RANO.txt na ekran
+rem
+rem  DWA ZRODLA, W OBIE STRONY -- na wypadek uszkodzenia exFAT na pendraku.
+rem  Kod: najpierw GitHub, bez sieci pendrak. Wyniki: na pendraka, a z niego
+rem  na GitHub. Kazda noc zapisuje w out\dostawa_kodu.txt, skad wziela kod,
+rem  a noc.sh sprawdza go plik po pliku ze spisem w WERSJA.txt.
 rem
 rem  DLACZEGO PRACA IDZIE NA HDD, A NIE NA PENDRAKU
 rem  exFAT bez wear-levelingu ma rzedu 50 tys. cykli zapisu. Trening pisze
@@ -56,9 +66,20 @@ rem Uzytkownik WSL. Konfiguracja karty na tej maszynie powstala jako root
 rem (symlinki do /usr/lib/wsl/lib), wiec taki jest domyslny.
 if "%WSLUSER%"=="" set WSLUSER=root
 
-rem Argumenty dla noc.sh: wszystko po pierwszym.
+rem Argumenty dla noc.sh: WSZYSTKIE po pierwszym. Do 08.10 bylo tu %~2..%~7,
+rem czyli najwyzej szesc -- a noc.sh ma ich dziewiec. Siodmej pozycji
+rem (liczba czesci zbioru) nie dalo sie ustawic z Windows, wiec noc z 4 mln
+rem probek trzeba bylo odpalac recznie w WSL. Petla z shift zbiera
+rem dowolnie wiele. Konczy sie na pierwszym pustym -- stad kreska "-".
 set ARGS=
-if not "%~2"=="" set ARGS=%~2 %~3 %~4 %~5 %~6 %~7
+shift
+:zbierz_arg
+if "%~1"=="" goto :zebrane_arg
+set ARGS=%ARGS% %~1
+shift
+goto :zbierz_arg
+:zebrane_arg
+if defined ARGS set ARGS=%ARGS:~1%
 
 rem  Znacznik czasu przez PowerShell, nie przez %DATE%.
 rem  ZMIERZONE: na tej maszynie %DATE% daje "09.09.2026", wiec podzial
@@ -119,13 +140,75 @@ if errorlevel 1 (
     goto :koniec_blad
 )
 
+rem === 0. SKAD KOD =======================================================
+rem  Najpierw GitHub, bez sieci pendrak. Ale GitHub TYLKO wtedy, gdy jego
+rem  wersja nie jest NIZSZA niz na pendraku: commit zrobiony na pendraku,
+rem  ktorego push sie nie udal, zostawia GitHub w tyle -- i wtedy "zawsze
+rem  GitHub" dowiozloby stary kod. Numer z WERSJA.txt porownuje sie jako
+rem  NAPIS (sprawdzone: "-10" GTR "-09", pazdziernik GEQ wrzesien).
+rem
+rem  Trzy pulapki sprawdzone na zywo 05.10, zanim to powstalo:
+rem   - curl.exe i tar.exe WOLANE PO PELNEJ SCIEZCE. W PATH bywa najpierw
+rem     GNU tar z Gita, ktory bierze "C:" za nazwe zdalnego hosta.
+rem   - numer czytany przez "for /f", nie "set /p": WERSJA.txt ma konce
+rem     linii LF, a set /p wciaga wtedy wiecej niz pierwsza linie.
+rem   - archiwum GitHuba ma .sh z LF i .bat z CRLF -- dokladnie tak, jak
+rem     trzeba, bo .gitattributes jest stosowane przy jego tworzeniu.
+set KOD=%ZRODLO%
+set KOD_SKAD=pendrak
+set KOD_POWOD=
+set VPD=
+set VGH=
+if exist "%ZRODLO%WERSJA.txt" for /f "usebackq tokens=1" %%v in ("%ZRODLO%WERSJA.txt") do if not defined VPD set "VPD=%%v"
+set GH=%TEMP%\cw_kod_%STEMPEL%
+echo [0/4] skad kod...  (pendrak: wersja %VPD%)
+"%SystemRoot%\System32\curl.exe" -fsSL --max-time 60 -o "%GH%.tar.gz" https://codeload.github.com/programmer-bvn/cw-decoder-dsp/tar.gz/refs/heads/main >> "%LOGB%" 2>&1
+if errorlevel 1 goto :bez_githuba
+if not exist "%GH%" mkdir "%GH%"
+"%SystemRoot%\System32\tar.exe" -xzf "%GH%.tar.gz" -C "%GH%" >> "%LOGB%" 2>&1
+if errorlevel 1 goto :bez_githuba
+if exist "%GH%\cw-decoder-dsp-main\WERSJA.txt" for /f "usebackq tokens=1" %%v in ("%GH%\cw-decoder-dsp-main\WERSJA.txt") do if not defined VGH set "VGH=%%v"
+if not defined VGH goto :bez_wersji_gh
+if not defined VPD goto :z_githuba
+if "%VGH%" GEQ "%VPD%" goto :z_githuba
+set KOD_POWOD=GitHub ma starsza wersje %VGH%
+goto :wybrane_zrodlo
+:bez_wersji_gh
+set KOD_POWOD=archiwum z GitHuba bez WERSJA.txt
+goto :wybrane_zrodlo
+:z_githuba
+set KOD=%GH%\cw-decoder-dsp-main\
+set KOD_SKAD=GitHub
+goto :wybrane_zrodlo
+:bez_githuba
+set KOD_POWOD=brak sieci albo GitHub nieosiagalny
+:wybrane_zrodlo
+set KOD_WERSJA=%VPD%
+if "%KOD_SKAD%"=="GitHub" set KOD_WERSJA=%VGH%
+if "%KOD_POWOD%"=="" (
+    echo       %KOD_SKAD%, wersja %KOD_WERSJA%
+) else (
+    echo       %KOD_SKAD%, wersja %KOD_WERSJA%  -- %KOD_POWOD%
+)
+echo.
+
 rem === 1. KOD NA HDD =====================================================
 echo [1/4] kod na HDD...
-call "%ZRODLO%na_hdd.bat" "%CEL%" auto >> "%LOGB%" 2>&1
+call "%ZRODLO%na_hdd.bat" "%CEL%" auto "%KOD%" >> "%LOGB%" 2>&1
 if errorlevel 1 (
     echo       NIE UDALO SIE. Szczegoly w %LOGB%
     goto :koniec_blad
 )
+rem  Zapis dla noc.sh: skad przyszedl kod tej nocy. Wersje i tak sprawdza
+rem  spis w WERSJA.txt -- ten plik mowi tylko, z ktorej strony.
+if not exist "%CEL%\out" mkdir "%CEL%\out"
+if "%KOD_POWOD%"=="" (
+    > "%CEL%\out\dostawa_kodu.txt" echo %KOD_SKAD%, wersja %KOD_WERSJA%, %STEMPEL%
+) else (
+    > "%CEL%\out\dostawa_kodu.txt" echo %KOD_SKAD%, wersja %KOD_WERSJA%, %STEMPEL% -- %KOD_POWOD%
+)
+if exist "%GH%" rmdir /s /q "%GH%"
+if exist "%GH%.tar.gz" del /q "%GH%.tar.gz"
 echo       gotowe
 echo.
 
