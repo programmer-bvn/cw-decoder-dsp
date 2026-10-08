@@ -1,0 +1,46 @@
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/dpu_4000/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt surowy:  (nic)
+  po scaleniu 0.35s: (nic)
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt surowy:  (nic)
+  po scaleniu 0.35s: (nic)
+  nadane: CQ SQ2BVN 73
+  w całości:    0/3
+  w kolejności: 0/3
+  po scaleniu:  w całości 0/3, w kolejności 0/3, odczyt krótszy o 100%
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt surowy:  (nic)
+  po scaleniu 0.35s: (nic)
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    0/6
+  w kolejności: 0/6
+  po scaleniu:  w całości 0/6, w kolejności 0/6, odczyt krótszy o 100%
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt surowy:  (nic)
+  po scaleniu 0.35s: (nic)
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 0/9, w kolejności 0/9
+RAZEM po scaleniu 0.35s: w całości 0/9, w kolejności 0/9
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.

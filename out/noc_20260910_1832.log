@@ -1,0 +1,10 @@
+============================================================
+ NOC TRENINGOWA  2026-09-10 18:32
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260910_1832.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+/mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/activate: line 77: LD_LIBRARY_PATH: unbound variable

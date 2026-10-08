@@ -1,0 +1,107 @@
+============================================================
+ NOC TRENINGOWA  2026-09-10 18:34
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260910_1834.log
+
+--- środowisko ---
+już aktywne — nie ruszam
+python: /mnt/c/Users/ADMIN/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789058134.556615     964 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 61/61 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (5 x 200000 = 1000000 próbek)
+czesci/morse_200000_*.npz: brak plikow
+wolne miejsce: 740629 MB, potrzeba ~6148 MB
+generuję 5 części po 200000 próbek (~14 min każda)...
+QRM 35%   QRN 30%   QSB>0.3 42%
+
+[5/5] czesci/morse_200000_04.npz
+generuję 200000 próbek na 11 procesach (400 kawałków po 500)
+  500/200000  30s  pozostało ~12036s     1000/200000  32s  pozostało ~6384s     1500/200000  32s  pozostało ~4245s     2000/200000  32s  pozostało ~3176s     2500/200000  32s  pozostało ~2535s     3000/200000  32s  pozostało ~2107s     3500/200000  32s  pozostało ~1801s     4000/200000  32s  pozostało ~1572s     4500/200000  32s  pozostało ~1394s     5000/200000  32s  pozostało ~1251s     5500/200000  32s  pozostało ~1135s     6000/200000  50s  pozostało ~1633s     6500/200000  51s  pozostało ~1508s     7000/200000  51s  pozostało ~1419s     7500/200000  52s  pozostało ~1331s     8000/200000  52s  pozostało ~1244s     8500/200000  53s  pozostało ~1187s     9000/200000  53s  pozostało ~1120s     9500/200000  53s  pozostało ~1058s     10000/200000  54s  pozostało ~1028s     10500/200000  54s  pozostało ~977s     11000/200000  55s  pozostało ~938s     11500/200000  72s  pozostało ~1188s     12000/200000  73s  pozostało ~1144s     12500/200000  73s  pozostało ~1101s     13000/200000  74s  pozostało ~1069s     13500/200000  74s  pozostało ~1027s     14000/200000  75s  pozostało ~993s     14500/200000  75s  pozostało ~964s     15000/200000  75s  pozostało ~930s     15500/200000  75s  pozostało ~898s     16000/200000  77s  pozostało ~880s     16500/200000  77s  pozostało ~859s     17000/200000  94s  pozostało ~1017s     17500/200000  95s  pozostało ~986s     18000/200000  95s  pozostało ~962s     18500/200000  96s  pozostało ~944s     19000/200000  96s  pozostało ~917s     19500/200000  98s  pozostało ~903s     20000/200000  98s  pozostało ~880s     20500/200000  98s  pozostało ~859s     21000/200000  99s  pozostało ~842s     21500/200000  100s  pozostało ~826s     22000/200000  100s  pozostało ~805s     22500/200000  117s  pozostało ~920s     23000/200000  117s  pozostało ~898s     23500/200000  117s  pozostało ~879s     24000/200000  119s  pozostało ~870s     24500/200000  119s  pozostało ~850s     25000/200000  120s  pozostało ~840s     25500/200000  121s  pozostało ~826s     26000/200000  121s  pozostało ~808s     26500/200000  121s  pozostało ~795s     27000/200000  121s  pozostało ~778s     27500/200000  123s  pozostało ~771s     28000/200000  138s  pozostało ~850s     28500/200000  138s  pozostało ~833s     29000/200000  139s  pozostało ~818s     29500/200000  140s  pozostało ~810s     30000/200000  142s  pozostało ~802s     30500/200000  143s  pozostało ~793s     31000/200000  143s  pozostało ~781s     31500/200000  143s  pozostało ~767s     32000/200000  143s  pozostało ~753s     32500/200000  144s  pozostało ~741s     33000/200000  146s  pozostało ~738s     33500/200000  161s  pozostało ~798s     34000/200000  161s  pozostało ~784s     34500/200000  161s  pozostało ~770s     35000/200000  162s  pozostało ~765s     35500/200000  165s  pozostało ~763s     36000/200000  165s  pozostało ~754s     36500/200000  165s  pozostało ~741s     37000/200000  167s  pozostało ~734s     37500/200000  167s  pozostało ~722s     38000/200000  167s  pozostało ~710s     38500/200000  168s  pozostało ~706s     39000/200000  184s  pozostało ~758s     39500/200000  184s  pozostało ~746s     40000/200000  184s  pozostało ~734s     40500/200000  185s  pozostało ~727s     41000/200000  187s  pozostało ~725s     41500/200000  187s  pozostało ~716s     42000/200000  188s  pozostało ~708s     42500/200000  189s  pozostało ~699s     43000/200000  189s  pozostało ~689s     43500/200000  189s  pozostało ~681s     44000/200000  191s  pozostało ~676s     44500/200000  204s  pozostało ~712s     45000/200000  205s  pozostało ~705s     45500/200000  206s  pozostało ~700s     46000/200000  207s  pozostało ~692s     46500/200000  210s  pozostało ~692s     47000/200000  210s  pozostało ~683s     47500/200000  211s  pozostało ~677s     48000/200000  211s  pozostało ~668s     48500/200000  212s  pozostało ~661s     49000/200000  212s  pozostało ~652s     49500/200000  213s  pozostało ~647s     50000/200000  225s  pozostało ~676s     50500/200000  226s  pozostało ~670s     51000/200000  229s  pozostało ~668s     51500/200000  229s  pozostało ~660s     52000/200000  232s  pozostało ~659s     52500/200000  232s  pozostało ~651s     53000/200000  233s  pozostało ~646s     53500/200000  233s  pozostało ~638s     54000/200000  234s  pozostało ~632s     54500/200000  235s  pozostało ~626s     55000/200000  235s  pozostało ~620s     55500/200000  248s  pozostało ~645s     56000/200000  248s  pozostało ~639s     56500/200000  252s  pozostało ~639s     57000/200000  252s  pozostało ~631s     57500/200000  254s  pozostało ~631s     58000/200000  254s  pozostało ~623s     58500/200000  255s  pozostało ~616s     59000/200000  255s  pozostało ~611s     59500/200000  257s  pozostało ~606s     60000/200000  258s  pozostało ~602s     60500/200000  258s  pozostało ~595s     61000/200000  270s  pozostało ~615s     61500/200000  270s  pozostało ~607s     62000/200000  272s  pozostało ~606s     62500/200000  274s  pozostało ~603s     63000/200000  276s  pozostało ~600s     63500/200000  277s  pozostało ~594s     64000/200000  277s  pozostało ~588s     64500/200000  278s  pozostało ~584s     65000/200000  279s  pozostało ~580s     65500/200000  279s  pozostało ~573s     66000/200000  281s  pozostało ~570s     66500/200000  292s  pozostało ~586s     67000/200000  292s  pozostało ~579s     67500/200000  295s  pozostało ~578s     68000/200000  298s  pozostało ~578s     68500/200000  298s  pozostało ~571s     69000/200000  299s  pozostało ~567s     69500/200000  300s  pozostało ~563s     70000/200000  301s  pozostało ~558s     70500/200000  302s  pozostało ~555s     71000/200000  303s  pozostało ~550s     71500/200000  303s  pozostało ~545s     72000/200000  313s  pozostało ~557s     72500/200000  313s  pozostało ~551s     73000/200000  317s  pozostało ~552s     73500/200000  319s  pozostało ~550s     74000/200000  321s  pozostało ~546s     74500/200000  321s  pozostało ~540s     75000/200000  323s  pozostało ~538s     75500/200000  323s  pozostało ~533s     76000/200000  325s  pozostało ~530s     76500/200000  326s  pozostało ~526s     77000/200000  326s  pozostało ~520s     77500/200000  335s  pozostało ~529s     78000/200000  335s  pozostało ~524s     78500/200000  339s  pozostało ~525s     79000/200000  342s  pozostało ~523s     79500/200000  342s  pozostało ~519s     80000/200000  344s  pozostało ~516s     80500/200000  346s  pozostało ~513s     81000/200000  346s  pozostało ~508s     81500/200000  347s  pozostało ~505s     82000/200000  348s  pozostało ~501s     82500/200000  349s  pozostało ~497s     83000/200000  357s  pozostało ~503s     83500/200000  357s  pozostało ~497s     84000/200000  361s  pozostało ~499s     84500/200000  364s  pozostało ~497s     85000/200000  365s  pozostało ~494s     85500/200000  367s  pozostało ~491s     86000/200000  368s  pozostało ~488s     86500/200000  368s  pozostało ~483s     87000/200000  370s  pozostało ~481s     87500/200000  371s  pozostało ~476s     88000/200000  372s  pozostało ~473s     88500/200000  378s  pozostało ~477s     89000/200000  378s  pozostało ~472s     89500/200000  383s  pozostało ~473s     90000/200000  386s  pozostało ~471s     90500/200000  388s  pozostało ~469s     91000/200000  389s  pozostało ~466s     91500/200000  390s  pozostało ~462s     92000/200000  391s  pozostało ~458s     92500/200000  392s  pozostało ~456s     93000/200000  393s  pozostało ~452s     93500/200000  395s  pozostało ~449s     94000/200000  400s  pozostało ~451s     94500/200000  400s  pozostało ~447s     95000/200000  406s  pozostało ~449s     95500/200000  408s  pozostało ~447s     96000/200000  410s  pozostało ~444s     96500/200000  412s  pozostało ~442s     97000/200000  412s  pozostało ~438s     97500/200000  413s  pozostało ~434s     98000/200000  414s  pozostało ~431s     98500/200000  415s  pozostało ~427s     99000/200000  417s  pozostało ~425s     99500/200000  423s  pozostało ~427s     100000/200000  423s  pozostało ~423s     100500/200000  429s  pozostało ~425s     101000/200000  431s  pozostało ~422s     101500/200000  432s  pozostało ~419s     102000/200000  433s  pozostało ~416s     102500/200000  435s  pozostało ~413s     103000/200000  436s  pozostało ~411s     103500/200000  436s  pozostało ~407s     104000/200000  437s  pozostało ~403s     104500/200000  439s  pozostało ~401s     105000/200000  444s  pozostało ~401s     105500/200000  444s  pozostało ~398s     106000/200000  452s  pozostało ~401s     106500/200000  453s  pozostało ~398s     107000/200000  455s  pozostało ~395s     107500/200000  455s  pozostało ~392s     108000/200000  457s  pozostało ~389s     108500/200000  459s  pozostało ~387s     109000/200000  459s  pozostało ~383s     109500/200000  459s  pozostało ~380s     110000/200000  461s  pozostało ~377s     110500/200000  465s  pozostało ~377s     111000/200000  466s  pozostało ~374s     111500/200000  476s  pozostało ~377s     112000/200000  476s  pozostało ~374s     112500/200000  477s  pozostało ~371s     113000/200000  477s  pozostało ~368s     113500/200000  479s  pozostało ~365s     114000/200000  481s  pozostało ~363s     114500/200000  481s  pozostało ~359s     115000/200000  482s  pozostało ~356s     115500/200000  482s  pozostało ~353s     116000/200000  488s  pozostało ~353s     116500/200000  489s  pozostało ~351s     117000/200000  500s  pozostało ~354s     117500/200000  500s  pozostało ~351s     118000/200000  500s  pozostało ~348s     118500/200000  501s  pozostało ~344s     119000/200000  502s  pozostało ~342s     119500/200000  504s  pozostało ~339s     120000/200000  504s  pozostało ~336s     120500/200000  504s  pozostało ~333s     121000/200000  506s  pozostało ~331s     121500/200000  510s  pozostało ~329s     122000/200000  511s  pozostało ~327s     122500/200000  520s  pozostało ~329s     123000/200000  520s  pozostało ~326s     123500/200000  523s  pozostało ~324s     124000/200000  524s  pozostało ~321s     124500/200000  525s  pozostało ~319s     125000/200000  526s  pozostało ~315s     125500/200000  526s  pozostało ~312s     126000/200000  526s  pozostało ~309s     126500/200000  529s  pozostało ~307s     127000/200000  532s  pozostało ~306s     127500/200000  534s  pozostało ~304s     128000/200000  542s  pozostało ~305s     128500/200000  543s  pozostało ~302s     129000/200000  546s  pozostało ~301s     129500/200000  546s  pozostało ~297s     130000/200000  549s  pozostało ~295s     130500/200000  549s  pozostało ~292s     131000/200000  549s  pozostało ~289s     131500/200000  549s  pozostało ~286s     132000/200000  552s  pozostało ~284s     132500/200000  555s  pozostało ~283s     133000/200000  557s  pozostało ~280s     133500/200000  564s  pozostało ~281s     134000/200000  565s  pozostało ~278s     134500/200000  569s  pozostało ~277s     135000/200000  569s  pozostało ~274s     135500/200000  571s  pozostało ~272s     136000/200000  571s  pozostało ~269s     136500/200000  572s  pozostało ~266s     137000/200000  572s  pozostało ~263s     137500/200000  574s  pozostało ~261s     138000/200000  578s  pozostało ~260s     138500/200000  579s  pozostało ~257s     139000/200000  586s  pozostało ~257s     139500/200000  587s  pozostało ~255s     140000/200000  591s  pozostało ~253s     140500/200000  591s  pozostało ~250s     141000/200000  593s  pozostało ~248s     141500/200000  593s  pozostało ~245s     142000/200000  593s  pozostało ~242s     142500/200000  596s  pozostało ~240s     143000/200000  596s  pozostało ~238s     143500/200000  600s  pozostało ~236s     144000/200000  601s  pozostało ~234s     144500/200000  608s  pozostało ~234s     145000/200000  609s  pozostało ~231s     145500/200000  613s  pozostało ~230s     146000/200000  613s  pozostało ~227s     146500/200000  614s  pozostało ~224s     147000/200000  615s  pozostało ~222s     147500/200000  616s  pozostało ~219s     148000/200000  619s  pozostało ~217s     148500/200000  619s  pozostało ~215s     149000/200000  623s  pozostało ~213s     149500/200000  624s  pozostało ~211s     150000/200000  630s  pozostało ~210s     150500/200000  631s  pozostało ~208s     151000/200000  635s  pozostało ~206s     151500/200000  636s  pozostało ~203s     152000/200000  636s  pozostało ~201s     152500/200000  637s  pozostało ~198s     153000/200000  638s  pozostało ~196s     153500/200000  641s  pozostało ~194s     154000/200000  641s  pozostało ~192s     154500/200000  645s  pozostało ~190s     155000/200000  646s  pozostało ~188s     155500/200000  653s  pozostało ~187s     156000/200000  653s  pozostało ~184s     156500/200000  656s  pozostało ~182s     157000/200000  658s  pozostało ~180s     157500/200000  658s  pozostało ~178s     158000/200000  659s  pozostało ~175s     158500/200000  660s  pozostało ~173s     159000/200000  663s  pozostało ~171s     159500/200000  664s  pozostało ~169s     160000/200000  668s  pozostało ~167s     160500/200000  668s  pozostało ~164s     161000/200000  674s  pozostało ~163s     161500/200000  675s  pozostało ~161s     162000/200000  679s  pozostało ~159s     162500/200000  680s  pozostało ~157s     163000/200000  680s  pozostało ~154s     163500/200000  681s  pozostało ~152s     164000/200000  682s  pozostało ~150s     164500/200000  686s  pozostało ~148s     165000/200000  686s  pozostało ~146s     165500/200000  691s  pozostało ~144s     166000/200000  691s  pozostało ~141s     166500/200000  696s  pozostało ~140s     167000/200000  697s  pozostało ~138s     167500/200000  702s  pozostało ~136s     168000/200000  702s  pozostało ~134s     168500/200000  702s  pozostało ~131s     169000/200000  704s  pozostało ~129s     169500/200000  704s  pozostało ~127s     170000/200000  709s  pozostało ~125s     170500/200000  709s  pozostało ~123s     171000/200000  713s  pozostało ~121s     171500/200000  713s  pozostało ~119s     172000/200000  718s  pozostało ~117s     172500/200000  719s  pozostało ~115s     173000/200000  723s  pozostało ~113s     173500/200000  725s  pozostało ~111s     174000/200000  725s  pozostało ~108s     174500/200000  726s  pozostało ~106s     175000/200000  727s  pozostało ~104s     175500/200000  731s  pozostało ~102s     176000/200000  732s  pozostało ~100s     176500/200000  735s  pozostało ~98s     177000/200000  736s  pozostało ~96s     177500/200000  741s  pozostało ~94s     178000/200000  741s  pozostało ~92s     178500/200000  745s  pozostało ~90s     179000/200000  745s  pozostało ~87s     179500/200000  748s  pozostało ~85s     180000/200000  749s  pozostało ~83s     180500/200000  749s  pozostało ~81s     181000/200000  754s  pozostało ~79s     181500/200000  754s  pozostało ~77s     182000/200000  757s  pozostało ~75s     182500/200000  759s  pozostało ~73s     183000/200000  763s  pozostało ~71s     183500/200000  763s  pozostało ~69s     184000/200000  767s  pozostało ~67s     184500/200000  767s  pozostało ~64s     185000/200000  771s  pozostało ~62s     185500/200000  771s  pozostało ~60s     186000/200000  771s  pozostało ~58s     186500/200000  776s  pozostało ~56s     187000/200000  776s  pozostało ~54s     187500/200000  780s  pozostało ~52s     188000/200000  781s  pozostało ~50s     188500/200000  784s  pozostało ~48s     189000/200000  785s  pozostało ~46s     189500/200000  789s  pozostało ~44s     190000/200000  789s  pozostało ~42s     190500/200000  792s  pozostało ~40s     191000/200000  793s  pozostało ~37s     191500/200000  793s  pozostało ~35s     192000/200000  799s  pozostało ~33s     192500/200000  799s  pozostało ~31s     193000/200000  802s  pozostało ~29s     193500/200000  804s  pozostało ~27s     194000/200000  806s  pozostało ~25s     194500/200000  807s  pozostało ~23s     195000/200000  811s  pozostało ~21s     195500/200000  812s  pozostało ~19s     196000/200000  814s  pozostało ~17s     196500/200000  814s  pozostało ~15s     197000/200000  815s  pozostało ~12s     197500/200000  817s  pozostało ~10s     198000/200000  817s  pozostało ~8s     198500/200000  818s  pozostało ~6s     199000/200000  819s  pozostało ~4s     199500/200000  819s  pozostało ~2s     200000/200000  819s  pozostało ~0s   
+
+Zapisano czesci/morse_200000_04.npz  (794 MB, uint8)
+klasa 0 (puste radio): 30030 (15.0%)
+znaki: min 4614, max 4851 na klasę
+QRM 35%   QRN 30%   QSB>0.3 43%
+
+Gotowe. Trening: --dataset 'czesci/morse_200000_*.npz'
+
+============================================================
+ TRENING dpu -> runs/dpu_1000000     19:45
+============================================================
+
+wagi klas: klasa 0 -> 0.180, znaki -> 1.145
+  NIE UDAŁO SIĘ (kod 0, 1 min) — dowody w:
+      out/noc_20260910_1834_dpu.log
+      out/noc_20260910_1834_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+============================================================
+ KOPERTA dpu     19:48
+============================================================
+  brak runs/dpu_1000000/best.keras — nie ma czego mierzyć
+  NIE UDAŁO SIĘ (kod 0, 0 min) — dowody w out/noc_20260910_1834_srodowisko.log
+  lecę dalej — pozostałe etapy są niezależne
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-09-10  --  co wyszło
+============================================================
+
+ETAPY
+  TRENING dpu -> runs/dpu_1000000 BŁĄD kod 0, log: out/noc_20260910_1834_dpu.log
+  KOPERTA dpu                  BŁĄD kod 0, log: out/noc_20260910_1834_srodowisko.log
+
+WYNIKI TRENINGU
+
+  runs/dpu_1000000 dpu (wdrażalny na KV260)           brak wyniku
+  runs/gru_1000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu --- brak pomiaru
+
+CO SIĘ NIE UDAŁO — I GDZIE TEGO SZUKAĆ
+
+  TRENING dpu -> runs/dpu_1000000
+      kod 0, log: out/noc_20260910_1834_dpu.log
+  KOPERTA dpu
+      kod 0, log: out/noc_20260910_1834_srodowisko.log
+
+  Stan maszyny w momencie każdej awarii (nvidia-smi,
+  LD_LIBRARY_PATH, biblioteki CUDA, pamięć, dysk):
+      out/noc_20260910_1834_srodowisko.log
+
+PEŁNE LOGI
+  out/noc_20260910_1834.log
+  out/noc_20260910_1834_diag.log                 12K
+  out/noc_20260910_1834_dpu.log                  8.0K
+  out/noc_20260910_1834_gen.log                  88K
+  out/noc_20260910_1834_srodowisko.log           24K
+
+Na pendraka:  bvn_z.bat  (z Windows)
+============================================================
+
+--- historia treningu ---
+to nie jest repozytorium git — pomijam
+  (kopia robocza z na_hdd.bat nie jest repozytorium; wyniki
+   wracają przez bvn_z.bat i to wystarcza)
+
+Koniec: 2026-09-10 19:48
+Do przeczytania: out/RANO.txt

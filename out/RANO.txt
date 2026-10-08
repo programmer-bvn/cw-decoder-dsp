@@ -1,31 +1,31 @@
 ============================================================
- NOC 2026-10-06  --  co wyszło
+ NOC 2026-10-08  --  co wyszło
 ============================================================
+
+KOD:   89cfb587b78f (main)
+VENV:  /root/venv_gpu
 
 ETAPY
   PRZEPUSTOWOSC                OK     0 min
-  TRENING dpu -> runs/dpu_4000000 OK     318 min
+  TRENING dpu -> runs/dpu_4000 OK     0 min
   KOPERTA dpu                  OK     0 min
   NAGRANIA dpu                 OK     0 min
 
 WYNIKI TRENINGU
 
-  runs/dpu_4000000  dpu (wdrażalny na KV260)
-      epok 40, najlepsza walidacja 99.34% (epoka 32)
-      val_loss: minimum 0.0288 w epoce 15, koniec 0.0574
-      ZAPAMIĘTYWANIE: val_loss rośnie od epoki 15. Epoki po 20 nic nie wniosły.
-      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
-  runs/gru_4000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+  runs/dpu_4000  dpu (wdrażalny na KV260)
+      epok 2, najlepsza walidacja 15.00% (epoka 1)
+      val_loss: minimum 3.4848 w epoce 1, koniec 3.7750
+  runs/gru_4000 gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
   --- dpu ---
-    czyta (>= 50%): tempo 10-30 WPM, ton 750-850 Hz
-    znak w całości w oknie:   99.3% trafień (2995 próbek)
-    znak obcięty oknem:      100.0% trafień (5 próbek, 0.2% zbioru)
+    znak w całości w oknie:    0.0% trafień (199 próbek)
+    znak obcięty oknem:        0.0% trafień (1 próbek, 0.5% zbioru)
     NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
     Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
-    5 przypadków na 3000 (0.17%).
+    1 przypadków na 200 (0.50%).
     Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
     ma. Nie jest ani potwierdzona, ani obalona — jest
     NIEISTOTNA. Powód: etykietą jest środkowy z trzech
@@ -45,25 +45,25 @@ PRAWDZIWE NAGRANIA (dpu)
 
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: CQ SQ2BVN 73
-    w całości:    2/3   (CQ 73)
-    w kolejności: 3/3   (CQ SQ2BVN 73)
+    w całości:    0/3
+    w kolejności: 0/3
     nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
-    w całości:    3/6   (CQx2 DE)
-    w kolejności: 5/6   (CQx3 DE SQ2BVN)
+    w całości:    0/6
+    w kolejności: 0/6
     nadane: nieodnotowane — odczyt tylko do obejrzenia
 
-  RAZEM na nagraniach z zapisaną treścią: w całości 5/9, w kolejności 8/9
-  RAZEM po scaleniu 0.35s: w całości 5/9, w kolejności 8/9
+  RAZEM na nagraniach z zapisaną treścią: w całości 0/9, w kolejności 0/9
+  RAZEM po scaleniu 0.35s: w całości 0/9, w kolejności 0/9
 
 PEŁNE LOGI
-  out/noc_20261006_0004.log
-  out/noc_20261006_0004_diag.log                 8.0K
-  out/noc_20261006_0004_dpu.log                  10M
-  out/noc_20261006_0004_gen.log                  64K
-  out/noc_20261006_0004_koperta_dpu.log          8.0K
-  out/noc_20261006_0004_nagrania_dpu.log         8.0K
-  out/noc_20261006_0004_przepustowosc.log        4.0K
-  out/noc_20261006_0004_srodowisko.log           4.0K
-  out/koperta_dpu_20261006_0004.txt              4.0K
+  out/noc_20261008_2211.log
+  out/noc_20261008_2211_diag.log                 8.0K
+  out/noc_20261008_2211_dpu.log                  8.0K
+  out/noc_20261008_2211_gen.log                  4.0K
+  out/noc_20261008_2211_koperta_dpu.log          8.0K
+  out/noc_20261008_2211_nagrania_dpu.log         4.0K
+  out/noc_20261008_2211_przepustowosc.log        4.0K
+  out/noc_20261008_2211_srodowisko.log           4.0K
+  out/koperta_dpu_20261008_2211.txt              4.0K
 
-Na pendraka:  bvn_z.bat  (z Windows)
+Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows

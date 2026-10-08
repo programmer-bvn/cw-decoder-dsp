@@ -1,0 +1,37 @@
+============================================================
+ NOC TRENINGOWA  2026-09-23 21:51
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260923_2151.log
+
+--- środowisko ---
+już aktywne — nie ruszam
+python: /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790193153.038486    1003 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 80/80 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (20 x 200000 = 4000000 próbek)
+czesci/morse_200000_*.npz: jest 8 czesci, ma byc 20
+pamięć: wolne 23374 MB, zbiór potrzebuje ~41000 MB
+
+PRZERWANO PRZED GENEROWANIEM: zbiór się nie zmieści.
+  W drodze do model.fit() obrazy istnieją w ~2,5 kopiach.
+  Bezpieczna liczba części przy tej pamięci: 9
+
+  ALBO PODNIEŚ LIMIT WSL. WSL2 bierze domyślnie POŁOWĘ
+  pamięci hosta, więc maszyna z 32 GB daje tu ~15 GB.
+  W C:\Users\<użytkownik>\.wslconfig po stronie Windows:
+      [wsl2]
+      memory=24GB
+  potem 'wsl --shutdown'. Szczegóły: srodowisko/README.md

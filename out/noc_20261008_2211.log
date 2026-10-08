@@ -1,0 +1,212 @@
+============================================================
+ NOC TRENINGOWA  2026-10-08 22:11
+============================================================
+ zbiór:  czesci/morse_2000_*.npz  (2000 próbek)
+ epoki:  2   batch: 256
+ log:    out/noc_20261008_2211.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu: kompletny
+    /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+
+--- paszport ---
+commit:  89cfb58 2026-10-08 22:11 HISTORIA: noc 28.09 na starym kodzie, stary venv, wynik 4 mln
+gałąź:   main
+zmiany:  brak — kod = commit
+venv:    /root/venv_gpu  (natywny system plików WSL)
+pakiety: tensorflow 2.21.0, keras 3.15.1, numpy 2.5.3, scipy 1.18.1, librosa 1.0.0
+import tensorflow: 12 s   (venv: /root/venv_gpu)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791490327.817661     625 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+======================================================================
+WYNIK: 87/87 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_2000_*.npz   (2 x 2000 = 4000 próbek)
+czesci/morse_2000_*.npz: brak plikow
+pamięć: wolne 23217 MB, zbiór potrzebuje ~41 MB
+wolne miejsce: 382519 MB, potrzeba ~2048 MB
+generuję 2 części po 2000 próbek (~14 min każda)...
+
+[2/2] czesci/morse_2000_01.npz
+generuję 2000 próbek na 11 procesach (4 kawałków po 500)
+  rdzeni widocznych: 12, wolnych: 1
+  500/2000  9s  pozostało ~27s     1000/2000  9s  pozostało ~9s     1500/2000  9s  pozostało ~3s     2000/2000  9s  pozostało ~0s   
+
+Zapisano czesci/morse_2000_01.npz  (8 MB, uint8)
+klasa 0 (puste radio): 287 (14.3%)
+znaki: min 35, max 66 na klasę
+QRM 35%   QRN 30%   QSB>0.3 44%
+
+Gotowe. Trening: --dataset 'czesci/morse_2000_*.npz'
+
+============================================================
+ PRZEPUSTOWOSC     22:12
+============================================================
+    potok wejściowy                       356120 próbek/s   (0.7 ms/krok)
+    model na karcie                         8318 próbek/s   (30.8 ms/krok)
+    trening                                 8188 próbek/s   (31.3 ms/krok)
+  WĄSKIM GARDŁEM JEST KARTA — tak ma być.
+    Wejście dowozi 356120 próbek/s, karta bierze 8318.
+  OK, 0 min
+
+============================================================
+ TRENING dpu -> runs/dpu_4000     22:13
+============================================================
+[1m15/15[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m47s[0m 2s/step - accuracy: 0.1269 - loss: 3.7594 - val_accuracy: 0.1500 - val_loss: 3.4848 - learning_rate: 0.0010
+[1m15/15[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 54ms/step - accuracy: 0.1720 - loss: 3.4668 - val_accuracy: 0.1500 - val_loss: 3.7750 - learning_rate: 0.0010
+
+wagi klas: klasa 0 -> 0.180, znaki -> 1.158
+Dokładność na walidacji: 15.00%
+  klasa 0 (puste radio): 100.0% poprawnie (48 próbek)
+  znaki:                 0.0% poprawnie (272 próbek)
+  znak wzięty za ciszę:  100.0%
+  OK, 0 min
+
+============================================================
+ KOPERTA dpu     22:14
+============================================================
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .      .      .      .      .      .
+     13            .      .      .      .      .      .      .
+     15            .      .      .      .      .      .      .
+     18            .      .      .      .      .      .      .
+     20            .      .      .      .      .      .      .
+     22            .      .      .      .      .      .      .
+     25            .      .      .      .      .      .      .
+     27            .      .      .      .      .      .      .
+     30            .      .      .      .      .      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+WYROK
+
+  znak w całości w oknie:    0.0% trafień (199 próbek)
+  znak obcięty oknem:        0.0% trafień (1 próbek, 0.5% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  1 przypadków na 200 (0.50%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+  OK, 0 min
+
+============================================================
+ NAGRANIA dpu     22:14
+============================================================
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+    w całości:    0/3
+    w kolejności: 0/3
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+    w całości:    0/6
+    w kolejności: 0/6
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  RAZEM na nagraniach z zapisaną treścią: w całości 0/9, w kolejności 0/9
+  RAZEM po scaleniu 0.35s: w całości 0/9, w kolejności 0/9
+  OK, 0 min
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-10-08  --  co wyszło
+============================================================
+
+KOD:   89cfb587b78f (main)
+VENV:  /root/venv_gpu
+
+ETAPY
+  PRZEPUSTOWOSC                OK     0 min
+  TRENING dpu -> runs/dpu_4000 OK     0 min
+  KOPERTA dpu                  OK     0 min
+  NAGRANIA dpu                 OK     0 min
+
+WYNIKI TRENINGU
+
+  runs/dpu_4000  dpu (wdrażalny na KV260)
+      epok 2, najlepsza walidacja 15.00% (epoka 1)
+      val_loss: minimum 3.4848 w epoce 1, koniec 3.7750
+  runs/gru_4000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- dpu ---
+    znak w całości w oknie:    0.0% trafień (199 próbek)
+    znak obcięty oknem:        0.0% trafień (1 próbek, 0.5% zbioru)
+    NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+    Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+    1 przypadków na 200 (0.50%).
+    Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+    ma. Nie jest ani potwierdzona, ani obalona — jest
+    NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+    znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+    z etykiety jest wycentrowany z konstrukcji.
+    Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+    tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+    a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+    choroby, jest ogólny brak danych.
+
+PRAWDZIWE NAGRANIA (dpu)
+
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: CQ SQ2BVN 73
+    w całości:    0/3
+    w kolejności: 0/3
+    nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+    w całości:    0/6
+    w kolejności: 0/6
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+  RAZEM na nagraniach z zapisaną treścią: w całości 0/9, w kolejności 0/9
+  RAZEM po scaleniu 0.35s: w całości 0/9, w kolejności 0/9
+
+PEŁNE LOGI
+  out/noc_20261008_2211.log
+  out/noc_20261008_2211_diag.log                 8.0K
+  out/noc_20261008_2211_dpu.log                  8.0K
+  out/noc_20261008_2211_gen.log                  4.0K
+  out/noc_20261008_2211_koperta_dpu.log          8.0K
+  out/noc_20261008_2211_nagrania_dpu.log         4.0K
+  out/noc_20261008_2211_przepustowosc.log        4.0K
+  out/noc_20261008_2211_srodowisko.log           4.0K
+  out/koperta_dpu_20261008_2211.txt              4.0K
+
+Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
+============================================================
+
+--- historia treningu ---

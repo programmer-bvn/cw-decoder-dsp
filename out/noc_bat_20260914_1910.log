@@ -1,0 +1,566 @@
+===========================================================================
+===========================================================================
+ zrodlo: C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\
+ cel:    c:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU
+
+ kopiowane:    *.py *.md *.txt *.sh requirements.txt
+ NIE kopiowane: .venv, __pycache__, out\, runs\, *.npz, *.whl
+
+ *** TRYB AUTO -- bez pytania ***
+[1/2] kod...
+
+2026/09/14 19:10:53 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:10:55 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:10:57 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:10:57 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn_z.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:10:59 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn_z.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:01 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\bvn_z.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:01 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\diag.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:03 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\diag.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:05 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\diag.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:05 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\GPU_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:07 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\GPU_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:09 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\GPU_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:09 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\libsRTX3050.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:11 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\libsRTX3050.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:13 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\libsRTX3050.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:13 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\na_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:15 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\na_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:17 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\na_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:17 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:19 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:21 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:21 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:23 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:25 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\noc.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:25 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:27 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:29 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:29 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\requirements.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:31 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\requirements.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:33 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\requirements.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:33 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.bvn.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:35 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.bvn.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:37 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.bvn.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:37 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.RTX3050.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:39 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.RTX3050.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:41 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.RTX3050.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:41 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:43 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:45 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:45 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:47 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:49 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:49 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:51 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:53 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\setup_gpu_env.sh.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:53 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\train_rtx.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:55 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\train_rtx.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:57 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\train_rtx.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:11:57 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\z_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:11:59 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\z_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:01 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\z_hdd.bat
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:01 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\config.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:03 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\config.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:05 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\config.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:05 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\frontend.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:07 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\frontend.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:09 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\frontend.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:09 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\melref.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:11 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\melref.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:13 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\melref.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:13 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\model.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:15 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\model.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:17 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\model.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:17 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\morse.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:19 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\morse.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:21 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\morse.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:21 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\radio.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:23 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\radio.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:25 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\radio.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:25 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\tune.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:27 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\tune.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:29 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\tune.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:29 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:31 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:33 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\dsp\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:33 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\LICENCJA.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:35 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\LICENCJA.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:38 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\LICENCJA.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:38 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic1_manipulator_12wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:40 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic1_manipulator_12wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:42 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic1_manipulator_12wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:42 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic2_manipulator_20wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:44 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic2_manipulator_20wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:46 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic2_manipulator_20wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:46 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic3_pamiec_15wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:48 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic3_pamiec_15wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:50 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\mic3_pamiec_15wpm.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:50 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\radio1_14020_dwie_stacje.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:52 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\radio1_14020_dwie_stacje.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:54 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\probki\radio1_14020_dwie_stacje.txt
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:54 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:56 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:12:58 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_check.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:12:58 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_libs.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:00 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_libs.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:02 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\gpu_libs.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:02 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\mount_pendrak.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:04 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\mount_pendrak.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:06 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\mount_pendrak.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:06 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:08 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:10 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\README.md
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:10 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\rtx3050_setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:12 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\rtx3050_setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:14 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\rtx3050_setenv.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:14 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:16 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:18 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\srodowisko\setup_gpu_env.sh
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:18 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\calibrate.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:20 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\calibrate.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:22 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\calibrate.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:22 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\generator.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:24 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\generator.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:26 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\generator.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:26 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\koperta.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:28 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\koperta.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:30 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\koperta.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:30 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\mic2wav.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:32 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\mic2wav.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:34 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\mic2wav.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:34 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\probki.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:36 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\probki.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:38 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\probki.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:38 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\profil.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:40 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\profil.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:42 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\profil.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:42 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\raport.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:44 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\raport.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:46 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\raport.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:46 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\trainer.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:48 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\trainer.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:50 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\trainer.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:50 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\wav2net.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:52 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\wav2net.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:54 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\wav2net.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:54 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:56 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:13:58 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:13:58 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray_all.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:14:00 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray_all.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:14:02 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\xray_all.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+2026/09/14 19:14:02 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:14:04 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+Waiting 2 seconds... Retrying...
+2026/09/14 19:14:06 ERROR 32 (0x00000020) Copying File C:\Users\ADMIN\PyCharmMiscProject\FT1-TF2-convert\CLAU\tools\__init__.py
+Proces nie mo¾e uzyska† dost©pu do pliku, poniewa¾ jest on u¾ywany przez inny proces.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        12         0        12         0         0         0
+   Files :        48         0         0         0        48         0
+   Bytes :   456.4 k         0         0         0   456.4 k         0
+   Times :   0:03:12   0:00:00                       0:03:12   0:00:00
+   Ended : poniedziaˆek, 14 wrze˜nia 2026 19:14:06
+
+[2/2] probki (nagrania)...
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         9         0         9         0         0         0
+   Bytes :  105.86 m         0  105.86 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : poniedziaˆek, 14 wrze˜nia 2026 19:14:06
+
+
+===========================================================================
+ BLAD kopiowania (robocopy 8 / 8)
+ Kody >= 8 to bledy. Sprawdz, czy cel nie jest zajety.
+===========================================================================

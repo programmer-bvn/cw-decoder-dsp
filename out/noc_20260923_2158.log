@@ -1,0 +1,45 @@
+============================================================
+ NOC TRENINGOWA  2026-09-23 21:59
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  40   batch: 256
+ log:    out/noc_20260923_2158.log
+
+--- środowisko ---
+już aktywne — nie ruszam
+python: /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu/bin/python  (Python 3.12.13)
+import tensorflow: 33 s   (venv: /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU/venv_gpu)
+
+  UWAGA: środowisko leży za drvfs i start kosztuje 33 s.
+  Przeniesienie go na natywny system plików WSL zwykle skraca
+  to do kilku sekund. Koszt ponosi się przy KAŻDYM etapie,
+  bo każdy woła pythona od nowa.
+      export CW_VENV=$HOME/venv_gpu
+      ./srodowisko/setup_gpu_env.sh
+  Potem to samo CW_VENV przed każdym ./noc.sh (albo do .bashrc).
+  Dane i kod zostają na SSD — przenosi się TYLKO biblioteki.
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790193624.495337    1359 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+--- diag.py ---
+BŁĄD: diag.py nie przeszedł. Szczegóły w
+      out/noc_20260923_2158_diag.log
+  [OK ] etykieta zawiera dokładnie nadane znaki
+         w etykiecie ['A', 'B', 'C'], nadano ['A', 'B', 'C']
+  [OK ] puste radio -> same zera
+         suma 0
+  [OK ] train_rtx.py daje IDENTYCZNE etykiety
+         różnic: 0 ramek
+
+======================================================================
+WYNIK: 82/83 kontroli przeszło
+Nie przeszły:
+  - zbiór na raty
+======================================================================
+
+PRZERWANO. Trening na niespójnym łańcuchu to zmarnowana noc.
+Środowisko w momencie awarii: out/noc_20260923_2158_srodowisko.log

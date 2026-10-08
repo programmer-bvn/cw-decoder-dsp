@@ -1,0 +1,109 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791490477.467056    2925 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1791490479.853838    2925 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 48 variables whereas the saved optimizer has 52 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1791490481.912244    2982 service.cc:153] XLA service 0x7aa7a4025d00 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1791490481.912771    2982 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1791490481.921693    2982 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1791490481.993935    2982 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1791490482.013354    2982 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791490484.726797    3044 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 296 bytes spill stores, 296 bytes spill loads
+
+I0000 00:00:1791490486.946016    2982 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+I0000 00:00:1791490487.155108    2979 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791490491.218722    2980 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791490493.840818    3293 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 336 bytes spill stores, 336 bytes spill loads
+
+======================================================================
+ KOPERTA I BŁĘDY: runs/dpu_4000/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x7 komórek po 5 próbek; błędy z 200 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .      .      .      .      .      .
+     13            .      .      .      .      .      .      .
+     15            .      .      .      .      .      .      .
+     18            .      .      .      .      .      .      .
+     20            .      .      .      .      .      .      .
+     22            .      .      .      .      .      .      .
+     25            .      .      .      .      .      .      .
+     27            .      .      .      .      .      .      .
+     30            .      .      .      .      .      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  UWAGA: nigdzie nie osiąga 50% — model albo nienauczony, albo zły plik
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              1      0.0%           0.0%
+  90-100%             0         -              -
+  cały (100%)       199      0.0%           0.0%
+
+WYROK
+
+  znak w całości w oknie:    0.0% trafień (199 próbek)
+  znak obcięty oknem:        0.0% trafień (1 próbek, 0.5% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  1 przypadków na 200 (0.50%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+  12-14          37     0.0%      0.0%    0.0%    0.0%       2.7%
+  15-17          40     0.0%      0.0%    0.0%    0.0%       0.0%
+  18-20          46     0.0%      0.0%    0.0%    0.0%       0.0%
+  21-23          29     0.0%      0.0%    0.0%    0.0%       0.0%
+  24-26          48     0.0%      0.0%    0.0%    0.0%       0.0%
+
+TRAFIENIA WOBEC DŁUGOŚCI KODU
+
+  elementów   próbek   trafień   przykłady
+  ----------------------------------------------------
+      1            4      0.0%   E T
+      2           23      0.0%   A I M N
+      3           49      0.0%   D G K O R S U W
+      4           67      0.0%   B C F H J L P Q V X Y Z
+      5           57      0.0%   cyfry 0-9
+
+  za mało próbek w skrajnych grupach (27 i 124) — podnieś --n-bledy
+
+NAJCZĘSTSZE POMYŁKI
+
+  K -.-    ->   (cisza)     9x   wzięty za ciszę
+  X -..-   ->   (cisza)     9x   wzięty za ciszę
+  M --     ->   (cisza)     9x   wzięty za ciszę
+  9 ----.  ->   (cisza)     8x   wzięty za ciszę
+  7 --...  ->   (cisza)     8x   wzięty za ciszę
+  D -..    ->   (cisza)     8x   wzięty za ciszę
+  C -.-.   ->   (cisza)     7x   wzięty za ciszę
+  S ...    ->   (cisza)     7x   wzięty za ciszę
+  5 .....  ->   (cisza)     7x   wzięty za ciszę
+  4 ....-  ->   (cisza)     7x   wzięty za ciszę
+  8 ---..  ->   (cisza)     7x   wzięty za ciszę
+  Q --.-   ->   (cisza)     7x   wzięty za ciszę
+
+zapisane: out/koperta_dpu_20261008_2211.txt

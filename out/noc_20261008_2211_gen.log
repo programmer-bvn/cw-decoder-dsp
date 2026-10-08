@@ -1,0 +1,29 @@
+========================================================================
+DEKODER CW — GENEROWANIE ZBIORU
+========================================================================
+SR=8000 Hz  klip=4.0s  mel: n_fft=512 hop=160 n_mels=32 pasmo=400-1200 Hz
+obraz=128x32 (2.56s)  dB: ref=1.0 zakres=[-30.0, 24.0]
+morse: WPM=20.0 kropka=60ms  klas=37
+------------------------------------------------------------------------
+
+[1/2] czesci/morse_2000_00.npz
+generuję 2000 próbek na 11 procesach (4 kawałków po 500)
+  rdzeni widocznych: 12, wolnych: 1
+  500/2000  11s  pozostało ~32s     1000/2000  11s  pozostało ~11s     1500/2000  11s  pozostało ~4s     2000/2000  11s  pozostało ~0s   
+
+Zapisano czesci/morse_2000_00.npz  (8 MB, uint8)
+klasa 0 (puste radio): 313 (15.7%)
+znaki: min 32, max 60 na klasę
+QRM 34%   QRN 29%   QSB>0.3 42%
+
+[2/2] czesci/morse_2000_01.npz
+generuję 2000 próbek na 11 procesach (4 kawałków po 500)
+  rdzeni widocznych: 12, wolnych: 1
+  500/2000  9s  pozostało ~27s     1000/2000  9s  pozostało ~9s     1500/2000  9s  pozostało ~3s     2000/2000  9s  pozostało ~0s   
+
+Zapisano czesci/morse_2000_01.npz  (8 MB, uint8)
+klasa 0 (puste radio): 287 (14.3%)
+znaki: min 35, max 66 na klasę
+QRM 35%   QRN 30%   QSB>0.3 44%
+
+Gotowe. Trening: --dataset 'czesci/morse_2000_*.npz'

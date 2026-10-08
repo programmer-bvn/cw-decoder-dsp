@@ -1,0 +1,231 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-10-06 00:01:22
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  /root/venv_gpu/bin/python
+wersja: Python 3.12.13
+VIRTUAL_ENV: /root/venv_gpu
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cublas/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cufft/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/curand/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cusolver/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cusparse/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/nvjitlink/lib
+  /usr/lib/wsl/lib
+  
+
+--- XLA_FLAGS ---
+  --xla_gpu_cuda_data_dir=/root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvcc
+
+--- nvidia-smi ---
+Tue Oct  6 00:01:22 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   31C    P8              9W /   70W |     682MiB /   6144MiB |      7%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              33      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791237683.650570     616 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+=== biblioteki dynamiczne (ctypes) ===
+  [ OK ] libcuda.so.1           sterownik NVIDIA (po stronie Windows, przez WSL)
+  [ OK ] libcudart.so.12        CUDA runtime
+  [ OK ] libcublas.so.12        cuBLAS — mnożenie macierzy
+  [ OK ] libcudnn.so.9          cuDNN — splot; bez tego nie ma sieci splotowej
+  [ OK ] libcusparse.so.12      cuSPARSE
+  [ OK ] libnvJitLink.so.12     nvJitLink — kompilacja JIT
+  [ OK ] libcufft.so.11         cuFFT
+  [ OK ] libcurand.so.10        cuRAND
+  [ OK ] libcusolver.so.11      cuSOLVER
+
+=== rejestracja karty w TensorFlow ===
+  TensorFlow 2.21.0, Python 3.12.13
+  karty: ['/physical_device:GPU:0']
+
+Środowisko w porządku.
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            23Gi       703Mi        20Gi       3.5Mi       2.3Gi        22Gi
+Swap:          6.0Gi          0B       6.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+W:\             448G   64G  384G  15% /mnt/w
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 96087
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 96087
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 16471573160793082
+-rwxrwxrwx 1 bvn bvn 91461 Sep 23 09:43 train_rtx.py
+-rwxrwxrwx 1 bvn bvn 60946 Sep 28 08:16 diag.py
+-rwxrwxrwx 1 bvn bvn 43860 Oct  5 09:52 noc.sh
+-rwxrwxrwx 1 bvn bvn 35149 Sep 24 08:20 LICENSE
+-rwxrwxrwx 1 bvn bvn 32117 Sep 28 08:23 HISTORIA.md
+-rwxrwxrwx 1 bvn bvn 30622 Sep 21 08:37 README.md
+-rwxrwxrwx 1 bvn bvn  7854 Sep 23 08:31 noc.bat
+
+########################################################
+# AWARIA ETAPU 2: diag.py nie przeszedł     2026-10-06 00:01:31
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/w/PyCharmMiscProject/FT1-TF2-convert/CLAU
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh AWARIA ETAPU 2: diag.py nie przeszedł
+
+--- python ---
+which:  /root/venv_gpu/bin/python
+wersja: Python 3.12.13
+VIRTUAL_ENV: /root/venv_gpu
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cublas/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_runtime/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cudnn/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cufft/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/curand/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cusolver/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/cusparse/lib
+  /root/venv_gpu/lib/python3.12/site-packages/nvidia/nvjitlink/lib
+  /usr/lib/wsl/lib
+  
+
+--- XLA_FLAGS ---
+  --xla_gpu_cuda_data_dir=/root/venv_gpu/lib/python3.12/site-packages/nvidia/cuda_nvcc
+
+--- nvidia-smi ---
+Tue Oct  6 00:01:31 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   31C    P8              9W /   70W |     682MiB /   6144MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              33      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791237692.331501     725 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+=== biblioteki dynamiczne (ctypes) ===
+  [ OK ] libcuda.so.1           sterownik NVIDIA (po stronie Windows, przez WSL)
+  [ OK ] libcudart.so.12        CUDA runtime
+  [ OK ] libcublas.so.12        cuBLAS — mnożenie macierzy
+  [ OK ] libcudnn.so.9          cuDNN — splot; bez tego nie ma sieci splotowej
+  [ OK ] libcusparse.so.12      cuSPARSE
+  [ OK ] libnvJitLink.so.12     nvJitLink — kompilacja JIT
+  [ OK ] libcufft.so.11         cuFFT
+  [ OK ] libcurand.so.10        cuRAND
+  [ OK ] libcusolver.so.11      cuSOLVER
+
+=== rejestracja karty w TensorFlow ===
+  TensorFlow 2.21.0, Python 3.12.13
+  karty: ['/physical_device:GPU:0']
+
+Środowisko w porządku.
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            23Gi       757Mi        20Gi       3.5Mi       2.3Gi        22Gi
+Swap:          6.0Gi          0B       6.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+W:\             448G   64G  384G  15% /mnt/w
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 96087
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 96087
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 233
+-rwxrwxrwx 1 bvn bvn 91461 Sep 23 09:43 train_rtx.py
+-rwxrwxrwx 1 bvn bvn 60946 Sep 28 08:16 diag.py
+-rwxrwxrwx 1 bvn bvn 43860 Oct  5 09:52 noc.sh
+-rwxrwxrwx 1 bvn bvn 35149 Sep 24 08:20 LICENSE
+-rwxrwxrwx 1 bvn bvn 32117 Sep 28 08:23 HISTORIA.md
+-rwxrwxrwx 1 bvn bvn 30622 Sep 21 08:37 README.md
+-rwxrwxrwx 1 bvn bvn  7854 Sep 23 08:31 noc.bat
+
+--- diag.py: linie z bledami ---
+1:Traceback (most recent call last):
+4:ModuleNotFoundError: No module named 'librosa'
+8:Traceback (most recent call last):
+18:    raise ImportError(
+19:ImportError: Brak librosy. Zainstaluj: pip install librosa soundfile
