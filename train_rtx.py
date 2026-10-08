@@ -1021,6 +1021,46 @@ def _gen_chunk(args):
     return X, y, yf, cols, texts
 
 
+def kod_wersja() -> str:
+    """Jaki kod liczy: commit, a gdy kod różni się od commita — ścieżka
+    do zapisanej różnicy. Trafia do state.json i do każdej części zbioru.
+
+    PO CO. 28.09 noc liczyła kodem sprzed tygodnia i żaden plik tego nie
+    pokazał. Paszport w noc.sh mówi to w logu; tutaj ta sama informacja
+    zostaje przy WYNIKU — model i zbiór żyją dłużej niż log tamtej nocy,
+    a zbiór z jednej nocy bywa używany przez następne.
+
+    Najpierw CW_KOD_COMMIT / CW_KOD_DIFF z paszportu noc.sh: wtedy wpis
+    wskazuje dokładnie ten plik .diff, który noc zapisała. Bez noc.sh
+    (ręczne uruchomienie) pytamy gita sam; różnica nie jest wtedy nigdzie
+    zapisana, więc wpis mówi to wprost zamiast udawać czysty commit.
+    """
+    import subprocess
+    commit = os.environ.get("CW_KOD_COMMIT", "")
+    if commit:
+        diff = os.environ.get("CW_KOD_DIFF", "")
+        return commit + (f" + zmiany: {diff}" if diff else "")
+    katalog = Path(__file__).resolve().parent
+
+    def git(*a):
+        r = subprocess.run(["git", *a], cwd=katalog, capture_output=True,
+                           text=True, timeout=20)
+        return r.stdout.strip() if r.returncode == 0 else None
+
+    try:
+        commit = git("rev-parse", "--short=12", "HEAD")
+        zmiany = git("status", "--porcelain", "--untracked-files=no",
+                     "--", ".", ":!out", ":!runs")
+    except (OSError, subprocess.SubprocessError):
+        commit = None
+    if not commit:
+        return "nieznana (bez gita)"
+    if zmiany is None:
+        return commit + " + stan zmian nieznany (git status zawiódł)"
+    return commit + (" + zmiany poza commitem (różnica niezapisana)"
+                     if zmiany else "")
+
+
 def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
              workers: int | None = None) -> Path:
     """Zbiór treningowy -> .npz. Równolegle, ale NIE na wszystkich rdzeniach."""
@@ -1088,7 +1128,7 @@ def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
     np.savez(out_path, X=X, y=y, yf=yf, text=np.array(texts),
              fingerprint=FINGERPRINT, dtype_note=STORE_DTYPE,
              meta=f"n={n};seed={seed};wpm={WPM};realism={int(realism)}",
-             **cols)
+             kod=kod_wersja(), **cols)
 
     counts = np.bincount(y, minlength=N_CLASSES)
     print(f"\nZapisano {out_path}  "
@@ -1289,6 +1329,17 @@ def _wolna_pamiec_mb() -> float:
     return -1.0
 
 
+def _raport_kodu(kody: list) -> None:
+    """Jednym wierszem: jakim kodem powstały części zbioru.
+
+    Części sprzed 08.10.2026 (i te, które diag.py składa sam) nie mają
+    tego zapisu — to nie jest błąd, tylko brak wiedzy, i tak to opisujemy.
+    """
+    from collections import Counter
+    ile = Counter(k or "bez zapisu wersji" for k in kody)
+    print("kod zbioru: " + "; ".join(f"{k} ({n} cz.)" for k, n in ile.items()))
+
+
 def load_dataset(spec):
     pliki = _pliki_zbioru(str(spec))
 
@@ -1338,7 +1389,7 @@ def load_dataset(spec):
             f"    memory=24GB\n"
             f"potem 'wsl --shutdown'. Szczegóły: srodowisko/README.md")
 
-    Xs, ys, yfs, metki = [], [], [], []
+    Xs, ys, yfs, metki, kody = [], [], [], [], []
     bez_ramek = []
     for p in pliki:
         data = np.load(p, allow_pickle=False)
@@ -1354,7 +1405,9 @@ def load_dataset(spec):
         else:
             bez_ramek.append(p.name)
         metki.append(str(data["meta"]) if "meta" in data else "")
+        kody.append(str(data["kod"]) if "kod" in data.files else "")
 
+    _raport_kodu(kody)
     if bez_ramek:
         print(f"bez etykiet na ramkę: {len(bez_ramek)} z {len(pliki)} części"
               f" ({', '.join(bez_ramek[:3])}"
@@ -1430,7 +1483,7 @@ class ZbiorNaRaty:
         # niezgodna wywróciłaby trening dopiero wtedy, gdy przyjdzie jej
         # kolej — czyli w środku nocy, po godzinie liczenia. To kosztuje
         # tyle, co odczyt samych etykiet: 800 kB na część.
-        self.liczby, ziarna = [], []
+        self.liczby, ziarna, kody = [], [], []
         licznik = np.zeros(N_CLASSES, dtype=np.int64)
         for p in self.pliki:
             with np.load(p, allow_pickle=False) as d:
@@ -1445,6 +1498,8 @@ class ZbiorNaRaty:
                 m = str(d["meta"]) if "meta" in d.files else ""
                 if "seed=" in m:
                     ziarna.append(m.split("seed=")[1].split(";")[0])
+                kody.append(str(d["kod"]) if "kod" in d.files else "")
+        _raport_kodu(kody)
 
         # --- walidacja: z PIERWSZEJ części i tylko z niej ---
         # Części różnią się ziarnem, nie rozkładem, więc jedna wystarcza,
@@ -1915,6 +1970,17 @@ def train(args):
               f"({initial_epoch}). Podnieś --epochs, żeby uczyć dalej.")
         confusion_report(model, ds_va, y_val)
         return
+
+    # Jakim kodem liczone były które epoki. Lista, nie jedno pole: przebieg
+    # bywa wznawiany przez kolejne noce, a kod między nimi się zmienia —
+    # jedno pole pokazałoby tylko ostatnią wersję dla całego modelu.
+    # Zapisuje się do state.json razem ze stanem po pierwszej epoce.
+    kod = kod_wersja()
+    wersje = saver.state.setdefault("kod", [])
+    if not wersje or wersje[-1].get("kod") != kod:
+        wersje.append({"od_epoki": initial_epoch + 1, "kod": kod,
+                       "kiedy": time.strftime("%Y-%m-%d %H:%M")})
+    print(f"kod: {kod}")
 
     cbs = [
         saver.callback(),
