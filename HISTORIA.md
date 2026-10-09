@@ -382,6 +382,7 @@ scalanie powtórzeń i gdzie działałby CTC.
 | 1 mln | 98,73% | 1,27% | 0,0637 |
 | 1,6 mln | 98,95% | **1,05%** | 0,0512 |
 | 4 mln (rotacja) | 99,34% | **0,66%** | 0,0288 |
+| 10 mln (rotacja, 20 epok) | 99,46% | **0,54%** | 0,0211 |
 
 Błąd spada jak `n^-0,41`, i wykładnik jest zgodny na obu krokach
 (0,418 przy pięciokrotnym zwiększeniu, 0,405 przy 1,6-krotnym). Trzy
@@ -393,6 +394,21 @@ między 1,6 a 4 mln to ≈ −0,51, więc krzywa nie wypłaszcza się, a nawet
 lekko przyspiesza. Walidacja przy rotacji pochodzi z jednej części
 (80 tys. próbek), stąd niepewność ±0,03 pkt. Na nagraniach: w kolejności
 8/9 (było 6/9 przy 1 mln), w całości 5/9 (było 4/9).
+
+**Piąty punkt, noc 08/09.10** (`runs/dpu_10000000`, 20 epok zamiast 40,
+402 min treningu). Prawo przewidywało 0,41–0,45%, wyszło **0,54%**.
+Wykładnik między 4 a 10 mln to ≈ −0,22 — krzywa się WYPŁASZCZA, po raz
+pierwszy wyraźnie. Uczciwie porównując tę samą liczbę epok (20): 4 mln
+99,32%, 10 mln 99,44%, czyli wykładnik ≈ −0,25 — wniosek ten sam.
+Na nagraniach bez poprawy: w całości 5/9 (bez zmian), w kolejności 6/9
+(było 8/9 — różnica to jedno nagranie, `mic3`, gdzie zgubione zostały S
+w SQ2BVN; przy 9 słowach to w granicach szumu, ale poprawy na pewno nie
+ma). Po scaleniu 0,35 s: w całości 6/9.
+
+**Wniosek.** Dźwignia „więcej danych" słabnie na syntetyku i nie dała nic
+na antenie. To potwierdza wpis o krótkich znakach: straty są w etapie
+dekodowania, nie w sieci. Kolejne 15 mln próbek (~1 doba liczenia) za
+przewidywane ~0,1 pkt na syntetyku nie jest teraz warte nocy.
 
 **Co z tego wynika dla kolejnych kroków:**
 
@@ -826,6 +842,11 @@ Przy 4 mln (06.10) to samo: minimum `val_loss` 0,0288 w epoce 15, na
 koniec 0,0574. Najlepsza dokładność w epoce 32, ale epoki po 20 dały
 niewiele. Wniosek: 20 epok zamiast 40, a zaoszczędzony czas na dane.
 
+Przy 10 mln (08/09.10) zapamiętywanie prawie znikło: minimum `val_loss`
+0,0211 w epoce 16, na koniec 0,0231 (+10%, przy 4 mln było +100%).
+Najlepsza dokładność w epoce 19 z 20 — model jeszcze nie skończył się
+uczyć, więc kilka epok więcej na tym samym zbiorze może coś dać.
+
 ### Więcej danych zwęża kopertę tonu
 
 Nieoczekiwane i zmierzone: przy 650 Hz model na 200 tys. trafiał 40–82%,
@@ -833,3 +854,17 @@ model na 1 mln trafia 0–20%. Lepsze dopasowanie do rozkładu treningowego
 (750 ± 80 Hz) oznacza ostrzejsze milczenie poza nim. To nie jest regres,
 tylko wybrany kompromis selektywność–odporność — ale **zależność od
 `dsp/tune.py` przez to wzrosła**.
+
+**Przy 10 mln trend się odwrócił — ale tylko na brzegach** (siatka
+koperty, `out/koperta_dpu_20261006_0004.txt` kontra `..._20261008_2220.txt`):
+
+| | 4 mln | 10 mln |
+|---|---|---|
+| 650 Hz przy 25 / 27 / 30 WPM | 2 / 15 / 0% | 50 / 62 / 55% |
+| 850 Hz przy 10 / 13 WPM | 18 / 50% | 48 / 70% |
+| 650 i 850 Hz przy 15–20 WPM | 0–8% | 0–8% |
+| 750 Hz przy 30 WPM | 100% | 90% |
+
+`RANO.txt` pisze „ton 650–850 Hz", bo bierze skrajne komórki ≥ 50%.
+To myli: w środku zakresu tempa (15–22 WPM) model nadal czyta wyłącznie
+750 Hz. Zależność od `tune.py` się nie zmniejszyła.
