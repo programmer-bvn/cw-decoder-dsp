@@ -1,0 +1,4 @@
+# SZUM PASMA - bez sygnalu; do banku tla generatora.
+zrodlo:        szum_ic7300_usb_3566kHz_FIL2_20261009_2126_surowe.wav, 63-73 s
+pas -6 dB:     504-996 Hz, szerokosc 492 Hz (zmierzona z widma co 1 s)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
