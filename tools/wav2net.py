@@ -109,6 +109,32 @@ def wav_to_windows(path: Path, stride_frames: int = 1,
     czytanie stacji przy 750 Hz i ignorowanie pozostałych. Ceną jest
     konieczność dostrojenia, i to robi właśnie pętla z dsp/tune.py.
     """
+    full, gain_db, lock = wav_to_obraz(path, gain_db, auto_gain, retune)
+
+    n_frames = full.shape[0]
+    if n_frames < C.IMG_FRAMES:
+        # Plik krótszy niż okno — dopełniamy zerami (czarne tło), tak jak
+        # robi frontend.center_window().
+        win = frontend.center_window(full)
+        return (win[np.newaxis, ..., np.newaxis],
+                np.array([n_frames / 2 * C.HOP_LENGTH / C.SR]),
+                gain_db, lock)
+
+    starts = np.arange(0, n_frames - C.IMG_FRAMES + 1, max(1, stride_frames))
+    windows = np.stack([full[s:s + C.IMG_FRAMES] for s in starts])
+    centers = (starts + C.IMG_FRAMES / 2.0) * C.HOP_LENGTH / C.SR
+    return (windows[..., np.newaxis].astype(np.float32), centers,
+            gain_db, lock)
+
+
+def wav_to_obraz(path: Path, gain_db: float = 0.0, auto_gain: bool = False,
+                 retune: bool = True) -> tuple[np.ndarray, float, str]:
+    """Plik audio -> (obraz całego nagrania [ramki, pasma], wzmocnienie, pętla).
+
+    Wspólna droga dla obu odczytów: przesuwanych okien ("dpu") i zszywanych
+    kroków ("fcn", dsp.sekwencja.kroki_nagrania). Przestrajanie i poziom
+    opisane w wav_to_windows.
+    """
     audio = frontend.load_audio(path)
 
     lock = ""
@@ -127,21 +153,25 @@ def wav_to_windows(path: Path, stride_frames: int = 1,
     # Cały spektrogram jednym przebiegiem, tą samą ścieżką co w treningu.
     full = frontend.normalize_db(
         frontend.power_to_db(frontend.melspec_power(audio)))
+    return full.astype(np.float32), gain_db, lock
 
-    n_frames = full.shape[0]
-    if n_frames < C.IMG_FRAMES:
-        # Plik krótszy niż okno — dopełniamy zerami (czarne tło), tak jak
-        # robi frontend.center_window().
-        win = frontend.center_window(full)
-        return (win[np.newaxis, ..., np.newaxis],
-                np.array([n_frames / 2 * C.HOP_LENGTH / C.SR]),
-                gain_db, lock)
 
-    starts = np.arange(0, n_frames - C.IMG_FRAMES + 1, max(1, stride_frames))
-    windows = np.stack([full[s:s + C.IMG_FRAMES] for s in starts])
-    centers = (starts + C.IMG_FRAMES / 2.0) * C.HOP_LENGTH / C.SR
-    return (windows[..., np.newaxis].astype(np.float32), centers,
-            gain_db, lock)
+def decode_fcn(obraz: np.ndarray, model, min_conf: float = 0.0):
+    """Odczyt modelem "fcn" -> zdarzenia w formacie decode_stream.
+
+    (czas_środka_odcinka_s, id, pewność, długość_odcinka_w_krokach).
+    Wspólny format pozwala nagrania.py liczyć te same miary dla obu
+    architektur. Progów min_windows tu nie ma: odcinek to już jedna
+    decyzja na znak, a nie seria okien.
+    """
+    from dsp import sekwencja
+    kroki = sekwencja.kroki_nagrania(obraz, model)
+    zdarzenia = []
+    for k0, k1, cid, pew in sekwencja.dekoduj_kroki(kroki):
+        if pew >= min_conf:
+            zdarzenia.append((sekwencja.krok_na_sekundy(0.5 * (k0 + k1)),
+                              cid, pew, k1 - k0))
+    return zdarzenia, kroki
 
 
 # --------------------------------------------------------------------------

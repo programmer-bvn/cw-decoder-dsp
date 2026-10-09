@@ -87,6 +87,10 @@ FMAX = 1200.0
 IMG_FRAMES = 128
 IMG_BINS = N_MELS
 INPUT_SHAPE = (IMG_FRAMES, IMG_BINS, 1)
+# Architektura "fcn": jeden krok wyjścia = 2 ramki = 40 ms. Uzasadnienie
+# przy build_model (przerwa międzyznakowa przy 30 WPM = 3 kroki).
+FCN_KROK = 2
+FCN_KROKI = IMG_FRAMES // FCN_KROK
 
 # Skala dB — WARTOŚCI ZMIERZONE narzędziem tools/calibrate.py, nie zgadnięte.
 #   szum 0.015 RMS: mediana -26.7 dB, 95 pct -21.5 dB
@@ -1236,9 +1240,56 @@ def build_model(dropout: float = 0.3, gru_units: int = 96,
         x = layers.Activation("relu")(x)
         name = "morse_cnn_dpu"
 
+    elif arch == "fcn":
+        # ZNAK NA KAŻDY KROK CZASU zamiast jednego znaku na okno. Odczyt to
+        # odcinki kroków "jest znak" rozdzielone przerwami (dekoduj_kroki),
+        # więc powtórzenia z przesuwanego okna (CCQQQCCCC) nie powstają
+        # u źródła, a krótki znak nie konkuruje z długimi sąsiadami o jedno
+        # wyjście okna (HISTORIA: „Znaki krótkie są gubione" — OBALONE).
+        #
+        # Czas redukowany TYLKO RAZ, do kroku 40 ms (FCN_KROK = 2 ramki).
+        # Przerwa międzyznakowa przy 30 WPM to 120 ms = 3 kroki; przy kroku
+        # 80 ms zostałoby 1,5 kroku i dwie takie same litery obok siebie
+        # zlewałyby się w jedną. Częstotliwość zgniatana do 1 (32 -> 1):
+        # ton jest wąskopasmowy, a pętla tune.py stawia go na 750 Hz.
+        for filters, pool in ((32, (1, 2)), (48, (2, 2)), (64, (1, 2)),
+                              (96, (1, 2)), (128, (1, 2))):
+            x = layers.Conv2D(filters, 3, padding="same", use_bias=False)(x)
+            x = layers.BatchNormalization()(x)
+            x = layers.Activation("relu")(x)
+            x = layers.MaxPooling2D(pool)(x)
+
+        # Zasięg widzenia w czasie, narastająco (w ramkach wejścia):
+        #   conv3 3, conv3 5, pool2 6 (skok 2), conv3 10, 14, 18
+        #   6 x conv(11,1): +20 każdy  ->  138 ramek = 2,76 s
+        # Decyzja o znaku wymaga widzenia CAŁEGO znaku: '0' przy 13 WPM
+        # trwa 1,8 s. Krok na początku takiego znaku widzi go tylko
+        # częściowo — dlatego dekoduj_kroki głosuje po całym odcinku,
+        # a nie bierze znaku z każdego kroku osobno. Jądra (11,1) zamiast
+        # dilation: na DPUCZDX8G dilation ma ograniczenia zależne od
+        # konfiguracji rdzenia, a jądro do 16 przechodzi.
+        for _ in range(6):
+            x = layers.Conv2D(128, (11, 1), padding="same",
+                              use_bias=False)(x)
+            x = layers.BatchNormalization()(x)
+            x = layers.Activation("relu")(x)
+
+        x = layers.Dropout(dropout)(x)
+        # Splot 1x1 = ta sama warstwa Dense dla każdego kroku. float32 jak
+        # w pozostałych architekturach (softmax przy mixed_float16).
+        x = layers.Conv2D(N_CLASSES, 1, activation="softmax",
+                          dtype="float32", name="znak_na_krok")(x)
+        outputs = layers.Reshape((FCN_KROKI, N_CLASSES), name="znak",
+                                 dtype="float32")(x)
+        model = keras.Model(inputs, outputs, name="morse_fcn")
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate),
+                      loss="sparse_categorical_crossentropy",
+                      metrics=["accuracy"])
+        return model
+
     else:
         raise ValueError(f"nieznana architektura: {arch!r} "
-                         f"(dostępne: 'dpu', 'gru')")
+                         f"(dostępne: 'dpu', 'gru', 'fcn')")
 
     x = layers.Dropout(dropout)(x)
     # dtype="float32" jawnie: przy mixed_float16 softmax musi liczyć się
@@ -1679,7 +1730,119 @@ def _do_float(img, label, *rest):
     """
     import tensorflow as tf
     img = tf.expand_dims(tf.cast(img, tf.float32) / 255.0, -1)
+    # Etykiety na ramkę (partia x IMG_FRAMES) -> na krok wyjścia "fcn".
+    # Tutaj, a nie w każdej drodze osobno — z tego samego powodu co wyżej.
+    if label.shape.rank == 2:
+        a, b = label[:, 0::FCN_KROK], label[:, 1::FCN_KROK]
+        label = tf.cast(tf.where(a > 0, a, b), tf.int32)
     return (img, label, rest[0]) if rest else (img, label)
+
+
+def ramki_na_kroki(yf: np.ndarray) -> np.ndarray:
+    """Etykiety na ramkę [..., IMG_FRAMES] -> na krok fcn [..., FCN_KROKI].
+
+    Krok dostaje znak, jeśli KTÓRAKOLWIEK z jego dwóch ramek go ma. Przy
+    „pierwsza ramka" znak skrócony do jednej ramki (znak przy krawędzi
+    okna, frame_labels przy znaku krótszym niż ramka) mógłby zniknąć,
+    a model uczyłby się, że tam nic nie ma. Przerwy między znakami są
+    dłuższe niż 2 ramki (diag.py sprawdza, że nie znikają).
+    Ta sama reguła co w _do_float, tylko w numpy (raport, diag).
+    """
+    assert FCN_KROK == 2, "reguła napisana dla kroku 2 ramek"
+    a, b = yf[..., 0::2], yf[..., 1::2]
+    return np.where(a > 0, a, b)
+
+
+def dekoduj_kroki(probs: np.ndarray, prog_ciszy: float = 0.5) -> list:
+    """Wyjście fcn [kroki, N_CLASSES] -> [(krok_od, krok_do, id, pewność)].
+
+    Dwa etapy, celowo rozdzielone:
+      1. GDZIE jest znak: krok, w którym klasa 0 ma < prog_ciszy. Sąsiednie
+         takie kroki tworzą odcinek. Granicą odcinków jest CISZA — tak jak
+         w lutowym dekoderze (HISTORIA: „Powtórzenia tego samego znaku"),
+         więc LL w HELLO to dwa odcinki, bo dzieli je przerwa.
+      2. JAKI to znak: suma prawdopodobieństw znaków po CAŁYM odcinku.
+         Krok na początku długiego znaku ('0' przy 13 WPM = 1,8 s) nie widzi
+         jego końca i może wskazać '9' albo '8'; głos całego odcinka to
+         wyrównuje. Argmax krok po kroku dałby wtedy "90" z jednego znaku.
+
+    Pewność = średnie prawdopodobieństwo wybranego znaku w odcinku.
+    Odpowiednik dsp.sekwencja.dekoduj_kroki (diag.py pilnuje zgodności).
+    """
+    jest = probs[:, 0] < prog_ciszy
+    wynik, k = [], 0
+    n = len(jest)
+    while k < n:
+        if not jest[k]:
+            k += 1
+            continue
+        k1 = k
+        while k1 < n and jest[k1]:
+            k1 += 1
+        suma = probs[k:k1, 1:].sum(axis=0)
+        cid = int(np.argmax(suma)) + 1
+        wynik.append((k, k1, cid, float(suma[cid - 1] / (k1 - k))))
+        k = k1
+    return wynik
+
+
+def tekst_z_krokow(lab: np.ndarray) -> str:
+    """Etykiety na krok -> nadany tekst widoczny w oknie (prawda dla fcn).
+
+    Granicą jest zmiana klasy, nie tylko cisza: to jest PRAWDA, więc nie
+    zakładamy tu niczego, co musi dopiero udowodnić dekoder.
+    """
+    out, prev = [], 0
+    for c in np.asarray(lab).tolist():
+        if c != 0 and c != prev:
+            out.append(ID_TO_CHAR[int(c)])
+        prev = c
+    return "".join(out)
+
+
+def znak_srodkowy(odcinki: list, lab: np.ndarray, y: int) -> int:
+    """Odpowiedź fcn na pytanie, które zadaje się "dpu" — miara porównywalna.
+
+    "dpu" odpowiada jednym znakiem: środkowym z trzech nadanych (etykieta
+    y). Tu bierzemy odcinek odczytu, który NAJBARDZIEJ POKRYWA SIĘ
+    z prawdziwym położeniem tego znaku (z etykiet na krok `lab`), i zwracamy
+    jego znak. Nie „odcinek w środkowym kroku": środek znaku z etykiety
+    błądzi ±24 ramki (komentarz przy "dpu"), czyli do 12 kroków, więc
+    środkowy krok okna trafia czasem w przerwę albo w sąsiada.
+
+    y == 0 (puste radio): odpowiedzią jest 0, jeśli odczyt jest pusty,
+    a inaczej znak najpewniejszego odcinka — czyli fałszywy alarm.
+    """
+    if y == 0:
+        return 0 if not odcinki else max(odcinki, key=lambda o: o[3])[2]
+    lab = np.asarray(lab)
+    kroki = np.flatnonzero(lab == y)
+    if len(kroki) == 0:
+        return 0
+    # Ten sam znak bywa w oknie dwa razy (np. "EHE"); bierzemy przebieg
+    # najbliższy środka okna, bo tam generator stawia środkowy znak.
+    przebiegi = np.split(kroki, np.flatnonzero(np.diff(kroki) > 1) + 1)
+    c = len(lab) / 2
+    p = min(przebiegi, key=lambda r: abs(0.5 * (r[0] + r[-1]) - c))
+    a, b = int(p[0]), int(p[-1]) + 1
+    najl, cid = 0, 0
+    for k0, k1, c_id, _ in odcinki:
+        wsp = min(b, k1) - max(a, k0)
+        if wsp > najl:
+            najl, cid = wsp, c_id
+    return cid
+
+
+def odleglosc_edycyjna(a: str, b: str) -> int:
+    """Levenshtein — do CER (ile znaków trzeba poprawić)."""
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1,
+                           prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
 
 
 def make_pipeline(X, y, idx, batch: int, training: bool,
@@ -1873,6 +2036,60 @@ def confusion_report(model, ds, y_true: np.ndarray) -> None:
               "TIMING, a nie że brakuje mu pojemności.")
 
 
+def raport_fcn(model, ds, yf_val: np.ndarray, y_val: np.ndarray) -> dict:
+    """Raport dla "fcn": trzy liczby, bo jedna by myliła.
+
+    val_accuracy z Kerasa liczy KROKI (ile kroków ma dobrą klasę), a to
+    nie jest odczyt — przesunięta o krok granica psuje dwa kroki i nic
+    w tekście. Dlatego:
+      środkowy znak — ta sama etykieta co "dpu" (znak_srodkowy); JEDYNA
+                      liczba porównywalna z 99,46% modelu dpu_10000000
+      okno w całości — odczyt okna == prawda (tekst_z_krokow)
+      CER           — błędne znaki / wszystkie znaki widoczne w oknach
+    Znaki ucięte krawędzią okna wchodzą do CER i do „okna w całości", więc
+    te dwie liczby są surowsze od tego, co zobaczy operator na strumieniu
+    (tam z każdego okna bierze się tylko środek).
+    """
+    probs = model.predict(ds, verbose=0)
+    lab = ramki_na_kroki(np.asarray(yf_val)).astype(np.int64)
+    y_val = np.asarray(y_val).astype(np.int64)
+    acc_k = float(np.mean(probs.argmax(-1) == lab))
+
+    traf, okna_ok, bledy, znaki = 0, 0, 0, 0
+    pomylki = {}
+    for i in range(len(probs)):
+        od = dekoduj_kroki(probs[i])
+        p = znak_srodkowy(od, lab[i], int(y_val[i]))
+        if p == y_val[i]:
+            traf += 1
+        else:
+            klucz = (int(y_val[i]), int(p))
+            pomylki[klucz] = pomylki.get(klucz, 0) + 1
+        odczyt = "".join(ID_TO_CHAR[o[2]] for o in od)
+        prawda = tekst_z_krokow(lab[i])
+        okna_ok += odczyt == prawda
+        bledy += odleglosc_edycyjna(odczyt, prawda)
+        znaki += len(prawda)
+
+    n = max(1, len(probs))
+    w = {"kroki": acc_k, "srodek": traf / n, "okno": okna_ok / n,
+         "cer": bledy / max(1, znaki)}
+    print(f"\nWalidacja fcn ({len(probs)} okien):")
+    print(f"  kroki z dobrą klasą:      {w['kroki']*100:.2f}%   (val_accuracy)")
+    print(f"  środkowy znak:            {w['srodek']*100:.2f}%   "
+          f"<- porównywalne z dpu")
+    print(f"  okno odczytane w całości: {w['okno']*100:.2f}%")
+    print(f"  CER:                      {w['cer']*100:.2f}%")
+    if pomylki:
+        print("\nNajczęstsze pomyłki środkowego znaku (prawda -> odczyt):")
+        for (t, p), cnt in sorted(pomylki.items(), key=lambda kv: -kv[1])[:15]:
+            ct = "PUSTE" if t == 0 else ID_TO_CHAR[t]
+            cp = "PUSTE" if p == 0 else ID_TO_CHAR[p]
+            print(f"  {ct:>5} {MORSE_DICT.get(ct,''):<6} -> "
+                  f"{cp:>5} {MORSE_DICT.get(cp,''):<6}  {cnt}x")
+    return w
+
+
 def train(args):
     import tensorflow as tf
     keras = keras_api()
@@ -1892,23 +2109,39 @@ def train(args):
     elif args.mixed:
         print("--mixed pominięte: brak GPU")
 
+    # "fcn" uczy się na etykietach na ramkę (yf) i BEZ wag klas: wagi
+    # liczone są po znaku środkowym okna, a strata fcn idzie po krokach,
+    # gdzie klasa 0 (przerwy, cisza) to ~44% kroków, a nie 15% okien.
+    fcn = args.arch == "fcn"
+    bez_wag = args.no_class_weights or fcn
+    yf_val = None
+
     # --- dane: albo wszystko naraz, albo na raty ---
     if args.rotacja:
         zbior = ZbiorNaRaty(_pliki_zbioru(str(args.dataset)), args.batch,
                             args.val, args.seed,
-                            bez_wag=args.no_class_weights)
+                            cel="ramki" if fcn else "znak",
+                            bez_wag=bez_wag)
         ds_meta = zbior.meta
         w = zbior.wagi
         y_val = zbior.yv_znak
+        yf_val = zbior.yv if fcn else None
         kroki = zbior.kroki
     else:
         X, y, yf, ds_meta = load_dataset(args.dataset)
         print(f"opis zbioru: {ds_meta or '(brak)'}")
         print(f"zbiór: {X.shape} {X.dtype} ({X.nbytes/1024/1024:.0f} MB)")
+        if fcn and yf is None:
+            raise SystemExit("architektura fcn potrzebuje etykiet na ramkę "
+                             "(yf), a ten zbiór ich nie ma — wygeneruj go "
+                             "od nowa.")
         tr, va = stratified_split(y, args.val, args.seed)
         print(f"podział warstwowy: trening={len(tr)}  walidacja={len(va)}")
-        w = None if args.no_class_weights else class_weights(y[tr])
+        w = None if bez_wag else class_weights(y[tr])
         y_val = y[va]
+        if fcn:
+            yf_val = yf[va]
+            ds_meta = (ds_meta + ";cel=ramki") if ds_meta else "cel=ramki"
         kroki = None
 
     if w is not None:
@@ -1923,10 +2156,20 @@ def train(args):
         ds_va = zbior.walidacja()
         ds_tr = zbior.dataset()
     else:
-        ds_va = make_pipeline(X, y, va, args.batch, False)
-        Xtr, ytr = X[tr], y[tr]
+        etyk = yf if fcn else y
+        ds_va = make_pipeline(X, etyk, va, args.batch, False)
+        Xtr, ytr = X[tr], etyk[tr]
         del X
         ds_tr = make_pipeline(Xtr, ytr, None, args.batch, True, weights=w)
+
+    def raport(model):
+        if not fcn:
+            confusion_report(model, ds_va, y_val)
+            return
+        # Do state.json: noc.sh czyta stamtąd wyniki do RANO.txt.
+        saver.state["raport_fcn"] = raport_fcn(model, ds_va, yf_val, y_val)
+        (run_dir / "state.json").write_text(
+            json.dumps(saver.state, indent=1), encoding="utf-8")
 
     # --- model: wznowienie albo świeży ---
     saver = StateSaver(run_dir, keras)
@@ -1968,7 +2211,7 @@ def train(args):
     if initial_epoch >= args.epochs:
         print(f"Zadana liczba epok ({args.epochs}) już osiągnięta "
               f"({initial_epoch}). Podnieś --epochs, żeby uczyć dalej.")
-        confusion_report(model, ds_va, y_val)
+        raport(model)
         return
 
     # Jakim kodem liczone były które epoki. Lista, nie jedno pole: przebieg
@@ -2006,7 +2249,7 @@ def train(args):
     if best is not None:
         print(f"\nnajlepszy model: {best}")
         model = keras.models.load_model(str(best))
-    confusion_report(model, ds_va, y_val)
+    raport(model)
 
 
 # =============================================================================
@@ -2035,10 +2278,11 @@ def main(argv=None):
                    help="plik zbioru albo WZORZEC, np. 'czesci/morse_*.npz'")
     t.add_argument("--run", type=Path, default=Path("runs/cw1"),
                    help="katalog stanu: last.keras, best.keras, state.json")
-    t.add_argument("--arch", choices=("dpu", "gru"), default="dpu",
+    t.add_argument("--arch", choices=("dpu", "gru", "fcn"), default="dpu",
                    help="dpu = sam splot, wdrażalny na KV260 (domyślnie); "
                         "gru = z rekurencją, NIE do wdrożenia na KV260, "
-                        "tylko jako punkt odniesienia")
+                        "tylko jako punkt odniesienia; fcn = znak na każdy "
+                        "krok 40 ms (etykiety na ramkę), sam splot")
     t.add_argument("--epochs", type=int, default=200)
     t.add_argument("--batch", type=int, default=256)
     t.add_argument("--val", type=float, default=0.08)

@@ -158,7 +158,21 @@ def scal_po_czasie(zdarzenia: list, okno_s: float) -> list:
 
 def odczytaj(sciezka: Path, model, min_conf: float, min_windows: int,
              scal_s: float = 0.0):
-    """Nagranie -> (odczyt_surowy, odczyt_scalony, opis_pętli, wzmocnienie)."""
+    """Nagranie -> (odczyt_surowy, odczyt_scalony, opis_pętli, wzmocnienie).
+
+    Model "fcn" (wyjście [okno, krok, klasa]) czyta się zszywanymi krokami,
+    bez progów pewności i liczby okien — te są obejściem powtórzeń
+    z przesuwanego okna, których fcn nie produkuje.
+    """
+    if len(model.output_shape) == 3:
+        obraz, wzm, lock = wav2net.wav_to_obraz(
+            sciezka, auto_gain=True, retune=True)
+        zdarzenia, _ = wav2net.decode_fcn(obraz, model)
+        surowy = "".join(C.ALPHABET[i] for _, i, _, _ in zdarzenia)
+        scalony = "".join(C.ALPHABET[i]
+                          for _, i, _, _ in scal_po_czasie(zdarzenia, scal_s))
+        return surowy, scalony, lock, wzm
+
     okna, srodki, wzm, lock = wav2net.wav_to_windows(
         sciezka, auto_gain=True, retune=True)
     zdarzenia, _, _, _ = wav2net.decode_stream(

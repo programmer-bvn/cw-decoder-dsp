@@ -1264,6 +1264,148 @@ def test_etykiety_ramek():
               f"różnic: {int((yf != yf_sa).sum())} ramek")
 
 
+# ==========================================================================
+# TEST 18: DEKODER fcn — znak na krok czasu
+# ==========================================================================
+#  Sieć "fcn" i jej odczyt (dsp/sekwencja.py, train_rtx.dekoduj_kroki).
+#  Wszystko tu da się sprawdzić bez treningu, a każda z tych usterek
+#  zepsułaby noc po cichu: etykiety zlewające dwa znaki w jeden, odczyt
+#  sklejający LL w L, zszywanie okien gubiące albo dublujące kroki.
+def test_dekoder_fcn():
+    section("TEST 18: dekoder fcn (znak na krok)")
+    import importlib.util
+    from pathlib import Path
+    from dsp import sekwencja
+    from dsp.model import DPU_SAFE_LAYERS
+
+    path = Path(__file__).resolve().parent / "train_rtx.py"
+    spec = importlib.util.spec_from_file_location("_fcn", path)
+    sa = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sa)
+
+    check("FCN_KROK zgodny w train_rtx.py i dsp/sekwencja.py",
+          sa.FCN_KROK == sekwencja.FCN_KROK
+          and sa.FCN_KROKI == sekwencja.FCN_KROKI,
+          f"train_rtx {sa.FCN_KROK}/{sa.FCN_KROKI}, "
+          f"sekwencja {sekwencja.FCN_KROK}/{sekwencja.FCN_KROKI}")
+
+    # --- 18a. model: kształt, warstwy DPU, zasięg widzenia ---
+    m = sa.build_model(arch="fcn")
+    ksz = tuple(m.output_shape[1:])
+    check("wyjście fcn = [kroki, klasy]", ksz == (sa.FCN_KROKI, C.N_CLASSES),
+          f"{ksz} zamiast {(sa.FCN_KROKI, C.N_CLASSES)}")
+    bad = sorted({type(l).__name__ for l in m.layers
+                  if type(l).__name__ not in DPU_SAFE_LAYERS})
+    duze = [l.name for l in m.layers if type(l).__name__ == "Conv2D"
+            and max(l.kernel_size) > 16]
+    check("fcn używa tylko warstw DPUCZDX8G, jądra <= 16",
+          not bad and not duze,
+          f"poza listą: {bad}, za duże jądra: {duze}" if bad or duze else
+          f"{len(m.layers)} warstw, {m.count_params()} parametrów")
+
+    rf, jump = 1, 1
+    for layer in m.layers:
+        t = type(layer).__name__
+        if t in ("Conv2D", "MaxPooling2D"):
+            k = (layer.kernel_size if t == "Conv2D" else layer.pool_size)[0]
+            rf += (k - 1) * jump
+            jump *= layer.strides[0]
+    # Najwolniejsze tempo w zbiorze, najdłuższy znak, z przerwami.
+    wpm_min = C.WPM - C.WPM_JITTER
+    need = ((morse.total_units("0") + 2 * C.GAP_CHAR_UNITS)
+            * C.dot_seconds(wpm_min) * C.frames_per_second())
+    check("zasięg fcn pokrywa '0' z przerwami przy najwolniejszym tempie",
+          rf >= need, f"zasięg {rf} ramek, potrzeba {need:.0f} "
+          f"({wpm_min:.0f} WPM)")
+
+    # --- 18b. etykiety na krok nie gubią i nie zlewają znaków ---
+    #  Pełny model kanału (rozjazd klucza, gap_jitter), bo to on skraca
+    #  przerwy. Odczyt dzieli znaki TYLKO ciszą, więc każda para sąsiednich
+    #  znaków musi mieć między sobą krok klasy 0.
+    rng = np.random.default_rng(18)
+    zly_tekst, bez_przerwy, par = 0, 0, 0
+    for _ in range(300):
+        _audio, _y, meta = sa.make_clip(rng)
+        yf = sa.frame_labels(meta.get("spans", []),
+                             float(meta.get("offset", 0.0)),
+                             meta.get("text", ""))
+        lab = sa.ramki_na_kroki(yf)
+        if sa.tekst_z_krokow(lab) != sa.tekst_z_krokow(yf):
+            zly_tekst += 1
+        nz = np.flatnonzero(lab)
+        for i, j in zip(nz[:-1], nz[1:]):
+            if lab[i] != lab[j]:
+                par += 1
+                if j == i + 1:
+                    bez_przerwy += 1
+    check("krok 40 ms zachowuje tekst okna (300 klipów, pełny kanał)",
+          zly_tekst == 0, f"{zly_tekst} klipów z innym tekstem po kroku")
+    check("sąsiednie znaki zawsze rozdziela krok ciszy",
+          bez_przerwy <= 0.005 * max(1, par),
+          f"{bez_przerwy} z {par} par bez przerwy (próg 0,5%)")
+
+    # --- 18c. odczyt: cisza dzieli, głos odcinka decyduje ---
+    E, ZERO, DZIEW = C.CHAR_TO_ID["E"], C.CHAR_TO_ID["0"], C.CHAR_TO_ID["9"]
+
+    def jedynki(lab):
+        p = np.full((len(lab), C.N_CLASSES), 1e-4, np.float32)
+        p[np.arange(len(lab)), lab] = 1.0
+        return p / p.sum(axis=1, keepdims=True)
+
+    od = sa.dekoduj_kroki(jedynki(np.array([0, E, E, 0, E, E, 0])))
+    check("dwa takie same znaki rozdzielone ciszą = dwa znaki ('EE')",
+          [o[2] for o in od] == [E, E], f"odczyt {od}")
+
+    # Początek długiego '0' wygląda jak '9' (nie widać końca) — słabo;
+    # dalsza część mocno '0'. Głos odcinka ma dać '0', nie '90'.
+    p = np.full((10, C.N_CLASSES), 0.001, np.float32)
+    p[:3, DZIEW] = 0.6
+    p[:3, ZERO] = 0.3
+    p[3:, ZERO] = 0.95
+    p /= p.sum(axis=1, keepdims=True)
+    od = sa.dekoduj_kroki(p)
+    check("głos odcinka: niepewny początek nie rozbija znaku",
+          [o[2] for o in od] == [ZERO], f"odczyt {[o[2] for o in od]}")
+
+    losowe = np.random.default_rng(5).dirichlet(
+        np.ones(C.N_CLASSES) * 0.3, size=500).astype(np.float32)
+    check("dsp.sekwencja.dekoduj_kroki == train_rtx.dekoduj_kroki",
+          sekwencja.dekoduj_kroki(losowe) == sa.dekoduj_kroki(losowe))
+
+    # --- 18d. zszywanie okien nagrania ---
+    #  Udawany model: w każdym kroku zwraca klasę zakodowaną w obrazie
+    #  (numer kroku nagrania mod 37). Po zszyciu każdy krok nagrania musi
+    #  mieć swoją klasę — wtedy nic nie wypadło, nie zdublowało się i nie
+    #  przesunęło. Długości nieparzyste i krótsze niż okno celowo.
+    class Udawany:
+        def predict(self, okna, batch_size=None, verbose=0):
+            nr = np.rint(okna[:, 0::sekwencja.FCN_KROK, 0, 0] * 1000)
+            kl = (nr.astype(np.int64) // sekwencja.FCN_KROK) % C.N_CLASSES
+            out = np.zeros(kl.shape + (C.N_CLASSES,), np.float32)
+            np.put_along_axis(out, kl[..., None], 1.0, axis=-1)
+            return out
+
+    zle = []
+    for n in (37, 128, 129, 200, 333, 1001):
+        obraz = np.zeros((n, C.IMG_BINS), np.float32)
+        obraz[:, 0] = np.arange(n) / 1000.0
+        k = sekwencja.kroki_nagrania(obraz, Udawany())
+        oczek = np.arange(len(k)) % C.N_CLASSES
+        realne = (n + 1) // 2           # kroki z prawdziwymi ramkami
+        if not np.array_equal(k[:realne].argmax(1), oczek[:realne]):
+            zle.append(n)
+    check("zszywanie okien: każdy krok nagrania dokładnie raz, na miejscu",
+          not zle, f"złe długości: {zle}" if zle else
+          "długości 37, 128, 129, 200, 333, 1001 ramek")
+
+    # --- 18e. miara środkowego znaku ---
+    lab = np.array([0, 0, E, E, 0, 0, ZERO, ZERO, ZERO, 0, E, 0])
+    od = sa.dekoduj_kroki(jedynki(lab))
+    check("znak środkowy z idealnego odczytu = etykieta",
+          sa.znak_srodkowy(od, lab, ZERO) == ZERO
+          and sa.znak_srodkowy([], np.zeros(12, int), 0) == 0)
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1275,7 +1417,8 @@ def main() -> int:
              test_generator_clip, test_radio, test_fist, test_nadajnik,
              test_fist_drift, test_standalone,
              test_dpu_model, test_melref, test_sciezka_danych,
-             test_tune_poza_pasmem, test_etykiety_ramek)
+             test_tune_poza_pasmem, test_etykiety_ramek,
+             test_dekoder_fcn)
 
     for t in tests:
         try:
