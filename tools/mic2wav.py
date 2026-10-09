@@ -5,6 +5,16 @@
     python -m tools.mic2wav --seconds 30 --out out/qso.wav
     python -m tools.mic2wav --device 3 --seconds 10
     python -m tools.mic2wav --monitor                 # tylko pomiar, bez zapisu
+    python -m tools.mic2wav --device 7 --seconds 300 --surowe --out probki/pasmo.wav
+
+--surowe zapisuje OBOK wersji 8 kHz oryginał z urządzenia: pełna
+częstotliwość, wszystkie kanały (`surowe/<nazwa>_surowe.wav`, PCM 24 bit).
+Podkatalog, bo nagrania.py i probki.py czytają `*.wav` z katalogu próbek —
+oryginał obok liczyłby się drugi raz jako osobne nagranie (09.10). Po co:
+wersja 8 kHz to decyzja dzisiejszego front-endu (SR, pasmo). Gdy kiedyś
+się zmieni, z samej wersji 8 kHz nagrania nie da się już przeliczyć —
+a nagrania z pasma (IC-7300 przez USB, od 09.10) są tym materiałem,
+którego generator nie umie podrobić.
 
 Zapisuje mono, 16 bit PCM, z częstotliwością config.SR — dokładnie w takim
 formacie, jakiego oczekuje wav2net i xray. Konwersja z częstotliwości
@@ -145,9 +155,17 @@ def _bar(value: float, width: int = 24) -> str:
 # Nagrywanie
 # --------------------------------------------------------------------------
 def record(seconds: float, device, out_path: Path | None,
-           monitor_only: bool = False) -> Path | None:
+           monitor_only: bool = False, surowe: bool = False) -> Path | None:
     dev_sr = device_samplerate(device)
     resample = dev_sr != C.SR
+    n_kan = 1
+    if surowe:
+        # Oryginał: częstotliwość i kanały urządzenia, nie modelu.
+        info = sd.query_devices(device, "input") if device is not None \
+            else sd.query_devices(kind="input")
+        dev_sr = int(info["default_samplerate"])
+        resample = dev_sr != C.SR
+        n_kan = int(info["max_input_channels"])
 
     print(f"urządzenie: {device if device is not None else 'domyślne'}  "
           f"{dev_sr} Hz" + (f"  -> decymacja do {C.SR} Hz" if resample else ""))
@@ -162,9 +180,10 @@ def record(seconds: float, device, out_path: Path | None,
     def cb(indata, frames, tinfo, status):
         if status:
             print(f"  [status audio] {status}", flush=True)
-        q.put(indata[:, 0].copy())
+        q.put(indata.copy())
 
     chunks: list[np.ndarray] = []
+    surowe_kawalki: list[np.ndarray] = []
     # Bufor ~1,5 s w 8 kHz do pomiaru szczytu OBRAZU — pojedynczy blok
     # 100 ms jest za krótki na sensowny spektrogram.
     img_buf = np.zeros(0, dtype=np.float32)
@@ -172,19 +191,22 @@ def record(seconds: float, device, out_path: Path | None,
 
     t0 = time.time()
     try:
-        with sd.InputStream(samplerate=dev_sr, channels=1, dtype="float32",
+        with sd.InputStream(samplerate=dev_sr, channels=n_kan, dtype="float32",
                             blocksize=C.MIC_BLOCK, device=device, callback=cb):
             while True:
                 elapsed = time.time() - t0
                 if not monitor_only and elapsed >= seconds:
                     break
                 try:
-                    block = q.get(timeout=0.5)
+                    caly = q.get(timeout=0.5)
                 except queue.Empty:
                     continue
+                block = caly[:, 0]
 
                 if not monitor_only:
                     chunks.append(block)
+                    if surowe:
+                        surowe_kawalki.append(caly)
 
                 rms, peak, tone, snr = measure(block, dev_sr)
                 if peak >= 0.99:
@@ -244,6 +266,12 @@ def record(seconds: float, device, out_path: Path | None,
     sf.write(out_path, audio, C.SR, subtype="PCM_16")
     print(f"zapisano: {out_path} "
           f"({out_path.stat().st_size/1024:.0f} kB)")
+    if surowe and surowe_kawalki:
+        sp = out_path.parent / "surowe" / (out_path.stem + "_surowe.wav")
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sf.write(sp, np.concatenate(surowe_kawalki), dev_sr, subtype="PCM_24")
+        print(f"oryginał: {sp}  {dev_sr} Hz, {n_kan} kan. "
+              f"({sp.stat().st_size/1024/1024:.1f} MB)")
     print(f"\nDalej:  python -m tools.xray --wav {out_path}")
     return out_path
 
@@ -257,6 +285,9 @@ def main(argv=None):
     ap.add_argument("--seconds", type=float, default=10.0)
     ap.add_argument("--device", type=int, default=C.MIC_DEVICE)
     ap.add_argument("--out", type=Path, default=C.OUT_DIR / "mic.wav")
+    ap.add_argument("--surowe", action="store_true",
+                    help="zapisz też oryginał z urządzenia (pełna "
+                         "częstotliwość, wszystkie kanały)")
     args = ap.parse_args(argv)
 
     if args.list:
@@ -268,7 +299,8 @@ def main(argv=None):
     print("=" * 70)
     print(C.summary())
     print("-" * 70)
-    record(args.seconds, args.device, args.out, monitor_only=args.monitor)
+    record(args.seconds, args.device, args.out, monitor_only=args.monitor,
+           surowe=args.surowe)
 
 
 if __name__ == "__main__":

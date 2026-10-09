@@ -1,0 +1,30 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        QST DE SN0FMT TEST
+nadajnik:      NIEZNANY — stacja SN0FMT z pasma
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany (obca stacja)
+tempo zadane:  ok. 15 WPM (wskazanie dekodera IC-7300)
+pasmo:         3.5655 MHz
+filtr:         FIL2 (szerokosc nieodnotowana)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+uwagi:         Tresc wedlug operatora i dekodera CW w IC-7300 (zrzut ekranu).
+               Drugie 3 min (21:05:57-21:09:00 czasu PC), nachodzi na pierwsze.
+               Zrzut ekranu radia z tego czasu: IC7300MK2screen/20200102_233854.png
+               (zegar radia +2 h 31 min wzgledem PC).
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        8000 Hz, 1 kan., 182.0 s
+szczyt obrazu: 23.9 dB   (korekta poziomu -6.9 dB do celu 17 dB)
+tlo:           -85.3 dB   kontrast 103.0 dB
+szerokosc:     225 Hz (9 z 32 pasm w granicach 10 dB)
+ton:           mediana 794 Hz, zakres 757-827 Hz, w zakresie czytelnym 100% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 23.9 dB dochodzi do DB_MAX=24; potrzeba -7 dB
+  - ton ROZLANY na 225 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - nie udało się zmierzyć tempa — za mało elementów

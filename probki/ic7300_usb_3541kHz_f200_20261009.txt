@@ -1,0 +1,32 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        nieznane — odbior z pasma
+nadajnik:      NIEZNANY
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany
+tempo zadane:  nieokreslone
+pasmo:         3.541319 MHz
+filtr:         200 Hz
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+uwagi:         Pierwsze nagranie z USB po ustawieniu poziomu (09.10, 20:49 czasu PC).
+               Pas szumu filtra 200 Hz zmierzony: -6 dB 699-850 Hz, szczyt 799 Hz.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        8000 Hz, 1 kan., 62.0 s
+szczyt obrazu: 21.4 dB   (korekta poziomu -4.4 dB do celu 17 dB)
+tlo:           0.8 dB   kontrast 20.5 dB
+szerokosc:     200 Hz (8 z 32 pasm w granicach 10 dB)
+ton:           mediana 765 Hz, zakres 731-787 Hz, w zakresie czytelnym 100% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 80, 90pct 270   stosunek 13.50
+elementow:     176, klucz 36% czasu
+
+ocena:
+  - ton ROZLANY na 200 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - niski kontrast 20 dB (tło 1 dB)
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)
+  - stosunek długości elementów 13.5 (kropka:kreska powinno dać ok. 3) — możliwe dwie stacje albo trzaski
