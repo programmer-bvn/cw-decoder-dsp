@@ -10,7 +10,10 @@
 #      ./noc.sh 200000 40 256 '' 40 3000 5 1    # ostatnia 1 = tez gru
 #
 #  Pozycje: probki_na_czesc  epoki  batch  wzorzec_zbioru
-#           koperta_n  koperta_bledy  czesci  trenuj_gru
+#           koperta_n  koperta_bledy  czesci  trenuj_gru  rotacja  arch
+#
+#  arch (10. pozycja): dpu (domyślnie) albo fcn — dekoder ze znakiem na
+#  każdy krok 40 ms. Obie wdrażalne na KV260.
 #
 #  Pusty wzorzec ('') znaczy "wylicz z rozmiaru" -- wtedy zbior i katalogi
 #  przebiegow nazywaja sie od LACZNEJ liczby probek, wiec nowy eksperyment
@@ -140,6 +143,15 @@ TRENUJ_GRU="${8:-0}"
 # wyniki. Przerwana noc to noc stracona.
 ROTACJA="${9:-auto}"
 
+# ARCHITEKTURA GŁÓWNA. "fcn" od 09.10: próba na 400 tys. próbek i 5 epokach
+# przeczytała nagrania 9/9 w całości, dpu na 10 mln — 5/9. Krok fcn
+# trwa 66 ms (dpu 31 ms), więc ta sama noc mieści o połowę mniej epok.
+ARCH="${10:-dpu}"
+case "$ARCH" in
+    dpu|fcn) ;;
+    *) echo "PRZERWANO: arch '$ARCH' — dozwolone: dpu, fcn"; exit 1 ;;
+esac
+
 # Nazwa domyślna zgodna z tym, co generuje train_rtx.py bez --out.
 # Dzięki temu istniejący zbiór jest UŻYWANY, a nie generowany od nowa —
 # 800 MB i kilka minut do stracenia przy 12-godzinnym oknie na trening.
@@ -163,7 +175,7 @@ if [ -z "$ZBIOR" ]; then
         ZBIOR="morse_dataset.npz"
     fi
 fi
-RUN_DPU="runs/dpu_${LACZNIE}"
+RUN_DPU="runs/${ARCH}_${LACZNIE}"
 RUN_GRU="runs/gru_${LACZNIE}"
 LOGI="out"
 mkdir -p "$LOGI"
@@ -756,7 +768,7 @@ PY
 
     grep -a "val_accuracy" "$LOG" | tail -3
     echo
-    grep -aE "Dokładność na walidacji|klasa 0|znaki:|wzięty za ciszę" "$LOG" || true
+    grep -aE "Dokładność na walidacji|klasa 0|znaki:|wzięty za ciszę|środkowy znak|okno odczytane|CER:" "$LOG" || true
     return $RC
 }
 
@@ -841,9 +853,9 @@ przepustowosc () {
 
 etap "PRZEPUSTOWOSC"            przepustowosc
 
-etap "TRENING dpu -> $RUN_DPU"  trenuj dpu "$RUN_DPU"
-etap "KOPERTA dpu"              koperta dpu "$RUN_DPU"
-etap "NAGRANIA dpu"             nagrania dpu "$RUN_DPU"
+etap "TRENING $ARCH -> $RUN_DPU"  trenuj "$ARCH" "$RUN_DPU"
+etap "KOPERTA $ARCH"              koperta "$ARCH" "$RUN_DPU"
+etap "NAGRANIA $ARCH"             nagrania "$ARCH" "$RUN_DPU"
 
 if [ "$TRENUJ_GRU" = "1" ]; then
     etap "TRENING gru -> $RUN_GRU"  trenuj gru "$RUN_GRU"
@@ -880,7 +892,7 @@ RANO="$LOGI/RANO.txt"
     echo
 } > "$RANO"
 
-python - "$RANO" "$RUN_DPU" "$RUN_GRU" <<'PY' || true
+python - "$RANO" "$RUN_DPU" "$RUN_GRU" "$ARCH" <<'PY' || true
 import json
 import sys
 from pathlib import Path
@@ -888,7 +900,7 @@ from pathlib import Path
 rano = Path(sys.argv[1])
 w = ["WYNIKI TRENINGU", ""]
 
-for run, opis in ((sys.argv[2], "dpu (wdrażalny na KV260)"),
+for run, opis in ((sys.argv[2], f"{sys.argv[4]} (wdrażalny na KV260)"),
                   (sys.argv[3], "gru (odniesienie, NIE wdrażalny)")):
     p = Path(run) / "state.json"
     if not p.exists():
@@ -902,6 +914,14 @@ for run, opis in ((sys.argv[2], "dpu (wdrażalny na KV260)"),
     w.append(f"      epok {s.get('epoch', 0)}, "
              f"najlepsza walidacja {s.get('best_val_acc', -1) * 100:.2f}%"
              + (f" (epoka {va.index(max(va)) + 1})" if va else ""))
+    # fcn: val_accuracy liczy KROKI, nie odczyt — porównywalny z dpu jest
+    # dopiero "środkowy znak" z raportu po treningu (train_rtx.raport_fcn).
+    r = s.get("raport_fcn")
+    if r:
+        w.append(f"      (walidacja wyżej = kroki 40 ms z dobrą klasą)")
+        w.append(f"      środkowy znak {r['srodek'] * 100:.2f}%  <- jak dpu;"
+                 f"  okno w całości {r['okno'] * 100:.2f}%;"
+                 f"  CER {r['cer'] * 100:.2f}%")
     if vl:
         i = vl.index(min(vl)) + 1
         w.append(f"      val_loss: minimum {min(vl):.4f} w epoce {i}, "
@@ -924,7 +944,7 @@ PY
 {
     echo "KOPERTA I PRZYCZYNA BŁĘDÓW"
     echo
-    for A in dpu gru; do
+    for A in "$ARCH" gru; do
         F="$LOGI/koperta_${A}_${STEMPEL}.txt"
         [ "$A" = "gru" ] && [ "$TRENUJ_GRU" != "1" ] && continue
         if [ -f "$F" ]; then
@@ -959,7 +979,7 @@ PY
 
     # Odczyt z prawdziwego radia idzie PRZED lista logow, bo to jest
     # liczba, po ktora sie tu zaglada. Reszta to droga do niej.
-    for A in dpu gru; do
+    for A in "$ARCH" gru; do
         F="$LOGI/nagrania_${A}_${STEMPEL}.txt"
         [ -f "$F" ] || continue
         echo "PRAWDZIWE NAGRANIA ($A)"

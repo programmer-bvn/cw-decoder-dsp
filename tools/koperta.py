@@ -173,26 +173,54 @@ RODZAJE = ("trafiony", "zgubiony element", "wstawiony element",
 # --------------------------------------------------------------------------
 # POMIARY
 # --------------------------------------------------------------------------
-def _przewiduj(model, obrazy: list[np.ndarray], batch: int = 256) -> np.ndarray:
+def _przewiduj(model, obrazy: list[np.ndarray], laby=None,
+               batch: int = 256) -> np.ndarray:
+    """Znak z etykiety (środkowy) według modelu, dla każdego obrazu.
+
+    Model "fcn" zwraca znak na każdy krok, nie na okno. Pytanie zadajemy
+    mu to samo co "dpu": jaki znak stoi tam, gdzie leży znak z etykiety —
+    czyli odcinek odczytu najlepiej pokrywający się z położeniem znaku
+    (`laby` = granice w próbkach klipu). Bez tego koperty obu architektur
+    nie byłyby porównywalne.
+    """
     X = np.stack(obrazy)[..., None].astype(np.float32)
     p = model.predict(X, batch_size=batch, verbose=0)
-    return p.argmax(1)
+    if p.ndim == 2:
+        return p.argmax(1)
+    from dsp import sekwencja
+    wynik = np.zeros(len(p), dtype=np.int64)
+    for i in range(len(p)):
+        od = sekwencja.dekoduj_kroki(p[i])
+        a, b = laby[i] if laby is not None else (float("nan"),) * 2
+        if not (np.isfinite(a) and np.isfinite(b)):
+            wynik[i] = max(od, key=lambda o: o[3])[2] if od else 0
+            continue
+        ka = frontend.sample_to_window_frame(a) / sekwencja.FCN_KROK
+        kb = frontend.sample_to_window_frame(b) / sekwencja.FCN_KROK
+        najl, cid = 0.0, 0
+        for k0, k1, c, _ in od:
+            wsp = min(kb, k1) - max(ka, k0)
+            if wsp > najl:
+                najl, cid = wsp, c
+        wynik[i] = cid
+    return wynik
 
 
 def mierz_koperte(model, n: int, seed: int = 20260909):
     """Siatka tempo x ton na sygnale idealnym. Zwraca (trafienia, liczby)."""
     rng = np.random.default_rng(seed)
-    obrazy, prawdy, komorki = [], [], []
+    obrazy, prawdy, komorki, laby = [], [], [], []
 
     for iw, wpm in enumerate(WPM_SIATKA):
         for it, tone in enumerate(TON_SIATKA):
             for _ in range(n):
-                audio, znak, _, _ = czysty(rng, wpm, tone)
+                audio, znak, la, lb = czysty(rng, wpm, tone)
                 obrazy.append(frontend.to_net_image(audio))
                 prawdy.append(C.CHAR_TO_ID[znak])
                 komorki.append((iw, it))
+                laby.append((la, lb))
 
-    pred = _przewiduj(model, obrazy)
+    pred = _przewiduj(model, obrazy, laby)
     prawdy = np.asarray(prawdy)
     traf = np.zeros((len(WPM_SIATKA), len(TON_SIATKA)), dtype=np.int32)
     ile = np.zeros_like(traf)
@@ -212,7 +240,7 @@ def mierz_bledy(model, n: int, seed: int = 20260910):
     faktycznym jest jedyne sensowne.
     """
     rng = np.random.default_rng(seed)
-    obrazy, prawdy, wpmy, widoki = [], [], [], []
+    obrazy, prawdy, wpmy, widoki, laby = [], [], [], [], []
 
     for _ in range(n):
         text, znak = _grupa(rng)
@@ -222,8 +250,9 @@ def mierz_bledy(model, n: int, seed: int = 20260910):
         prawdy.append(znak)
         wpmy.append(float(meta["wpm"]))
         widoki.append(widocznosc(meta["lab_a"], meta["lab_b"]))
+        laby.append((meta["lab_a"], meta["lab_b"]))
 
-    pred_id = _przewiduj(model, obrazy)
+    pred_id = _przewiduj(model, obrazy, laby)
     pred = [C.ALPHABET[i] for i in pred_id]
     rodzaje = [rodzaj_bledu(t, p) for t, p in zip(prawdy, pred)]
     return (np.asarray(rodzaje), np.asarray(wpmy, dtype=np.float64),
