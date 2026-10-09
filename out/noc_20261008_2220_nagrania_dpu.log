@@ -1,0 +1,79 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791541156.725043   12455 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1791541158.984299   12455 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 48 variables whereas the saved optimizer has 52 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1791541167.010221   12511 service.cc:153] XLA service 0x79ce640275b0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1791541167.010745   12511 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1791541167.019244   12511 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1791541167.088057   12511 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1791541167.106658   12511 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791541168.460215   12583 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 296 bytes spill stores, 296 bytes spill loads
+
+I0000 00:00:1791541171.947660   12511 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+I0000 00:00:1791541173.934107   12702 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 380 bytes spill stores, 380 bytes spill loads
+
+I0000 00:00:1791541174.095494   12512 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791541184.180466   12844 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 284 bytes spill stores, 284 bytes spill loads
+
+I0000 00:00:1791541184.208722   12510 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791541184.881133   12853 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_6', 88 bytes spill stores, 88 bytes spill loads
+
+I0000 00:00:1791541186.684619   12511 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791541187.389249   12967 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_6', 88 bytes spill stores, 88 bytes spill loads
+
+I0000 00:00:1791541188.955584   12966 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 280 bytes spill stores, 280 bytes spill loads
+
+I0000 00:00:1791541192.570958   12510 dot_search_space.cc:240] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+I0000 00:00:1791541193.273244   13095 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_6', 88 bytes spill stores, 88 bytes spill loads
+
+I0000 00:00:1791541194.780841   13101 subprocess_compilation.cc:348] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_MatMul_4', 288 bytes spill stores, 288 bytes spill loads
+
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/dpu_10000000/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt surowy:  EQQQQCCCCQQQBBBBBIQQQ22BBHVVVQQQ22BVVPSEEESSSQQ22BVVVSSSEQQQCCCQCCCCCEESQQQQ22BBBVSSEEEPP22MMSSEEEESQ222BBBVVVVOMMMXXTKKSFFEEAALLAUURISIIII59QASSSASSBRRIIUUAAAIIUUXXQTTTTQTHSIIISBBBBYYDGOOSSSBYYDDDGGOOSSSHSSP22MMSEEHSSQ222BBVVV
+  po scaleniu 0.35s: EQCQBIQQ2BBHVQQ22BVPSEESQQ2BVVSSEQCQCCESQQ2BBVSEP22MSSESQ22BVOMMXTKSFEEAALLAUURISII59QASSASSBRIIUUAAIUXQTTQTHSIIISBYDGOSSBYDDGGOSSSHSP22MMSEEHSQ2BV
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt surowy:  GGTCCCCRRQQCCMTMTCQQCQBBVV8SQQI2BVVNNPSEYYLC55CQQCQCQCQQ4RRRRQDEEESSSSQQ22BBVNNSSQ22LVVETPPKK66SPPPKBBSPP2KKP22KKKKBPSEVVVVE73SS85554VVVVVVVEEIVVVVVVMEEIISISAIIUUSSTTIIIAUAAAAUUUUARIUUSSSSEEETSIAAIQCCCQCCCQQDDEDEQ2Q2BQ2BVPPPSEE
+  po scaleniu 0.35s: GTCCRQQCCMTMTCQQCQBBVV8SQQI2BVVNPSEYLC55CQCQCQCQQ4RQDESQ2BVNSSQ22LVVETPKK6SPPKBSP2KKP2KKBPSEVVVE73S85554VVVEIVVVMEISISAIUSTIIAUAAUARIUSETSIAIQCCQCCQQDEDEQ2Q2BQ2BVPSE
+  nadane: CQ SQ2BVN 73
+  w całości:    2/3   (CQ 73)
+  w kolejności: 3/3   (CQ SQ2BVN 73)
+  po scaleniu:  w całości 3/3, w kolejności 3/3, odczyt krótszy o 27%
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt surowy:  QQCCCQQCCCQDDDEEDEQ2BQ2BVSQ2PPSEE
+  po scaleniu 0.35s: QCCQCCQDDEDEQ2BQ2BVSQ2PSE
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    3/6   (CQx2 DE)
+  w kolejności: 3/6   (CQx2 DE)
+  po scaleniu:  w całości 3/6, w kolejności 3/6, odczyt krótszy o 24%
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt surowy:  000000090A099000904000000000
+  po scaleniu 0.35s: 0000090A090009040000
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 5/9, w kolejności 6/9
+RAZEM po scaleniu 0.35s: w całości 6/9, w kolejności 6/9
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.
+zapisane: out/nagrania_dpu_20261008_2220.txt

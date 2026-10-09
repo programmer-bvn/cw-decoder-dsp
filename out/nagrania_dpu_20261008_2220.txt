@@ -1,0 +1,46 @@
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/dpu_10000000/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt surowy:  EQQQQCCCCQQQBBBBBIQQQ22BBHVVVQQQ22BVVPSEEESSSQQ22BVVVSSSEQQQCCCQCCCCCEESQQQQ22BBBVSSEEEPP22MMSSEEEESQ222BBBVVVVOMMMXXTKKSFFEEAALLAUURISIIII59QASSSASSBRRIIUUAAAIIUUXXQTTTTQTHSIIISBBBBYYDGOOSSSBYYDDDGGOOSSSHSSP22MMSEEHSSQ222BBVVV
+  po scaleniu 0.35s: EQCQBIQQ2BBHVQQ22BVPSEESQQ2BVVSSEQCQCCESQQ2BBVSEP22MSSESQ22BVOMMXTKSFEEAALLAUURISII59QASSASSBRIIUUAAIUXQTTQTHSIIISBYDGOSSBYDDGGOSSSHSP22MMSEEHSQ2BV
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt surowy:  GGTCCCCRRQQCCMTMTCQQCQBBVV8SQQI2BVVNNPSEYYLC55CQQCQCQCQQ4RRRRQDEEESSSSQQ22BBVNNSSQ22LVVETPPKK66SPPPKBBSPP2KKP22KKKKBPSEVVVVE73SS85554VVVVVVVEEIVVVVVVMEEIISISAIIUUSSTTIIIAUAAAAUUUUARIUUSSSSEEETSIAAIQCCCQCCCQQDDEDEQ2Q2BQ2BVPPPSEE
+  po scaleniu 0.35s: GTCCRQQCCMTMTCQQCQBBVV8SQQI2BVVNPSEYLC55CQCQCQCQQ4RQDESQ2BVNSSQ22LVVETPKK6SPPKBSP2KKP2KKBPSEVVVE73S85554VVVEIVVVMEISISAIUSTIIAUAAUARIUSETSIAIQCCQCCQQDEDEQ2Q2BQ2BVPSE
+  nadane: CQ SQ2BVN 73
+  w całości:    2/3   (CQ 73)
+  w kolejności: 3/3   (CQ SQ2BVN 73)
+  po scaleniu:  w całości 3/3, w kolejności 3/3, odczyt krótszy o 27%
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt surowy:  QQCCCQQCCCQDDDEEDEQ2BQ2BVSQ2PPSEE
+  po scaleniu 0.35s: QCCQCCQDDEDEQ2BQ2BVSQ2PSE
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    3/6   (CQx2 DE)
+  w kolejności: 3/6   (CQx2 DE)
+  po scaleniu:  w całości 3/6, w kolejności 3/6, odczyt krótszy o 24%
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt surowy:  000000090A099000904000000000
+  po scaleniu 0.35s: 0000090A090009040000
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 5/9, w kolejności 6/9
+RAZEM po scaleniu 0.35s: w całości 6/9, w kolejności 6/9
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.
