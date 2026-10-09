@@ -1,0 +1,5 @@
+﻿# SZUM PASMA - bez sygnalu; do banku tla generatora.
+czestotliwosc: 7007289 Hz (CI-V przed), 7007289 Hz (po)
+tryb/filtr:    07 / FIL1 (CI-V przed), FIL1 (po)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+czas:          20261009_2140, 180 s
