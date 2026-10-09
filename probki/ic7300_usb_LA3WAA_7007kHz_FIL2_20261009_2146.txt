@@ -5,8 +5,8 @@ nadajnik:      NIEZNANY — LA3WAA w pileupie (wolanie DX-a)
 odbiornik:     IC-7300MK2  (odbior wlasny)
 klucz:         nieznany (obca stacja)
 tempo zadane:  nieokreslone
-pasmo:         7.007447 MHz, CW-R (odczyt CI-V)
-filtr:         FIL2 (odczyt CI-V)
+pasmo:         7.007447 MHz na poczatku, 7.008744 MHz na koncu, CW-R (CI-V)
+filtr:         FIL2 na poczatku, FIL3 na koncu (CI-V) — przestrajane w trakcie
 tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
 uwagi:         21:46:41-21:49:4x czasu PC. Pileup na 40 m, wiele stacji naraz.
                LA3WAA rozpoznany uchem przez operatora; reszta tresci nieznana.
