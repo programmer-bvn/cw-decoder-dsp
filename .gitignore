@@ -60,6 +60,13 @@ out/xray_lab/
 !runs/**/log.csv
 !runs/**/state.json
 !out/noc_*.log
+# Log samego treningu (pasek postepu Kerasa): 88 MB przy 10 mln probek,
+# a GitHub odrzuca pliki > 100 MB. Zostaje na dysku W: (od 09.10, decyzja
+# operatora); wynik niosa runs/**/log.csv i state.json. Wzorzec waski,
+# zeby nie zlapac malych logow koperty i nagran (noc_*_koperta_dpu.log).
+out/noc_????????_????_dpu.log
+out/noc_????????_????_gru.log
+out/noc_????????_????_fcn.log
 
 # Pomiary i podsumowanie nocy ZOSTAJA. Sa male (po kilka kB), a bez
 # modelu nieodtwarzalne -- koperta powstaje z konkretnych wag, ktore

@@ -1000,6 +1000,9 @@ echo "============================================================"
 #
 #  CO trafia do commita: TYLKO historia treningu i pomiary (runs/**/log.csv,
 #  runs/**/state.json, out/*.log, out/koperta_*.txt, out/RANO.txt).
+#  BEZ logu samego treningu (out/noc_<stempel>_dpu.log): pasek postępu
+#  Kerasa robi z niego 88 MB przy 10 mln próbek, a GitHub odrzuca pliki
+#  > 100 MB. Wyklucza go .gitignore; plik zostaje na dysku W: (09.10).
 #  Świadomie NIE "git add -A", i commit idzie z listą ścieżek (tryb --only):
 #  skrypt bez nadzoru nie ma prawa wciągnąć do historii zmian w kodzie
 #  zostawionych z wieczora — także tych, które operator już dodał do indeksu.
