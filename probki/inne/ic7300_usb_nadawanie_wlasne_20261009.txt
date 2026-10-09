@@ -1,0 +1,4 @@
+# Proba 09.10, 22:23:19-22:24:23 czasu PC: operator nadawal SQ2BVN.
+# Na wyjsciu USB (AF) NIE MA sladu kluczowania: tylko staly pas szumu filtra,
+# poziom RMS ok. 0,005 (przy odbiorze stacji 0,05-0,4). Nadawanie wlasne nie
+# trafia na USB AF w tej konfiguracji radia. Nie uzywac jako prawdy "SQ2BVN".
