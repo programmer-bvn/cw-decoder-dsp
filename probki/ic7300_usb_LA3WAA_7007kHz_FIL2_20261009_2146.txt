@@ -1,0 +1,32 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        LA3WAA
+nadajnik:      NIEZNANY — LA3WAA w pileupie (wolanie DX-a)
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany (obca stacja)
+tempo zadane:  nieokreslone
+pasmo:         7.007447 MHz, CW-R (odczyt CI-V)
+filtr:         FIL2 (odczyt CI-V)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+uwagi:         21:46:41-21:49:4x czasu PC. Pileup na 40 m, wiele stacji naraz.
+               LA3WAA rozpoznany uchem przez operatora; reszta tresci nieznana.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        8000 Hz, 1 kan., 180.0 s
+szczyt obrazu: 22.4 dB   (korekta poziomu -5.4 dB do celu 17 dB)
+tlo:           -3.7 dB   kontrast 26.4 dB
+szerokosc:     375 Hz (15 z 32 pasm w granicach 10 dB)
+ton:           mediana 716 Hz, zakres 520-863 Hz, w zakresie czytelnym 61% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 60, 90pct 160   stosunek 8.00
+elementow:     423, klucz 19% czasu
+
+ocena:
+  - ton ROZLANY na 375 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - ton w zakresie czytelnym tylko 61% czasu (mediana 716 Hz) — konieczne przestrojenie
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)
+  - stosunek długości elementów 8.0 (kropka:kreska powinno dać ok. 3) — możliwe dwie stacje albo trzaski
