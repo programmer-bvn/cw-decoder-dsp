@@ -1,0 +1,35 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        F5OHS
+nadajnik:      NIEZNANY — stacja F5OHS z pasma
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany (obca stacja)
+tempo zadane:  nieokreslone
+pasmo:         ?
+filtr:         ?
+tor:           USB audio z IC-7300MK2 (kabel USB, bez mikrofonu)
+uwagi:         Znak F5OHS na poczatku nagrania, potem sam szum. Potwierdzony
+               uchem przez operatora i optycznie na wodospadzie (09.10).
+               USB NIE jest wolne od problemu: w obrazie stoi jasny pas szumu
+               filtra p.cz. (ok. 10 pasm mel), a CW to cienka linia w nim.
+               Model fcn z 09.10 czytal tu glownie '0' — pas wyglada jak kreska.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        48000 Hz, 2 kan., 41.2 s
+szczyt obrazu: 27.1 dB   (korekta poziomu -10.1 dB do celu 17 dB)
+tlo:           9.5 dB   kontrast 18.3 dB
+szerokosc:     225 Hz (9 z 32 pasm w granicach 10 dB)
+ton:           mediana 798 Hz, zakres 783-812 Hz, w zakresie czytelnym 100% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 20, 90pct 80   stosunek 4.00
+elementow:     75, klucz 8% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 27.1 dB dochodzi do DB_MAX=24; potrzeba -10 dB
+  - ton ROZLANY na 225 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - niski kontrast 18 dB (tło 10 dB)
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)

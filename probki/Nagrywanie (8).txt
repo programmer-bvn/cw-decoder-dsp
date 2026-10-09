@@ -1,0 +1,30 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        
+nadajnik:      
+klucz:         
+tempo zadane:  
+pasmo:         
+filtr:         
+tor:           
+uwagi:         
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        48000 Hz, 2 kan., 105.2 s
+szczyt obrazu: 25.4 dB   (korekta poziomu -8.4 dB do celu 17 dB)
+tlo:           8.6 dB   kontrast 15.1 dB
+szerokosc:     250 Hz (10 z 32 pasm w granicach 10 dB)
+ton:           mediana 753 Hz, zakres 696-799 Hz, w zakresie czytelnym 100% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 20, 90pct 80   stosunek 4.00
+elementow:     454, klucz 17% czasu
+
+ocena:
+  - PRZESTEROWANE: szczyt 25.4 dB dochodzi do DB_MAX=24; potrzeba -8 dB
+  - ton ROZLANY na 250 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - niski kontrast 15 dB (tło 9 dB)
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)
