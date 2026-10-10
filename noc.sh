@@ -15,6 +15,10 @@
 #  arch (10. pozycja): dpu (domyślnie) albo fcn — dekoder ze znakiem na
 #  każdy krok 40 ms. Obie wdrażalne na KV260.
 #
+#  wzorzec_zbioru (4. pozycja): '-' = czesci/, albo SAMA NAZWA KATALOGU,
+#  np. czesci_rt (zbiór z prawdziwym tłem, 10.10). Z noc.bat nigdy wzorca
+#  z gwiazdką: wsl.exe rozwija ją w listę plików.
+#
 #  Pusty wzorzec ('') znaczy "wylicz z rozmiaru" -- wtedy zbior i katalogi
 #  przebiegow nazywaja sie od LACZNEJ liczby probek, wiec nowy eksperyment
 #  nigdy nie wchodzi w katalog starego.
@@ -168,6 +172,16 @@ ZBIOR="${4:-}"
 # Przy okazji stary przebieg zostaje do porownania, a to jest caly sens:
 # ta sama architektura, 5x wiecej danych.
 LACZNIE=$(( N_PROBEK * CZESCI ))
+# Sama nazwa katalogu (bez gwiazdki i bez .npz) = części w tym katalogu.
+# Tak należy podawać zbiór z noc.bat: wsl.exe ROZWIJA gwiazdkę w listę
+# plików (sprawdzone 10.10: "czesci/morse_200000_0*.npz" przyszło jako
+# dziesięć argumentów), co przesunęłoby wszystkie dalsze pozycje — liczbę
+# części, architekturę. Przy pierwszej nocy plików jeszcze nie ma i błąd
+# wyszedłby dopiero przy wznowieniu.
+case "$ZBIOR" in
+    ""|*"*"*|*.npz) ;;
+    *) ZBIOR="${ZBIOR%/}/morse_${N_PROBEK}_*.npz" ;;
+esac
 if [ -z "$ZBIOR" ]; then
     if [ "$CZESCI" -gt 1 ]; then
         ZBIOR="czesci/morse_${N_PROBEK}_*.npz"
@@ -175,8 +189,18 @@ if [ -z "$ZBIOR" ]; then
         ZBIOR="morse_dataset.npz"
     fi
 fi
-RUN_DPU="runs/${ARCH}_${LACZNIE}"
-RUN_GRU="runs/gru_${LACZNIE}"
+# Zbiór spoza czesci/ (np. czesci_rt/ z prawdziwym tłem od 10.10) dostaje
+# katalog przebiegu z dopiskiem — inaczej fcn na 2 mln z prawdziwym tłem
+# i bez niego weszłyby do tego samego runs/fcn_2000000, a wznowienie wzięłoby
+# jeden za drugi.
+KAT_ZBIORU="$(dirname "$ZBIOR")"
+DOPISEK=""
+case "$KAT_ZBIORU" in
+    .|czesci) ;;
+    *) DOPISEK="_$(basename "$KAT_ZBIORU")" ;;
+esac
+RUN_DPU="runs/${ARCH}_${LACZNIE}${DOPISEK}"
+RUN_GRU="runs/gru_${LACZNIE}${DOPISEK}"
 LOGI="out"
 mkdir -p "$LOGI"
 
@@ -647,7 +671,11 @@ if [ "$GENERUJ" = "1" ]; then
     fi
     if [ "$CZESCI" -gt 1 ]; then
         echo "generuję $CZESCI części po $N_PROBEK próbek (~14 min każda)..."
-        GEN_ARG="--shards $CZESCI --out czesci/morse_${N_PROBEK}.npz"
+        # Części tam, gdzie wskazuje wzorzec zbioru: "kat/nazwa_*.npz" ->
+        # --out "kat/nazwa.npz" (train_rtx dopisuje _00, _01...). Do 10.10
+        # było na sztywno czesci/morse_N.npz — zbiór w innym katalogu
+        # (czesci_rt/) nigdy by nie powstał, a noc uznałaby go za brakujący.
+        GEN_ARG="--shards $CZESCI --out ${ZBIOR%_\*.npz}.npz"
     else
         echo "generuję $N_PROBEK próbek..."
         GEN_ARG="--out $ZBIOR"
