@@ -767,6 +767,54 @@ gorzej na antenie. Następny krok to prawdziwe tło w danych (bank szumu
 
 ---
 
+### Prawdziwe tło w generatorze — pierwsza noc (10.10)
+
+**Co zrobiono.** Połowa klipów dostaje tło z `probki/szum` (pusty kanał
+IC-7300 przez USB, 80 i 40 m, filtry 200–1250 Hz): pas szumu filtra przy
+tonie stacji, ARW zawsze, jasność pasa 0–17 dB, stacja przez SNR −3…20 dB
+(TEST 19). Noc: 4 mln próbek w `czesci_rt/`, fcn, 12 epok
+(`runs/fcn_4000000_czesci_rt`).
+
+**Zmierzone** — ten sam komplet nagrań dla trzech modeli fcn (w całości /
+w kolejności):
+
+| | fcn próba | fcn 10 mln | **fcn 4 mln + prawdziwe tło** |
+|---|---|---|---|
+| mic2 + mic3 (9 słów) | 9/9 · 9/9 | 7/9 · 7/9 | 7/9 · 8/9 |
+| SN0FMT ×3 (12 słów) | 0 · 4 | 0 · 4 | **6 · 8** |
+| F5OHS, DP75HSC, LA3WAA, LA4CIR, OK1FPS (5) | 2 · 2 | 2 · 2 | 0 · **4** |
+| **radio razem (17 słów)** | 2 · 6 | 2 · 6 | **6 · 12** |
+
+Na odczytach widać różnicę jakościową: znacznie mniej ciągów `0` (pas
+szumu przestał być kreską), SN0FMT czytany jako
+`…QSTDEEN0FMQ…SN000FMT…TEST`, w LA4CIR pojawiają się kawałki tekstu QSO
+(`NAME`, `CALL`).
+
+**Uczciwie o tym, czego to NIE dowodzi.**
+- Prawie cały zysk „w całości" jest na SN0FMT — a bank szumu nagrano tego
+  samego wieczoru, na tej samej częstotliwości (3565 kHz). To przeciek
+  warunków (nie samych próbek) i wynik jest tam optymistyczny.
+- Na pozostałych pięciu stacjach „w całości" spadło z 2/5 do 0/5
+  (DP75HSC i LA3WAA, czytane wcześniej w całości, teraz tylko we
+  fragmentach), a „w kolejności" wzrosło z 2/5 do 4/5. Wynik mieszany.
+- Nowy błąd: podwojone litery (`1FFPSS1FFP` przy OK1FPS) — odczyt dzieli
+  jeden znak na dwa odcinki. Hipoteza: ARW i pas szumu robią krótkie
+  „dziury" w środku elementu, a `dekoduj_kroki` dzieli odcinki ciszą.
+- Walidacja na syntetyku (97,77% środkowego znaku) nie jest porównywalna
+  z wcześniejszymi — połowa zbioru ma teraz trudne, prawdziwe tło.
+
+**Wniosek.** Kierunek jest dobry (radio „w kolejności" 6 → 12 z 17,
+koniec ciągów `0`), ale bank szumu jest za mały i za jednorodny (jeden
+wieczór, dwa pasma), a test częściowo z tych samych warunków. Następne:
+nagrania szumu i stacji z innych pasm i pór (20 m), i test tylko na
+stacjach spoza warunków banku.
+
+**Gdzie mieszka.** `dsp/radio.py` i `train_rtx.py` (`bank_szumu`,
+`szum_prawdziwy`, `receive`), stałe `REAL_NOISE_*` w `dsp/config.py`,
+TEST 19 w `diag.py`, bank `probki/szum/`.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
