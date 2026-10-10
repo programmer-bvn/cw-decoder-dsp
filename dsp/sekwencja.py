@@ -21,7 +21,9 @@ FCN_KROK = 2
 FCN_KROKI = C.IMG_FRAMES // FCN_KROK
 
 
-def dekoduj_kroki(probs: np.ndarray, prog_ciszy: float = 0.5) -> list:
+def dekoduj_kroki(probs: np.ndarray, prog_ciszy: float = 0.5,
+                  sklejaj: bool = True,
+                  prog_pewnej_ciszy: float = 0.8) -> list:
     """[kroki, N_CLASSES] -> [(krok_od, krok_do, id, pewność)].
 
     Granicą znaków jest CISZA (klasa 0 >= prog_ciszy), a znak odcinka to
@@ -41,7 +43,31 @@ def dekoduj_kroki(probs: np.ndarray, prog_ciszy: float = 0.5) -> list:
         cid = int(np.argmax(suma)) + 1
         wynik.append((k, k1, cid, float(suma[cid - 1] / (k1 - k))))
         k = k1
-    return wynik
+    if not sklejaj:
+        return wynik
+
+    # SKLEJANIE ROZCIĘTYCH LITER. Zmierzone 10.10 na nagraniach z USB
+    # (model fcn z prawdziwym tłem): gdy dwa sąsiednie odcinki dzieli 1 krok
+    # ciszy, w 54% par to TEN SAM znak (2 kroki: 36%, 5+: 5-13%) — czyli
+    # jedna litera rozcięta na dwie (OK1FPS -> 1FFPS). W rozcięciu cisza
+    # jest słaba: p(cisza) 0,51-0,64, a między prawdziwymi znakami
+    # 0,98-1,00. W etykietach generatora przerwa 1 krok to ~0,1% par.
+    # Sklejamy więc TYLKO ten sam znak, i tylko gdy przerwa ma 1 krok albo
+    # nie ma w niej ani jednego kroku pewnej ciszy. Różnych znaków nie
+    # skleja nigdy — nie może zgubić litery.
+    sklejone = []
+    for o in wynik:
+        if sklejone:
+            p = sklejone[-1]
+            przerwa = probs[p[1]:o[0], 0]
+            if (o[2] == p[2] and (o[0] - p[1] <= 1
+                                  or float(przerwa.max()) < prog_pewnej_ciszy)):
+                d1, d2 = p[1] - p[0], o[1] - o[0]
+                sklejone[-1] = (p[0], o[1], p[2],
+                                (p[3] * d1 + o[3] * d2) / (d1 + d2))
+                continue
+        sklejone.append(o)
+    return sklejone
 
 
 def kroki_nagrania(obraz: np.ndarray, model, krok_okna: int = 32,

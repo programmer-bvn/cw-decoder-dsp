@@ -1359,9 +1359,24 @@ def test_dekoder_fcn():
         p[np.arange(len(lab)), lab] = 1.0
         return p / p.sum(axis=1, keepdims=True)
 
-    od = sa.dekoduj_kroki(jedynki(np.array([0, E, E, 0, E, E, 0])))
-    check("dwa takie same znaki rozdzielone ciszą = dwa znaki ('EE')",
+    # Prawdziwe podwójne litery dzieli przerwa międzyznakowa: >= 2 kroki
+    # PEWNEJ ciszy (w etykietach generatora 1 krok to ~0,1% par).
+    od = sa.dekoduj_kroki(jedynki(np.array([0, E, E, 0, 0, E, E, 0])))
+    check("dwa takie same znaki rozdzielone pewną ciszą = dwa znaki ('EE')",
           [o[2] for o in od] == [E, E], f"odczyt {od}")
+
+    # Rozcięta litera (10.10, OK1FPS -> 1FFPS): ten sam znak, a cisza
+    # między kawałkami słaba (p 0,5-0,65) albo 1-krokowa -> jeden znak.
+    F_, P_ = C.CHAR_TO_ID["F"], C.CHAR_TO_ID["P"]
+    p = jedynki(np.array([0, F_, F_, 0, 0, F_, F_, 0, 0, P_, P_, 0]))
+    p[3:5, 0], p[3:5, F_] = 0.6, 0.4       # słaba cisza w rozcięciu F
+    od = sa.dekoduj_kroki(p)
+    check("rozcięta litera ze słabą ciszą sklejona ('FP', nie 'FFP')",
+          [o[2] for o in od] == [F_, P_], f"odczyt {[o[2] for o in od]}")
+    p = jedynki(np.array([0, F_, F_, 0, P_, P_, 0]))
+    od = sa.dekoduj_kroki(p)
+    check("RÓŻNE znaki nigdy się nie sklejają, nawet przy 1 kroku ciszy",
+          [o[2] for o in od] == [F_, P_], f"odczyt {[o[2] for o in od]}")
 
     # Początek długiego '0' wygląda jak '9' (nie widać końca) — słabo;
     # dalsza część mocno '0'. Głos odcinka ma dać '0', nie '90'.
