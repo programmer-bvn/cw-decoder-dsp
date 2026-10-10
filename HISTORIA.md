@@ -717,6 +717,56 @@ w `noc.sh`.
 
 ---
 
+### Dekoder fcn: powtórzenia znikły u źródła — ale syntetyk i radio się rozjechały
+
+**Objaw, który to otworzyło.** Odczyty typu `CCQQQCCCC` (wpis „Powtórzenia
+tego samego znaku") i gubienie krótkich znaków przy dekodowaniu
+przesuwanym oknem (wpis „Znaki krótkie są gubione" — OBALONE). Oba
+wskazywały na etap dekodowania, nie na sieć.
+
+**Co zrobiono, 09.10.** Architektura `fcn`: sam splot, wyjście = znak na
+każdy krok 40 ms (64 kroki na okno), uczona na etykietach na ramkę (`yf`,
+z konstrukcji generatora — bez CTC). Odczyt: cisza dzieli odcinki, znak
+odcinka to głos całego odcinka (`dekoduj_kroki`), nagranie zszywane ze
+środków okien. Miara porównywalna z `dpu`: „środkowy znak".
+
+**Zmierzone:**
+
+| | dpu 10 mln | fcn próba (0,4 mln, 5 ep.) | fcn 10 mln (12 ep.) |
+|---|---|---|---|
+| środkowy znak (syntetyk) | 99,46% | 98,19% | **99,69%** |
+| mic2 + mic3 (9 słów) | 5/9 | **9/9** | 7/9 |
+| nagrania z USB IC-7300 (15 słów) | — | 1/15 | 1/15 |
+| koperta tonu (≥ 50%) | 650–850 Hz | 650–750 Hz | **750 Hz** |
+| krok treningu | 31 ms | 66 ms | 62 ms |
+
+Powtórzenia zniknęły: scalanie 0,35 s nie zmienia już odczytu (różnica
+0 słów). Na syntetyku fcn 10 mln ma błąd 0,31% wobec 0,54% dpu.
+
+**Ale.** Dłuższy trening na większym syntetyku POGORSZYŁ odczyt
+prawdziwych nagrań z mikrofonu (9/9 → 7/9: zgubione oba SQ2BVN na mic3)
+i ZWĘZIŁ kopertę tonu do jednej kolumny 750 Hz. To ten sam wzór co we
+wpisie „Więcej danych zwęża kopertę tonu": lepsze dopasowanie do
+rozkładu generatora = ostrzejsze milczenie poza nim. 9 słów to mało
+(różnica 2 słów), więc to obserwacja, nie prawo — ale kierunek jest
+zgodny z wcześniejszym.
+
+**Nagrania z pasma przez USB (IC-7300, 09.10) czytają oba modele fcn
+źle**: z 15 słów tylko LA3WAA w całości. Przyczyna zmierzona na
+wodospadzie: jasny pas szumu filtra p.cz., AGC w przerwach, trzaski
+kluczowania — czego generator nie robi (NOTATKI, 09.10 wieczór).
+
+**Wniosek.** Wąskim gardłem przestał być dekoder, a stał się GENERATOR:
+dalsze trenowanie na tym samym syntetyku poprawia syntetyk i nic albo
+gorzej na antenie. Następny krok to prawdziwe tło w danych (bank szumu
+`probki/szum/`), a test to nagrania z pasma, nie walidacja.
+
+**Gdzie mieszka.** `--arch fcn` w `train_rtx.py`, `dsp/sekwencja.py`,
+`tools/nagrania.py` (sam rozpoznaje fcn), `diag.py` TEST 18,
+`noc.sh` 10. pozycja = arch.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
