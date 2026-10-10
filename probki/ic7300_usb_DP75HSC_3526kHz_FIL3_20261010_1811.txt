@@ -1,0 +1,34 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        DP75HSC
+nadajnik:      NIEZNANY — stacja okolicznosciowa DP75HSC (lokalizacja: berlin)
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany (obca stacja)
+tempo zadane:  nieokreslone
+pasmo:         3.526049 MHz, CW (odczyt CI-V przed nagraniem)
+filtr:         FIL3 (odczyt CI-V przed nagraniem)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+uwagi:         10.10, 18:11:11-18:14:15 czasu PC, 182 s. Znak rozpoznany uchem
+               przez operatora. Nagrane w trakcie nocy (generowanie na 11
+               rdzeniach) — 181,92 s z 182, bez zgloszen przepelnienia.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        8000 Hz, 1 kan., 181.9 s
+szczyt obrazu: 21.9 dB   (korekta poziomu -4.9 dB do celu 17 dB)
+tlo:           -2.5 dB   kontrast 22.3 dB
+szerokosc:     300 Hz (12 z 32 pasm w granicach 10 dB)
+ton:           mediana 712 Hz, zakres 643-1008 Hz, w zakresie czytelnym 68% czasu
+tempo:         60.0 WPM (najkrotszy element 20 ms)
+elementy [ms]: 10pct 20, mediana 20, 90pct 160   stosunek 8.00
+elementow:     435, klucz 13% czasu
+
+ocena:
+  - ton ROZLANY na 300 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
+  - niski kontrast 22 dB (tło -3 dB)
+  - ton w zakresie czytelnym tylko 68% czasu (mediana 712 Hz) — konieczne przestrojenie
+  - tempo 60 WPM POZA zakresem treningu (13-27 WPM)
+  - stosunek długości elementów 8.0 (kropka:kreska powinno dać ok. 3) — możliwe dwie stacje albo trzaski
