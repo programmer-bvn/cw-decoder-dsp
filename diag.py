@@ -720,13 +720,18 @@ def test_standalone():
                  "FIST_DRIFT", "FIST_DRIFT_TAU_S", "GAP_JITTER",
                  "CHIRP_HZ", "SAG_DB", "SAG_TAU_MS",
                  "HUM_PROB", "HUM_DEPTH", "HUM_HZ",
-                 "AGC_PROB", "AGC_TAU_MS", "AGC_DEPTH"):
+                 "AGC_PROB", "AGC_TAU_MS", "AGC_DEPTH",
+                 # Prawdziwe tło (10.10) — bez nich obie ścieżki mogłyby
+                 # losować z banku inaczej i nikt by tego nie zauważył.
+                 "REAL_NOISE_PROB", "REAL_NOISE_DIR", "REAL_NOISE_RMS",
+                 "REAL_NOISE_SNR_DB", "REAL_NOISE_OFFSET_HZ",
+                 "REAL_NOISE_TLO_DB", "REAL_NOISE_RMS_MAX"):
         a, b = getattr(C, name), getattr(sa, name, None)
         if a != b:
             same = False
             bad.append(f"{name}: config={a}  train_rtx={b}")
     check("stałe generatora i kanału identyczne", same,
-          "\n".join(bad) if bad else "33 stałe zgodne")
+          "\n".join(bad) if bad else "40 stałych zgodnych")
 
     # --- 12c. TEN SAM OBRAZ z tego samego ziarna ---
     # To jest mocniejsze niż porównanie stałych: sprawdza, że cała ścieżka —
@@ -736,7 +741,9 @@ def test_standalone():
     from tools.generator import make_clip as make_project
 
     worst, bad_idx = 0.0, []
-    for seed in range(6):
+    # 12 ziaren, nie 6: od 10.10 połowa klipów ma prawdziwe tło i obie
+    # ścieżki (syntetyczna i z banku) muszą trafić do porównania.
+    for seed in range(12):
         a_audio, a_y, _ = make_project(np.random.default_rng(seed), C.WPM, 0.0)
         b_audio, b_y, _ = sa.make_clip(np.random.default_rng(seed))
         img_a = frontend.to_net_image(a_audio)
@@ -750,7 +757,7 @@ def test_standalone():
     check("obrazy z tego samego ziarna identyczne co do bitu",
           not bad_idx,
           "\n".join(bad_idx) if bad_idx
-          else f"6 ziaren, największa różnica {worst:.2e}")
+          else f"12 ziaren, największa różnica {worst:.2e}")
 
 
 # ==========================================================================
@@ -1406,6 +1413,111 @@ def test_dekoder_fcn():
           and sa.znak_srodkowy([], np.zeros(12, int), 0) == 0)
 
 
+# ==========================================================================
+# TEST 19: PRAWDZIWE TŁO Z BANKU SZUMU (probki/szum)
+# ==========================================================================
+#  Od 10.10 połowa klipów dostaje tło z nagrań pustego pasma (IC-7300 przez
+#  USB). Każda z usterek niżej psułaby zbiór po cichu: bank się nie wczytał
+#  (zbiór bez prawdziwego tła, a noc myśli, że z nim), pas szumu nie stoi
+#  przy tonie stacji, poziom nie taki jak po auto_gain przy odczycie.
+def test_prawdziwe_tlo():
+    section("TEST 19: prawdziwe tło z banku szumu")
+
+    bank = radio.bank_szumu()
+    check("bank szumu wczytany", len(bank) > 0,
+          f"{len(bank)} plików z {C.ROOT / C.REAL_NOISE_DIR}" if bank else
+          f"pusty: {C.ROOT / C.REAL_NOISE_DIR} — zbiór powstanie BEZ "
+          f"prawdziwego tła")
+    if not bank:
+        return
+    sek = sum(b[1].size for b in bank) / C.SR
+    srodki = ", ".join(f"{b[2]:.0f}" for b in bank)
+    check("środki pasów szumu w paśmie analizy",
+          all(C.FMIN - 300 < b[2] < C.FMAX + 300 for b in bank),
+          f"{sek:.0f} s nagrań; środki pasów [Hz]: {srodki}")
+
+    # Szerokość pasa każdego pliku — testy położenia pasa mają sens tylko dla
+    # wąskich filtrów. Przy 1250 Hz „środek" pasa o nierównym grzbiecie
+    # skacze o dziesiątki Hz między wycinkami 4 s (zmierzone 10.10).
+    def szerokosc(a):
+        n = 1024
+        w = np.hanning(n)
+        moc = np.zeros(n // 2 + 1)
+        for k in range(0, a.size - n, n // 2):
+            moc += np.abs(np.fft.rfft(a[k:k + n] * w)) ** 2
+        f = np.fft.rfftfreq(n, 1.0 / C.SR)
+        m = (f > 150.0) & (f < 3500.0)
+        p = f[m][moc[m] > moc[m].max() / 4.0]
+        return p.max() - p.min()
+    waskie = [b for b in bank if szerokosc(b[1]) < 600.0]
+
+    # --- pas szumu stoi tam, gdzie kazano ---
+    rng = np.random.default_rng(19)
+    zle = []
+    for cel in (650.0, 750.0, 850.0):
+        for _ in range(3):
+            x, i = radio.szum_prawdziwy(C.CLIP_SAMPLES, rng, cel, bank=waskie)
+            c = radio.srodek_pasa(x.astype(np.float64))
+            if abs(c - cel) > 30.0:
+                zle.append(f"{waskie[i][0][-24:]}: cel {cel:.0f} -> {c:.0f} Hz")
+    check("przesunięcie stawia środek pasa w zadanym miejscu "
+          "(wąskie filtry, +/- 30 Hz)",
+          bool(waskie) and not zle,
+          "; ".join(zle) if zle else
+          f"{len(waskie)} plików < 600 Hz; 650, 750, 850 Hz po 3 razy")
+
+    # --- w receive(): udział i jasność pasa szumu ---
+    n, ile_real, poziomy = 300, 0, []
+    for i in range(n):
+        tekst = "" if i % 4 == 0 else "ABC"
+        audio, meta = radio.receive(tekst, rng, n_samples=C.CLIP_SAMPLES,
+                                    realism=True)
+        if meta["szum_real"] < 0:
+            continue
+        ile_real += 1
+        # Jasność pasa da się sprawdzić tylko bez stacji i zakłóceń.
+        if not tekst and meta["qrm"] == 0 and meta["qrn"] == 0:
+            db = frontend.power_to_db(frontend.melspec_power(audio))
+            poziomy.append(float(np.percentile(db, 99.9)))
+    udzial = ile_real / n
+    check("udział klipów z prawdziwym tłem zgodny z REAL_NOISE_PROB",
+          abs(udzial - C.REAL_NOISE_PROB) < 0.1,
+          f"{ile_real}/{n} = {udzial:.2f}, oczekiwane {C.REAL_NOISE_PROB}")
+    lo, hi = C.REAL_NOISE_TLO_DB
+    # ARW podnosi szum w cichszych chwilach (cel liczony jest PRZED nim).
+    # Zmierzone 10.10 przy równym losowaniu plików: do 20,7 dB przy celu
+    # <= 17 — stąd luz 5 dB. Szeroki filtr może nie dojść do celu
+    # (REAL_NOISE_RMS_MAX), więc twarda jest tylko górna granica.
+    za_jasne = [p for p in poziomy if p > hi + 5.0]
+    check("jasność pasa szumu nie wyższa niż REAL_NOISE_TLO_DB (+5 dB na ARW)",
+          bool(poziomy) and not za_jasne,
+          f"{len(poziomy)} pustych klipów, jasność "
+          f"{min(poziomy):.1f}-{max(poziomy):.1f} dB, mediana "
+          f"{np.median(poziomy):.1f}; za jasnych {len(za_jasne)}"
+          if poziomy else "brak pustych klipów z prawdziwym tłem")
+
+    # --- pas szumu w obrazie: jasny przy 750 Hz (wąski filtr) ---
+    #  Ten obraz dawał 09.10 '0' na nagraniach z USB: sieć ma go zobaczyć
+    #  w treningu jako puste radio.
+    from dsp import melref
+    x, _ = radio.szum_prawdziwy(C.CLIP_SAMPLES, rng, C.TONE_CENTER,
+                                bank=waskie)
+    db = frontend.power_to_db(frontend.melspec_power(x))
+    x = x * 10.0 ** ((15.0 - float(np.percentile(db, 99.9))) / 20.0)
+    prof = frontend.to_net_image(x).mean(axis=0)
+    # mel_frequencies(n) zwraca n + 2 krawędzi; środki pasm to [1:-1].
+    srodki_pasm = melref.mel_frequencies(C.N_MELS, C.FMIN, C.FMAX)[1:-1]
+    # Środek pasa = środek pasm jaśniejszych niż połowa maksimum. NIE
+    # najjaśniejsze pasmo: filtr 500 Hz ma płaski grzbiet i maksimum wypada
+    # na nim w przypadkowym miejscu (10.10: 689 Hz przy pasie 500-1000 Hz).
+    jasne = srodki_pasm[prof > 0.5 * prof.max()]
+    srodek = float(0.5 * (jasne.min() + jasne.max()))
+    check("pas szumu (wąski filtr) w obrazie: jasny, środek przy 750 Hz",
+          prof.max() > 0.5 and abs(srodek - C.TONE_CENTER) <= 60.0,
+          f"jasność {prof.max():.2f}, pas {jasne.min():.0f}-"
+          f"{jasne.max():.0f} Hz, środek {srodek:.0f} Hz, "
+          f"mediana pasm {np.median(prof):.2f}")
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1418,7 +1530,7 @@ def main() -> int:
              test_fist_drift, test_standalone,
              test_dpu_model, test_melref, test_sciezka_danych,
              test_tune_poza_pasmem, test_etykiety_ramek,
-             test_dekoder_fcn)
+             test_dekoder_fcn, test_prawdziwe_tlo)
 
     for t in tests:
         try:

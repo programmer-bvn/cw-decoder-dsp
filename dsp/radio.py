@@ -202,6 +202,93 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
 
 
 # --------------------------------------------------------------------------
+# Prawdziwy szum odbiornika — bank nagrań pustego pasma (probki/szum)
+# --------------------------------------------------------------------------
+# Po co: opis przy REAL_NOISE_PROB w config.py. Bank wczytywany RAZ na
+# proces (generator chodzi na kilku). Pliki POSORTOWANE po nazwie: ta sama
+# funkcja jest w train_rtx.py i oba generatory muszą losować z tej samej
+# listy — inaczej TEST 12 w diag.py nie dostanie tych samych obrazów.
+_BANK = None
+
+
+def srodek_pasa(a: np.ndarray, sr: int = C.SR) -> float:
+    """Środek pasa szumu w Hz: środek przedziału -6 dB od szczytu widma
+    uśrednionego po całym nagraniu. Liczone, nie wpisane — szerokość
+    i położenie filtra zależą od ustawień radia (09.10: FIL2 = 200 Hz
+    przy 699-850 Hz, FIL1 = 1240 Hz przy 211-1441 Hz)."""
+    n = 1024
+    w = np.hanning(n)
+    moc = np.zeros(n // 2 + 1)
+    for k in range(0, a.size - n, n // 2):
+        moc += np.abs(np.fft.rfft(a[k:k + n] * w)) ** 2
+    # Wygładzenie ~70 Hz (9 prążków po 7,8 Hz): 10.10 w pliku z 7025 kHz
+    # wąski prążek stacji był 7,5 dB nad pasem i „środek pasa" wychodził
+    # w nim (szerokość -6 dB: 8 Hz zamiast 230). Pas filtra jest szeroki,
+    # więc wygładzenie go nie przesuwa, a prążek rozmywa.
+    moc = np.convolve(moc, np.ones(9) / 9.0, mode="same")
+    f = np.fft.rfftfreq(n, 1.0 / sr)
+    m = (f > 150.0) & (f < 3500.0)
+    p = f[m][moc[m] > moc[m].max() / 4.0]
+    return float(0.5 * (p.min() + p.max()))
+
+
+def bank_szumu(katalog=None) -> list:
+    """[(nazwa, próbki float64, środek pasa Hz)], posortowane po nazwie.
+
+    Pusty, gdy katalogu nie ma (np. inna maszyna) — receive() zostaje wtedy
+    przy szumie syntetycznym, zamiast się wywracać. Ile plików weszło,
+    widać w meta ("szum_real" = numer pliku albo -1).
+    """
+    global _BANK
+    if _BANK is None or katalog is not None:
+        from pathlib import Path
+        from scipy.io import wavfile
+        kat = Path(katalog) if katalog is not None else C.ROOT / C.REAL_NOISE_DIR
+        bank = []
+        for p in sorted(kat.glob("*.wav")):
+            sr, a = wavfile.read(p)
+            if a.ndim > 1:
+                a = a[:, 0]
+            if a.dtype.kind in "iu":
+                a = a.astype(np.float64) / (np.iinfo(a.dtype).max + 1.0)
+            else:
+                a = a.astype(np.float64)
+            if sr != C.SR or a.size < 2 * C.CLIP_SAMPLES:
+                continue
+            bank.append((p.name, a, srodek_pasa(a, sr)))
+        if katalog is not None:
+            return bank
+        _BANK = bank
+    return _BANK
+
+
+def szum_prawdziwy(n: int, rng: np.random.Generator, srodek_hz: float,
+                   rms: float = C.REAL_NOISE_RMS, sr: int = C.SR,
+                   bank: list | None = None):
+    """Wycinek z banku, przesunięty tak, by środek pasa wypadł w srodek_hz.
+
+    Przesunięcie sygnałem analitycznym (hilbert * e^jwt), czyli tak, jak
+    robi to tune.retune przy odczycie. Losowo odwrócony w czasie: szum nie
+    ma kierunku, a bank ma ledwie kilka minut. Zwraca (szum, numer pliku).
+    """
+    from scipy.signal import hilbert
+    bank = bank_szumu() if bank is None else bank
+    # Każdy PLIK z równą szansą, nie każda sekunda: z wagą długości 2/3
+    # klipów dostawało szeroki filtr (1250 Hz = 279 s z 420), a nagrania
+    # z pasma są głównie z wąskim (FIL2, 200 Hz) — porównanie obrazów 10.10.
+    i = int(rng.integers(0, len(bank)))
+    _, a, c = bank[i]
+    s = int(rng.integers(0, a.size - n))
+    x = a[s:s + n]
+    if rng.random() < 0.5:
+        x = x[::-1]
+    t = np.arange(n, dtype=np.float64) / sr
+    x = np.real(hilbert(x) * np.exp(2j * np.pi * (srodek_hz - c) * t))
+    r = float(np.sqrt(np.mean(x * x)))
+    return (x * (rms / max(r, 1e-12))).astype(np.float32), i
+
+
+# --------------------------------------------------------------------------
 # Cały tor: stacja + kanał + odbiornik
 # --------------------------------------------------------------------------
 def receive(text: str, rng: np.random.Generator,
@@ -220,16 +307,35 @@ def receive(text: str, rng: np.random.Generator,
     meta: dict = {}
 
     # --- tor odbiorczy: szum tła ---
-    tilt = float(rng.uniform(*C.NOISE_TILT)) if realism else 0.0
-    noise_rms = C.NOISE_RMS * (float(rng.uniform(*C.NOISE_RMS_SPREAD))
-                               if realism else 1.0)
-    audio = band_noise(n_samples, rng, rms=noise_rms, tilt=tilt, sr=sr)
-    meta.update(noise_rms=noise_rms, noise_tilt=tilt)
+    # Prawdziwe tło z banku (opis przy REAL_NOISE_PROB w config.py) albo
+    # syntetyczne. Prawdziwe dokłada się PO stacji, bo jego pas ma stanąć
+    # przy jej tonie, a ton losuje się dopiero niżej.
+    prawdziwy = bool(realism and rng.random() < C.REAL_NOISE_PROB
+                     and len(bank_szumu()) > 0)
+    if prawdziwy:
+        audio = np.zeros(n_samples, dtype=np.float32)
+        # QRM i QRN mają amplitudy dobrane do NOISE_RMS; przy innym poziomie
+        # tła skalujemy je tak, żeby stosunek do szumu został ten sam.
+        skala = C.REAL_NOISE_RMS / C.NOISE_RMS
+        meta.update(noise_rms=C.REAL_NOISE_RMS, noise_tilt=float("nan"))
+    else:
+        skala = 1.0
+        tilt = float(rng.uniform(*C.NOISE_TILT)) if realism else 0.0
+        noise_rms = C.NOISE_RMS * (float(rng.uniform(*C.NOISE_RMS_SPREAD))
+                                   if realism else 1.0)
+        audio = band_noise(n_samples, rng, rms=noise_rms, tilt=tilt, sr=sr)
+        meta.update(noise_rms=noise_rms, noise_tilt=tilt)
+    snr = float("nan")
 
     # --- stacja docelowa ---
     if text:
         tone = C.TONE_CENTER + float(rng.uniform(-C.TONE_SPREAD, C.TONE_SPREAD))
         amp = float(rng.uniform(C.SIGNAL_AMP_MIN, C.SIGNAL_AMP_MAX))
+        if prawdziwy:
+            # Siła stacji względem PRAWDZIWEGO szumu, nie bezwzględna:
+            # bezwzględny poziom i tak ustawia się na końcu jak auto_gain.
+            snr = float(rng.uniform(*C.REAL_NOISE_SNR_DB))
+            amp = float(np.sqrt(2.0) * C.REAL_NOISE_RMS * 10.0 ** (snr / 20.0))
         clip_wpm = wpm + (float(rng.uniform(-C.WPM_JITTER, C.WPM_JITTER))
                           if C.WPM_JITTER > 0 else 0.0)
         clip_wpm = float(np.clip(clip_wpm, 5.0, 60.0))
@@ -291,10 +397,27 @@ def receive(text: str, rng: np.random.Generator,
                     lab_a=float("nan"), lab_b=float("nan"),
                     spans=[], offset=0)
 
+    szum_i = -1
+    if prawdziwy:
+        srodek = ((meta["tone"] if text else C.TONE_CENTER)
+                  + float(rng.uniform(-C.REAL_NOISE_OFFSET_HZ,
+                                      C.REAL_NOISE_OFFSET_HZ)))
+        szum, szum_i = szum_prawdziwy(n_samples, rng, srodek, sr=sr)
+        # Jasność PASA SZUMU (opis przy REAL_NOISE_TLO_DB). To samo
+        # wzmocnienie idzie na stację i na QRM/QRN, więc ich odstęp od
+        # szumu zostaje taki, jak wylosowano.
+        cel = float(rng.uniform(*C.REAL_NOISE_TLO_DB))
+        g = 10.0 ** ((cel - float(np.percentile(frontend.power_to_db(frontend.melspec_power(szum, sr)), 99.9)))
+                     / 20.0)
+        g = min(g, C.REAL_NOISE_RMS_MAX / C.REAL_NOISE_RMS)
+        audio = ((audio + szum) * g).astype(np.float32)
+        skala *= g
+    meta.update(szum_real=szum_i, snr_db=snr)
+
     # --- zakłócenia w pasmie ---
     qrm_amp = 0.0
     if realism and rng.random() < C.QRM_PROB:
-        qrm_amp = float(rng.uniform(*C.QRM_AMP))
+        qrm_amp = float(rng.uniform(*C.QRM_AMP)) * skala
         audio = add_qrm(audio, rng, amp=qrm_amp, sr=sr)
     meta["qrm"] = qrm_amp
 
@@ -302,14 +425,16 @@ def receive(text: str, rng: np.random.Generator,
     if realism and rng.random() < C.QRN_PROB:
         n_crashes = int(rng.integers(1, C.QRN_MAX + 1))
         audio = add_qrn(audio, rng, n_crashes=n_crashes,
-                        amp=float(rng.uniform(*C.QRN_AMP)), sr=sr)
+                        amp=float(rng.uniform(*C.QRN_AMP)) * skala, sr=sr)
     meta["qrn"] = n_crashes
 
     # --- ARW odbiornika ---
     # Ostatni etap przed ogranicznikiem, bo taka jest kolejność w torze:
     # antena -> mieszacz -> filtr -> ARW -> wyjście AF -> karta dźwiękowa.
+    # Przy prawdziwym tle ARW ZAWSZE: radio przez USB zawsze je ma, a to ono
+    # podciąga szum w przerwach między elementami (09.10, SN0FMT).
     agc_tau = 0.0
-    if realism and rng.random() < C.AGC_PROB:
+    if realism and (prawdziwy or rng.random() < C.AGC_PROB):
         agc_tau = float(rng.uniform(*C.AGC_TAU_MS))
         audio = apply_agc(audio, agc_tau,
                           float(rng.uniform(*C.AGC_DEPTH)), sr=sr)

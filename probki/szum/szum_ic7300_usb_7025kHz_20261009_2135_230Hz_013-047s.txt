@@ -1,0 +1,7 @@
+# SZUM PASMA - bez sygnalu; do banku tla generatora.
+zrodlo:        szum_ic7300_usb_7025kHz_FIL3_20261009_2135_surowe.wav, 13-47 s
+pas -6 dB:     ok. 230 Hz (FIL3), jak w odcinku 001-047s
+uwagi:         10.10: odcinek 001-047s mial stacje przy 770 Hz w 6-12 s
+               (waski prazek, -1 dB udzialu w pasie wobec ok. -11 dB tla).
+               Wyciety; zostaje 13-47 s. Pionowe smugi (trzaski kluczowania
+               stacji obok) zostaja — to prawdziwe tlo 40 m.

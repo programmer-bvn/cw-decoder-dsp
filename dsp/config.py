@@ -266,6 +266,40 @@ AGC_PROB = 0.5                  # udział klipów z symulowanym ARW
 AGC_TAU_MS = (50.0, 500.0)      # stała czasowa ARW
 AGC_DEPTH = (0.2, 0.8)          # jak mocno ARW ściska dynamikę
 
+# --- Prawdziwy szum odbiornika (bank nagrań z pasma) -----------------------
+# PO CO. 09.10 nagrania z IC-7300MK2 przez USB czytały się na 1/15 słów.
+# Wodospad pokazał dlaczego: w obrazie stoi JASNY PAS szumu filtra p.cz.
+# (FIL2 200 Hz: -6 dB 699-850 Hz), AGC podciąga szum w przerwach między
+# elementami, przy kluczowaniu idą trzaski. Generator robił szum szeroki
+# i niski — sieć nigdy takiego tła nie widziała i brała pas za ciągłą
+# kreskę ('0'). Zamiast modelować filtr i AGC od zera, część klipów
+# dostaje PRAWDZIWE tło: wycinek z probki/szum/ (nagrania pustego pasma,
+# cięte wg zmierzonej szerokości filtra: 200, 230, 500, 1250 Hz).
+#
+# Środek pasa szumu stawiany jest przy tonie stacji +/- REAL_NOISE_OFFSET_HZ
+# — operator stroi stację mniej więcej na środek filtra, a tune.py przenosi
+# CAŁOŚĆ (stację i pas) na 750 Hz. Dla pustego radia środek pasa to 750 Hz
+# — dokładnie tam, gdzie tune.py zaczepia się bez stacji (zmierzone 09.10:
+# mediana tonu = środek filtra, 798 Hz).
+#
+# POZIOM: losowana jest jasność SAMEGO PASA SZUMU w obrazie (99,9 percentyl
+# dB), a stacja dostaje swoją przez odstęp od tego szumu (SNR). Pierwsza
+# wersja ustawiała szczyt CAŁEGO KLIPU jak auto_gain i była błędna, co
+# wyszło na pomiarze 10.10: auto_gain liczy poziom z CAŁEGO NAGRANIA, czyli
+# z najsilniejszej stacji, a pas szumu ląduje zwykle znacznie niżej. Sam
+# szum z banku przy poziomie z radia ma 4-6 dB. Zakres 0-17 dB pokrywa
+# „mocna stacja gdzie indziej w nagraniu" (pas ciemny) aż po „samo puste
+# pasmo" (auto_gain wyciąga pas na 17 dB). Szeroki filtr (1250 Hz) rozkłada
+# moc na wiele pasm mel i do 17 dB trzeba by podbić go ponad pełną skalę —
+# REAL_NOISE_RMS_MAX nie pozwala zrobić z tego obciętego szumu.
+REAL_NOISE_PROB = 0.5             # udział klipów z prawdziwym tłem
+REAL_NOISE_DIR = "probki/szum"    # względem ROOT; *.wav 8 kHz mono
+REAL_NOISE_RMS = 0.05             # poziom roboczy przed ustawieniem poziomu
+REAL_NOISE_SNR_DB = (-3.0, 20.0)  # moc stacji / moc szumu w całym filtrze
+REAL_NOISE_OFFSET_HZ = 60.0       # środek pasa szumu względem tonu stacji
+REAL_NOISE_TLO_DB = (0.0, 17.0)   # jasność pasa szumu (99,9 percentyl dB)
+REAL_NOISE_RMS_MAX = 0.25         # górna granica RMS szumu po ustawieniu
+
 # Format zapisu obrazów w zbiorze. "uint8" kwantuje [0,1] na 256 poziomów,
 # czyli 40 dB / 255 = 0,16 dB na krok — poniżej rozdzielczości, jaką ma
 # jakikolwiek tor odbiorczy. Zysk jest realny: 40000 obrazów 128x32 to

@@ -77,7 +77,10 @@ _META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb",
                 # telegrafista sprawdza etykietę, zamiast zgadywać, który
                 # z trzech nadanych znaków jest tym opisanym. Liczone
                 # z faktycznych granic po rozjeździe klucza.
-                "lab_x0", "lab_x1")
+                "lab_x0", "lab_x1",
+                # Prawdziwe tło (od 10.10): numer pliku w banku szumu
+                # (-1 = syntetyczny) i siła stacji względem tego szumu.
+                "szum_real", "snr_db")
 
 
 def generate(n: int, seed: int, wpm: float, jitter: float,
