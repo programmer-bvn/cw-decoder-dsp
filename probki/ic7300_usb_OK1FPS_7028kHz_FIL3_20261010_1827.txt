@@ -1,0 +1,28 @@
+# OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
+
+nadane:        OK1FPS
+nadajnik:      NIEZNANY — stacja OK1FPS z pasma
+odbiornik:     IC-7300MK2  (odbior wlasny)
+klucz:         nieznany (obca stacja)
+tempo zadane:  nieokreslone
+pasmo:         7.027750 MHz, CW-R (odczyt CI-V przed nagraniem)
+filtr:         FIL3 (odczyt CI-V przed nagraniem)
+tor:           USB audio z IC-7300MK2, AF Output Level 50%, wejscie Windows 50%
+uwagi:         10.10, 182 s. Znak rozpoznany uchem przez operatora.
+
+# ---- PONIŻEJ MIERZONE AUTOMATYCZNIE, NIE EDYTUJ ----
+# zmierzone dla config: SR=8000, pasmo 400-1200 Hz,
+#                       ton 750+/-80 Hz,
+#                       tempo 13-27 WPM
+
+zrodlo:        8000 Hz, 1 kan., 181.9 s
+szczyt obrazu: 22.1 dB   (korekta poziomu -5.1 dB do celu 17 dB)
+tlo:           -4.8 dB   kontrast 26.3 dB
+szerokosc:     275 Hz (11 z 32 pasm w granicach 10 dB)
+ton:           mediana 774 Hz, zakres 686-836 Hz, w zakresie czytelnym 100% czasu
+tempo:         20.0 WPM (najkrotszy element 60 ms)
+elementy [ms]: 10pct 60, mediana 140, 90pct 180   stosunek 3.00
+elementow:     311, klucz 22% czasu
+
+ocena:
+  - ton ROZLANY na 275 Hz (czysty CW to ok. 75 Hz) — przesterowanie albo dwie stacje
