@@ -1,0 +1,166 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791660990.778955   65256 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1791660993.126752   65256 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 72 variables whereas the saved optimizer has 76 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1791660995.756987   65313 service.cc:153] XLA service 0x77c67c035270 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1791660995.757584   65313 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1791660995.768833   65313 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1791660995.892247   65313 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1791660998.977333   65313 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/fcn_4000000_czesci_rt/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+Nagrywanie (6).wav   (korekta poziomu -10.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 798 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 783-812 Hz)
+  odczyt surowy:  8XKC290YCBEEP3
+  po scaleniu 0.35s: 8XKC290YCBEP3
+  nadane: F5OHS
+  w całości:    0/1
+  w kolejności: 0/1
+  po scaleniu:  w całości 0/1, w kolejności 0/1, odczyt krótszy o 7%
+
+Nagrywanie (7).wav   (korekta poziomu -10.6 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 730 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 678-793 Hz)
+  odczyt surowy:  755HC0555NKDDAVOME102M0P6NMUNNN09G5JANIMG0EYN4NCG7710JM95BM0UIO4TM000
+  po scaleniu 0.35s: 75HC05NKDAVOME102M0P6NMUNNN09G5JANIMG0EYN4NCG710JM95BM0UIO4TM00
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+Nagrywanie (8).wav   (korekta poziomu -8.6 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 753 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 696-799 Hz)
+  odczyt surowy:  99IC9G0000T4YY3NUS60IEL0BBUVCKHVTTK5TTDB8HOTUWQUHEKKSCCC1AGUOB6
+  po scaleniu 0.35s: 9IC9G0000T4Y3NUS60IEL0BBUVCKHVTK5TTDB8HOTUWQUHEKKSCC1AGUOB6
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+Nagrywanie (9).wav   (korekta poziomu -10.4 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 733 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 711-789 Hz)
+  odczyt surowy:  5FFJGBAAR9CC7CYJTM0Z336B0X00BQU54BIDMMMB936BD61HA50BN8DK5SVOWA5XEB
+  po scaleniu 0.35s: 5FJGBAR9C7CYJTM0Z336B0X00BQU54BIDMMB936BD61HA50BN8DK5SVOWA5XEB
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+ic7300_usb_3541kHz_f200_20261009.wav   (korekta poziomu -5.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 765 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 731-787 Hz)
+  odczyt surowy:  6B0LJM4VVKXKC00RWE5C5053EIC9O7UKIC22LIZL8POUMWV09N9
+  po scaleniu 0.35s: 6B0LJM4VVKXKC00RWE5C5053EIC9O7UKIC22LIZL8POUMWV09N9
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1811.wav   (korekta poziomu -5.2 dB)
+  ton: zaczep w 100% czasu, 2 raz(y) od nowa; mediana tonu 712 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 68% czasu (zakres estymaty 643-1008 Hz)
+  odczyt surowy:  BUBES8XVCNCDS2HB1AFM62H206IZD05IH00NDB02QMEDCCSCITKKA45VBM27B8Y010000090054YYGSPE55BCQDPCCDP7SC56K0ASC
+  po scaleniu 0.35s: BUBES8XVCNCDS2HB1AFM62H206IZD05IH00NDB02QMEDCSCITKA45VBM27B8Y01000090054YYGSPE55BCQDPCCDP7SC56K0ASC
+  nadane: DP75HSC
+  w całości:    0/1
+  w kolejności: 0/1
+  po scaleniu:  w całości 0/1, w kolejności 0/1, odczyt krótszy o 3%
+
+ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_2146.wav   (korekta poziomu -5.5 dB)
+  ton: zaczep w 100% czasu, 2 raz(y) od nowa; mediana tonu 716 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 61% czasu (zakres estymaty 520-863 Hz)
+  odczyt surowy:  L4D3ZF9JWH0K05OH0000000033WAA31AALLALAWLA3WALLA33W75OP801AFZY2200AMCE5ON4JC4B8SASSLD5IB4VUKF5C448P7KC5WTV6BNNIDJ88B4CHI595V5FF9EMJ5HH3JJ6H8RHSI3H2XRTTDIEIAEKKU
+  po scaleniu 0.35s: L4D3ZF9JWH0K05OH0000000033WA31ALALAWLA3WALA3W75OP801AFZY2200AMCE5ON4JC4B8SASLD5IB4VUKF5C48P7KC5WTV6BNNIDJ88B4CHI595V5F9EMJ5H3J6H8RHSI3H2XRTDIEIAEKU
+  nadane: LA3WAA
+  w całości:    0/1
+  w kolejności: 1/1   (LA3WAA)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 8%
+
+ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_2153.wav   (korekta poziomu -4.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 755 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 82% czasu (zakres estymaty 637-785 Hz)
+  odczyt surowy:  2OZZPAGH5SCCANSEESULNAME95EASPDYVALONGO64SONOWURPCALLISHH553L53375ZWX2EERRF1WBUC016001RECWC57I2T37SX55000A1V9B7US5DZBJ53ET0Y0ETGEX5U68N8CEEBX5SCMDCVSEB5XCX4OOXXP5CHB06HIUY9W5SK1MEMQM31DEMKOFX00910B54UG90B
+  po scaleniu 0.35s: 2OZZPAGH5SCCANSESULNAME95EASPDYVALONGO64SONOWURPCALLISH553L5375ZWX2ERF1WBUC016001RECWC57I2T37SX50A1V9B7US5DZBJ53ET0Y0ETGEX5U68N8CEBX5SCMDCVSEB5XCX4OOXXP5CHB06HIUY9W5SK1MEMQM31DEMKOFX00910B54UG90B
+  nadane: LA4CIR
+  w całości:    0/1
+  w kolejności: 1/1   (LA4CIR)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 4%
+
+ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_1827.wav   (korekta poziomu -6.1 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 774 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 686-836 Hz)
+  odczyt surowy:  QU0CKFK1111FPPIESOMMK111BQQOCOKAMXXXSSWCCHH1FFPSS1FFPFIE2R4B5775I48JJ525H584CZ3P39GI5HLC
+  po scaleniu 0.35s: QU0CKFK11FPIESOMK11BQQOCOKAMXSSWCH1FPS1FPFIE2R4B575I48JJ525H584CZ3P39GI5HLC
+  nadane: OK1FPS
+  w całości:    0/1
+  w kolejności: 1/1   (OK1FPS)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 15%
+
+ic7300_usb_SN0FMT_20261009_c.wav   (korekta poziomu -7.1 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 775 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 757-824 Hz)
+  odczyt surowy:  EEE100000000000000000000000000000000000OMESTILDENN0FEENEVIEEEEIEES00Y000000000000000D
+  po scaleniu 0.35s: EEE100000000000000000000000000000000000OMESTILDEN0FEENEVIEEEIES00Y000000000000D
+  nadane: QST DE SN0FMT TEST
+  w całości:    1/4   (DE)
+  w kolejności: 1/4   (DE)
+  po scaleniu:  w całości 1/4, w kolejności 1/4, odczyt krótszy o 7%
+
+ic7300_usb_SN0FMT_3565kHz_20261009.wav   (korekta poziomu -7.0 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 778 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 764-818 Hz)
+  odczyt surowy:  1FSTCSLIBBIOOFMMD000000000000000000000000OWAAHQASSNN0MNTESMMGX96SSTSN90MF53QSTN8UFFBNESTFKQQSDENN0FFFFQQQSSNTJFFEQSTDEEN0FM
+  po scaleniu 0.35s: 1FSTCSLIBIOOFMD000000000000000000000000OWAAHQASN0MNTESMGX96SSTSN90MF53QSTN8UFBNESTFKQSDEN0FFQQSNTJFFEQSTDEEN0FM
+  nadane: QST DE SN0FMT TEST
+  w całości:    2/4   (QST DE)
+  w kolejności: 3/4   (QST DE TEST)
+  po scaleniu:  w całości 2/4, w kolejności 3/4, odczyt krótszy o 10%
+
+ic7300_usb_SN0FMT_3565kHz_20261009_b.wav   (korekta poziomu -7.0 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 794 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 757-827 Hz)
+  odczyt surowy:  0FFFQSSNTJFFTQSTDEEN0FMQNN000FMMISFMT92GBBIQQSNNN00FTEST
+  po scaleniu 0.35s: 0FFQSNTJFFTQSTDEEN0FMQN000FMISFMT92GBIQSNN0FTEST
+  nadane: QST DE SN0FMT TEST
+  w całości:    3/4   (QST DE TEST)
+  w kolejności: 4/4   (QST DE SN0FMT TEST)
+  po scaleniu:  w całości 3/4, w kolejności 4/4, odczyt krótszy o 14%
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt surowy:  CQQQCQCQBVQ2BVQ2BVTBPPSECCQCCQCCQDESQ2BVSECQCCCQESQ2BVPSEKP22222MSDESSQ22BVUHOMD44KSFERRACALLLURSS5599QSQSBQRARIUHARIUARIU444QTHHUTHISBYDGOSZBYDGOSZH82P2MSADESQ2BV
+  po scaleniu 0.35s: CQQCQCQBVQ2BVQ2BVTBPSECQCCQCQDESQ2BVSECQCCCQESQ2BVPSEKP22MSDESQ22BVUHOMD44KSFERACALLURSS5599QSQSBQRARIUHARIUARIU4QTHUTHISBYDGOSZBYDGOSZH82P2MSADESQ2BV
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt surowy:  CTQCQCMTCQCQBVNSQ2BVNPSEKCCHH5HHCQCQCQCQTRQDESQ2BVNSQ2LLVVVVYY4SP22KKBSP2KKBSP2KKBSP2KKBPSEKVVV73S888VVVYVVVVHH2NAAMEISARRRIUSZABIU5MMARIUAIIUV5ARRIUVARIUSSEKARIUSZZZH9VVUSVQCCQCCQQDEVVSBBVNPSEK
+  po scaleniu 0.35s: CTQCQCMTCQCQBVNSQ2BVNPSEKCCHH5HCQCQCQCQTRQDESQ2BVNSQ2LVVVVY4SP22KKBSP2KKBSP2KKBSP2KKBPSEKVVV73S88VVVYVVVVH2NAMEISARRIUSZABIU5MARIUAIUV5ARIUVARIUSSEKARIUSZH9VUSVQCCQCCQQDEVSBVNPSEK
+  nadane: CQ SQ2BVN 73
+  w całości:    3/3   (CQ SQ2BVN 73)
+  w kolejności: 3/3   (CQ SQ2BVN 73)
+  po scaleniu:  w całości 3/3, w kolejności 3/3, odczyt krótszy o 8%
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt surowy:  CQCQQQCCQDEQQ2BVSQ2BBBNNSSVNPPPS
+  po scaleniu 0.35s: CQCQQCCQDEQ2BVSQ2BNSVNPS
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    4/6   (CQx3 DE)
+  w kolejności: 5/6   (CQx3 DE SQ2BVN)
+  po scaleniu:  w całości 4/6, w kolejności 5/6, odczyt krótszy o 25%
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt surowy:  MNMHBMBMCMWAMBWL6DLOGMKMCOBEW1CNUREEM990O8DIRGCMHBIFFINEEIBR33333HM22NRW0J60HGKME99XAOKNJMIUGNAXARAUOJYENF2MXCP9HXE1AHE95GDT5BCMSFA0H3LA
+  po scaleniu 0.35s: MNMHBMBMCMWAMBWL6DLOGMKMCOBEW1CNUREM990O8DIRGCMHBIFINEIBR333HM22NRW0J60HGKME99XAOKNJMIUGNAXARAUOJYENF2MXCP9HXE1AHE95GDT5BCMSFA0H3LA
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 13/26, w kolejności 19/26
+RAZEM po scaleniu 0.35s: w całości 13/26, w kolejności 19/26
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.
+zapisane: out/nagrania_fcn_20261010_1215.txt

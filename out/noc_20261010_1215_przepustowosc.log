@@ -1,0 +1,26 @@
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/trainers/epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+======================================================================
+ PRZEPUSTOWOŚĆ: co wyznacza tempo treningu
+======================================================================
+karta: /physical_device:GPU:0
+partia: 256, kroków na pomiar: 120
+
+dane losowe: (40960, 128, 32) (160 MB)
+
+A. SAM POTOK (bez modelu — ile wejście dowozi)
+  potok wejściowy                       368513 próbek/s   (0.7 ms/krok)
+
+B. SAM MODEL (jedna gotowa partia w kółko, przez model.fit)
+  model na karcie                         8943 próbek/s   (28.6 ms/krok)
+
+C. TRENING (potok + model, czyli to, co widać w logu nocy)
+  trening                                 8764 próbek/s   (29.2 ms/krok)
+
+======================================================================
+ potok 368513/s   model 8943/s   trening 8764/s
+======================================================================
+WĄSKIM GARDŁEM JEST KARTA — tak ma być.
+  Wejście dowozi 368513 próbek/s, karta bierze 8943.
+  Szybszy potok niczego nie zmieni. Żeby przyspieszyć,
+  trzeba mniejszego modelu albo większej partii.

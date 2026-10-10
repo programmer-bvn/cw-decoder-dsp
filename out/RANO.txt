@@ -2,33 +2,33 @@
  NOC 2026-10-10  --  co wyszło
 ============================================================
 
-KOD:   6e3254198e09 (main)
+KOD:   23cc98317b88 (main)
 VENV:  /root/venv_gpu
 
 ETAPY
   PRZEPUSTOWOSC                OK     0 min
-  TRENING fcn -> runs/fcn_10000000 OK     481 min
+  TRENING fcn -> runs/fcn_4000000_czesci_rt OK     191 min
   KOPERTA fcn                  OK     0 min
   NAGRANIA fcn                 OK     1 min
 
 WYNIKI TRENINGU
 
-  runs/fcn_10000000  fcn (wdrażalny na KV260)
-      epok 12, najlepsza walidacja 95.01% (epoka 11)
+  runs/fcn_4000000_czesci_rt  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 92.85% (epoka 11)
       (walidacja wyżej = kroki 40 ms z dobrą klasą)
-      środkowy znak 99.69%  <- jak dpu;  okno w całości 82.90%;  CER 9.11%
-      val_loss: minimum 0.1129 w epoce 11, koniec 0.1156
-  runs/gru_10000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+      środkowy znak 97.77%  <- jak dpu;  okno w całości 78.03%;  CER 12.80%
+      val_loss: minimum 0.1832 w epoce 11, koniec 0.1846
+  runs/gru_4000000_czesci_rt gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
   --- fcn ---
     czyta (>= 50%): tempo 10-30 WPM, ton 750-750 Hz
-    znak w całości w oknie:   99.8% trafień (2995 próbek)
-    znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+    znak w całości w oknie:   97.5% trafień (2998 próbek)
+    znak obcięty oknem:      100.0% trafień (2 próbek, 0.1% zbioru)
     NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
     Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
-    5 przypadków na 3000 (0.17%).
+    2 przypadków na 3000 (0.07%).
     Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
     ma. Nie jest ani potwierdzona, ani obalona — jest
     NIEISTOTNA. Powód: etykietą jest środkowy z trzech
@@ -53,35 +53,36 @@ PRAWDZIWE NAGRANIA (fcn)
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: DP75HSC
+    w całości:    0/1
+    w kolejności: 0/1
     nadane: LA3WAA
-    w całości:    1/1   (LA3WAA)
+    w całości:    0/1
     w kolejności: 1/1   (LA3WAA)
     nadane: LA4CIR
     w całości:    0/1
-    w kolejności: 0/1
+    w kolejności: 1/1   (LA4CIR)
+    nadane: OK1FPS
+    w całości:    0/1
+    w kolejności: 1/1   (OK1FPS)
     nadane: QST DE SN0FMT TEST
-    w całości:    0/4
-    w kolejności: 0/4
-    nadane: QST DE SN0FMT TEST
-    w całości:    0/4
-    w kolejności: 3/4   (QST DE TEST)
-    nadane: QST DE SN0FMT TEST
-    w całości:    0/4
+    w całości:    1/4   (DE)
     w kolejności: 1/4   (DE)
-    nadane: nieodnotowane — odczyt tylko do obejrzenia
-    nadane: CQ SQ2BVN 73
+    nadane: QST DE SN0FMT TEST
+    w całości:    2/4   (QST DE)
 
-  RAZEM na nagraniach z zapisaną treścią: w całości 8/24, w kolejności 12/24
-  RAZEM po scaleniu 0.35s: w całości 8/24, w kolejności 12/24
+  RAZEM na nagraniach z zapisaną treścią: w całości 13/26, w kolejności 19/26
+  RAZEM po scaleniu 0.35s: w całości 13/26, w kolejności 19/26
 
 PEŁNE LOGI
-  out/noc_20261009_1957.log
-  out/noc_20261009_1957_diag.log                 12K
-  out/noc_20261009_1957_fcn.log                  16M
-  out/noc_20261009_1957_koperta_fcn.log          8.0K
-  out/noc_20261009_1957_nagrania_fcn.log         4.0K
-  out/noc_20261009_1957_przepustowosc.log        4.0K
-  out/noc_20261009_1957_srodowisko.log           4.0K
-  out/koperta_fcn_20261009_1957.txt              4.0K
+  out/noc_20261010_1215.log
+  out/noc_20261010_1215_diag.log                 12K
+  out/noc_20261010_1215_fcn.log                  6.5M
+  out/noc_20261010_1215_gen.log                  108K
+  out/noc_20261010_1215_koperta_fcn.log          8.0K
+  out/noc_20261010_1215_nagrania_fcn.log         4.0K
+  out/noc_20261010_1215_przepustowosc.log        4.0K
+  out/noc_20261010_1215_srodowisko.log           4.0K
+  out/koperta_fcn_20261010_1215.txt              4.0K
 
 Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows

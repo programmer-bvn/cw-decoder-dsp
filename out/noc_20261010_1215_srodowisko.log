@@ -1,0 +1,85 @@
+
+########################################################
+# STAN ODNIESIENIA (start)     2026-10-10 12:15:08
+########################################################
+
+--- powloka i katalog ---
+pwd:    /mnt/w/PyCharmMiscProject/cw-decoder-dsp
+user:   root (uid 0)
+bash:   5.3.9(1)-release
+argv:   ./noc.sh STAN ODNIESIENIA (start)
+
+--- python ---
+which:  
+wersja: ./noc.sh: line 238: python: command not found
+VIRTUAL_ENV: <brak>
+
+--- LD_LIBRARY_PATH (po jednym na wiersz) ---
+  <pusty>
+
+--- XLA_FLAGS ---
+  <brak>
+
+--- nvidia-smi ---
+Sat Oct 10 12:15:09 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.08              KMD Version: 616.92        CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050        On  |   00000000:09:00.0  On |                  N/A |
+| 30%   30C    P0             21W /   70W |     834MiB /   6144MiB |      2%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              26      G   /Xwayland                             N/A      |
++-----------------------------------------------------------------------------------------+
+
+--- biblioteki CUDA po jednej ---
+BŁĄD: nie ma 'python' w PATH.
+Najpierw:  source srodowisko/rtx3050_setenv.sh
+
+--- pamiec ---
+               total        used        free      shared  buff/cache   available
+Mem:            23Gi       747Mi        21Gi       5.3Mi       1.3Gi        22Gi
+Swap:          6.0Gi          0B       6.0Gi
+
+--- miejsce na dysku ---
+Filesystem      Size  Used Avail Use% Mounted on
+W:\             448G  100G  348G  23% /mnt/w
+
+--- limity ---
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 96087
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 10240
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 96087
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+--- najwieksze pliki w katalogu ---
+total 264
+-rwxrwxrwx 1 bvn bvn 112476 Oct 10 11:21 train_rtx.py
+-rwxrwxrwx 1 bvn bvn  73637 Oct 10 11:22 diag.py
+-rwxrwxrwx 1 bvn bvn  46493 Oct 10 11:24 noc.sh
+-rwxrwxrwx 1 bvn bvn  43040 Oct 10 07:52 HISTORIA.md
+-rwxrwxrwx 1 bvn bvn  35149 Oct  8 21:32 LICENSE
+-rwxrwxrwx 1 bvn bvn  30622 Oct  8 21:32 README.md
+-rwxrwxrwx 1 bvn bvn  12519 Oct 10 07:52 NOTATKI.md
