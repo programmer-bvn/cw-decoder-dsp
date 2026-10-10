@@ -1,0 +1,283 @@
+============================================================
+ NOC TRENINGOWA  2026-10-09 19:57
+============================================================
+ zbiór:  czesci/morse_200000_*.npz  (200000 próbek)
+ epoki:  12   batch: 256
+ log:    out/noc_20261009_1957.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+
+--- paszport ---
+commit:  6e32541 2026-10-09 19:57 noc.sh: 10. pozycja = architektura (dpu/fcn); koperta i RANO dla fcn
+gałąź:   main
+zmiany:  brak — kod = commit
+venv:    /root/venv_gpu  (natywny system plików WSL)
+pakiety: tensorflow 2.21.0, keras 3.15.1, numpy 2.5.3, scipy 1.18.1, librosa 1.0.0
+import tensorflow: 3 s   (venv: /root/venv_gpu)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791568641.343983    5333 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+ROTACJA CZĘŚCI WŁĄCZONA
+  zbiór 10000000 próbek potrzebowałby ~102500 MB naraz,
+  wolne jest 23130 MB. Części pójdą po kolei — w pamięci
+  będzie leżeć jedna (~820 MB) plus walidacja.
+  Koszt przy zmierzonych 289 MB/s: ~3 s na część na epokę.
+
+--- diag.py ---
+======================================================================
+WYNIK: 98/98 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci/morse_200000_*.npz   (50 x 200000 = 10000000 próbek)
+  czesci/morse_200000_00.npz: 200000 probek | n=200000;seed=12345;wpm=20.0;realism=1
+  czesci/morse_200000_01.npz: 200000 probek | n=200000;seed=13345;wpm=20.0;realism=1
+  czesci/morse_200000_02.npz: 200000 probek | n=200000;seed=14345;wpm=20.0;realism=1
+  czesci/morse_200000_03.npz: 200000 probek | n=200000;seed=15345;wpm=20.0;realism=1
+  czesci/morse_200000_04.npz: 200000 probek | n=200000;seed=16345;wpm=20.0;realism=1
+  czesci/morse_200000_05.npz: 200000 probek | n=200000;seed=17345;wpm=20.0;realism=1
+  czesci/morse_200000_06.npz: 200000 probek | n=200000;seed=18345;wpm=20.0;realism=1
+  czesci/morse_200000_07.npz: 200000 probek | n=200000;seed=19345;wpm=20.0;realism=1
+  czesci/morse_200000_08.npz: 200000 probek | n=200000;seed=20345;wpm=20.0;realism=1
+  czesci/morse_200000_09.npz: 200000 probek | n=200000;seed=21345;wpm=20.0;realism=1
+  czesci/morse_200000_10.npz: 200000 probek | n=200000;seed=22345;wpm=20.0;realism=1
+  czesci/morse_200000_11.npz: 200000 probek | n=200000;seed=23345;wpm=20.0;realism=1
+  czesci/morse_200000_12.npz: 200000 probek | n=200000;seed=24345;wpm=20.0;realism=1
+  czesci/morse_200000_13.npz: 200000 probek | n=200000;seed=25345;wpm=20.0;realism=1
+  czesci/morse_200000_14.npz: 200000 probek | n=200000;seed=26345;wpm=20.0;realism=1
+  czesci/morse_200000_15.npz: 200000 probek | n=200000;seed=27345;wpm=20.0;realism=1
+  czesci/morse_200000_16.npz: 200000 probek | n=200000;seed=28345;wpm=20.0;realism=1
+  czesci/morse_200000_17.npz: 200000 probek | n=200000;seed=29345;wpm=20.0;realism=1
+  czesci/morse_200000_18.npz: 200000 probek | n=200000;seed=30345;wpm=20.0;realism=1
+  czesci/morse_200000_19.npz: 200000 probek | n=200000;seed=31345;wpm=20.0;realism=1
+  czesci/morse_200000_20.npz: 200000 probek | n=200000;seed=32345;wpm=20.0;realism=1
+  czesci/morse_200000_21.npz: 200000 probek | n=200000;seed=33345;wpm=20.0;realism=1
+  czesci/morse_200000_22.npz: 200000 probek | n=200000;seed=34345;wpm=20.0;realism=1
+  czesci/morse_200000_23.npz: 200000 probek | n=200000;seed=35345;wpm=20.0;realism=1
+  czesci/morse_200000_24.npz: 200000 probek | n=200000;seed=36345;wpm=20.0;realism=1
+  czesci/morse_200000_25.npz: 200000 probek | n=200000;seed=37345;wpm=20.0;realism=1
+  czesci/morse_200000_26.npz: 200000 probek | n=200000;seed=38345;wpm=20.0;realism=1
+  czesci/morse_200000_27.npz: 200000 probek | n=200000;seed=39345;wpm=20.0;realism=1
+  czesci/morse_200000_28.npz: 200000 probek | n=200000;seed=40345;wpm=20.0;realism=1
+  czesci/morse_200000_29.npz: 200000 probek | n=200000;seed=41345;wpm=20.0;realism=1
+  czesci/morse_200000_30.npz: 200000 probek | n=200000;seed=42345;wpm=20.0;realism=1
+  czesci/morse_200000_31.npz: 200000 probek | n=200000;seed=43345;wpm=20.0;realism=1
+  czesci/morse_200000_32.npz: 200000 probek | n=200000;seed=44345;wpm=20.0;realism=1
+  czesci/morse_200000_33.npz: 200000 probek | n=200000;seed=45345;wpm=20.0;realism=1
+  czesci/morse_200000_34.npz: 200000 probek | n=200000;seed=46345;wpm=20.0;realism=1
+  czesci/morse_200000_35.npz: 200000 probek | n=200000;seed=47345;wpm=20.0;realism=1
+  czesci/morse_200000_36.npz: 200000 probek | n=200000;seed=48345;wpm=20.0;realism=1
+  czesci/morse_200000_37.npz: 200000 probek | n=200000;seed=49345;wpm=20.0;realism=1
+  czesci/morse_200000_38.npz: 200000 probek | n=200000;seed=50345;wpm=20.0;realism=1
+  czesci/morse_200000_39.npz: 200000 probek | n=200000;seed=51345;wpm=20.0;realism=1
+  czesci/morse_200000_40.npz: 200000 probek | n=200000;seed=52345;wpm=20.0;realism=1
+  czesci/morse_200000_41.npz: 200000 probek | n=200000;seed=53345;wpm=20.0;realism=1
+  czesci/morse_200000_42.npz: 200000 probek | n=200000;seed=54345;wpm=20.0;realism=1
+  czesci/morse_200000_43.npz: 200000 probek | n=200000;seed=55345;wpm=20.0;realism=1
+  czesci/morse_200000_44.npz: 200000 probek | n=200000;seed=56345;wpm=20.0;realism=1
+  czesci/morse_200000_45.npz: 200000 probek | n=200000;seed=57345;wpm=20.0;realism=1
+  czesci/morse_200000_46.npz: 200000 probek | n=200000;seed=58345;wpm=20.0;realism=1
+  czesci/morse_200000_47.npz: 200000 probek | n=200000;seed=59345;wpm=20.0;realism=1
+  czesci/morse_200000_48.npz: 200000 probek | n=200000;seed=60345;wpm=20.0;realism=1
+  czesci/morse_200000_49.npz: 200000 probek | n=200000;seed=61345;wpm=20.0;realism=1
+razem 10000000 probek w 50 czesciach, ziarna rozne
+zbiór aktualny — nie generuję
+
+============================================================
+ PRZEPUSTOWOSC     19:57
+============================================================
+    potok wejściowy                       375647 próbek/s   (0.7 ms/krok)
+    model na karcie                         8796 próbek/s   (29.1 ms/krok)
+    trening                                 8593 próbek/s   (29.8 ms/krok)
+  WĄSKIM GARDŁEM JEST KARTA — tak ma być.
+    Wejście dowozi 375647 próbek/s, karta bierze 8796.
+  OK, 0 min
+
+============================================================
+ TRENING fcn -> runs/fcn_10000000     19:58
+============================================================
+[1m38737/38737[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m2361s[0m 61ms/step - accuracy: 0.9508 - loss: 0.1105 - val_accuracy: 0.9501 - val_loss: 0.1129 - learning_rate: 0.0010
+[1m38737/38737[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m2361s[0m 61ms/step - accuracy: 0.9510 - loss: 0.1099 - val_accuracy: 0.9492 - val_loss: 0.1156 - learning_rate: 0.0010
+  kroki z dobrą klasą:      95.01%   (val_accuracy)
+
+  środkowy znak:            99.69%   <- porównywalne z dpu
+  okno odczytane w całości: 82.90%
+  CER:                      9.11%
+  OK, 481 min
+
+============================================================
+ KOPERTA fcn     03:59
+============================================================
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .     32     88      .      .      .
+     13            .      .     20    100      .      .      .
+     15            .      .      .      .      .      .      .
+     18            .      .      .     15      .      .      .
+     20            .      .      .     52      .      .      .
+     22            .      .      .     75      .      .      .
+     25            .      .      2     98      .      .      .
+     27            .      .     20     88      2      .      .
+     30            .      .     15     98      .      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+WYROK
+
+  znak w całości w oknie:   99.8% trafień (2995 próbek)
+  znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  5 przypadków na 3000 (0.17%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+  OK, 0 min
+
+============================================================
+ NAGRANIA fcn     04:00
+============================================================
+    w całości:    0/1
+    w kolejności: 0/1
+    w całości:    1/1   (LA3WAA)
+    w kolejności: 1/1   (LA3WAA)
+    w całości:    0/1
+    w kolejności: 0/1
+    w całości:    0/4
+    w kolejności: 0/4
+    w całości:    0/4
+    w kolejności: 3/4   (QST DE TEST)
+    w całości:    0/4
+    w kolejności: 1/4   (DE)
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+    w całości:    3/3   (CQ SQ2BVN 73)
+    w kolejności: 3/3   (CQ SQ2BVN 73)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+    w całości:    4/6   (CQx3 DE)
+    w kolejności: 4/6   (CQx3 DE)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  RAZEM na nagraniach z zapisaną treścią: w całości 8/24, w kolejności 12/24
+  RAZEM po scaleniu 0.35s: w całości 8/24, w kolejności 12/24
+  OK, 1 min
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-10-10  --  co wyszło
+============================================================
+
+KOD:   6e3254198e09 (main)
+VENV:  /root/venv_gpu
+
+ETAPY
+  PRZEPUSTOWOSC                OK     0 min
+  TRENING fcn -> runs/fcn_10000000 OK     481 min
+  KOPERTA fcn                  OK     0 min
+  NAGRANIA fcn                 OK     1 min
+
+WYNIKI TRENINGU
+
+  runs/fcn_10000000  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 95.01% (epoka 11)
+      (walidacja wyżej = kroki 40 ms z dobrą klasą)
+      środkowy znak 99.69%  <- jak dpu;  okno w całości 82.90%;  CER 9.11%
+      val_loss: minimum 0.1129 w epoce 11, koniec 0.1156
+  runs/gru_10000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- fcn ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 750-750 Hz
+    znak w całości w oknie:   99.8% trafień (2995 próbek)
+    znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
+    NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+    Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+    5 przypadków na 3000 (0.17%).
+    Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+    ma. Nie jest ani potwierdzona, ani obalona — jest
+    NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+    znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+    z etykiety jest wycentrowany z konstrukcji.
+    Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+    tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+    a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+    choroby, jest ogólny brak danych.
+
+PRAWDZIWE NAGRANIA (fcn)
+
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+
+    nadane: F5OHS
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: LA3WAA
+    w całości:    1/1   (LA3WAA)
+    w kolejności: 1/1   (LA3WAA)
+    nadane: LA4CIR
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 0/4
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 3/4   (QST DE TEST)
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 1/4   (DE)
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: CQ SQ2BVN 73
+
+  RAZEM na nagraniach z zapisaną treścią: w całości 8/24, w kolejności 12/24
+  RAZEM po scaleniu 0.35s: w całości 8/24, w kolejności 12/24
+
+PEŁNE LOGI
+  out/noc_20261009_1957.log
+  out/noc_20261009_1957_diag.log                 12K
+  out/noc_20261009_1957_fcn.log                  16M
+  out/noc_20261009_1957_koperta_fcn.log          8.0K
+  out/noc_20261009_1957_nagrania_fcn.log         4.0K
+  out/noc_20261009_1957_przepustowosc.log        4.0K
+  out/noc_20261009_1957_srodowisko.log           4.0K
+  out/koperta_fcn_20261009_1957.txt              4.0K
+
+Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
+============================================================
+
+--- historia treningu ---

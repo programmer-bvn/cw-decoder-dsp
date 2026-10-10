@@ -1,30 +1,31 @@
 ============================================================
- NOC 2026-10-09  --  co wyszło
+ NOC 2026-10-10  --  co wyszło
 ============================================================
 
-KOD:   a68693d606b9 (main)
+KOD:   6e3254198e09 (main)
 VENV:  /root/venv_gpu
 
 ETAPY
   PRZEPUSTOWOSC                OK     0 min
-  TRENING dpu -> runs/dpu_10000000 OK     402 min
-  KOPERTA dpu                  OK     0 min
-  NAGRANIA dpu                 OK     0 min
+  TRENING fcn -> runs/fcn_10000000 OK     481 min
+  KOPERTA fcn                  OK     0 min
+  NAGRANIA fcn                 OK     1 min
 
 WYNIKI TRENINGU
 
-  runs/dpu_10000000  dpu (wdrażalny na KV260)
-      epok 20, najlepsza walidacja 99.46% (epoka 19)
-      val_loss: minimum 0.0211 w epoce 16, koniec 0.0231
-      accuracy treningowa ~100% = model zapamiętał zbiór. Potrzeba WIĘCEJ DANYCH, nie epok.
+  runs/fcn_10000000  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 95.01% (epoka 11)
+      (walidacja wyżej = kroki 40 ms z dobrą klasą)
+      środkowy znak 99.69%  <- jak dpu;  okno w całości 82.90%;  CER 9.11%
+      val_loss: minimum 0.1129 w epoce 11, koniec 0.1156
   runs/gru_10000000 gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
-  --- dpu ---
-    czyta (>= 50%): tempo 10-30 WPM, ton 650-850 Hz
-    znak w całości w oknie:   99.4% trafień (2995 próbek)
-    znak obcięty oknem:      100.0% trafień (5 próbek, 0.2% zbioru)
+  --- fcn ---
+    czyta (>= 50%): tempo 10-30 WPM, ton 750-750 Hz
+    znak w całości w oknie:   99.8% trafień (2995 próbek)
+    znak obcięty oknem:       80.0% trafień (5 próbek, 0.2% zbioru)
     NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
     Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
     5 przypadków na 3000 (0.17%).
@@ -38,34 +39,49 @@ KOPERTA I PRZYCZYNA BŁĘDÓW
     a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
     choroby, jest ogólny brak danych.
 
-PRAWDZIWE NAGRANIA (dpu)
+PRAWDZIWE NAGRANIA (fcn)
 
   mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
   mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
   mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
   radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
 
+    nadane: F5OHS
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: LA3WAA
+    w całości:    1/1   (LA3WAA)
+    w kolejności: 1/1   (LA3WAA)
+    nadane: LA4CIR
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 0/4
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 3/4   (QST DE TEST)
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+    w kolejności: 1/4   (DE)
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: CQ SQ2BVN 73
-    w całości:    2/3   (CQ 73)
-    w kolejności: 3/3   (CQ SQ2BVN 73)
-    nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
-    w całości:    3/6   (CQx2 DE)
-    w kolejności: 3/6   (CQx2 DE)
-    nadane: nieodnotowane — odczyt tylko do obejrzenia
 
-  RAZEM na nagraniach z zapisaną treścią: w całości 5/9, w kolejności 6/9
-  RAZEM po scaleniu 0.35s: w całości 6/9, w kolejności 6/9
+  RAZEM na nagraniach z zapisaną treścią: w całości 8/24, w kolejności 12/24
+  RAZEM po scaleniu 0.35s: w całości 8/24, w kolejności 12/24
 
 PEŁNE LOGI
-  out/noc_20261008_2220.log
-  out/noc_20261008_2220_diag.log                 8.0K
-  out/noc_20261008_2220_dpu.log                  13M
-  out/noc_20261008_2220_gen.log                  156K
-  out/noc_20261008_2220_koperta_dpu.log          8.0K
-  out/noc_20261008_2220_nagrania_dpu.log         8.0K
-  out/noc_20261008_2220_przepustowosc.log        4.0K
-  out/noc_20261008_2220_srodowisko.log           4.0K
-  out/koperta_dpu_20261008_2220.txt              4.0K
+  out/noc_20261009_1957.log
+  out/noc_20261009_1957_diag.log                 12K
+  out/noc_20261009_1957_fcn.log                  16M
+  out/noc_20261009_1957_koperta_fcn.log          8.0K
+  out/noc_20261009_1957_nagrania_fcn.log         4.0K
+  out/noc_20261009_1957_przepustowosc.log        4.0K
+  out/noc_20261009_1957_srodowisko.log           4.0K
+  out/koperta_fcn_20261009_1957.txt              4.0K
 
 Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
