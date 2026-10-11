@@ -1,30 +1,30 @@
 ============================================================
- NOC 2026-10-10  --  co wyszło
+ NOC 2026-10-11  --  co wyszło
 ============================================================
 
-KOD:   23cc98317b88 (main)
+KOD:   de5a45c82c09 (main)
 VENV:  /root/venv_gpu
 
 ETAPY
   PRZEPUSTOWOSC                OK     0 min
-  TRENING fcn -> runs/fcn_4000000_czesci_rt OK     191 min
+  TRENING fcn -> runs/fcn_4000000_czesci_4m OK     192 min
   KOPERTA fcn                  OK     0 min
   NAGRANIA fcn                 OK     1 min
 
 WYNIKI TRENINGU
 
-  runs/fcn_4000000_czesci_rt  fcn (wdrażalny na KV260)
-      epok 12, najlepsza walidacja 92.85% (epoka 11)
+  runs/fcn_4000000_czesci_4m  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 94.82% (epoka 11)
       (walidacja wyżej = kroki 40 ms z dobrą klasą)
-      środkowy znak 97.77%  <- jak dpu;  okno w całości 78.03%;  CER 12.80%
-      val_loss: minimum 0.1832 w epoce 11, koniec 0.1846
-  runs/gru_4000000_czesci_rt gru (odniesienie, NIE wdrażalny)   brak wyniku
+      środkowy znak 99.54%  <- jak dpu;  okno w całości 82.38%;  CER 9.37%
+      val_loss: minimum 0.1182 w epoce 11, koniec 0.2558
+  runs/gru_4000000_czesci_4m gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
   --- fcn ---
     czyta (>= 50%): tempo 10-30 WPM, ton 750-750 Hz
-    znak w całości w oknie:   97.5% trafień (2998 próbek)
+    znak w całości w oknie:   69.3% trafień (2998 próbek)
     znak obcięty oknem:      100.0% trafień (2 próbek, 0.1% zbioru)
     NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
     Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
@@ -54,35 +54,34 @@ PRAWDZIWE NAGRANIA (fcn)
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: nieodnotowane — odczyt tylko do obejrzenia
     nadane: DP75HSC
-    w całości:    0/1
-    w kolejności: 0/1
+    w całości:    1/1   (DP75HSC)
+    w kolejności: 1/1   (DP75HSC)
     nadane: LA3WAA
-    w całości:    0/1
+    w całości:    1/1   (LA3WAA)
     w kolejności: 1/1   (LA3WAA)
     nadane: LA4CIR
     w całości:    0/1
-    w kolejności: 1/1   (LA4CIR)
+    w kolejności: 0/1
     nadane: OK1FPS
     w całości:    0/1
     w kolejności: 1/1   (OK1FPS)
     nadane: QST DE SN0FMT TEST
-    w całości:    1/4   (DE)
+    w całości:    0/4
     w kolejności: 1/4   (DE)
     nadane: QST DE SN0FMT TEST
-    w całości:    2/4   (QST DE)
+    w całości:    0/4
 
-  RAZEM na nagraniach z zapisaną treścią: w całości 13/26, w kolejności 19/26
-  RAZEM po scaleniu 0.35s: w całości 13/26, w kolejności 19/26
+  RAZEM na nagraniach z zapisaną treścią: w całości 9/26, w kolejności 13/26
+  RAZEM po scaleniu 0.35s: w całości 9/26, w kolejności 13/26
 
 PEŁNE LOGI
-  out/noc_20261010_1215.log
-  out/noc_20261010_1215_diag.log                 12K
-  out/noc_20261010_1215_fcn.log                  6.5M
-  out/noc_20261010_1215_gen.log                  108K
-  out/noc_20261010_1215_koperta_fcn.log          8.0K
-  out/noc_20261010_1215_nagrania_fcn.log         4.0K
-  out/noc_20261010_1215_przepustowosc.log        4.0K
-  out/noc_20261010_1215_srodowisko.log           4.0K
-  out/koperta_fcn_20261010_1215.txt              4.0K
+  out/noc_20261010_2301.log
+  out/noc_20261010_2301_diag.log                 12K
+  out/noc_20261010_2301_fcn.log                  6.4M
+  out/noc_20261010_2301_koperta_fcn.log          8.0K
+  out/noc_20261010_2301_nagrania_fcn.log         8.0K
+  out/noc_20261010_2301_przepustowosc.log        4.0K
+  out/noc_20261010_2301_srodowisko.log           4.0K
+  out/koperta_fcn_20261010_2301.txt              4.0K
 
 Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
