@@ -815,6 +815,39 @@ TEST 19 w `diag.py`, bank `probki/szum/`.
 
 ---
 
+### Czy prosta baza szumów pomaga — doświadczenie kontrolne (11.10)
+
+**Pytanie operatora:** czy prosta baza szumów „lewaruje" dekodowanie —
+jeśli słabo, szkoda na nią czasu na tym etapie.
+
+**Układ.** Dwa modele różniące się TYLKO tłem: fcn, 4 mln próbek, 12 epok,
+ten sam kod odczytu (ze sklejaniem liter).
+- `runs/fcn_4000000_czesci_4m` — stare części, szum syntetyczny
+  (`czesci_4m/` = dowiązania twarde do `czesci/..._00-19`)
+- `runs/fcn_4000000_czesci_rt` — połowa klipów z bankiem `probki/szum`
+
+**Zmierzone** (w całości / w kolejności):
+
+| grupa nagrań | bez banku | z bankiem |
+|---|---|---|
+| stacje spoza warunków banku: F5OHS, DP75HSC, LA4CIR, OK1FPS (4 słowa) | 1 / 2 | 0 / 2 |
+| warunki jak w banku: SN0FMT ×3 (3565 kHz, ten sam wieczór), LA3WAA (7007, 10 min po szumie 7025) — 13 słów | 1 / 3 | **6 / 10** |
+| mikrofon: mic2 + mic3 (9) | 7 / 8 | 7 / 8 |
+
+**Wniosek.** Zysk z banku jest TYLKO tam, gdzie warunki nagrania pokrywają
+się z warunkami nagrania szumu (to samo pasmo i wieczór). Na stacjach
+niezależnych efektu nie widać — przy 4 słowach nie da się go ani
+potwierdzić, ani wykluczyć. Bank z jednego wieczoru uczy sieć TAMTEGO
+tła, nie tła w ogóle. Czy bank z wielu pasm i pór przeniósłby się na
+inne warunki — hipoteza, niesprawdzona.
+
+**Decyzja (11.10):** priorytet przechodzi na projekt Grawana_od_rana
+(zasilanie domu). Dekoder wstrzymany w stanie: generator z bankiem
+działa i jest przetestowany (diag 106/106), modele i dane zostają. Wrócić
+z niezależnym zestawem testowym (nagrania z 20 m i innych pór).
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej
