@@ -201,8 +201,8 @@ QSB_DEPTH = (0.0, 0.6)          # głębokość zaniku; 0.6 = spadek o 8 dB.
                                 # i etykieta przestaje odpowiadać obrazowi.
 
 # --- QRM: inna stacja w pasmie -------------------------------------------
-QRM_PROB = 0.35                 # udział klipów z drugą stacją
-QRM_AMP = (0.05, 0.35)          # jej amplituda; bywa mocniejsza od naszej
+QRM_PROB = 0.35                 # udział klipów z drugą stacją; jej S/N
+                                # losowane z SN_DB, jak naszej (12.10)
 
 # --- QRN: trzaski atmosferyczne ------------------------------------------
 QRN_PROB = 0.30                 # udział klipów z trzaskami
@@ -307,20 +307,23 @@ SN_REF_BW_HZ = 500.0
 # syntetyk mediana 20 dB, bank kończył się na ~14 dB.
 SN_DB = (-3.0, 30.0)
 
-# --- Gałka AF: poziom bezwzględny ------------------------------------------
-# Losowany osobno od S/N: poziom tonu stacji w obrazie (dB skali sieci).
-# Przy odczycie auto_gain stawia szczyt nagrania na 17 dB i działa tylko
-# jako tłumik; cichsze nagrania zostają ciche. Stąd zakres od cichego do
-# trochę ponad 17 dB.
-POZIOM_DB = (2.0, 20.0)
-# Ton o amplitudzie 1 w obrazie, ZMIERZONE 12.10 (frontend, ton ciągły):
-# 27,2 dB przy 670 Hz, 28,6 przy 750, 28,2 przy 830.
-TON_DB_AMP1 = 28.2
-# Szeroki szum przy małym S/N wymagałby wzmocnienia ponad pełną skalę —
-# wtedy „operator ścisza": RMS całości nie przekracza tej wartości.
-POZIOM_RMS_MAX = 0.25
+# --- Gałka AF: poziom SZUMU w obrazie ---------------------------------------
+# Losowany osobno od S/N: gdzie leży szum w obrazie (dB skali sieci,
+# dsp/sn.tlo_db — pasma przy tonie, ramki przerw). Stacja = szum + S/N.
+# ZMIERZONE 12.10 na nagraniach radiowych po tłumiku (okna 2,56 s):
+# 5% -15,0 | 50% -5,7 | 95% +3,7 dB; mikrofon -30...-20 dB (tam S/N
+# 26-29 dB, więc niski szum daje tłumik przy mocnej stacji).
+# Pierwsza wersja (12.10) losowała poziom STACJI — przy słabej stacji
+# szum szedł „po sam dach" (ocena operatora).
+# Zakres (-15, 4) dał w generatorze przy S/N < 16 dB (bank): 5% -16,2 |
+# 50% -7,7 | 95% -0,4 — o 2-4 dB ciemniej niż nagrania, bo tłumik ścisza
+# mocniejsze stacje. Stąd przesunięcie o 3 dB.
+TLO_DB = (-12.0, 7.0)
+# Karta: szczyt w czasie po tłumiku nie wyżej niż tyle (ułamek pełnej
+# skali) — operator ścisza, zamiast słuchać obciętego sygnału.
+KARTA_MAX = 0.95
 # Tłumik: szczyt obrazu (99,9 percentyl dB), powyżej którego poziom się
-# ścisza. TA SAMA liczba przy odczycie (tools/wav2net.py, auto_gain) i w
+# ścisza (ton o amplitudzie 1 daje 28,2 dB — zmierzone 12.10). TA SAMA liczba przy odczycie (tools/wav2net.py, auto_gain) i w
 # generatorze — w generatorze po gałce AF, bo silna druga stacja albo
 # trzask przesterowywały 11,6% klipów (diag 12.10).
 TLUMIK_DB = 17.0

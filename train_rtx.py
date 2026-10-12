@@ -143,7 +143,6 @@ STORE_DTYPE = "uint8"
 NOISE_TILT = (-1.0, 0.0)
 QSB_DEPTH = (0.0, 0.6)
 QRM_PROB = 0.35
-QRM_AMP = (0.05, 0.35)
 QRN_PROB = 0.30
 QRN_MAX = 6
 QRN_AMP = (0.1, 0.6)
@@ -187,12 +186,12 @@ REAL_NOISE_DIR = "probki/szum"
 REAL_NOISE_RMS = 0.05
 REAL_NOISE_OFFSET_HZ = 60.0
 # Jedna miara S/N i gałka AF — opis w dsp/config.py przy SN_REF_BW_HZ
-# i POZIOM_DB (12.10).
+# i TLO_DB (12.10).
 SN_REF_BW_HZ = 500.0
 SN_DB = (-3.0, 30.0)
-POZIOM_DB = (2.0, 20.0)
-TON_DB_AMP1 = 28.2
-POZIOM_RMS_MAX = 0.25
+TLO_DB = (-12.0, 7.0)
+KARTA_MAX = 0.95
+TLO_PASMO_HZ = 120.0
 TLUMIK_DB = 17.0
 
 # Odcisk front-endu. Musi być identyczny z config.fingerprint_str().
@@ -629,7 +628,10 @@ def apply_agc(audio: np.ndarray, tau_ms: float, depth: float,
     if depth <= 0.0 or x.size == 0:
         return audio
     a = float(np.exp(-1.0 / (max(1e-3, tau_ms) * 1e-3 * sr)))
-    envd = lfilter([1.0 - a], [1.0, -a], np.abs(x))
+    # Detektor startuje z poziomu sygnału, nie od zera (dsp/radio.py).
+    n0 = max(1, min(x.size, int(tau_ms * 1e-3 * sr)))
+    e0 = float(np.mean(np.abs(x[:n0])))
+    envd, _ = lfilter([1.0 - a], [1.0, -a], np.abs(x), zi=[a * e0])
     ref = float(np.percentile(envd, 95)) + 1e-9
     gain = (ref / np.maximum(envd, ref * 1e-3)) ** float(depth)
     return (x * np.clip(gain, 0.0, 20.0)).astype(np.float32)
@@ -780,6 +782,48 @@ def amp_dla_sn(sn_db: float, szum: np.ndarray, ton_hz: float,
     return float(np.sqrt(2.0 * moc * 10.0 ** (sn_db / 10.0)))
 
 
+def filtr_jak_szum(x: np.ndarray, szum: np.ndarray, sr: int = SR
+                   ) -> np.ndarray:
+    """Filtr p.cz. odczytany z widma szumu z banku (dsp/radio.py, 12.10)."""
+    n = 1024
+    w = np.hanning(n)
+    s = np.asarray(szum, dtype=np.float64)
+    moc = np.zeros(n // 2 + 1)
+    for k in range(0, s.size - n, n // 2):
+        moc += np.abs(np.fft.rfft(s[k:k + n] * w)) ** 2
+    moc = np.convolve(moc, np.ones(9) / 9.0, mode="same")
+    h = np.sqrt(moc / max(moc.max(), 1e-30))
+    X = np.fft.rfft(np.asarray(x, dtype=np.float64))
+    f = np.fft.rfftfreq(x.size, 1.0 / sr)
+    X *= np.interp(f, np.fft.rfftfreq(n, 1.0 / sr), h)
+    return np.fft.irfft(X, n=x.size).astype(np.float32)
+
+
+def przerwy_z_klucza(stacja: np.ndarray) -> np.ndarray:
+    """Ramki obrazu bez ani próbki znaku w oknie FFT (dsp/sn.py)."""
+    x = np.pad(np.abs(np.asarray(stacja, dtype=np.float64)), N_FFT // 2,
+               mode="constant")
+    n = 1 + (x.size - N_FFT) // HOP_LENGTH
+    ramki = np.lib.stride_tricks.as_strided(
+        x, shape=(n, N_FFT), strides=(x.strides[0] * HOP_LENGTH,
+                                      x.strides[0]))
+    return ramki.max(axis=1) < 1e-3
+
+
+def tlo_db(db: np.ndarray, przerwy: np.ndarray, ton_hz: float) -> float:
+    """Poziom szumu w obrazie z ramek przerw (dsp/sn.py)."""
+    srodki = mel_to_hz(np.linspace(hz_to_mel(FMIN), hz_to_mel(FMAX),
+                                   N_MELS + 2))[1:-1]
+    m = np.abs(srodki - ton_hz) <= TLO_PASMO_HZ / 2.0
+    if not m.any():
+        m[int(np.argmin(np.abs(srodki - ton_hz)))] = True
+    p = 10.0 ** (db[:, m] / 10.0)
+    na_ramke = p.mean(axis=1)[przerwy]
+    if na_ramke.size < 5:
+        return float("nan")
+    return float(10.0 * np.log10(np.median(na_ramke)))
+
+
 def receive(text: str, rng: np.random.Generator, realism: bool = True
             ) -> tuple[np.ndarray, dict]:
     """Nadanie przepuszczone przez kanał. Zwraca (audio, pełny opis)."""
@@ -870,18 +914,23 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
     meta.update(amp=amp if text else 0.0, szum_real=szum_i,
                 snr_db=snr if text else float("nan"))
 
+    # Zakłócenia osobno: przy tle z banku idą przez filtr p.cz. (12.10).
+    zak = np.zeros(CLIP_SAMPLES, dtype=np.float32)
     qrm = 0.0
     if realism and rng.random() < QRM_PROB:
-        qrm = float(rng.uniform(*QRM_AMP)) * skala
-        audio = add_qrm(audio, rng, amp=qrm)
+        qrm = amp_dla_sn(float(rng.uniform(*SN_DB)), szum, TONE_CENTER)
+        zak = add_qrm(zak, rng, amp=qrm)
     meta["qrm"] = qrm
 
     qrn = 0
     if realism and rng.random() < QRN_PROB:
         qrn = int(rng.integers(1, QRN_MAX + 1))
-        audio = add_qrn(audio, rng, n_crashes=qrn,
-                        amp=float(rng.uniform(*QRN_AMP)) * skala)
+        zak = add_qrn(zak, rng, n_crashes=qrn,
+                      amp=float(rng.uniform(*QRN_AMP)) * skala)
     meta["qrn"] = qrn
+    if prawdziwy and (qrm > 0.0 or qrn > 0):
+        zak = filtr_jak_szum(zak, szum)
+    audio = (audio + zak).astype(np.float32)
 
     # ARW odbiornika — ostatni etap przed ogranicznikiem karty, bo taka jest
     # kolejność w torze: antena -> mieszacz -> filtr -> ARW -> AF -> karta.
@@ -891,19 +940,25 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
         audio = apply_agc(audio, agc_tau, float(rng.uniform(*AGC_DEPTH)))
     meta["agc_tau"] = agc_tau
 
-    # Gałka AF: poziom tonu stacji w obrazie, niezależny od S/N (12.10).
-    poziom = float(rng.uniform(*POZIOM_DB)) if realism else 17.0
-    g = 10.0 ** ((poziom - TON_DB_AMP1) / 20.0) / max(amp, 1e-9)
-    rms = float(np.sqrt(np.mean(audio.astype(np.float64) ** 2)))
-    g = min(g, POZIOM_RMS_MAX / max(rms, 1e-12))
-    audio = (audio * g).astype(np.float32)
-    # Tłumik jak przy odczycie (TLUMIK_DB w dsp/config.py).
-    szczyt = float(np.percentile(mel_db(audio), 99.9))
+    # Gałka AF: poziom SZUMU w obrazie (opis w dsp/radio.py, 12.10).
+    cel = float(rng.uniform(*TLO_DB)) if realism else TLO_DB[1]
+    db = mel_db(audio)
+    przerwy = (przerwy_z_klucza(amp * stacja) if text
+               else np.ones(db.shape[0], dtype=bool))
+    ton_t = meta["tone"] if text else TONE_CENTER
+    tlo = tlo_db(db, przerwy, ton_t)
+    if not np.isfinite(tlo):
+        tlo = tlo_db(db, np.ones(db.shape[0], dtype=bool), ton_t)
+    g_db = cel - tlo
+    szczyt = float(np.percentile(db, 99.9)) + g_db
     if szczyt > TLUMIK_DB:
-        t = 10.0 ** ((TLUMIK_DB - szczyt) / 20.0)
-        audio = (audio * t).astype(np.float32)
-        g *= t
-    meta["poziom_db"] = float(TON_DB_AMP1 + 20.0 * np.log10(max(amp * g, 1e-12)))
+        g_db -= szczyt - TLUMIK_DB
+    audio = (audio * 10.0 ** (g_db / 20.0)).astype(np.float32)
+    peak = float(np.max(np.abs(audio))) if audio.size else 0.0
+    if peak > KARTA_MAX:
+        audio = (audio * (KARTA_MAX / peak)).astype(np.float32)
+        g_db += 20.0 * np.log10(KARTA_MAX / peak)
+    meta["tlo_db"] = float(tlo + g_db)
 
     peak = float(np.max(np.abs(audio))) if audio.size else 0.0
     meta.update(peak=peak, clipped=peak > 1.0)
@@ -1079,7 +1134,7 @@ META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb", "qrm", "qrn",
                "lab_x0", "lab_x1",
                # Prawdziwe tło (od 10.10): numer pliku w banku (-1 = szum
                # syntetyczny) i siła stacji względem tego szumu.
-               "szum_real", "snr_db", "poziom_db")
+               "szum_real", "snr_db", "tlo_db")
 
 
 def clip_frames(n_samples: int = CLIP_SAMPLES) -> int:

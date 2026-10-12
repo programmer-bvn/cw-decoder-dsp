@@ -923,8 +923,44 @@ całej szerokości obrazu (odbiornik bez wąskiego filtra) — nagrania tak
 nie wyglądają, ale to możliwy przypadek. Poziom stacji w treningu:
 mediana ~9 dB, nagrania po tłumiku ~17 dB — pokryte, nie wyśrodkowane.
 
-**Dalej:** noc porównawcza na warunkach kontroli z 10.10 (4 mln, 12 epok,
-fcn), zbiór `czesci_sn`, porównanie z `fcn_4000000_czesci_rt` i `_4m`.
+**Ocena okiem operatora (12.10, wieczór)** — `tools/xray_ocena.py`,
+przeglądarka pygame z polem „zły", partia 320 klipów + 32 okna PRAWDZIWYCH
+nagrań wymieszane bez oznaczeń (kontrola oka). Wynik `out/ocena/partia1`:
+
+| | złych |
+|---|---|
+| bank, wąski filtr p.cz. (200–500 Hz) | 84% |
+| bank, szeroki filtr (1250 Hz) | 8% |
+| syntetyk | 5% |
+| **prawdziwe nagrania** | **31/32** |
+
+Kryterium operatora: „czego nie widać na wodospadzie IC-7300". Wodospad
+pokazuje widmo PRZED filtrem p.cz., gniazdo USB — ZA filtrem; czarne pola
+nad i pod pasem filtra są więc prawdziwe (dowód: `out/ocena/zle_a_prawdziwe.png`).
+Ocena trafiła za to w trzy realne błędy, które pod tym kryterium było widać:
+
+1. **Gałka AF zaczepiona o stację** — przy słabej stacji szum szedł „po
+   sam dach", jaśniejszy niż jakakolwiek stacja. Prawdziwe radio trzyma
+   w ryzach SZUM. Teraz losowany jest poziom szumu w obrazie (`TLO_DB`,
+   miara `dsp/sn.tlo_db`: pasma przy tonie, ramki przerw), stacja = szum
+   + S/N, potem tłumik 17 dB. Nagrania radiowe tą miarą: 5% −15,0 | 50%
+   −5,7 | 95% +3,7 dB; generator (bank, S/N < 16) po zmianie: −14,5 |
+   −5,3 | +1,3 dB.
+2. **QRM i trzaski dokładane za filtrem p.cz.** — świeciły w czarnym polu
+   poza pasem („widma z innego świata"). Teraz przy tle z banku idą przez
+   filtr odczytany z widma tego szumu (`radio.filtr_jak_szum`, −38 dB poza
+   pasem). QRM ma S/N z `SN_DB` jak nasza stacja (było zawsze 16–33 dB,
+   tłumik wtedy chował naszą stację).
+3. **Rozbieg ARW** — detektor startował od zera, lewa krawędź świeciła;
+   **karta** — szczyt w czasie 4–8× pełnej skali, ogranicznik robił szum
+   na całym obrazie. Teraz detektor startuje z poziomu sygnału, a szczyt
+   ≤ `KARTA_MAX` (operator ścisza).
+
+Usunięte: `POZIOM_DB`, `TON_DB_AMP1`, `POZIOM_RMS_MAX`, `QRM_AMP`.
+diag 113/113. Nowa partia do oceny: `out/ocena/partia2.npz`.
+
+**Dalej:** ocena partii 2 okiem, potem noc porównawcza na warunkach
+kontroli z 10.10 (4 mln, 12 epok, fcn), zbiór `czesci_sn`.
 
 ---
 

@@ -143,3 +143,64 @@ def zmierz_sn(x: np.ndarray, ton_hz: float = C.TONE_CENTER,
 
 
 KONCENTRACJA_MIN = 0.8
+
+
+# --- poziom tła w OBRAZIE ---------------------------------------------------
+# 12.10: gałka AF zaczepiona o STACJĘ podciągała szum przy słabej stacji
+# aż „po sam dach" (ocena operatora, out/ocena/partia1). Prawdziwe radio
+# trzyma w ryzach SZUM (ARW, gałka AF), a słaba stacja jest po prostu
+# ciemna. Ta miara mówi, gdzie leży szum w obrazie sieci: mediana po
+# ramkach przerw ze średniej mocy w pasmach mel przy tonie.
+TLO_PASMO_HZ = 120.0       # pasma mel o środku w tonie +/- 60 Hz
+                           # (kopia w train_rtx.py — TEST 12)
+
+
+def pasma_przy_tonie(ton_hz: float) -> np.ndarray:
+    from . import melref
+    srodki = melref.mel_frequencies(C.N_MELS, C.FMIN, C.FMAX)[1:-1]
+    m = np.abs(srodki - ton_hz) <= TLO_PASMO_HZ / 2.0
+    if not m.any():
+        m[int(np.argmin(np.abs(srodki - ton_hz)))] = True
+    return m
+
+
+def tlo_db(mel_db: np.ndarray, przerwy: np.ndarray, ton_hz: float) -> float:
+    """Poziom szumu w obrazie [dB skali sieci] z ramek przerw."""
+    p = 10.0 ** (mel_db[:, pasma_przy_tonie(ton_hz)] / 10.0)
+    na_ramke = p.mean(axis=1)[przerwy]
+    if na_ramke.size < 5:
+        return float("nan")
+    return float(10.0 * np.log10(np.median(na_ramke)))
+
+
+def przerwy_z_klucza(stacja: np.ndarray) -> np.ndarray:
+    """Ramki obrazu, w których okno FFT nie obejmuje ani próbki znaku.
+
+    Generator zna obwiednię stacji osobno — nie musi zgadywać przerw.
+    Ramki jak w melref: dopełnienie N_FFT/2 zerami, krok HOP_LENGTH.
+    """
+    x = np.pad(np.abs(np.asarray(stacja, dtype=np.float64)), C.N_FFT // 2,
+               mode="constant")
+    n = 1 + (x.size - C.N_FFT) // C.HOP_LENGTH
+    ramki = np.lib.stride_tricks.as_strided(
+        x, shape=(n, C.N_FFT), strides=(x.strides[0] * C.HOP_LENGTH,
+                                        x.strides[0]))
+    return ramki.max(axis=1) < 1e-3
+
+
+def przerwy_z_obrazu(mel_db: np.ndarray, ton_hz: float) -> np.ndarray:
+    """Ramki przerw w obrazie bez wiedzy o kluczu (nagrania).
+
+    Próg Otsu na mocy w pasmach przy tonie, potem dwie ramki odstępu od
+    każdej zmiany stanu (okno 64 ms przy kroku 20 ms zachodzi na 3 ramki).
+    Okno bez stacji: Otsu i tak dzieli szum na pół — wtedy „przerwy" to
+    cichsza połowa szumu i poziom wychodzi zaniżony o ok. 1-2 dB.
+    """
+    p = mel_db[:, pasma_przy_tonie(ton_hz)]
+    db = 10.0 * np.log10(np.mean(10.0 ** (p / 10.0), axis=1))
+    przerwa = db <= _prog_otsu(db)
+    pewne = przerwa.copy()
+    for s in (1, 2):
+        pewne[s:] &= przerwa[:-s]
+        pewne[:-s] &= przerwa[s:]
+    return pewne

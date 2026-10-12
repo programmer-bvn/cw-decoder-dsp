@@ -123,7 +123,12 @@ def apply_agc(audio: np.ndarray, tau_ms: float, depth: float,
 
     # Detektor obwiedni z zadaną stałą czasową.
     a = float(np.exp(-1.0 / (max(1e-3, tau_ms) * 1e-3 * sr)))
-    envd = lfilter([1.0 - a], [1.0, -a], np.abs(x))
+    # Detektor startuje z poziomu sygnału, nie od zera: radio pracowało
+    # przed tym klipem. Od zera wzmocnienie skakało na początku do 20x
+    # i lewa krawędź obrazu świeciła (ocena operatora 12.10).
+    n0 = max(1, min(x.size, int(tau_ms * 1e-3 * sr)))
+    e0 = float(np.mean(np.abs(x[:n0])))
+    envd, _ = lfilter([1.0 - a], [1.0, -a], np.abs(x), zi=[a * e0])
     ref = float(np.percentile(envd, 95)) + 1e-9
     # Wzmocnienie odwrotnie proporcjonalne do obwiedni, w stopniu `depth`.
     gain = (ref / np.maximum(envd, ref * 1e-3)) ** float(depth)
@@ -210,6 +215,30 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
 # funkcja jest w train_rtx.py i oba generatory muszą losować z tej samej
 # listy — inaczej TEST 12 w diag.py nie dostanie tych samych obrazów.
 _BANK = None
+
+
+def filtr_jak_szum(x: np.ndarray, szum: np.ndarray, sr: int = C.SR
+                   ) -> np.ndarray:
+    """Przepuszcza x przez filtr p.cz. odczytany z widma szumu z banku.
+
+    Szum z banku przeszedł przez filtr radia, a QRM i trzaski dokładane
+    w generatorze nie — do 12.10 świeciły w czarnym polu poza pasem filtra,
+    czego w żadnym radiu nie ma (ocena operatora: „widma z innego świata").
+    Charakterystyka = pierwiastek z wygładzonego (~70 Hz, jak srodek_pasa)
+    widma mocy szumu, unormowany do 1 w szczycie.
+    """
+    n = 1024
+    w = np.hanning(n)
+    s = np.asarray(szum, dtype=np.float64)
+    moc = np.zeros(n // 2 + 1)
+    for k in range(0, s.size - n, n // 2):
+        moc += np.abs(np.fft.rfft(s[k:k + n] * w)) ** 2
+    moc = np.convolve(moc, np.ones(9) / 9.0, mode="same")
+    h = np.sqrt(moc / max(moc.max(), 1e-30))
+    X = np.fft.rfft(np.asarray(x, dtype=np.float64))
+    f = np.fft.rfftfreq(x.size, 1.0 / sr)
+    X *= np.interp(f, np.fft.rfftfreq(n, 1.0 / sr), h)
+    return np.fft.irfft(X, n=x.size).astype(np.float32)
 
 
 def srodek_pasa(a: np.ndarray, sr: int = C.SR) -> float:
@@ -411,18 +440,28 @@ def receive(text: str, rng: np.random.Generator,
                 snr_db=snr if text else float("nan"))
 
     # --- zakłócenia w pasmie ---
+    # Osobny bufor: przy tle z banku zakłócenia idą przez ten sam filtr
+    # p.cz., przez który przeszedł szum (filtr_jak_szum).
+    zak = np.zeros(n_samples, dtype=np.float32)
     qrm_amp = 0.0
     if realism and rng.random() < C.QRM_PROB:
-        qrm_amp = float(rng.uniform(*C.QRM_AMP)) * skala
-        audio = add_qrm(audio, rng, amp=qrm_amp, sr=sr)
+        # Druga stacja w tej samej mierze S/N co nasza. Do 12.10 amplituda
+        # w starych jednostkach dawała jej zawsze 16-33 dB — tłumik
+        # ściszał wtedy całość i nasza stacja znikała (ocena operatora).
+        qrm_amp = sn.amp_dla_sn(float(rng.uniform(*C.SN_DB)), szum,
+                                C.TONE_CENTER, sr=sr)
+        zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr)
     meta["qrm"] = qrm_amp
 
     n_crashes = 0
     if realism and rng.random() < C.QRN_PROB:
         n_crashes = int(rng.integers(1, C.QRN_MAX + 1))
-        audio = add_qrn(audio, rng, n_crashes=n_crashes,
-                        amp=float(rng.uniform(*C.QRN_AMP)) * skala, sr=sr)
+        zak = add_qrn(zak, rng, n_crashes=n_crashes,
+                      amp=float(rng.uniform(*C.QRN_AMP)) * skala, sr=sr)
     meta["qrn"] = n_crashes
+    if prawdziwy and (qrm_amp > 0.0 or n_crashes > 0):
+        zak = filtr_jak_szum(zak, szum, sr=sr)
+    audio = (audio + zak).astype(np.float32)
 
     # --- ARW odbiornika ---
     # Ostatni etap przed ogranicznikiem, bo taka jest kolejność w torze:
@@ -436,27 +475,36 @@ def receive(text: str, rng: np.random.Generator,
                           float(rng.uniform(*C.AGC_DEPTH)), sr=sr)
     meta["agc_tau"] = agc_tau
 
-    # --- gałka AF: poziom bezwzględny, niezależny od S/N ---
-    # Losowany jest poziom TONU STACJI w obrazie (jak gałka AF albo tłumik),
-    # a tło ustawia się samo, S/N niżej. Przy odczycie auto_gain działa
-    # na naszych nagraniach tylko jako tłumik (12.10: korekta -2,8...-12,7
-    # dB na wszystkich 16), więc sieć ma znać poziomy od cichych do ~17 dB,
-    # a nie jeden. Szeroki szum przy małym S/N wymagałby wzmocnienia ponad
-    # pełną skalę — tam „operator ścisza" (POZIOM_RMS_MAX).
-    poziom = float(rng.uniform(*C.POZIOM_DB)) if realism else 17.0
-    g = 10.0 ** ((poziom - C.TON_DB_AMP1) / 20.0) / max(amp, 1e-9)
-    rms = float(np.sqrt(np.mean(audio.astype(np.float64) ** 2)))
-    g = min(g, C.POZIOM_RMS_MAX / max(rms, 1e-12))
-    audio = (audio * g).astype(np.float32)
+    # --- gałka AF: poziom SZUMU w obrazie ---
+    # Prawdziwe radio trzyma w ryzach szum (ARW, gałka AF), a słaba stacja
+    # jest po prostu ciemna. Pierwsza wersja z 12.10 zaczepiała gałkę
+    # o STACJĘ — przy słabej stacji szum szedł „po sam dach" (ocena
+    # operatora, out/ocena/partia1). Poziom mierzony w przerwach między
+    # znakami, po ARW, tak jak tools/sn mierzy nagrania (TLO_DB).
+    cel = float(rng.uniform(*C.TLO_DB)) if realism else C.TLO_DB[1]
+    db = frontend.power_to_db(frontend.melspec_power(audio, sr))
+    przerwy = (sn.przerwy_z_klucza(amp * stacja) if text
+               else np.ones(db.shape[0], dtype=bool))
+    tlo = sn.tlo_db(db, przerwy, meta["tone"] if text else C.TONE_CENTER)
+    if not np.isfinite(tlo):        # stacja bez przerw w oknie
+        tlo = sn.tlo_db(db, np.ones(db.shape[0], dtype=bool),
+                        meta["tone"] if text else C.TONE_CENTER)
+    g_db = cel - tlo
     # Tłumik jak przy odczycie: najsilniejsza rzecz w klipie (stacja,
-    # druga stacja, trzask) nie wyżej niż TLUMIK_DB.
-    szczyt = float(np.percentile(
-        frontend.power_to_db(frontend.melspec_power(audio, sr)), 99.9))
+    # druga stacja, trzask) nie wyżej niż TLUMIK_DB. Obraz w dB przesuwa
+    # się o tyle, o ile wzmocnienie — bez liczenia mel drugi raz.
+    szczyt = float(np.percentile(db, 99.9)) + g_db
     if szczyt > C.TLUMIK_DB:
-        t = 10.0 ** ((C.TLUMIK_DB - szczyt) / 20.0)
-        audio = (audio * t).astype(np.float32)
-        g *= t
-    meta["poziom_db"] = float(C.TON_DB_AMP1 + 20.0 * np.log10(max(amp * g, 1e-12)))
+        g_db -= szczyt - C.TLUMIK_DB
+    audio = (audio * 10.0 ** (g_db / 20.0)).astype(np.float32)
+    # Karta: operator nie słucha obciętego sygnału, tylko ścisza. Do 12.10
+    # szczyt w czasie dochodził do 4-8x pełnej skali (trzaski, rozbieg
+    # ARW), a ogranicznik robił z tego szum na całym obrazie.
+    peak = float(np.max(np.abs(audio))) if audio.size else 0.0
+    if peak > C.KARTA_MAX:
+        audio = (audio * (C.KARTA_MAX / peak)).astype(np.float32)
+        g_db += 20.0 * np.log10(C.KARTA_MAX / peak)
+    meta["tlo_db"] = float(tlo + g_db)
 
     # --- ogranicznik toru wejściowego ---
     # Karta dźwiękowa obcina powyżej pełnej skali. Bez tego suma stacji,
