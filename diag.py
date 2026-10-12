@@ -282,18 +282,24 @@ def test_generator_clip():
         contrast = float(np.percentile(db, 99.5) - np.percentile(db, 25))
 
         if meta["signal"]:
-            contrasts.append(contrast)
+            contrasts.append((contrast, meta.get("snr_db", 99.0)))
         else:
             n_silent += 1
             silent_ok &= (target == 0)
 
     check(f"klipy bez sygnału mają etykietę 0 ({n_silent} sztuk)", silent_ok)
 
-    n_vis = sum(1 for c in contrasts if c > 10.0)
-    check("sygnał jest widoczny w oknie sieci (kontrast > 10 dB)",
+    # Od 12.10 S/N schodzi celowo do -3 dB (SN_DB): przy takim sygnał
+    # wystaje w paśmie mel ~7 dB nad szum. Próg 10 dB tylko od 3 dB S/N.
+    def prog(sn):
+        return 10.0 if not (sn < 3.0) else 5.0
+    n_vis = sum(1 for c, sn in contrasts if c > prog(sn))
+    kon = [c for c, _ in contrasts]
+    check("sygnał jest widoczny w oknie sieci (kontrast > 10 dB, "
+          "przy S/N < 3 dB > 5 dB)",
           n_vis == len(contrasts),
           f"{n_vis}/{len(contrasts)} klipów z sygnałem; kontrast "
-          f"min={min(contrasts):.1f} dB, średnio={np.mean(contrasts):.1f} dB")
+          f"min={min(kon):.1f} dB, średnio={np.mean(kon):.1f} dB")
 
     # W oknie sieci musi się zmieścić ZNAK DOCELOWY wraz z przerwami
     # międzyznakowymi po obu stronach — to one wyznaczają jego granice.

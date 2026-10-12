@@ -156,7 +156,7 @@ def keying_envelope(text: str, wpm: float = C.WPM, sr: int = C.SR,
             # manipulatorze elementy idą równo, ale czas na pomyślenie
             # kolejnego znaku jest różny.
             if gap_jitter > 0.0 and not is_m and tag < 0:
-                scale *= 1.0 + r.uniform(-gap_jitter, gap_jitter)
+                scale *= 1.0 + r.uniform(0.0, gap_jitter)    # tylko dłuższe (13.10)
             u = max(0.35, n * scale)
             # Przerwa MIĘDZY znakami nie krótsza niż GAP_MIN_T (w lokalnym
             # tempie). 13.10 operator wskazał „JVD" ze sklejonym J i V:

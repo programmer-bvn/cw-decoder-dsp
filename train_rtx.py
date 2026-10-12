@@ -154,11 +154,12 @@ QRN_AMP = (0.1, 0.6)
 #               kluczu ręcznym nie ma.
 #   GAP_JITTER  rozjazd PRZERW międzyznakowych, osobno od elementów —
 #               przy manipulatorze elementy idą równo, a przerwy nie.
-FIST = (0.0, 0.25)
-FIST_DRIFT = (0.0, 0.15)
+# Timing keyera — decyzja operatora 13.10 (dsp/config.py przy FIST).
+FIST = (0.0, 0.0)
+FIST_DRIFT = (0.0, 0.0)
 FIST_DRIFT_TAU_S = 2.0
-GAP_JITTER = (0.0, 0.40)
-GAP_MIN_T = 2.5
+GAP_JITTER = (0.0, 0.50)
+GAP_MIN_T = 3.0
 
 # Zapadanie zasilania nadajnika: naduszenie klucza rozładowuje kondensator,
 # napięcie spada, generator LC się przestraja. Ton spada W TRAKCIE elementu
@@ -475,7 +476,7 @@ def keying_envelope(text: str, wpm: float = WPM, sr: int = SR,
             if fist > 0.0:
                 scale *= 1.0 + r.uniform(-fist, fist)
             if gap_jitter > 0.0 and not m and tag < 0:
-                scale *= 1.0 + r.uniform(-gap_jitter, gap_jitter)
+                scale *= 1.0 + r.uniform(0.0, gap_jitter)    # tylko dłuższe (13.10)
             u = max(0.35, n * scale)
             if not m and tag < 0:            # GAP_MIN_T (dsp/morse.py)
                 u = max(u, GAP_MIN_T * (1.0 + slow[i]))

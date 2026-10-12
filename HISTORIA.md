@@ -1009,8 +1009,20 @@ jak 1 t.
 2,5 t w lokalnym tempie operatora (`morse.keying_envelope` i kopia
 w `train_rtx.py`); rozrzut w górę zostaje. Po zmianie: min 2,06 t
 w jednostkach nominalnych (wolne błądzenie tempa), 0% < 2 t. Nie zmienia
-kolejności losowań. TEST 21 w `diag.py`; diag 114/114. Partia do oceny:
-`out/ocena/partia3.npz`.
+kolejności losowań. TEST 21 w `diag.py`.
+
+**Decyzja operatora (13.10, tego samego dnia): timing KEYERA.** „Na
+kluczu sztorcowym mało kto nadaje, większość ma manipulator dwudźwigniowy
+i keyer, znaki wychodzą równo; odległości powinny być nawet dłuższe, a jak
+ktoś klei, to źle nadaje — QLF." Cel: „jeśli zacznie odbierać prawidłowo
+dobrze nadane znaki, to będzie sukces i punkt wyjścia do następnych
+kroków". Zmiany: `FIST = FIST_DRIFT = (0, 0)` (klucz ręczny zostaje
+w kodzie, wyłączony), przerwa międzyznakowa tylko DŁUŻSZA — 3 t ×
+(1 + U(0, 0,5)), `GAP_MIN_T = 3`. Zmierzone na 4000 klipach: przerwa
+w znaku 1,00 t; między znakami min 3,00, mediana 3,28 t. Kontrola
+widoczności w TEST 9 przy S/N < 3 dB wymaga > 5 dB kontrastu (było 10 —
+próg z czasów samych czystych stacji). diag 114/114. Partia do oceny:
+`out/ocena/partia4.npz`.
 
 ---
 

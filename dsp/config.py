@@ -226,16 +226,23 @@ QRN_AMP = (0.1, 0.6)            # amplituda impulsu
 #                Przy manipulatorze z IC-7300 elementy idą równo, ale
 #                przerwy między znakami zależą od tego, jak szybko operator
 #                myśli. Więc jitter elementów i przerw muszą być rozdzielne.
-FIST = (0.0, 0.25)              # szum na element (+/- udział długości)
-FIST_DRIFT = (0.0, 0.15)        # zakres wolnego błądzenia tempa (+/- udział)
+#
+# DECYZJA OPERATORA 13.10: na razie timing KEYERA. „Na kluczu sztorcowym
+# mało kto nadaje, większość ma manipulator dwudźwigniowy i keyer, czyli
+# znaki wychodzą równo; odległości powinny być nawet dłuższe, a jak ktoś
+# klei, to źle nadaje" (QLF). Elementy i przerwy w znaku dokładnie 1:3:1,
+# tempo stałe w klipie; przerwa między znakami od 3 t W GÓRĘ (operator
+# myśli nad następnym znakiem), nigdy krócej. Klucz ręczny (FIST,
+# FIST_DRIFT) zostaje w kodzie, wyłączony zakresem (0, 0).
+FIST = (0.0, 0.0)               # szum na element (+/- udział długości)
+FIST_DRIFT = (0.0, 0.0)         # zakres wolnego błądzenia tempa (+/- udział)
 FIST_DRIFT_TAU_S = 2.0          # stała czasowa błądzenia [s]
-GAP_JITTER = (0.0, 0.40)        # rozjazd przerw międzyznakowych
-# Dolna granica przerwy międzyznakowej [t, w lokalnym tempie]. Bez niej
-# rozjazdy mnożyły się do 1,56 t (1,7% przerw < 2 t, 10% < 2,4 t —
-# zmierzone 13.10 na 4000 klipach), a okno FFT 64 ms skraca przerwę
-# w obrazie o ~0,7 t przy 14 WPM: znaki się sklejały, choć etykieta mówi
-# „dwa znaki" (operator, „JVD" w partii 2). W górę rozrzut zostaje.
-GAP_MIN_T = 2.5
+GAP_JITTER = (0.0, 0.50)        # przerwa międzyznakowa: 3 t x (1 + 0...0,5)
+# Dolna granica przerwy międzyznakowej [t, w lokalnym tempie] — bezpiecznik
+# na wypadek włączenia klucza ręcznego. Bez niej rozjazdy mnożyły się do
+# 1,56 t, a okno FFT 64 ms skraca przerwę w obrazie o ~0,7 t przy 14 WPM:
+# znaki się sklejały (operator, „JVD" w partii 2, 13.10).
+GAP_MIN_T = 3.0
 
 # --- Zapadanie zasilania nadajnika: CHIRP i spadek amplitudy --------------
 # Naduszenie klucza obciąża zasilacz, kondensator się rozładowuje, napięcie
