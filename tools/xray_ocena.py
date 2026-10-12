@@ -141,6 +141,8 @@ def przegladaj(partia: Path) -> None:
              "kiedy": time.strftime("%Y-%m-%d %H:%M:%S")},
             ensure_ascii=False, indent=1), encoding="utf-8")
 
+    # Zapis od razu: plik oceny istnieje, odkąd przegląd ruszył.
+    zapisz()
     pygame.init()
     W = KOL * (KAF_W + 16) + 16
     H = 46 + WIER * (KAF_H + POLE_H) + 10
@@ -261,7 +263,13 @@ def przegladaj(partia: Path) -> None:
 def podsumuj(partia: Path) -> None:
     d = np.load(partia)
     opisy = json.loads(str(d["opisy"]))
-    z = json.loads(_plik_oceny(partia).read_text(encoding="utf-8"))
+    plik = _plik_oceny(partia)
+    if not plik.exists():
+        print(f"Brak oceny: {plik} nie istnieje — partia nie była jeszcze "
+              f"przeglądana. Najpierw:\n"
+              f"    python -m tools.xray_ocena przegladaj {partia}")
+        sys.exit(1)
+    z = json.loads(plik.read_text(encoding="utf-8"))
     zle = set(z["zle"])
     na_strone = KOL * WIER
     ob = {i for s in z["obejrzane"] for i in range(s * na_strone,
