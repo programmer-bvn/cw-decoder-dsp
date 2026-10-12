@@ -47,7 +47,7 @@ from dsp import frontend
 #   bez zmiany poziomu (szczyt 24,0 dB): CQCCCLQ2BVSQ2BVQ2BV9SE5
 #   przyciszone o 12 dB (szczyt 17,3 dB): CCLQ2BVQ2BVQ2BVS
 #   podgłośnione o 12 dB (szczyt 24,0 dB): 5FLSH42HQ2H6F5
-TARGET_PEAK_DB = 17.0
+TARGET_PEAK_DB = C.TLUMIK_DB
 
 
 def measure_peak_db(audio: np.ndarray) -> float:

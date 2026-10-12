@@ -105,7 +105,7 @@ def device_samplerate(device) -> int:
 # porównanie odczytów przy różnych wzmocnieniach. Poziom da się ustawić
 # PRZED nagraniem, jeśli mierzyć go w tej skali, w której patrzy model,
 # a nie tylko jako szczyt próbki audio.
-TARGET_PEAK_DB = 17.0
+TARGET_PEAK_DB = C.TLUMIK_DB
 
 
 def image_peak_db(audio_8k: np.ndarray) -> float:

@@ -707,12 +707,12 @@ def test_standalone():
         check("odcisk front-endu identyczny", False, "\n".join(diffs))
 
     # --- 12b. stałe kanału radiowego ---
-    same, bad = True, []
+    same, bad, ile = True, [], 0
     for name in ("SILENCE_FRACTION", "CHARS_PER_CLIP", "LABEL_INDEX",
-                 "NOISE_RMS", "SIGNAL_AMP_MIN", "SIGNAL_AMP_MAX",
+                 "NOISE_RMS",
                  "TONE_CENTER", "TONE_SPREAD", "WPM", "WPM_JITTER",
                  "KEY_RAMP_MS", "QRM_PROB", "QRN_PROB", "QRN_MAX",
-                 "DRIFT_HZ", "NOISE_TILT", "NOISE_RMS_SPREAD",
+                 "DRIFT_HZ", "NOISE_TILT",
                  "QSB_DEPTH", "QRM_AMP", "QRN_AMP", "FIST",
                  # Dołożone po rozbudowie modelu nadajnika i odbiornika.
                  # Bez nich zabezpieczenie przed rozjazdem miałoby dziurę
@@ -724,14 +724,17 @@ def test_standalone():
                  # Prawdziwe tło (10.10) — bez nich obie ścieżki mogłyby
                  # losować z banku inaczej i nikt by tego nie zauważył.
                  "REAL_NOISE_PROB", "REAL_NOISE_DIR", "REAL_NOISE_RMS",
-                 "REAL_NOISE_SNR_DB", "REAL_NOISE_OFFSET_HZ",
-                 "REAL_NOISE_TLO_DB", "REAL_NOISE_RMS_MAX"):
+                 "REAL_NOISE_OFFSET_HZ",
+                 # Jedna miara S/N i gałka AF (12.10).
+                 "SN_REF_BW_HZ", "SN_DB", "POZIOM_DB", "TON_DB_AMP1",
+                 "POZIOM_RMS_MAX", "TLUMIK_DB"):
+        ile += 1
         a, b = getattr(C, name), getattr(sa, name, None)
         if a != b:
             same = False
             bad.append(f"{name}: config={a}  train_rtx={b}")
     check("stałe generatora i kanału identyczne", same,
-          "\n".join(bad) if bad else "40 stałych zgodnych")
+          "\n".join(bad) if bad else f"{ile} stałych zgodnych")
 
     # --- 12c. TEN SAM OBRAZ z tego samego ziarna ---
     # To jest mocniejsze niż porównanie stałych: sprawdza, że cała ścieżka —
@@ -1481,35 +1484,48 @@ def test_prawdziwe_tlo():
           "; ".join(zle) if zle else
           f"{len(waskie)} plików < 600 Hz; 650, 750, 850 Hz po 3 razy")
 
-    # --- w receive(): udział i jasność pasa szumu ---
-    n, ile_real, poziomy = 300, 0, []
+    # --- w receive(): udział tła z banku, S/N i poziom (12.10) ---
+    from dsp import sn
+    n, ile_real, szczyty, bledy_sn, poziomy = 300, 0, [], [], []
     for i in range(n):
         tekst = "" if i % 4 == 0 else "ABC"
         audio, meta = radio.receive(tekst, rng, n_samples=C.CLIP_SAMPLES,
                                     realism=True)
-        if meta["szum_real"] < 0:
+        ile_real += meta["szum_real"] >= 0
+        if not tekst:
             continue
-        ile_real += 1
-        # Jasność pasa da się sprawdzić tylko bez stacji i zakłóceń.
-        if not tekst and meta["qrm"] == 0 and meta["qrn"] == 0:
-            db = frontend.power_to_db(frontend.melspec_power(audio))
-            poziomy.append(float(np.percentile(db, 99.9)))
+        db = frontend.power_to_db(frontend.melspec_power(audio))
+        szczyty.append(float(np.percentile(db, 99.9)))
+        poziomy.append(meta["poziom_db"])
     udzial = ile_real / n
     check("udział klipów z prawdziwym tłem zgodny z REAL_NOISE_PROB",
           abs(udzial - C.REAL_NOISE_PROB) < 0.1,
           f"{ile_real}/{n} = {udzial:.2f}, oczekiwane {C.REAL_NOISE_PROB}")
-    lo, hi = C.REAL_NOISE_TLO_DB
-    # ARW podnosi szum w cichszych chwilach (cel liczony jest PRZED nim).
-    # Zmierzone 10.10 przy równym losowaniu plików: do 20,7 dB przy celu
-    # <= 17 — stąd luz 5 dB. Szeroki filtr może nie dojść do celu
-    # (REAL_NOISE_RMS_MAX), więc twarda jest tylko górna granica.
-    za_jasne = [p for p in poziomy if p > hi + 5.0]
-    check("jasność pasa szumu nie wyższa niż REAL_NOISE_TLO_DB (+5 dB na ARW)",
-          bool(poziomy) and not za_jasne,
-          f"{len(poziomy)} pustych klipów, jasność "
-          f"{min(poziomy):.1f}-{max(poziomy):.1f} dB, mediana "
-          f"{np.median(poziomy):.1f}; za jasnych {len(za_jasne)}"
-          if poziomy else "brak pustych klipów z prawdziwym tłem")
+    # S/N z audio = wylosowane: tylko bez zjawisk, które je po drodze
+    # zmieniają (zapadanie zasilacza obniża nośną do 3 dB, zanik, ARW) —
+    # realism=False: S/N = SN_DB[1], poziom 17 dB.
+    for _ in range(10):
+        audio, meta = radio.receive("ABC", rng, n_samples=C.CLIP_SAMPLES,
+                                    realism=False)
+        z = sn.zmierz_sn(audio, meta["tone"])["sn_db"]
+        bledy_sn.append(z - meta["snr_db"])
+    check("S/N zmierzone na klipie = wylosowane (mediana +/-1 dB)",
+          abs(float(np.nanmedian(bledy_sn))) <= 1.0,
+          f"S/N {C.SN_DB[1]:.0f} dB, mediana błędu "
+          f"{np.nanmedian(bledy_sn):+.2f} dB")
+    lo, hi = C.POZIOM_DB
+    check("poziom stacji w zakresie gałki AF (ściszanie tylko w dół)",
+          all(p <= hi + 0.01 for p in poziomy),
+          f"poziom {min(poziomy):.1f}-{max(poziomy):.1f} dB, mediana "
+          f"{np.median(poziomy):.1f}; ściszonych poniżej {lo:.0f} dB: "
+          f"{sum(p < lo for p in poziomy)}/{len(poziomy)}")
+    # 12.10 przed zmianą: 28% klipów ze stacją miało szczyt na granicy
+    # skali (w klipach z bankiem ponad połowa) — tło podkręcone.
+    nasyc = float(np.mean(np.array(szczyty) >= C.DB_MAX - 0.5))
+    check("szczyt obrazu nie wyżej niż tłumik (TLUMIK_DB), bez nasycenia",
+          max(szczyty) <= C.TLUMIK_DB + 0.01 and nasyc == 0.0,
+          f"szczyt {min(szczyty):.1f}-{max(szczyty):.1f} dB, mediana "
+          f"{np.median(szczyty):.1f}; na granicy skali {100 * nasyc:.1f}%")
 
     # --- pas szumu w obrazie: jasny przy 750 Hz (wąski filtr) ---
     #  Ten obraz dawał 09.10 '0' na nagraniach z USB: sieć ma go zobaczyć

@@ -37,6 +37,7 @@ import numpy as np
 from . import config as C
 from . import frontend
 from . import morse
+from . import sn
 
 
 # --------------------------------------------------------------------------
@@ -308,12 +309,12 @@ def receive(text: str, rng: np.random.Generator,
 
     # --- tor odbiorczy: szum tła ---
     # Prawdziwe tło z banku (opis przy REAL_NOISE_PROB w config.py) albo
-    # syntetyczne. Prawdziwe dokłada się PO stacji, bo jego pas ma stanąć
+    # syntetyczne. Prawdziwe powstaje PO stacji, bo jego pas ma stanąć
     # przy jej tonie, a ton losuje się dopiero niżej.
     prawdziwy = bool(realism and rng.random() < C.REAL_NOISE_PROB
                      and len(bank_szumu()) > 0)
     if prawdziwy:
-        audio = np.zeros(n_samples, dtype=np.float32)
+        szum = None
         # QRM i QRN mają amplitudy dobrane do NOISE_RMS; przy innym poziomie
         # tła skalujemy je tak, żeby stosunek do szumu został ten sam.
         skala = C.REAL_NOISE_RMS / C.NOISE_RMS
@@ -321,21 +322,18 @@ def receive(text: str, rng: np.random.Generator,
     else:
         skala = 1.0
         tilt = float(rng.uniform(*C.NOISE_TILT)) if realism else 0.0
-        noise_rms = C.NOISE_RMS * (float(rng.uniform(*C.NOISE_RMS_SPREAD))
-                                   if realism else 1.0)
-        audio = band_noise(n_samples, rng, rms=noise_rms, tilt=tilt, sr=sr)
-        meta.update(noise_rms=noise_rms, noise_tilt=tilt)
-    snr = float("nan")
+        szum = band_noise(n_samples, rng, rms=C.NOISE_RMS, tilt=tilt, sr=sr)
+        meta.update(noise_rms=C.NOISE_RMS, noise_tilt=tilt)
+    # Stacja powstaje z amplitudą 1 i dostaje swoją dopiero, gdy szum jest
+    # znany: amplituda wynika z wylosowanego S/N (jedna miara, dsp/sn.py),
+    # nie odwrotnie. Do 12.10 syntetyk losował amplitudę, a bank jasność
+    # szumu — dwa różne światy (HISTORIA „Poziom zamiast normalizacji").
+    stacja = np.zeros(n_samples, dtype=np.float32)
+    snr = float(rng.uniform(*C.SN_DB)) if realism else C.SN_DB[1]
 
     # --- stacja docelowa ---
     if text:
         tone = C.TONE_CENTER + float(rng.uniform(-C.TONE_SPREAD, C.TONE_SPREAD))
-        amp = float(rng.uniform(C.SIGNAL_AMP_MIN, C.SIGNAL_AMP_MAX))
-        if prawdziwy:
-            # Siła stacji względem PRAWDZIWEGO szumu, nie bezwzględna:
-            # bezwzględny poziom i tak ustawia się na końcu jak auto_gain.
-            snr = float(rng.uniform(*C.REAL_NOISE_SNR_DB))
-            amp = float(np.sqrt(2.0) * C.REAL_NOISE_RMS * 10.0 ** (snr / 20.0))
         clip_wpm = wpm + (float(rng.uniform(-C.WPM_JITTER, C.WPM_JITTER))
                           if C.WPM_JITTER > 0 else 0.0)
         clip_wpm = float(np.clip(clip_wpm, 5.0, 60.0))
@@ -355,7 +353,7 @@ def receive(text: str, rng: np.random.Generator,
             hum_f = float(rng.choice(C.HUM_HZ))
 
         wave, spans = morse.synth_cw(
-            text, wpm=clip_wpm, tone=tone, amp=amp, sr=sr,
+            text, wpm=clip_wpm, tone=tone, amp=1.0, sr=sr,
             phase=float(rng.uniform(0, 2 * np.pi)),
             fist=fist, fist_drift=fist_drift, gap_jitter=gap_jit,
             drift_hz=drift, chirp_hz=chirp, sag_db=sag, sag_tau_ms=sag_tau,
@@ -368,11 +366,11 @@ def receive(text: str, rng: np.random.Generator,
         # Wstawienie w klip: wyśrodkowane, bo etykietą jest środkowy znak.
         if wave.size < n_samples:
             s = (n_samples - wave.size) // 2
-            audio[s:s + wave.size] += wave
+            stacja[s:s + wave.size] += wave
             offset = s                 # nadanie zaczyna się w próbce s klipu
         else:
             s = (wave.size - n_samples) // 2
-            audio += wave[s:s + n_samples]
+            stacja += wave[s:s + n_samples]
             offset = -s                # klip zaczyna się w próbce s nadania
 
         # Położenie znaku Z ETYKIETY w próbkach klipu. Liczone z FAKTYCZNYCH
@@ -384,13 +382,13 @@ def receive(text: str, rng: np.random.Generator,
                 lab_a, lab_b = a + offset, b + offset
                 break
 
-        meta.update(tone=tone, amp=amp, wpm=clip_wpm, fist=fist,
+        meta.update(tone=tone, wpm=clip_wpm, fist=fist,
                     fist_drift=fist_drift, gap_jitter=gap_jit,
                     drift=drift, chirp=chirp, sag=sag, hum=hum,
                     qsb=qsb, text=text,
                     lab_a=lab_a, lab_b=lab_b, spans=spans, offset=offset)
     else:
-        meta.update(tone=float("nan"), amp=0.0, wpm=wpm, fist=0.0,
+        meta.update(tone=float("nan"), wpm=wpm, fist=0.0,
                     fist_drift=0.0, gap_jitter=0.0,
                     drift=0.0, chirp=0.0, sag=0.0, hum=0.0,
                     qsb=0.0, text="",
@@ -403,16 +401,14 @@ def receive(text: str, rng: np.random.Generator,
                   + float(rng.uniform(-C.REAL_NOISE_OFFSET_HZ,
                                       C.REAL_NOISE_OFFSET_HZ)))
         szum, szum_i = szum_prawdziwy(n_samples, rng, srodek, sr=sr)
-        # Jasność PASA SZUMU (opis przy REAL_NOISE_TLO_DB). To samo
-        # wzmocnienie idzie na stację i na QRM/QRN, więc ich odstęp od
-        # szumu zostaje taki, jak wylosowano.
-        cel = float(rng.uniform(*C.REAL_NOISE_TLO_DB))
-        g = 10.0 ** ((cel - float(np.percentile(frontend.power_to_db(frontend.melspec_power(szum, sr)), 99.9)))
-                     / 20.0)
-        g = min(g, C.REAL_NOISE_RMS_MAX / C.REAL_NOISE_RMS)
-        audio = ((audio + szum) * g).astype(np.float32)
-        skala *= g
-    meta.update(szum_real=szum_i, snr_db=snr)
+    # Amplituda z S/N. Pusty klip liczy ją tak samo („stacja, która
+    # akurat nie nadaje") — wtedy gałka AF niżej ustawia tło na tym samym
+    # poziomie co w klipach ze stacją, a nie podkręca samego szumu.
+    amp = sn.amp_dla_sn(snr, szum, meta["tone"] if text else C.TONE_CENTER,
+                        sr=sr)
+    audio = (szum + amp * stacja).astype(np.float32)
+    meta.update(amp=amp if text else 0.0, szum_real=szum_i,
+                snr_db=snr if text else float("nan"))
 
     # --- zakłócenia w pasmie ---
     qrm_amp = 0.0
@@ -439,6 +435,28 @@ def receive(text: str, rng: np.random.Generator,
         audio = apply_agc(audio, agc_tau,
                           float(rng.uniform(*C.AGC_DEPTH)), sr=sr)
     meta["agc_tau"] = agc_tau
+
+    # --- gałka AF: poziom bezwzględny, niezależny od S/N ---
+    # Losowany jest poziom TONU STACJI w obrazie (jak gałka AF albo tłumik),
+    # a tło ustawia się samo, S/N niżej. Przy odczycie auto_gain działa
+    # na naszych nagraniach tylko jako tłumik (12.10: korekta -2,8...-12,7
+    # dB na wszystkich 16), więc sieć ma znać poziomy od cichych do ~17 dB,
+    # a nie jeden. Szeroki szum przy małym S/N wymagałby wzmocnienia ponad
+    # pełną skalę — tam „operator ścisza" (POZIOM_RMS_MAX).
+    poziom = float(rng.uniform(*C.POZIOM_DB)) if realism else 17.0
+    g = 10.0 ** ((poziom - C.TON_DB_AMP1) / 20.0) / max(amp, 1e-9)
+    rms = float(np.sqrt(np.mean(audio.astype(np.float64) ** 2)))
+    g = min(g, C.POZIOM_RMS_MAX / max(rms, 1e-12))
+    audio = (audio * g).astype(np.float32)
+    # Tłumik jak przy odczycie: najsilniejsza rzecz w klipie (stacja,
+    # druga stacja, trzask) nie wyżej niż TLUMIK_DB.
+    szczyt = float(np.percentile(
+        frontend.power_to_db(frontend.melspec_power(audio, sr)), 99.9))
+    if szczyt > C.TLUMIK_DB:
+        t = 10.0 ** ((C.TLUMIK_DB - szczyt) / 20.0)
+        audio = (audio * t).astype(np.float32)
+        g *= t
+    meta["poziom_db"] = float(C.TON_DB_AMP1 + 20.0 * np.log10(max(amp * g, 1e-12)))
 
     # --- ogranicznik toru wejściowego ---
     # Karta dźwiękowa obcina powyżej pełnej skali. Bez tego suma stacji,

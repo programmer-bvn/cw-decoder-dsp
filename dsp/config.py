@@ -163,6 +163,10 @@ NOISE_RMS = 0.015               # RMS szumu tła — zawsze obecny, nie ma
 # więc samo zwężenie pasma daje 10*log10(4000/48) = 19 dB zysku.
 # Dlatego amplituda 0.03 (szerokopasmowo ~3 dB) w obrazie daje jeszcze
 # ok. 24 dB kontrastu nad tłem — sygnał słaby, ale czytelny.
+#
+# OD 12.10 GENERATOR TYCH DWÓCH NIE UŻYWA — amplituda stacji wynika z S/N
+# (SN_DB) i poziomu (POZIOM_DB). Zostały dla tools/calibrate.py i podglądu
+# --text w tools/xray.py.
 SIGNAL_AMP_MIN = 0.03           # słaba stacja
 SIGNAL_AMP_MAX = 0.50           # mocna stacja lokalna
 
@@ -190,8 +194,6 @@ SEED = 12345                    # ziarno generatora — powtarzalny zbiór
 NOISE_TILT = (-1.0, 0.0)        # nachylenie widma szumu: -1 = różowy (1/f),
                                 # 0 = biały. Szum odbiornika na niskich
                                 # pasmach jest bliżej różowego.
-NOISE_RMS_SPREAD = (0.5, 2.0)   # mnożnik NOISE_RMS na klip — poziom szumu
-                                # zmienia się z pasmem, porą dnia i anteną
 
 # --- QSB: zanik -----------------------------------------------------------
 QSB_DEPTH = (0.0, 0.6)          # głębokość zaniku; 0.6 = spadek o 8 dB.
@@ -282,23 +284,14 @@ AGC_DEPTH = (0.2, 0.8)          # jak mocno ARW ściska dynamikę
 # — dokładnie tam, gdzie tune.py zaczepia się bez stacji (zmierzone 09.10:
 # mediana tonu = środek filtra, 798 Hz).
 #
-# POZIOM: losowana jest jasność SAMEGO PASA SZUMU w obrazie (99,9 percentyl
-# dB), a stacja dostaje swoją przez odstęp od tego szumu (SNR). Pierwsza
-# wersja ustawiała szczyt CAŁEGO KLIPU jak auto_gain i była błędna, co
-# wyszło na pomiarze 10.10: auto_gain liczy poziom z CAŁEGO NAGRANIA, czyli
-# z najsilniejszej stacji, a pas szumu ląduje zwykle znacznie niżej. Sam
-# szum z banku przy poziomie z radia ma 4-6 dB. Zakres 0-17 dB pokrywa
-# „mocna stacja gdzie indziej w nagraniu" (pas ciemny) aż po „samo puste
-# pasmo" (auto_gain wyciąga pas na 17 dB). Szeroki filtr (1250 Hz) rozkłada
-# moc na wiele pasm mel i do 17 dB trzeba by podbić go ponad pełną skalę —
-# REAL_NOISE_RMS_MAX nie pozwala zrobić z tego obciętego szumu.
+# POZIOM i S/N: wspólne dla obu teł — SN_DB i POZIOM_DB niżej. Do 12.10
+# bank losował jasność pasa szumu (0-17 dB), a stację stawiał nad nim;
+# skutek na arkuszu X-Ray: tło podkręcone prawie do poziomu znaków, ponad
+# połowa klipów ze szczytem na granicy skali.
 REAL_NOISE_PROB = 0.5             # udział klipów z prawdziwym tłem
 REAL_NOISE_DIR = "probki/szum"    # względem ROOT; *.wav 8 kHz mono
 REAL_NOISE_RMS = 0.05             # poziom roboczy przed ustawieniem poziomu
-REAL_NOISE_SNR_DB = (-3.0, 20.0)  # moc stacji / moc szumu w całym filtrze
 REAL_NOISE_OFFSET_HZ = 60.0       # środek pasa szumu względem tonu stacji
-REAL_NOISE_TLO_DB = (0.0, 17.0)   # jasność pasa szumu (99,9 percentyl dB)
-REAL_NOISE_RMS_MAX = 0.25         # górna granica RMS szumu po ustawieniu
 
 # --- Jedna miara S/N (dsp/sn.py) -------------------------------------------
 # Do 12.10 S/N syntetyku liczono względem szumu w całym paśmie 0-4 kHz,
@@ -308,6 +301,29 @@ REAL_NOISE_RMS_MAX = 0.25         # górna granica RMS szumu po ustawieniu
 # odbiornika dla CW: moc nośnej przy wciśniętym kluczu do mocy szumu
 # w paśmie SN_REF_BW_HZ wokół tonu.
 SN_REF_BW_HZ = 500.0
+# Zakres losowania S/N stacji w tej mierze, oba rodzaje tła. ZMIERZONE
+# 12.10 (tools/sn.py, mediany): radio USB 4,8-15,6 dB, mikrofon 26-29 dB.
+# Dolna granica -3 dB: poniżej operator już nie czyta. Stary trening:
+# syntetyk mediana 20 dB, bank kończył się na ~14 dB.
+SN_DB = (-3.0, 30.0)
+
+# --- Gałka AF: poziom bezwzględny ------------------------------------------
+# Losowany osobno od S/N: poziom tonu stacji w obrazie (dB skali sieci).
+# Przy odczycie auto_gain stawia szczyt nagrania na 17 dB i działa tylko
+# jako tłumik; cichsze nagrania zostają ciche. Stąd zakres od cichego do
+# trochę ponad 17 dB.
+POZIOM_DB = (2.0, 20.0)
+# Ton o amplitudzie 1 w obrazie, ZMIERZONE 12.10 (frontend, ton ciągły):
+# 27,2 dB przy 670 Hz, 28,6 przy 750, 28,2 przy 830.
+TON_DB_AMP1 = 28.2
+# Szeroki szum przy małym S/N wymagałby wzmocnienia ponad pełną skalę —
+# wtedy „operator ścisza": RMS całości nie przekracza tej wartości.
+POZIOM_RMS_MAX = 0.25
+# Tłumik: szczyt obrazu (99,9 percentyl dB), powyżej którego poziom się
+# ścisza. TA SAMA liczba przy odczycie (tools/wav2net.py, auto_gain) i w
+# generatorze — w generatorze po gałce AF, bo silna druga stacja albo
+# trzask przesterowywały 11,6% klipów (diag 12.10).
+TLUMIK_DB = 17.0
 
 # Format zapisu obrazów w zbiorze. "uint8" kwantuje [0,1] na 256 poziomów,
 # czyli 40 dB / 255 = 0,16 dB na krok — poniżej rozdzielczości, jaką ma

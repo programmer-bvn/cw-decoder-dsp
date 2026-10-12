@@ -80,7 +80,7 @@ _META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb",
                 "lab_x0", "lab_x1",
                 # Prawdziwe tło (od 10.10): numer pliku w banku szumu
                 # (-1 = syntetyczny) i siła stacji względem tego szumu.
-                "szum_real", "snr_db")
+                "szum_real", "snr_db", "poziom_db")
 
 
 def generate(n: int, seed: int, wpm: float, jitter: float,

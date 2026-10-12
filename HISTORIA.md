@@ -901,9 +901,30 @@ pokrywa je, ale z innym tłem.
 ma ton o S/N 7–12 dB w 7 z 12 okien (koncentracja 0,99). Dekoder czyta
 głównie „9"/„0" — nośna albo stacja, nie rozstrzygnięte. Do odsłuchu.
 
-**Dalej:** generator losuje S/N w tej mierze (oba rodzaje tła), poziom
-bezwzględny osobno (gałka AF); przy odczycie tylko tłumik. Sprawdzian:
-arkusz X-Ray klipów ma przypominać nagrania.
+**Generator po zmianie (12.10, ten sam dzień).** `receive()` w
+`dsp/radio.py` i `train_rtx.py` (zgodne bit w bit, TEST 12):
+
+1. Stacja powstaje z amplitudą 1; amplitudę dostaje z S/N losowanego
+   w jednej mierze, `SN_DB = (-3, 30)`, dla obu rodzajów tła. Usunięte:
+   `NOISE_RMS_SPREAD`, `REAL_NOISE_SNR_DB`, `REAL_NOISE_TLO_DB`,
+   `REAL_NOISE_RMS_MAX` (poziom szumu wynika teraz z S/N i gałki).
+2. Gałka AF osobno: poziom tonu stacji w obrazie `POZIOM_DB = (2, 20)`,
+   z `TON_DB_AMP1 = 28,2` (zmierzone). Szeroki szum przy małym S/N —
+   ściszenie do `POZIOM_RMS_MAX`.
+3. Tłumik jak przy odczycie: szczyt klipu nie wyżej niż `TLUMIK_DB = 17`
+   — ta sama stała w `wav2net` i `mic2wav`. Bez niego silna druga stacja
+   albo trzask przesterowywały 11,6% klipów.
+
+diag 110/110 (TEST 19 przepisany: S/N z audio = wylosowane, 0% nasycenia,
+szczyt ≤ 17 dB). Arkusz `out/xray_sn_po.png`: tło z banku ciemne, S/N
+widać jako stopniowanie od „ledwo widać" do „czysto"; klipy z bankiem
+przy 10–30 dB wyglądają jak nagrania. Syntetyk przy małym S/N ma szum na
+całej szerokości obrazu (odbiornik bez wąskiego filtra) — nagrania tak
+nie wyglądają, ale to możliwy przypadek. Poziom stacji w treningu:
+mediana ~9 dB, nagrania po tłumiku ~17 dB — pokryte, nie wyśrodkowane.
+
+**Dalej:** noc porównawcza na warunkach kontroli z 10.10 (4 mln, 12 epok,
+fcn), zbiór `czesci_sn`, porównanie z `fcn_4000000_czesci_rt` i `_4m`.
 
 ---
 

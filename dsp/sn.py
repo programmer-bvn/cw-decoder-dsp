@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from dsp import config as C
+from . import config as C
 
 
 def moc_w_pasmie(x: np.ndarray, srodek_hz: float,
