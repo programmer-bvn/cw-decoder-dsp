@@ -157,7 +157,13 @@ def keying_envelope(text: str, wpm: float = C.WPM, sr: int = C.SR,
             # kolejnego znaku jest różny.
             if gap_jitter > 0.0 and not is_m and tag < 0:
                 scale *= 1.0 + r.uniform(-gap_jitter, gap_jitter)
-            out.append((is_m, max(0.35, n * scale), tag))
+            u = max(0.35, n * scale)
+            # Przerwa MIĘDZY znakami nie krótsza niż GAP_MIN_T (w lokalnym
+            # tempie). 13.10 operator wskazał „JVD" ze sklejonym J i V:
+            # przerwa 1,8 t, a okno FFT 64 ms skraca ją w obrazie do ~1 t.
+            if not is_m and tag < 0:
+                u = max(u, C.GAP_MIN_T * (1.0 + slow[i]))
+            out.append((is_m, u, tag))
         seq = out
 
     dot = C.dot_seconds(wpm) * sr                 # próbki na jednostkę (float)

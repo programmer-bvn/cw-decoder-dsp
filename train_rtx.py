@@ -158,6 +158,7 @@ FIST = (0.0, 0.25)
 FIST_DRIFT = (0.0, 0.15)
 FIST_DRIFT_TAU_S = 2.0
 GAP_JITTER = (0.0, 0.40)
+GAP_MIN_T = 2.5
 
 # Zapadanie zasilania nadajnika: naduszenie klucza rozładowuje kondensator,
 # napięcie spada, generator LC się przestraja. Ton spada W TRAKCIE elementu
@@ -475,7 +476,10 @@ def keying_envelope(text: str, wpm: float = WPM, sr: int = SR,
                 scale *= 1.0 + r.uniform(-fist, fist)
             if gap_jitter > 0.0 and not m and tag < 0:
                 scale *= 1.0 + r.uniform(-gap_jitter, gap_jitter)
-            out.append((m, max(0.35, n * scale), tag))
+            u = max(0.35, n * scale)
+            if not m and tag < 0:            # GAP_MIN_T (dsp/morse.py)
+                u = max(u, GAP_MIN_T * (1.0 + slow[i]))
+            out.append((m, u, tag))
         seq = out
 
     dot = dot_seconds(wpm) * sr

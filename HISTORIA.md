@@ -991,6 +991,27 @@ z kursorem, suwakami, odczytem dB i profilami. Dwie kopie obok siebie:
 **Dalej:** decyzja o etykietach uciętych znaków, potem noc porównawcza
 na warunkach kontroli z 10.10 (4 mln, 12 epok, fcn), zbiór `czesci_sn`.
 
+### Sklejone znaki: przerwa międzyznakowa za krótka (13.10)
+
+**Objaw (operator, partia 2, #6 „JVD").** J i V sklejone — „przerwa
+między znakami była krótka, powinna być jak 3 t".
+
+**Zmierzone.** Z zapisanych granic znaków: J–V 7,8 ramki = **1,8 t**
+(13,8 WPM, kropka 4,35 ramki), V–D 2,6 t. Na 4000 klipach losowanych jak
+w `receive()`: przerwa międzyznakowa min 1,56 t, 1,7% < 2 t, 10% < 2,4 t.
+Rozjazdy się MNOŻĄ: 3 t × (1 − fist 0,25) × (1 − gap_jitter 0,4) ×
+(1 − drift) ≈ 1,15 t w najgorszym razie. W czasie przerwa wewnątrz znaku
+(max 1,39 t) jeszcze ich nie myliła, ale okno FFT 64 ms rozmywa krawędzie
+— przy 14 WPM przerwa w obrazie jest krótsza o ~0,7 t i 1,8 t wygląda
+jak 1 t.
+
+**Co pomogło.** `GAP_MIN_T = 2,5` — przerwa międzyznakowa nie krótsza niż
+2,5 t w lokalnym tempie operatora (`morse.keying_envelope` i kopia
+w `train_rtx.py`); rozrzut w górę zostaje. Po zmianie: min 2,06 t
+w jednostkach nominalnych (wolne błądzenie tempa), 0% < 2 t. Nie zmienia
+kolejności losowań. TEST 21 w `diag.py`; diag 114/114. Partia do oceny:
+`out/ocena/partia3.npz`.
+
 ---
 
 ## Sprawdzone i odrzucone

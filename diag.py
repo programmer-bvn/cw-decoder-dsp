@@ -717,7 +717,7 @@ def test_standalone():
                  # Dołożone po rozbudowie modelu nadajnika i odbiornika.
                  # Bez nich zabezpieczenie przed rozjazdem miałoby dziurę
                  # dokładnie w tej części, którą właśnie się zmieniło.
-                 "FIST_DRIFT", "FIST_DRIFT_TAU_S", "GAP_JITTER",
+                 "FIST_DRIFT", "FIST_DRIFT_TAU_S", "GAP_JITTER", "GAP_MIN_T",
                  "CHIRP_HZ", "SAG_DB", "SAG_TAU_MS",
                  "HUM_PROB", "HUM_DEPTH", "HUM_HZ",
                  "AGC_PROB", "AGC_TAU_MS", "AGC_DEPTH",
@@ -1620,6 +1620,28 @@ def test_jedna_miara_sn():
           f"{falszywe}/30 fałszywych")
 
 
+# ==========================================================================
+# TEST 21: PRZERWA MIĘDZYZNAKOWA NIE SKLEJA ZNAKÓW (13.10)
+# ==========================================================================
+def test_przerwa_miedzyznakowa():
+    section("TEST 21: przerwa międzyznakowa >= GAP_MIN_T")
+    from dsp import morse
+    rng = np.random.default_rng(21)
+    naj = 99.0
+    for _ in range(300):
+        t = "".join(rng.choice(list(C.ALPHABET[1:]), 3))
+        env, spans = morse.keying_envelope(
+            t, wpm=14.0, ramp_ms=0.0, fist=max(C.FIST), drift=0.0,
+            gap_jitter=max(C.GAP_JITTER), rng=rng, return_spans=True)
+        dot = C.dot_seconds(14.0) * C.SR
+        for k in range(len(spans) - 1):
+            naj = min(naj, (spans[k + 1][1] - spans[k][2]) / dot)
+    check("najkrótsza przerwa między znakami >= GAP_MIN_T (pełny rozjazd)",
+          naj >= C.GAP_MIN_T - 0.02,
+          f"{naj:.2f} t przy fist={max(C.FIST)}, gap_jitter="
+          f"{max(C.GAP_JITTER)} (przed 13.10: do 1,56 t)")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1632,7 +1654,8 @@ def main() -> int:
              test_fist_drift, test_standalone,
              test_dpu_model, test_melref, test_sciezka_danych,
              test_tune_poza_pasmem, test_etykiety_ramek,
-             test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn)
+             test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn,
+             test_przerwa_miedzyznakowa)
 
     for t in tests:
         try:
