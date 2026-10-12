@@ -959,8 +959,37 @@ Ocena trafiła za to w trzy realne błędy, które pod tym kryterium było wida�
 Usunięte: `POZIOM_DB`, `TON_DB_AMP1`, `POZIOM_RMS_MAX`, `QRM_AMP`.
 diag 113/113. Nowa partia do oceny: `out/ocena/partia2.npz`.
 
-**Dalej:** ocena partii 2 okiem, potem noc porównawcza na warunkach
-kontroli z 10.10 (4 mln, 12 epok, fcn), zbiór `czesci_sn`.
+**Partia 2 po poprawkach** (`out/ocena/partia2`): operator przejrzał
+22/22 strony — **0 złych na 352** (generator 0/320, nagrania 0/32).
+
+### Znak ucięty krawędzią okna dostaje pełną etykietę (12.10)
+
+**Objaw (operator).** Okno zaczyna się w połowie kreski albo kropki —
+„niejednoznaczność i wprowadzanie sieci w błąd".
+
+**Przyczyna.** `frontend.frame_labels` daje każdej widocznej ramce znaku
+jego PEŁNĄ klasę, także gdy połowa znaku jest poza oknem. Pół kreski na
+lewej krawędzi to równie dobrze końcówka „T", „M", „O" czy „0" — a sieć
+fcn uczy się nazywać ją jedną z nich.
+
+**Zmierzone** (`python -m tools.xray_ocena ucinki`): `czesci_rt` część 00,
+pierwsze 20 000 okien — znak ucięty lewą krawędzią w 28%, prawą w 29%;
+ucięty cel (znak etykiety) 21 razy. Partia 2 (nowy generator): 26% / 27%.
+
+**Stan:** nierozwiązane. Do decyzji: ucięte ramki jako „nie licz"
+(maska w funkcji straty) zamiast pełnej klasy. Przy odczycie nagrań
+i tak liczą się środki okien (`kroki_nagrania`), ale trening wymusza
+zgadywanie na krawędziach. Hipoteza: to szkodzi — niesprawdzona.
+
+**Narzędzie.** `tools/xray_ocena.py przegladaj` otwiera partię, część
+zbioru treningowego (pierwsze N bez rozpakowywania całości) i nagranie
+WAV tą samą drogą co odczyt (przestrojenie + tłumik), w jednej skali.
+Pod obrazkiem pasek etykiety (cel żółty, ucięty czerwony); powiększenie
+z kursorem, suwakami, odczytem dB i profilami. Dwie kopie obok siebie:
+`--kol 2 --pozycja x,y`. Barwy z `tools/xray_magma.npy` — bez matplotlib.
+
+**Dalej:** decyzja o etykietach uciętych znaków, potem noc porównawcza
+na warunkach kontroli z 10.10 (4 mln, 12 epok, fcn), zbiór `czesci_sn`.
 
 ---
 
