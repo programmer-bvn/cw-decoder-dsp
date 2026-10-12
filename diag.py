@@ -1533,6 +1533,47 @@ def test_prawdziwe_tlo():
           f"{jasne.max():.0f} Hz, środek {srodek:.0f} Hz, "
           f"mediana pasm {np.median(prof):.2f}")
 
+# ==========================================================================
+# TEST 20: JEDNA MIARA S/N (dsp/sn.py)
+#
+# Pomiar z audio musi dać to samo, co generator wie ze składowych —
+# inaczej „S/N nagrania" i „S/N treningu" znowu będą dwiema różnymi
+# liczbami (12.10). Walidacja 12.10: od 0 dB w górę błąd +/-0,6 dB dla
+# szumu białego, różowego i z banku, przy 12-30 WPM.
+# ==========================================================================
+def test_jedna_miara_sn():
+    section("TEST 20: jedna miara S/N")
+    from dsp import morse, radio, sn
+
+    rng = np.random.default_rng(20)
+    n = 5 * C.SR
+    bledy = []
+    for tilt in (0.0, -1.0):
+        for cel in (3.0, 9.0, 15.0, 24.0):
+            z = radio.band_noise(n, rng, rms=0.02, tilt=tilt).astype(np.float64)
+            a = sn.amp_dla_sn(cel, z, 750.0)
+            check_prawda = sn.sn_ze_skladowych(a, z, 750.0)
+            sig = morse.synth_cw("CQ DE SQ2BVN TEST", wpm=20, tone=750.0,
+                                 amp=a)
+            x = z.copy()
+            m = min(sig.size, n)
+            x[:m] += sig[:m]
+            bledy.append((cel, check_prawda,
+                          sn.zmierz_sn(x, 750.0)["sn_db"]))
+    zle = [b for b in bledy
+           if not (abs(b[1] - b[0]) < 0.01 and abs(b[2] - b[0]) <= 1.0)]
+    check("S/N z audio = S/N ze składowych (+/-1 dB, 3-24 dB)", not zle,
+          "  ".join(f"{c:.0f}->{z:.1f}" for c, _, z in bledy))
+
+    falszywe = 0
+    for _ in range(30):
+        x = radio.band_noise(n, rng, rms=0.02, tilt=float(rng.uniform(-1, 0)))
+        if sn.zmierz_sn(x, 750.0)["sn_db"] >= 0.0:
+            falszywe += 1
+    check("sam szum syntetyczny: brak odczytu S/N >= 0 dB", falszywe == 0,
+          f"{falszywe}/30 fałszywych")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1545,7 +1586,7 @@ def main() -> int:
              test_fist_drift, test_standalone,
              test_dpu_model, test_melref, test_sciezka_danych,
              test_tune_poza_pasmem, test_etykiety_ramek,
-             test_dekoder_fcn, test_prawdziwe_tlo)
+             test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn)
 
     for t in tests:
         try:

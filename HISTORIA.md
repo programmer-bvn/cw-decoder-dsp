@@ -848,6 +848,65 @@ z niezależnym zestawem testowym (nagrania z 20 m i innych pór).
 
 ---
 
+### Poziom zamiast normalizacji, jedna miara S/N (12.10)
+
+**Teza operatora.** Telegrafista nie podkręca szumu do poziomu sygnału.
+Za mocno — tłumik; średnio — nic; słabo — filtr. Amplituda i S/N mają
+być parametrem treningu, a nie czymś, co „normalizacja wyrówna".
+
+**Pomiar 1 — `auto_gain` przy odczycie** (fcn_4000000_czesci_rt /
+fcn_proba, 26 słów, w całości / w kolejności):
+
+| | jak dziś | tylko tłumik | bez korekty |
+|---|---|---|---|
+| model z bankiem | 13/19 | 13/19 | **3/9** |
+| model bez banku | 11/15 | 11/15 | 11/11 |
+
+Na wszystkich 16 nagraniach korekta była ujemna (−2,8…−12,7 dB) —
+`auto_gain` działał wyłącznie jako tłumik, „podciągania" przy odczycie
+nie ma. Tłumik jest potrzebny; bez niego model z bankiem się sypie.
+
+**Pomiar 2 — X-Ray w jednej skali** (`out/xray_sn.png`). Klipy z bankiem
+mają tło jasne, często prawie jak znaki — to generator „podkręca" szum
+(jasność pasa 0–17 dB). Nagrania: tło ciemne, znaki jasne. 28% klipów
+ze stacją ma szczyt na granicy skali (24 dB), w klipach z bankiem ponad
+połowa. S/N syntetyku i banku liczono różnie (0–4 kHz vs filtr p.cz.) —
+nieporównywalne.
+
+**Co zrobione.** Jedna miara jak w katalogu odbiornika dla CW: moc nośnej
+do mocy szumu w 500 Hz wokół tonu (`C.SN_REF_BW_HZ`, `dsp/sn.py`).
+Dwie drogi: ze składowych (generator) i z gotowego audio (nagranie:
+ramki znak/przerwa progiem Otsu w wąskim paśmie). Walidacja: od 0 dB
+w górę błąd ±0,6 dB (szum biały, różowy, bank; 12–30 WPM); poniżej 0 dB
+zawyża do +5 dB. Skoki ARW w banku udawały stację (do +12 dB) — odcina
+je warunek koncentracji przyrostu mocy w wąskim paśmie (≥ 0,8).
+`tools/sn.py` mierzy nagrania, TEST 20 w `diag.py` pilnuje miary.
+
+**Zmierzone S/N (mediana okien 5 s, 500 Hz):**
+
+| | S/N |
+|---|---|
+| radio USB: LA4CIR / LA3WAA / DP75HSC / f200 | 4,8 / 7,2 / 10,8 / 10,0 dB |
+| radio USB: SN0FMT ×3 / OK1FPS | 14,4–15,5 / 15,6 dB |
+| Nagrywanie (7)–(9) (IC-7300, F5OHS…) | 2,8–7,0 dB |
+| mikrofon mic1–3 | 26–29 dB |
+| trening, syntetyk (po kanale) | mediana 20, 25–75%: 13–26 dB |
+| trening, bank (po kanale) | mediana 6,8, 95%: 13,8 dB; 38% klipów < 0 dB lub bez pomiaru |
+
+Klipy z bankiem kończą się na ~14 dB — stacje mocniejsze (SN0FMT,
+OK1FPS) przy prawdziwym tle sieć widziała tylko na brzegu. Syntetyk
+pokrywa je, ale z innym tłem.
+
+**Przy okazji.** `probki/szum/szum_ic7300_usb_7025kHz_20261009_2135_230Hz_013-047s.wav`
+ma ton o S/N 7–12 dB w 7 z 12 okien (koncentracja 0,99). Dekoder czyta
+głównie „9"/„0" — nośna albo stacja, nie rozstrzygnięte. Do odsłuchu.
+
+**Dalej:** generator losuje S/N w tej mierze (oba rodzaje tła), poziom
+bezwzględny osobno (gałka AF); przy odczycie tylko tłumik. Sprawdzian:
+arkusz X-Ray klipów ma przypominać nagrania.
+
+---
+
 ## Sprawdzone i odrzucone
 
 ### Rekurencja (GRU) zamiast czystej sieci splotowej

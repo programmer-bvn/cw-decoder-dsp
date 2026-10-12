@@ -300,6 +300,15 @@ REAL_NOISE_OFFSET_HZ = 60.0       # środek pasa szumu względem tonu stacji
 REAL_NOISE_TLO_DB = (0.0, 17.0)   # jasność pasa szumu (99,9 percentyl dB)
 REAL_NOISE_RMS_MAX = 0.25         # górna granica RMS szumu po ustawieniu
 
+# --- Jedna miara S/N (dsp/sn.py) -------------------------------------------
+# Do 12.10 S/N syntetyku liczono względem szumu w całym paśmie 0-4 kHz,
+# a banku względem szumu w filtrze p.cz. — dwie nieporównywalne liczby
+# (arkusz out/xray_sn.png: „bank 12-20 dB" wyglądał gorzej niż „syntetyk
+# 5-15 dB"), a S/N nagrań nie dało się w ogóle podać. Teraz jak w katalogu
+# odbiornika dla CW: moc nośnej przy wciśniętym kluczu do mocy szumu
+# w paśmie SN_REF_BW_HZ wokół tonu.
+SN_REF_BW_HZ = 500.0
+
 # Format zapisu obrazów w zbiorze. "uint8" kwantuje [0,1] na 256 poziomów,
 # czyli 40 dB / 255 = 0,16 dB na krok — poniżej rozdzielczości, jaką ma
 # jakikolwiek tor odbiorczy. Zysk jest realny: 40000 obrazów 128x32 to
