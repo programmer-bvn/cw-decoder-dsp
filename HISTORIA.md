@@ -1024,6 +1024,44 @@ widoczności w TEST 9 przy S/N < 3 dB wymaga > 5 dB kontrastu (było 10 —
 próg z czasów samych czystych stacji). diag 114/114. Partia do oceny:
 `out/ocena/partia4.npz`.
 
+### Noc 14.10 (nowy generator) gorsza — sieć rozpoznaje stację po CHIRPIE
+
+**Wynik nocy** (`runs/fcn_4000000_czesci_sn`, warunki kontroli z 10.10):
+walidacja 92,29%, środkowy znak 97,24%, CER 14,08%; nagrania w całości /
+w kolejności **6/26 / 14/26** (stary generator z bankiem: 13/26 / 19/26).
+mic2 3/3 → 1/3, mic3 6/6 → 2/6. Odczyty pełne błędnych znaków.
+
+**Odrzucone (pomiar, bez treningu):** „znaki w ciszy" — na pustym szumie
+nowy model daje znak w 0–0,2% kroków przy tle od −28 do +4 dB, jak stary.
+Na klipach z generatora (pełny realizm) nowy model 87,3%, stary 87,2% —
+miara poprawna. Przy pełnym realizmie wysokie S/N nie szkodzi (25–30 dB:
+92,4%).
+
+**Znalezione (test „po jednym", S/N 15–30 dB, zjawiska wyłączone):**
+
+| | nowy | stary (bank) |
+|---|---|---|
+| wszystko wyłączone | 41,8% | 59,1% |
+| + chirp (0–25 Hz) | **86,4%** | 88,1% |
+| + zapadanie amplitudy | 63,3% | 73,0% |
+| + zanik / ARW / bank / przerwy / dryf | 41–69% | 59–67% |
+| chirp stały 0 / 0,5 / 2 / 5 / 25 Hz | 42 / 50 / 70 / 88 / 90% | 59 / 66 / 81 / 90 / 91% |
+
+Przy chirpie 0 model NIE WIDZI silnej, czystej stacji — odpowiada „cisza"
+przez całe okno. **Przyczyna w kodzie:** `add_qrm` (druga stacja, klasa 0)
+syntetyzuje BEZ chirpu i zapadania, a z rozrzutem ręki (`fist` 0–0,2);
+stacja docelowa ma chirp U(0, 25 Hz) prawie zawsze, od 13.10 do tego timing
+keyera. Sieć nauczyła się skrótu: „czysty ton bez chirpu (i z ręcznym
+timingiem) = obca stacja = ignoruj". Nagrania z mikrofonu (keyer, bez
+chirpu) i dobre nadajniki na paśmie wyglądają jak QRM. Stary generator
+miał ten sam skrót słabiej (stacja też miała rozrzut ręki), stąd mniejsza
+szkoda.
+
+**Do zrobienia:** QRM z TYM SAMYM modelem nadajnika i operatora co stacja
+(chirp, zapadanie, przydźwięk, dryf, timing) — ma się różnić tylko
+położeniem w paśmie i czasie. Chirp rzadki (nowoczesne radia go nie
+mają), nie w każdym nadaniu.
+
 ---
 
 ## Sprawdzone i odrzucone
