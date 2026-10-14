@@ -1375,10 +1375,19 @@ def generate(n: int, out_path: Path, seed: int = SEED, realism: bool = True,
     cols = {k: np.concatenate([c[k] for c in colss]) for k in META_FIELDS}
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(out_path, X=X, y=y, yf=yf, text=np.array(texts),
-             fingerprint=FINGERPRINT, dtype_note=STORE_DTYPE,
-             meta=f"n={n};seed={seed};wpm={WPM};realism={int(realism)}",
-             kod=kod_wersja(), **cols)
+    # Zapis do pliku obok, fsync, potem podmiana nazwy. 14.10 zgasł prąd
+    # w trakcie generowania szóstej części; gdyby trafiło w sam zapis,
+    # zostałby ucięty plik pod docelową nazwą. Rozszerzenie „.part" nie
+    # pasuje do wzorca części (*.npz), więc resztka nie liczy się jako część.
+    tymczasowy = out_path.with_name(out_path.name + ".part")
+    with open(tymczasowy, "wb") as f:
+        np.savez(f, X=X, y=y, yf=yf, text=np.array(texts),
+                 fingerprint=FINGERPRINT, dtype_note=STORE_DTYPE,
+                 meta=f"n={n};seed={seed};wpm={WPM};realism={int(realism)}",
+                 kod=kod_wersja(), **cols)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tymczasowy, out_path)
 
     counts = np.bincount(y, minlength=N_CLASSES)
     print(f"\nZapisano {out_path}  "

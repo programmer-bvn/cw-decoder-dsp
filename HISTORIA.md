@@ -1069,6 +1069,27 @@ stacja wypada o > 10 pkt gorzej niż pełny realizm. Na modelu z 14.10:
 czysta 39,1%, zapadanie zawsze 89,7%, dłuższe przerwy 74,0% (drugi, słabszy
 skrót: QRM z ręką miał krótsze przerwy), pełny realizm 87,4% — UWAGA.
 
+### Zanik zasilania w trakcie generowania zbioru (14.10)
+
+**Objaw.** Noc `czesci_nad` (start 18:14) przerwana zanikiem zasilania
+w trakcie szóstej części (126 500 / 200 000 próbek, po 20:24).
+
+**Stan po awarii (sprawdzone).** `git fsck` bez błędów; paszport nocy bez
+różnicy od commita; części 00–04 całe (CRC archiwum OK, po 200 000 próbek,
+ziarna 12345…16345); części 05 nie ma wcale — plik powstaje dopiero po
+wygenerowaniu całości. Treningu jeszcze nie było.
+
+**Wznowienie było już w kodzie.** `train_rtx.py generate --shards` pomija
+części kompletne; `noc.sh` przy 5 z 20 częściach woła generowanie, które
+dorabia brakujące 15.
+
+**Co poprawione.** Zapis części szedł prosto pod docelową nazwę — awaria
+w samym zapisie zostawiłaby ucięty plik. Teraz `<część>.npz.part`, fsync,
+`os.replace` (`.part` nie pasuje do wzorca `*.npz`). Sprawdzone poza
+repozytorium: 2 części, potem ucięta trzecia i śmieciowy `.part` —
+wznowienie pominęło dwie, ucięta „NIEKOMPLETNA — generuje od nowa",
+po zapisie bez resztek. diag 116/116.
+
 ---
 
 ## Sprawdzone i odrzucone
