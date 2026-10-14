@@ -1,0 +1,115 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791971173.228708   11479 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1791971176.241792   11479 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 72 variables whereas the saved optimizer has 76 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1791971183.114573   11534 service.cc:153] XLA service 0x71562c056ef0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1791971183.115253   11534 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1791971183.126489   11534 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1791971183.244343   11534 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1791971187.001081   11534 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+======================================================================
+ KOPERTA I BŁĘDY: runs/fcn_4000000_czesci_sn/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x7 komórek po 40 próbek; błędy z 3000 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       450    550    650    750    850    950   1100
+  -------------------------------------------------------------
+     10            .      .      .      .      .      .      .
+     13            .      .      2    100     50      .      .
+     15            .      .      .    100     20      .      .
+     18            .      .      .     52      .      .      .
+     20            .      .      .     55      .      .      .
+     22            .      .      .     55      .      .      .
+     25            .      .      .     88      .      .      .
+     27            .      .      .     35      .      .      .
+     30            .      .      .      .      .      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  czyta (>= 50%): tempo 13-25 WPM, ton 750-850 Hz
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              0         -              -
+  90-100%             4     75.0%           0.0%
+  cały (100%)      2996     97.4%           0.7%
+
+WYROK
+
+  znak w całości w oknie:   97.4% trafień (2996 próbek)
+  znak obcięty oknem:       75.0% trafień (4 próbek, 0.1% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  4 przypadków na 3000 (0.13%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+  12-14         402    98.3%      0.5%    0.5%    0.5%       1.0%
+  15-17         660    98.6%      0.3%    0.0%    0.3%       0.0%
+  18-20         627    97.6%      0.3%    1.0%    0.8%       0.0%
+  21-23         650    96.8%      0.8%    0.5%    0.8%       0.0%
+  24-26         661    96.1%      1.5%    1.1%    0.6%       0.0%
+
+TRAFIENIA WOBEC DŁUGOŚCI KODU
+
+  elementów   próbek   trafień   przykłady
+  ----------------------------------------------------
+      1          152     97.4%   E T
+      2          313     97.4%   A I M N
+      3          675     95.9%   D G K O R S U W
+      4         1036     97.9%   B C F H J L P Q V X Y Z
+      5          824     98.1%   cyfry 0-9
+
+  krótkie (1-2 elementy): 97.4%  (465 próbek)
+  długie  (4-5 elementów): 98.0%  (1860 próbek)
+  Różnica tylko 0.5 pp — zależności NIE MA.
+  Czyli gubienie krótkich znaków na nagraniach bierze się
+  nie z samej sieci, a z czegoś dalej: najpewniej z tego,
+  że długie znaki trwają dłużej, zbierają więcej okien
+  i wygrywają przy scalaniu powtórzeń.
+
+  najgorzej czytane znaki:
+    G --.     92.8%  (83 próbek)
+    S ...     95.0%  (80 próbek)
+    Z --..    95.1%  (102 próbek)
+    K -.-     95.2%  (84 próbek)
+    D -..     95.9%  (97 próbek)
+
+NAJCZĘSTSZE POMYŁKI
+
+  S ...    -> 5 .....       2x   inne
+  Z --..   -> 6 -....       2x   wstawiony element
+  V ...-   -> U ..-         2x   zgubiony element
+  G --.    -> B -...        2x   wstawiony element
+  Q --.-   -> 7 --...       1x   wstawiony element
+  5 .....  -> H ....        1x   zgubiony element
+  9 ----.  -> B -...        1x   zgubiony element
+  2 ..---  -> 8 ---..       1x   kropka/kreska
+  5 .....  -> B -...        1x   zgubiony element
+  L .-..   -> 2 ..---       1x   wstawiony element
+  T -      -> E .           1x   kropka/kreska
+  R .-.    -> 9 ----.       1x   inne
+
+zapisane: out/koperta_fcn_20261014_0001.txt
