@@ -1057,10 +1057,17 @@ chirpu) i dobre nadajniki na paśmie wyglądają jak QRM. Stary generator
 miał ten sam skrót słabiej (stacja też miała rozrzut ręki), stąd mniejsza
 szkoda.
 
-**Do zrobienia:** QRM z TYM SAMYM modelem nadajnika i operatora co stacja
-(chirp, zapadanie, przydźwięk, dryf, timing) — ma się różnić tylko
-położeniem w paśmie i czasie. Chirp rzadki (nowoczesne radia go nie
-mają), nie w każdym nadaniu.
+**Co zrobione (14.10).** `radio.losuj_nadajnik` (i kopia w `train_rtx.py`)
+— JEDEN rozkład operatora i nadajnika dla stacji docelowej i QRM; QRM ma
+też to samo tempo (`wpm_klipu`) i zanik. Zapadanie zasilacza (chirp + spadek
+amplitudy, jedna przyczyna) tylko w `ZAPADANIE_PROB = 0,2` nadań. TEST 22
+w `diag.py`; diag 116/116.
+
+**Strażnik w nocy.** `tools/skroty.py` — test „po jednym" po każdym treningu
+fcn, etap SKROTY w `noc.sh`, tabela w `RANO.txt`, ostrzeżenie, gdy czysta
+stacja wypada o > 10 pkt gorzej niż pełny realizm. Na modelu z 14.10:
+czysta 39,1%, zapadanie zawsze 89,7%, dłuższe przerwy 74,0% (drugi, słabszy
+skrót: QRM z ręką miał krótsze przerwy), pełny realizm 87,4% — UWAGA.
 
 ---
 

@@ -166,6 +166,7 @@ GAP_MIN_T = 3.0
 # (750 Hz na początku kreski, 730 Hz na końcu) i wraca w przerwie; z tego
 # SAMEGO mechanizmu spada amplituda. To opisuje trzecia litera RST (Tone).
 # NIE to samo co dryf VFO, który jest wolny i niezależny od klucza.
+ZAPADANIE_PROB = 0.2
 CHIRP_HZ = (0.0, 25.0)
 SAG_DB = (0.0, 3.0)
 SAG_TAU_MS = (20.0, 120.0)
@@ -661,19 +662,50 @@ def add_qrn(audio: np.ndarray, rng: np.random.Generator,
     return out
 
 
+def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
+    """Operator i nadajnik — wspólny rozkład stacji i QRM (dsp/radio.py)."""
+    if not realism:
+        return dict(fist=0.0, fist_drift=0.0, gap_jitter=0.0, drift_hz=0.0,
+                    chirp_hz=0.0, sag_db=0.0, sag_tau_ms=60.0,
+                    hum_depth=0.0, hum_hz=100.0)
+    p = dict(fist=float(rng.uniform(*FIST)),
+             fist_drift=float(rng.uniform(*FIST_DRIFT)),
+             gap_jitter=float(rng.uniform(*GAP_JITTER)),
+             drift_hz=float(rng.uniform(-DRIFT_HZ, DRIFT_HZ)),
+             chirp_hz=0.0, sag_db=0.0)
+    if rng.random() < ZAPADANIE_PROB:
+        p["chirp_hz"] = float(rng.uniform(*CHIRP_HZ))
+        p["sag_db"] = float(rng.uniform(*SAG_DB))
+    p["sag_tau_ms"] = float(rng.uniform(*SAG_TAU_MS))
+    p["hum_depth"], p["hum_hz"] = 0.0, 100.0
+    if rng.random() < HUM_PROB:
+        p["hum_depth"] = float(rng.uniform(*HUM_DEPTH))
+        p["hum_hz"] = float(rng.choice(HUM_HZ))
+    return p
+
+
+def wpm_klipu(rng: np.random.Generator, wpm: float = WPM) -> float:
+    w = wpm + (float(rng.uniform(-WPM_JITTER, WPM_JITTER))
+               if WPM_JITTER > 0 else 0.0)
+    return float(np.clip(w, 5.0, 60.0))
+
+
 def add_qrm(audio: np.ndarray, rng: np.random.Generator,
-            amp: float, sr: int = SR) -> np.ndarray:
-    """Druga stacja: inny ton w CAŁYM pasmie analizy, inne tempo, inny tekst."""
+            amp: float, sr: int = SR, realism: bool = True) -> np.ndarray:
+    """Druga stacja: inny ton w CAŁYM pasmie analizy, inny tekst; tempo,
+    nadajnik i zanik z tych samych rozkładów co stacja (14.10)."""
     if amp <= 0.0 or audio.size == 0:
         return audio
     tone = float(rng.uniform(FMIN + 30.0, FMAX - 30.0))
-    wpm = float(rng.uniform(15.0, 35.0))
+    wpm = wpm_klipu(rng)
     text = "".join(str(rng.choice(list(ALPHABET[1:]))) for _ in range(6))
+    nad = losuj_nadajnik(rng, realism)
     wave = synth_cw(text, wpm=wpm, tone=tone, amp=amp, sr=sr,
-                    phase=float(rng.uniform(0, 2 * np.pi)),
-                    fist=float(rng.uniform(0.0, 0.2)), rng=rng)
+                    phase=float(rng.uniform(0, 2 * np.pi)), rng=rng, **nad)
     if wave.size == 0:
         return audio
+    wave = apply_qsb(wave, rng, depth=float(rng.uniform(*QSB_DEPTH))
+                     if realism else 0.0, sr=sr)
     out = audio.copy()
     # Start losowy, ale musi ZAHACZAĆ o okno widziane przez sieć: front-end
     # wycina środkowe IMG_FRAMES ramek, więc pierwsze i ostatnie 0,72 s klipu
@@ -852,29 +884,16 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
 
     if text:
         tone = TONE_CENTER + float(rng.uniform(-TONE_SPREAD, TONE_SPREAD))
-        wpm = float(np.clip(WPM + (rng.uniform(-WPM_JITTER, WPM_JITTER)
-                                   if WPM_JITTER > 0 else 0.0), 5.0, 60.0))
-        # --- operator i klucz ---
-        fist = float(rng.uniform(*FIST)) if realism else 0.0
-        fist_drift = float(rng.uniform(*FIST_DRIFT)) if realism else 0.0
-        gap_jit = float(rng.uniform(*GAP_JITTER)) if realism else 0.0
-        # --- nadajnik ---
-        drift = float(rng.uniform(-DRIFT_HZ, DRIFT_HZ)) if realism else 0.0
-        chirp = float(rng.uniform(*CHIRP_HZ)) if realism else 0.0
-        sag = float(rng.uniform(*SAG_DB)) if realism else 0.0
-        sag_tau = float(rng.uniform(*SAG_TAU_MS)) if realism else 60.0
-        hum, hum_f = 0.0, 100.0
-        if realism and rng.random() < HUM_PROB:
-            hum = float(rng.uniform(*HUM_DEPTH))
-            hum_f = float(rng.choice(HUM_HZ))
-
+        wpm = wpm_klipu(rng)
+        # --- operator, klucz i nadajnik: wspólny rozkład z QRM (14.10) ---
+        nad = losuj_nadajnik(rng, realism)
+        fist, fist_drift, gap_jit = (nad["fist"], nad["fist_drift"],
+                                     nad["gap_jitter"])
+        drift, chirp, sag, hum = (nad["drift_hz"], nad["chirp_hz"],
+                                  nad["sag_db"], nad["hum_depth"])
         wave, spans = synth_cw(text, wpm=wpm, tone=tone, amp=1.0,
                                phase=float(rng.uniform(0, 2 * np.pi)),
-                               fist=fist, fist_drift=fist_drift,
-                               gap_jitter=gap_jit, drift_hz=drift,
-                               chirp_hz=chirp, sag_db=sag,
-                               sag_tau_ms=sag_tau, hum_depth=hum,
-                               hum_hz=hum_f, rng=rng, return_spans=True)
+                               rng=rng, return_spans=True, **nad)
         qsb = float(rng.uniform(*QSB_DEPTH)) if realism else 0.0
         wave = apply_qsb(wave, rng, depth=qsb)
         if wave.size < CLIP_SAMPLES:
@@ -924,7 +943,7 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
     qrm = 0.0
     if realism and rng.random() < QRM_PROB:
         qrm = amp_dla_sn(float(rng.uniform(*SN_DB)), szum, TONE_CENTER)
-        zak = add_qrm(zak, rng, amp=qrm)
+        zak = add_qrm(zak, rng, amp=qrm, realism=realism)
     meta["qrm"] = qrm
 
     qrn = 0

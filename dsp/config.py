@@ -257,6 +257,11 @@ GAP_MIN_T = 3.0
 # dryf liniowy przez cały klip, czyli zjawisko innego rodzaju.
 #
 # W raporcie RST opisuje to TRZECIA litera (Tone).
+# RZADKO, nie w każdym nadaniu (14.10): przy chirpie w prawie każdej stacji
+# docelowej, a bez chirpu w QRM, sieć nauczyła się czytać TYLKO stacje
+# z chirpem — czystą stację (keyer, dobre radio) brała za obcą i pomijała
+# (HISTORIA „Noc 14.10"). Nowoczesne radia chirpu nie mają.
+ZAPADANIE_PROB = 0.2            # udział nadań z zapadaniem zasilacza
 CHIRP_HZ = (0.0, 25.0)          # ile herców spada ton w trakcie elementu
 SAG_DB = (0.0, 3.0)             # ile decybeli spada amplituda elementu
 SAG_TAU_MS = (20.0, 120.0)      # stała czasowa zapadania i powrotu

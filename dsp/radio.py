@@ -160,11 +160,53 @@ def add_qrn(audio: np.ndarray, rng: np.random.Generator,
 
 
 # --------------------------------------------------------------------------
+# Operator i nadajnik — JEDEN rozkład dla stacji docelowej i dla QRM
+# --------------------------------------------------------------------------
+def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
+    """Parametry operatora i nadajnika dla synth_cw.
+
+    14.10: QRM był syntetyzowany bez chirpu i zapadania, za to z ręką
+    (fist 0-0,2), a stacja docelowa miała chirp prawie zawsze i od 13.10
+    timing keyera. Sieć odróżniała je po charakterze nadajnika zamiast po
+    położeniu w paśmie i czystą stację brała za obcą (test „po jednym":
+    bez chirpu 42% kroków, z chirpem 86%). Teraz obie stacje losują z tej
+    samej funkcji — różnią się tylko tonem, tempem, tekstem i czasem.
+    """
+    if not realism:
+        return dict(fist=0.0, fist_drift=0.0, gap_jitter=0.0, drift_hz=0.0,
+                    chirp_hz=0.0, sag_db=0.0, sag_tau_ms=60.0,
+                    hum_depth=0.0, hum_hz=100.0)
+    p = dict(fist=float(rng.uniform(*C.FIST)),
+             fist_drift=float(rng.uniform(*C.FIST_DRIFT)),
+             gap_jitter=float(rng.uniform(*C.GAP_JITTER)),
+             drift_hz=float(rng.uniform(-C.DRIFT_HZ, C.DRIFT_HZ)),
+             chirp_hz=0.0, sag_db=0.0)
+    # Chirp i spadek amplitudy mają jedną przyczynę (zapadanie zasilacza),
+    # więc albo są oba, albo żadnego.
+    if rng.random() < C.ZAPADANIE_PROB:
+        p["chirp_hz"] = float(rng.uniform(*C.CHIRP_HZ))
+        p["sag_db"] = float(rng.uniform(*C.SAG_DB))
+    p["sag_tau_ms"] = float(rng.uniform(*C.SAG_TAU_MS))
+    p["hum_depth"], p["hum_hz"] = 0.0, 100.0
+    if rng.random() < C.HUM_PROB:
+        p["hum_depth"] = float(rng.uniform(*C.HUM_DEPTH))
+        p["hum_hz"] = float(rng.choice(C.HUM_HZ))
+    return p
+
+
+def wpm_klipu(rng: np.random.Generator, wpm: float = C.WPM) -> float:
+    """Tempo jednego nadania — ten sam rozkład dla stacji i dla QRM."""
+    w = wpm + (float(rng.uniform(-C.WPM_JITTER, C.WPM_JITTER))
+               if C.WPM_JITTER > 0 else 0.0)
+    return float(np.clip(w, 5.0, 60.0))
+
+
+# --------------------------------------------------------------------------
 # QRM — inna stacja w pasmie
 # --------------------------------------------------------------------------
 def add_qrm(audio: np.ndarray, rng: np.random.Generator,
             amp: float, sr: int = C.SR,
-            alphabet: str = C.ALPHABET) -> np.ndarray:
+            alphabet: str = C.ALPHABET, realism: bool = True) -> np.ndarray:
     """Druga stacja CW: inny ton, inne tempo, inny tekst, inna faza.
 
     Ton jest losowany W CAŁYM pasmie analizy, także blisko tonu stacji
@@ -176,14 +218,19 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
         return audio
 
     tone = float(rng.uniform(C.FMIN + 30.0, C.FMAX - 30.0))
-    wpm = float(rng.uniform(15.0, 35.0))
+    # Tempo, nadajnik i zanik z TYCH SAMYCH rozkładów co stacja docelowa
+    # (losuj_nadajnik — dlaczego). Do 14.10: 15-35 WPM, ręka, bez chirpu.
+    wpm = wpm_klipu(rng)
     text = "".join(str(rng.choice(list(alphabet[1:]))) for _ in range(6))
+    nad = losuj_nadajnik(rng, realism)
 
     wave = morse.synth_cw(text, wpm=wpm, tone=tone, amp=amp, sr=sr,
                           phase=float(rng.uniform(0, 2 * np.pi)),
-                          fist=float(rng.uniform(0.0, 0.2)), rng=rng)
+                          rng=rng, **nad)
     if wave.size == 0:
         return audio
+    wave = apply_qsb(wave, rng, depth=float(rng.uniform(*C.QSB_DEPTH))
+                     if realism else 0.0, sr=sr)
 
     out = audio.copy()
     # Druga stacja startuje w losowym momencie i może wchodzić i wychodzić
@@ -363,31 +410,18 @@ def receive(text: str, rng: np.random.Generator,
     # --- stacja docelowa ---
     if text:
         tone = C.TONE_CENTER + float(rng.uniform(-C.TONE_SPREAD, C.TONE_SPREAD))
-        clip_wpm = wpm + (float(rng.uniform(-C.WPM_JITTER, C.WPM_JITTER))
-                          if C.WPM_JITTER > 0 else 0.0)
-        clip_wpm = float(np.clip(clip_wpm, 5.0, 60.0))
-        # --- operator i klucz ---
-        fist = float(rng.uniform(*C.FIST)) if realism else 0.0
-        fist_drift = float(rng.uniform(*C.FIST_DRIFT)) if realism else 0.0
-        gap_jit = float(rng.uniform(*C.GAP_JITTER)) if realism else 0.0
-        # --- nadajnik ---
-        drift = float(rng.uniform(-C.DRIFT_HZ, C.DRIFT_HZ)) if realism else 0.0
-        chirp = float(rng.uniform(*C.CHIRP_HZ)) if realism else 0.0
-        sag = float(rng.uniform(*C.SAG_DB)) if realism else 0.0
-        sag_tau = float(rng.uniform(*C.SAG_TAU_MS)) if realism else 60.0
-        hum = 0.0
-        hum_f = 100.0
-        if realism and rng.random() < C.HUM_PROB:
-            hum = float(rng.uniform(*C.HUM_DEPTH))
-            hum_f = float(rng.choice(C.HUM_HZ))
+        clip_wpm = wpm_klipu(rng, wpm)
+        # --- operator, klucz i nadajnik: wspólny rozkład z QRM ---
+        nad = losuj_nadajnik(rng, realism)
+        fist, fist_drift, gap_jit = (nad["fist"], nad["fist_drift"],
+                                     nad["gap_jitter"])
+        drift, chirp, sag, hum = (nad["drift_hz"], nad["chirp_hz"],
+                                  nad["sag_db"], nad["hum_depth"])
 
         wave, spans = morse.synth_cw(
             text, wpm=clip_wpm, tone=tone, amp=1.0, sr=sr,
             phase=float(rng.uniform(0, 2 * np.pi)),
-            fist=fist, fist_drift=fist_drift, gap_jitter=gap_jit,
-            drift_hz=drift, chirp_hz=chirp, sag_db=sag, sag_tau_ms=sag_tau,
-            hum_depth=hum, hum_hz=hum_f,
-            rng=rng, return_spans=True)
+            rng=rng, return_spans=True, **nad)
 
         qsb = float(rng.uniform(*C.QSB_DEPTH)) if realism else 0.0
         wave = apply_qsb(wave, rng, depth=qsb, sr=sr)
@@ -450,7 +484,7 @@ def receive(text: str, rng: np.random.Generator,
         # ściszał wtedy całość i nasza stacja znikała (ocena operatora).
         qrm_amp = sn.amp_dla_sn(float(rng.uniform(*C.SN_DB)), szum,
                                 C.TONE_CENTER, sr=sr)
-        zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr)
+        zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr, realism=realism)
     meta["qrm"] = qrm_amp
 
     n_crashes = 0

@@ -670,7 +670,7 @@ if [ "$GENERUJ" = "1" ]; then
         exit 1
     fi
     if [ "$CZESCI" -gt 1 ]; then
-        echo "generuję $CZESCI części po $N_PROBEK próbek (~14 min każda)..."
+        echo "generuję $CZESCI części po $N_PROBEK próbek (~25 min każda, pomiar 14.10)..."
         # Części tam, gdzie wskazuje wzorzec zbioru: "kat/nazwa_*.npz" ->
         # --out "kat/nazwa.npz" (train_rtx dopisuje _00, _01...). Do 10.10
         # było na sztywno czesci/morse_N.npz — zbiór w innym katalogu
@@ -861,6 +861,34 @@ nagrania () {
     return $RC
 }
 
+# --- SKRÓTY ------------------------------------------------------------
+#  Czy model czyta STACJĘ, czy przypadkową cechę generatora. 14.10 model
+#  z walidacją 92% nie widział czystej stacji, bo QRM był generowany bez
+#  chirpu (tools/skroty.py, HISTORIA „Noc 14.10"). Walidacja ma ten sam
+#  skrót co trening, więc go nie pokaże — stąd osobny etap. Tylko fcn.
+skroty () {
+    local ARCH="$1" RUN="$2"
+    if [ "$ARCH" != "fcn" ]; then
+        echo "  tylko dla fcn — pomijam"
+        return 0
+    fi
+    if [ ! -f "$RUN/best.keras" ]; then
+        echo "  brak $RUN/best.keras"
+        return 1
+    fi
+    local WYNIK="$LOGI/skroty_${ARCH}_${STEMPEL}.txt"
+    ETAP_LOG="$LOGI/noc_${STEMPEL}_skroty_${ARCH}.log"
+    python -m tools.skroty --model "$RUN/best.keras" --out "$WYNIK" \
+        > "$ETAP_LOG" 2>&1
+    local RC=$?
+    if [ -f "$WYNIK" ]; then
+        sed -n '4,$p' "$WYNIK"
+    else
+        tail -12 "$ETAP_LOG"
+    fi
+    return $RC
+}
+
 # --- PRZEPUSTOWOŚĆ ------------------------------------------------------
 #  Odpowiada na pytanie, które przez cały projekt było ZAŁOŻENIEM, a nie
 #  pomiarem: czy tempo treningu wyznacza karta, czy potok wejściowy.
@@ -884,6 +912,7 @@ etap "PRZEPUSTOWOSC"            przepustowosc
 etap "TRENING $ARCH -> $RUN_DPU"  trenuj "$ARCH" "$RUN_DPU"
 etap "KOPERTA $ARCH"              koperta "$ARCH" "$RUN_DPU"
 etap "NAGRANIA $ARCH"             nagrania "$ARCH" "$RUN_DPU"
+etap "SKROTY $ARCH"               skroty "$ARCH" "$RUN_DPU"
 
 if [ "$TRENUJ_GRU" = "1" ]; then
     etap "TRENING gru -> $RUN_GRU"  trenuj gru "$RUN_GRU"
@@ -1021,6 +1050,14 @@ PY
         echo
     done
 
+    F="$LOGI/skroty_${ARCH}_${STEMPEL}.txt"
+    if [ -f "$F" ]; then
+        echo "SKRÓTY ($ARCH) — czy czyta stację, czy cechę generatora"
+        echo
+        sed -n '4,$p' "$F"
+        echo
+    fi
+
     echo "PEŁNE LOGI"
     echo "  $GLOWNY"
     for F in "$LOGI"/noc_${STEMPEL}_*.log "$LOGI"/koperta_*_${STEMPEL}.txt; do
@@ -1064,7 +1101,7 @@ if [ -z "$KOD_COMMIT" ]; then
 else
     WYNIKI=( 'runs/**/log.csv' 'runs/**/state.json'
              "$LOGI/noc_*.log" "$LOGI/noc_*_kod.diff" "$LOGI/koperta_*.txt"
-             "$LOGI/nagrania_*.txt" "$RANO" )
+             "$LOGI/nagrania_*.txt" "$LOGI/skroty_*.txt" "$RANO" )
     # Po jednym wzorcu, i commit z NAZWAMI plików, nie wzorcami: wzorzec,
     # który nic nie łapie (np. brak *_kod.diff, gdy kod = commit, albo brak
     # nagrań), wywraca CAŁE "git add" i cały commit — nic by nie weszło.

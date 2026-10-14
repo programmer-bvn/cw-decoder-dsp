@@ -724,7 +724,7 @@ def test_standalone():
                  # Bez nich zabezpieczenie przed rozjazdem miałoby dziurę
                  # dokładnie w tej części, którą właśnie się zmieniło.
                  "FIST_DRIFT", "FIST_DRIFT_TAU_S", "GAP_JITTER", "GAP_MIN_T",
-                 "CHIRP_HZ", "SAG_DB", "SAG_TAU_MS",
+                 "ZAPADANIE_PROB", "CHIRP_HZ", "SAG_DB", "SAG_TAU_MS",
                  "HUM_PROB", "HUM_DEPTH", "HUM_HZ",
                  "AGC_PROB", "AGC_TAU_MS", "AGC_DEPTH",
                  # Prawdziwe tło (10.10) — bez nich obie ścieżki mogłyby
@@ -1648,6 +1648,46 @@ def test_przerwa_miedzyznakowa():
           f"{max(C.GAP_JITTER)} (przed 13.10: do 1,56 t)")
 
 
+# ==========================================================================
+# TEST 22: STACJA I QRM Z JEDNEGO MODELU NADAJNIKA (14.10)
+#
+# Noc 14.10: QRM bez chirpu, stacja z chirpem -> sieć czytała tylko stacje
+# z chirpem (czysta stacja 42% kroków, HISTORIA „Noc 14.10"). Obie stacje
+# mają losować nadajnik z radio.losuj_nadajnik, a zapadanie zasilacza ma
+# być rzadkie (ZAPADANIE_PROB).
+# ==========================================================================
+def test_jeden_nadajnik():
+    section("TEST 22: stacja i QRM z jednego modelu nadajnika")
+    wywolania = []
+    oryg = radio.losuj_nadajnik
+
+    def licz(rng, realism=True):
+        p = oryg(rng, realism)
+        wywolania.append(p)
+        return p
+
+    stare = C.QRM_PROB
+    radio.losuj_nadajnik = licz
+    try:
+        C.QRM_PROB = 1.0
+        rng = np.random.default_rng(22)
+        for _ in range(20):
+            radio.receive("ABC", rng, realism=True)
+    finally:
+        radio.losuj_nadajnik = oryg
+        C.QRM_PROB = stare
+    check("każdy klip: nadajnik stacji I nadajnik QRM z losuj_nadajnik",
+          len(wywolania) == 40, f"{len(wywolania)} wywołań na 20 klipów z QRM")
+
+    rng = np.random.default_rng(23)
+    z = [radio.losuj_nadajnik(rng)["chirp_hz"] > 0 for _ in range(3000)]
+    udzial = float(np.mean(z))
+    check("zapadanie zasilacza (chirp) w zadanym udziale nadań",
+          abs(udzial - C.ZAPADANIE_PROB) < 0.03,
+          f"{100 * udzial:.1f}% nadań z chirpem, oczekiwane "
+          f"{100 * C.ZAPADANIE_PROB:.0f}% (przed 14.10: prawie 100%)")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1661,7 +1701,7 @@ def main() -> int:
              test_dpu_model, test_melref, test_sciezka_danych,
              test_tune_poza_pasmem, test_etykiety_ramek,
              test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn,
-             test_przerwa_miedzyznakowa)
+             test_przerwa_miedzyznakowa, test_jeden_nadajnik)
 
     for t in tests:
         try:
