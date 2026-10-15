@@ -1,0 +1,50 @@
+============================================================
+ NOC TRENINGOWA  2026-10-14 18:14
+============================================================
+ zbiór:  czesci_nad/morse_200000_*.npz  (200000 próbek)
+ epoki:  12   batch: 256
+ log:    out/noc_20261014_1814.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+
+--- paszport ---
+commit:  95c65b9 2026-10-14 18:11 Generator: stacja i QRM z jednego modelu nadajnika, chirp rzadki; straznik SKROTY w nocy
+gałąź:   main
+zmiany:  2 plików poza commitem — różnica w out/noc_20261014_1814_kod.diff
+            M tools/mic2wav.py
+            M tools/wav2net.py
+venv:    /root/venv_gpu  (natywny system plików WSL)
+pakiety: tensorflow 2.21.0, keras 3.15.1, numpy 2.5.3, scipy 1.18.1, librosa 1.0.0
+import tensorflow: 15 s   (venv: /root/venv_gpu)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791994491.860037     645 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+ROTACJA CZĘŚCI WŁĄCZONA
+  zbiór 4000000 próbek potrzebowałby ~41000 MB naraz,
+  wolne jest 23238 MB. Części pójdą po kolei — w pamięci
+  będzie leżeć jedna (~820 MB) plus walidacja.
+  Koszt przy zmierzonych 289 MB/s: ~3 s na część na epokę.
+
+--- diag.py ---
+======================================================================
+WYNIK: 116/116 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci_nad/morse_200000_*.npz   (20 x 200000 = 4000000 próbek)
+czesci_nad/morse_200000_*.npz: brak plikow
+wolne miejsce: 307910 MB, potrzeba ~18448 MB
+generuję 20 części po 200000 próbek (~25 min każda, pomiar 14.10)...
