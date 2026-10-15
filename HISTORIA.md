@@ -1083,9 +1083,34 @@ walidacja 91,80%, środkowy znak 96,81%, CER 14,86%. SKRÓTY: czysta stacja
 
 Pierwszy raz OK1FPS w całości i DP75HSC w kolejności; SN0FMT w kolejności
 12/12. Mikrofon wrócił do poziomu sprzed zmian. Zastrzeżenie bez zmian:
-stacji niezależnych są 4 słowa — to wskazówka, nie dowód. Do obserwacji:
-koperta tonu w RANO „750–750 Hz" (dzień wcześniej 750–850) — odczyt
-nagrań idzie po przestrojeniu na 750 Hz, ale zawężenie warto sprawdzić.
+stacji niezależnych są 4 słowa — to wskazówka, nie dowód.
+
+**Koperta tonu — sprostowanie (15.10).** Uwaga „750–750 Hz (dzień wcześniej
+750–850), zawężenie do sprawdzenia" była błędna: siatka koperty ma kroki
+co 100 Hz, a trening losuje ton 750 ± 80 Hz, więc 650 i 850 Hz leżą POZA
+treningiem w obu nocach. „750–850" brało się z jednej komórki (13 WPM,
+850 Hz: 50%) modelu ze skrótem chirpowym, który przy 750 Hz czytał tylko
+35–88%. Pomiar co 25 Hz (`tools.koperta`, sygnał idealny, % trafień):
+
+| | 675–825 Hz, 13–27 WPM | 10 WPM | 30 WPM |
+|---|---|---|---|
+| czesci_nad | **100 w każdej komórce** | 2–10 | 58–80 |
+| czesci_rt (10.10) | 12–100, z dziurami | 68–92 | 25–68 |
+
+Ton: nowy model czyta cały zakres treningu, równo. Słaby punkt to TEMPO
+poza treningiem (20 ± 7 = 13–27 WPM): stary czytał 10 WPM, bo rozrzut ręki
+i błądzenie tempa poszerzały mu zakres; po przejściu na timing keyera
+(13.10) tego nie ma.
+
+**Poszerzenie tempa (15.10).** `WPM = 22, WPM_JITTER = 10` → 12–32 WPM.
+Dolna granica z okna: „0" z przerwami to 25 jednostek, okno 2,56 s → poniżej
+11,7 WPM znak się nie mieści (TEST 9 w `diag.py`). Górna: przy 35 WPM kropka
+(34 ms) jest krótsza niż krok wyjścia fcn (40 ms). Wolniejsze stacje — do
+rozważenia ściśnięcie obrazu w czasie przy odczycie, bez zmiany treningu.
+Koperta ma od 15.10 siatkę tempa 10-35 WPM i tonu gęsto przy granicach
+treningu. Punkt odniesienia — model czesci_nad (trenowany 13-27 WPM) na
+nowej siatce: 12-28 WPM i 675-825 Hz 95-100%, 32 WPM 0-5%, 10 WPM 0-15%.
+diag 116/116 (12 WPM: „0" z przerwami 2,50 s w oknie 2,56 s).
 
 ### Zanik zasilania w trakcie generowania zbioru (14.10)
 

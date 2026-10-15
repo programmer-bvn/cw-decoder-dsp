@@ -55,11 +55,15 @@ if __package__ in (None, ""):                      # uruchomienie wprost
 from dsp import config as C
 from dsp import frontend, morse, radio
 
-# Siatka pomiarowa. Tempo obejmuje zakres z config (13-27 WPM) z zapasem
-# po obu stronach, żeby było widać, GDZIE model milknie, a nie tylko że
-# w środku czyta. Ton to całe pasmo front-endu 400-1200 Hz.
-WPM_SIATKA = (10.0, 13.0, 15.0, 18.0, 20.0, 22.0, 25.0, 27.0, 30.0)
-TON_SIATKA = (450.0, 550.0, 650.0, 750.0, 850.0, 950.0, 1100.0)
+# Siatka pomiarowa. Tempo obejmuje zakres z config (od 15.10: 12-32 WPM)
+# z zapasem po obu stronach, żeby było widać, GDZIE model milknie, a nie
+# tylko że w środku czyta. Ton: gęsto przy granicach treningu (750 +/- 80
+# Hz), rzadziej dalej. Do 15.10 siatka szła co 100 Hz — 650 i 850 Hz leżały
+# tuż ZA granicą treningu, a 675-825 nie było w ogóle, i RANO pokazało
+# „750-750 Hz" przy modelu, który czyta 675-825 w 100% (HISTORIA
+# „Koperta tonu — sprostowanie").
+WPM_SIATKA = (10.0, 12.0, 15.0, 18.0, 22.0, 25.0, 28.0, 32.0, 35.0)
+TON_SIATKA = (550.0, 650.0, 675.0, 725.0, 750.0, 775.0, 825.0, 850.0, 950.0)
 
 
 # --------------------------------------------------------------------------
@@ -236,7 +240,7 @@ def mierz_bledy(model, n: int, seed: int = 20260910):
     zapisujemy rodzaj błędu, FAKTYCZNE tempo i widoczność znaku w oknie.
 
     Tempo bierzemy z meta, nie z zadanej wartości: receive() dokłada do
-    niego WPM_JITTER, więc zadane 20 daje faktyczne 13-27. Binowanie po
+    niego WPM_JITTER, więc zadane 22 daje faktyczne 12-32. Binowanie po
     faktycznym jest jedyne sensowne.
     """
     rng = np.random.default_rng(seed)

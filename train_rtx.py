@@ -117,12 +117,13 @@ MORSE_DICT = {
 }
 
 # --- timing CW ---
-WPM = 20.0
-# 7 WPM rozrzutu = 13-27 WPM. Przy WPM_JITTER = 0 zbiór miał dokładnie jedno
-# tempo i model gubił znaki krótkie na pierwszym nagraniu z pasma, które
-# szło 15 WPM (kropka 80 ms zamiast 60 ms). Dolna granica wynika z okna
-# sieci: poniżej 11,7 WPM najdłuższy znak z przerwami się w nim nie mieści.
-WPM_JITTER = 7.0
+WPM = 22.0
+# 22 +/- 10 = 12-32 WPM (15.10; było 20 +/- 7 = 13-27). Przy WPM_JITTER = 0
+# zbiór miał dokładnie jedno tempo i model gubił znaki krótkie na pierwszym
+# nagraniu z pasma (15 WPM). Dolna granica wynika z okna sieci: poniżej
+# 11,7 WPM najdłuższy znak z przerwami się w nim nie mieści. Górna: przy
+# 35 WPM kropka jest krótsza niż krok wyjścia fcn (opis w dsp/config.py).
+WPM_JITTER = 10.0
 DASH_UNITS = 3
 GAP_ELEMENT_UNITS = 1
 GAP_CHAR_UNITS = 3

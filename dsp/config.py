@@ -111,7 +111,7 @@ MORSE_DICT = {
 # Kropka [s] = 1.2 / WPM (słowo wzorcowe PARIS = 50 jednostek).
 # Odstępy w jednostkach kropki: kreska 3, przerwa w znaku 1,
 # przerwa między znakami 3, przerwa między słowami 7.
-WPM = 20.0                      # tempo nominalne
+WPM = 22.0                      # tempo nominalne (środek zakresu)
 
 # ZMIERZONE NA PRAWDZIWYM NAGRANIU — i to była najkosztowniejsza pomyłka
 # w domyślnych wartościach tego projektu.
@@ -128,7 +128,14 @@ WPM = 20.0                      # tempo nominalne
 # operatorów. Dolna granica nie jest przypadkowa: przy 13 WPM najdłuższy
 # znak z przerwami zajmuje 2,31 s, a okno sieci ma 2,56 s. Poniżej 11,7 WPM
 # przestaje się mieścić — pilnuje tego diag.py TEST 9.
-WPM_JITTER = 7.0
+#
+# 15.10: 22 +/- 10 = 12-32 WPM (było 20 +/- 7). Pomiar koperty: model
+# z timingiem keyera czytał 13-27 WPM w 100%, a 10 WPM w 2-10% i 30 WPM
+# w 58-80% — stary model łapał 10 WPM tylko dzięki rozrzutowi ręki
+# (HISTORIA „Koperta tonu — sprostowanie"). Dół: 12 WPM, bo 11,7 to granica
+# okna. Góra: 32, bo przy 35 WPM kropka (34 ms) jest krótsza niż krok
+# wyjścia fcn (40 ms).
+WPM_JITTER = 10.0
 
 DASH_UNITS = 3
 GAP_ELEMENT_UNITS = 1
