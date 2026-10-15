@@ -1069,6 +1069,24 @@ stacja wypada o > 10 pkt gorzej niż pełny realizm. Na modelu z 14.10:
 czysta 39,1%, zapadanie zawsze 89,7%, dłuższe przerwy 74,0% (drugi, słabszy
 skrót: QRM z ręką miał krótsze przerwy), pełny realizm 87,4% — UWAGA.
 
+**Wynik po poprawce — noc 14/15.10** (`runs/fcn_4000000_czesci_nad`,
+warunki kontroli z 10.10: 4 mln, 12 epok, fcn; wznowiona po zaniku prądu):
+walidacja 91,80%, środkowy znak 96,81%, CER 14,86%. SKRÓTY: czysta stacja
+91,3%, pełny realizm 89,7% — skrótu nie widać (dzień wcześniej 39,1 / 87,4).
+
+| nagrania (słowa w całości / w kolejności) | czesci_rt (10.10) | czesci_sn (14.10) | **czesci_nad** |
+|---|---|---|---|
+| RAZEM (26) | 13 / 19 | 6 / 14 | **16 / 24** |
+| stacje spoza warunków banku: F5OHS, DP75HSC, LA4CIR, OK1FPS (4) | 0 / 2 | 0 / 1 | 1 / 3 |
+| warunki banku: SN0FMT ×3, LA3WAA (13) | 6 / 9 | 2 / 9 | **8 / 13** |
+| mikrofon: mic2, mic3 (9) | 7 / 8 | 3 / 4 | 7 / 8 |
+
+Pierwszy raz OK1FPS w całości i DP75HSC w kolejności; SN0FMT w kolejności
+12/12. Mikrofon wrócił do poziomu sprzed zmian. Zastrzeżenie bez zmian:
+stacji niezależnych są 4 słowa — to wskazówka, nie dowód. Do obserwacji:
+koperta tonu w RANO „750–750 Hz" (dzień wcześniej 750–850) — odczyt
+nagrań idzie po przestrojeniu na 750 Hz, ale zawężenie warto sprawdzić.
+
 ### Zanik zasilania w trakcie generowania zbioru (14.10)
 
 **Objaw.** Noc `czesci_nad` (start 18:14) przerwana zanikiem zasilania
