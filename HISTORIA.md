@@ -1112,6 +1112,30 @@ treningu. Punkt odniesienia — model czesci_nad (trenowany 13-27 WPM) na
 nowej siatce: 12-28 WPM i 675-825 Hz 95-100%, 32 WPM 0-5%, 10 WPM 0-15%.
 diag 116/116 (12 WPM: „0" z przerwami 2,50 s w oknie 2,56 s).
 
+### Noc tempa 12-32 WPM (15/16.10)
+
+`runs/fcn_4000000_czesci_tempo` (warunki jak `czesci_nad`, zmienione tylko
+tempo): walidacja 92,56%, środkowy znak 96,61%, CER 13,91%; SKRÓTY OK
+(czysta 90,5 / pełny 90,2). Koperta (sygnał idealny): 12-32 WPM przy
+675-825 Hz **100% w każdej komórce**, 10 i 35 WPM 32-60% (wcześniej 32 WPM
+0-5%, 10 WPM 0-15%).
+
+Nagrania 12/26 w całości, 21/26 w kolejności (czesci_nad: 16 / 24). Różnice
+po jednym słowie: LA3WAA, OK1FPS, SN0FMT_b, mic2 (20 WPM — w zakresie obu
+treningów). **Na syntetyku w 12-28 WPM oba modele identyczne** (pełny
+realizm, 3000 tych samych klipów, trafne kroki):
+
+| WPM | 12-15 | 15-18 | 18-22 | 22-25 | 25-28 | 28-32 | razem |
+|---|---|---|---|---|---|---|---|
+| czesci_nad | 66,8 | 82,2 | 91,0 | 96,0 | 94,6 | 62,0 | 81,8 |
+| czesci_tempo | 67,3 | 81,1 | 90,6 | 95,7 | 94,8 | 95,1 | 86,7 |
+
+Wniosek (hipoteza): 4 słowa różnicy na nagraniach to rozrzut między
+treningami, nie skutek tempa — ROZRZUTU MIARY NAGRAŃ NIE ZNAMY; bez niego
+każde porównanie nocy o kilka słów jest niepewne. Nowe: wolne tempo przy
+pełnym realizmie słabe w obu modelach (12-15 WPM 67%, 15-18 WPM 82%), choć
+na sygnale idealnym 100%. mic1 (12 WPM) i mic3 (15 WPM) są w tym zakresie.
+
 ### Zanik zasilania w trakcie generowania zbioru (14.10)
 
 **Objaw.** Noc `czesci_nad` (start 18:14) przerwana zanikiem zasilania
