@@ -1163,6 +1163,36 @@ OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
 prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
 tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
 
+### Normalizacja tempa przy odczycie — BEZ trenowania (16.10, wieczór)
+
+**Uwaga operatora.** Telegrafista też nie wie, czy pierwszy element to
+kropka, czy kreska — rozstrzyga przerwa za nim i kolejne znaki; dekodery
+na rynku „najpierw pokazują bzdury, potem przepisują bufor", kursy dają
+VVV =, żeby słuchacz złapał tempo. Adaptacja do tempa jest normalna.
+
+**Zrobione.** `dsp/tempo.tor_tempa` (pomiar w buforze 8 s co 2 s, w obie
+strony nagrania, mediana z 5) i `obraz_w_tempie_wzorcowym`: widmo co 5 ms,
+moc uśredniana w przedziale, który przy 22 WPM trwałby 20 ms — każda stacja
+wygląda w oknie jak 22 WPM. Wejście sieci bez zmian (128×32).
+
+**Nagrania, modele bez zmian** (w całości / w kolejności, z 26):
+
+| | (a) obraz jak dotąd | (b) nowa droga, 22 na sztywno | (c) tempo zmierzone |
+|---|---|---|---|
+| czesci_tempo (bez maski) | 12 / 21 | 12 / 21 | **19 / 22** |
+| czesci_tempo_maska | 17 / 21 | 16 / 23 | 14 / **25** |
+
+(b) to kontrola: samo uśrednianie ramek nie zmienia sumy. Zysk (c) bez
+maski rozłożony na 6 nagrań (LA3WAA, OK1FPS, SN0FMT ×3, mic2) — więcej niż
+rozrzut dwóch identycznych treningów (do 2 słów na nagraniu). Z maską
+normalizacja daje rekord w kolejności, ale mniej w całości — dwie poprawki
+nie sumują się. Zmierzone tempa: SN0FMT 15-20, mic 19-20, stacje zawodowe
+28-37 WPM.
+
+**Dalej:** trening na obrazach znormalizowanych (generator zna prawdziwe
+tempo; resztkowy rozrzut ±15-20% na błąd pomiaru), odczyt nagrań przez
+`tor_tempa`; potem tryb na żywo z przepisaniem bufora.
+
 ### Maska uciętych znaków — pierwszy trening (16.10)
 
 `runs/fcn_4000000_czesci_tempo_maska`: zbiór, ustawienia i ziarno 42 jak

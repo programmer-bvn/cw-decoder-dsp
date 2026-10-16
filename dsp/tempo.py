@@ -143,3 +143,65 @@ def tempo_w_czasie(audio: np.ndarray, okno_s: float = 8.0,
     for s in range(0, max(1, audio.size - n + 1), k):
         out.append(((s + n / 2) / sr, zmierz_tempo(audio[s:s + n], ton_hz, sr)))
     return out
+
+
+# --------------------------------------------------------------------------
+# Obraz w tempie wzorcowym — „normalizacja tempa jak amplitudy" (16.10)
+# --------------------------------------------------------------------------
+# Każda ramka obrazu obejmuje tyle czasu nagrania, ile przy WPM_WZORZEC
+# trwałoby HOP_LENGTH — stacja 12 WPM wygląda wtedy w oknie jak 22 WPM, a
+# w oknie mieści się podobna liczba znaków przy każdym tempie. Tempo
+# mierzone w przesuwanym buforze w OBIE strony (nagranie jest znane
+# w całości) — pierwsze znaki dostają tempo zmierzone na kolejnych, czyli
+# to, co dekoder na żywo robi „przepisaniem bufora" (operator, 16.10).
+WPM_WZORZEC = C.WPM
+DROBNY_HOP = 40                                  # 5 ms przy 8 kHz
+
+
+def tor_tempa(audio: np.ndarray, sr: int = C.SR, okno_s: float = 8.0,
+              krok_s: float = 2.0) -> tuple[np.ndarray, np.ndarray]:
+    """(czasy [s], WPM) — pomiar w buforze, braki uzupełnione najbliższym
+    pomiarem, mediana z 5 okien, ograniczone do 10-40 WPM."""
+    w = tempo_w_czasie(audio, okno_s=okno_s, krok_s=krok_s, sr=sr)
+    if not w:
+        return np.array([0.0]), np.array([WPM_WZORZEC])
+    t = np.array([c for c, _ in w])
+    v = np.array([r["wpm"] for _, r in w], dtype=np.float64)
+    ok = np.isfinite(v)
+    if not ok.any():
+        return t, np.full_like(t, WPM_WZORZEC)
+    v = np.interp(t, t[ok], v[ok])
+    if v.size >= 5:
+        p = np.pad(v, 2, mode="edge")
+        v = np.median(np.lib.stride_tricks.sliding_window_view(p, 5), axis=1)
+    return t, np.clip(v, 10.0, 40.0)
+
+
+def obraz_w_tempie_wzorcowym(audio: np.ndarray, sr: int = C.SR,
+                             tor: tuple | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """audio -> (dB [ramki, N_MELS] w tempie wzorcowym, czas środka ramki [s]).
+
+    Moc z ramek 5 ms uśredniana w przedziale, który odpowiada jednej ramce
+    przy tempie wzorcowym (średnia w mocy, nie w dB — jak dłuższa ramka)."""
+    from . import melref
+    a = np.asarray(audio, dtype=np.float32)
+    t_tor, wpm = tor_tempa(a, sr) if tor is None else tor
+    p = melref.stft_power(a, C.N_FFT, DROBNY_HOP)
+    fb = melref.mel_filterbank(sr, C.N_FFT, C.N_MELS, C.FMIN, C.FMAX)
+    mel = (p @ fb.T).astype(np.float64)                      # [drobne, pasma]
+    t_drob = np.arange(mel.shape[0]) * DROBNY_HOP / sr
+    sk = np.cumsum(np.vstack([np.zeros((1, mel.shape[1])), mel]), axis=0)
+    krok0 = C.HOP_LENGTH / sr                                 # 20 ms
+    granice = [0.0]
+    while granice[-1] < t_drob[-1]:
+        w = float(np.interp(granice[-1], t_tor, wpm))
+        granice.append(granice[-1] + krok0 * WPM_WZORZEC / w)
+    g = np.searchsorted(t_drob, np.array(granice))
+    g = np.clip(g, 0, mel.shape[0])
+    a0, a1 = g[:-1], np.maximum(g[1:], g[:-1] + 1)
+    a1 = np.minimum(a1, mel.shape[0])
+    a0 = np.minimum(a0, a1 - 1)
+    sr_moc = (sk[a1] - sk[a0]) / (a1 - a0)[:, None]
+    db = melref.power_to_db(sr_moc)
+    srodki = 0.5 * (np.array(granice[:-1]) + np.array(granice[1:]))
+    return db, srodki
