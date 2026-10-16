@@ -1163,6 +1163,23 @@ wolnym tempie, więcej niż różnica dwóch treningów bez maski), nagrania
 sumie, o 2 na nagraniu). Jeden trening z maską to za mało. Maska zostaje
 opcją, nie domyślną. Rozstrzygnie: druga noc z maską i/lub więcej nagrań.
 
+**Druga para — rozstrzygnięcie (16.10, 20:49).** `czesci_tempo_maska_s7`
+(ziarno 7 jak powtórka bez maski): środkowy znak 96,65%, SKRÓTY OK.
+
+| nagrania (w całości / w kolejności) | bez maski | z maską |
+|---|---|---|
+| ziarno 42 | 12 / 21 | 17 / 21 |
+| ziarno 7 | 12 / 19 | 14 / 24 |
+| średnio | 12 / 20 | **15,5 / 22,5** |
+
+W OBU parach maska czyta w całości LA3WAA (0→1), SN0FMT_c (1→3), SN0FMT_b
+(2→3) — powtarzalnie; bez maski żaden z dwóch treningów. Syntetyk też
+powtarzalny: środek okna 12-18 WPM 94,2 i 94,2 z maską wobec 95,9 i 96,1
+bez (−1,8 pkt); 18-25 WPM −0,6…−0,9; 25-32 bez różnicy. Oba efekty są
+prawdziwe. Hipoteza: przy wolnym tempie długi znak ucięty krawędzią okna
+sięga do środka okna, a model z maską go tam nie nazywa — to dotyczy
+tylko wolnych stacji (nagrania z zapisaną treścią są głównie 15-25 WPM).
+
 **Poprawka miary.** `tools/trafnosc` liczył „środek" jako kroki 16-47
 (połowa okna); odczyt nagrań bierze 24-39. Poprawione — tabele z 16.10
 przed 13:50 mają szerszy środek.
