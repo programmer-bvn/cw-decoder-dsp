@@ -1136,6 +1136,37 @@ każde porównanie nocy o kilka słów jest niepewne. Nowe: wolne tempo przy
 pełnym realizmie słabe w obu modelach (12-15 WPM 67%, 15-18 WPM 82%), choć
 na sygnale idealnym 100%. mic1 (12 WPM) i mic3 (15 WPM) są w tym zakresie.
 
+### Maska uciętych znaków — pierwszy trening (16.10)
+
+`runs/fcn_4000000_czesci_tempo_maska`: zbiór, ustawienia i ziarno 42 jak
+`czesci_tempo`, plus `--maska-uciete`. Środkowy znak 96,69%; CER 20,61%
+i SKRÓTY 80% — obie liczby liczą też znaki ucięte, których ten model z
+założenia nie uczył się nazywać (SKRÓTY: czysta 79,4 / pełny 80,0 — OK).
+
+**Nagrania: 17/26 w całości (najwięcej w projekcie), 21/26 w kolejności**
+(bez maski: 12 i 12 / 21 i 19). Zysk na SN0FMT_c 1→3, SN0FMT_b 2→3, LA3WAA
+0→1, mic2 1→2; strata: LA4CIR i DP75HSC w kolejności.
+
+**Syntetyk** (`tools/trafnosc`, 800 klipów na przedział; „środek" =
+kroki 24-39, dokładnie to, co bierze `kroki_nagrania`):
+
+| tempo | całe: bez maski | całe: maska | środek: bez maski | środek: maska |
+|---|---|---|---|---|
+| 12-18 WPM | 94,0 / 94,4 | 93,1 | 95,9 / 96,1 | **94,2** |
+| 18-25 WPM | 96,7 / 96,3 | 95,1 | 97,4 / 96,9 | 96,5 |
+| 25-32 WPM | 95,4 / 95,2 | 95,3 | 95,8 / 95,4 | 95,6 |
+
+Na uciętych model z maską trafia 2-6% (nie nazywa ich — tak miało być).
+**Nierozstrzygnięte:** syntetyk mówi „nieznacznie gorzej" (−1,8 pkt przy
+wolnym tempie, więcej niż różnica dwóch treningów bez maski), nagrania
+„lepiej" (+5 słów; dwa identyczne treningi bez maski różniły się o 0 w
+sumie, o 2 na nagraniu). Jeden trening z maską to za mało. Maska zostaje
+opcją, nie domyślną. Rozstrzygnie: druga noc z maską i/lub więcej nagrań.
+
+**Poprawka miary.** `tools/trafnosc` liczył „środek" jako kroki 16-47
+(połowa okna); odczyt nagrań bierze 24-39. Poprawione — tabele z 16.10
+przed 13:50 mają szerszy środek.
+
 ### Rozrzut miary nagrań — powtórka treningu (16.10)
 
 `runs/fcn_4000000_czesci_tempo_s7`: TE SAME ustawienia i zbiór co

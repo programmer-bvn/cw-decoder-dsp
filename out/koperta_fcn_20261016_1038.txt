@@ -1,0 +1,104 @@
+======================================================================
+ KOPERTA I BŁĘDY: runs/fcn_4000000_czesci_tempo_maska/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x9 komórek po 40 próbek; błędy z 3000 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       550    650    675    725    750    775    825    850    950
+  ---------------------------------------------------------------------------
+     10            .      .     32     45     42     58     45      .      .
+     12            .     20    100     98    100    100    100     10      .
+     15            .      .    100    100    100    100    100      .      .
+     18            .      .    100    100    100    100    100      .      2
+     22            .      .    100    100    100    100    100      .      .
+     25            .      8    100    100    100    100    100      .      .
+     28            .      .    100    100    100    100    100      .      .
+     32            .      2    100    100    100    100    100      .      .
+     35            .      2     30     32     25     35     48      .      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  czyta (>= 50%): tempo 10-32 WPM, ton 675-825 Hz
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              2      0.0%           0.0%
+  90-100%             2     50.0%           0.0%
+  cały (100%)      2996     96.0%           0.7%
+
+WYROK
+
+  znak w całości w oknie:   96.0% trafień (2996 próbek)
+  znak obcięty oknem:       25.0% trafień (4 próbek, 0.1% zbioru)
+
+  NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
+  Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
+  4 przypadków na 3000 (0.13%).
+
+  Ta hipoteza nie tłumaczy błędów, bo zjawiska prawie nie
+  ma. Nie jest ani potwierdzona, ani obalona — jest
+  NIEISTOTNA. Powód: etykietą jest środkowy z trzech
+  znaków, a nadanie wstawiane jest wyśrodkowane, więc znak
+  z etykiety jest wycentrowany z konstrukcji.
+
+  Przyczyny błędów szukaj gdzie indziej: rozkład wobec
+  tempa niżej i tabela pomyłek. Jeśli rozkład jest płaski,
+  a najczęstsza pomyłka ma kilka wystąpień — nie ma jednej
+  choroby, jest ogólny brak danych.
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+  12-14         468    95.5%      0.2%    1.5%    0.9%       0.9%
+  15-17         437    96.8%      1.1%    0.9%    0.5%       0.0%
+  18-20         418    98.1%      0.0%    0.2%    1.2%       0.0%
+  21-23         464    94.0%      1.7%    2.2%    0.9%       0.0%
+  24-26         445    95.3%      0.9%    2.5%    1.1%       0.0%
+  27-60         768    95.8%      0.5%    1.6%    1.0%       0.0%
+
+TRAFIENIA WOBEC DŁUGOŚCI KODU
+
+  elementów   próbek   trafień   przykłady
+  ----------------------------------------------------
+      1          175     94.9%   E T
+      2          319     96.9%   A I M N
+      3          688     94.8%   D G K O R S U W
+      4          974     95.4%   B C F H J L P Q V X Y Z
+      5          844     97.2%   cyfry 0-9
+
+  krótkie (1-2 elementy): 96.2%  (494 próbek)
+  długie  (4-5 elementów): 96.2%  (1818 próbek)
+  Różnica tylko 0.1 pp — zależności NIE MA.
+  Czyli gubienie krótkich znaków na nagraniach bierze się
+  nie z samej sieci, a z czegoś dalej: najpewniej z tego,
+  że długie znaki trwają dłużej, zbierają więcej okien
+  i wygrywają przy scalaniu powtórzeń.
+
+  najgorzej czytane znaki:
+    L .-..    92.5%  (93 próbek)
+    S ...     92.8%  (83 próbek)
+    D -..     92.9%  (84 próbek)
+    M --      92.9%  (84 próbek)
+    K -.-     93.0%  (86 próbek)
+
+NAJCZĘSTSZE POMYŁKI
+
+  S ...    -> H ....        3x   wstawiony element
+  Q --.-   -> 7 --...       3x   wstawiony element
+  D -..    -> M --          2x   zgubiony element
+  0 -----  -> 9 ----.       2x   kropka/kreska
+  D -..    -> T -           2x   inne
+  K -.-    -> V ...-        2x   wstawiony element
+  L .-..   -> 5 .....       2x   wstawiony element
+  B -...   -> 5 .....       2x   wstawiony element
+  R .-.    -> W .--         2x   kropka/kreska
+  4 ....-  -> X -..-        2x   zgubiony element
+  M --     -> 3 ...--       2x   inne
+  Q --.-   -> 6 -....       1x   wstawiony element
+

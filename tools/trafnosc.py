@@ -30,8 +30,11 @@ from dsp import config as C
 from dsp import frontend, radio
 
 PRZEDZIALY = ((12, 18), (18, 25), (25, 32))
-# Środek okna: kroki 16-47 z 64, czyli połowa okna wokół środka.
-SRODEK = (16, 48)
+# Środek okna = DOKŁADNIE to, co odczyt nagrań bierze z każdego okna:
+# dsp.sekwencja.kroki_nagrania(krok_okna=32) zszywa środkowe 32 ramki,
+# czyli kroki 24-39 z 64. Do 16.10 13:50 było 16-47 (połowa okna) —
+# zawierało kroki, których odczyt nie używa, i krzywdziło model z maską.
+SRODEK = (24, 40)
 
 
 def zestaw(wpm_od: float, wpm_do: float, n: int, ziarno: int):
