@@ -1,32 +1,32 @@
 ============================================================
- NOC 2026-10-15  --  co wyszło
+ NOC 2026-10-16  --  co wyszło
 ============================================================
 
-KOD:   41381b813f42 (main) + zmiany w 2 plikach
-       różnica od commita: out/noc_20261014_2058_kod.diff
+KOD:   8fa3349acf9e (main) + zmiany w 2 plikach
+       różnica od commita: out/noc_20261015_1840_kod.diff
 VENV:  /root/venv_gpu
 
 ETAPY
   PRZEPUSTOWOSC                OK     0 min
-  TRENING fcn -> runs/fcn_4000000_czesci_nad OK     192 min
+  TRENING fcn -> runs/fcn_4000000_czesci_tempo OK     187 min
   KOPERTA fcn                  OK     0 min
   NAGRANIA fcn                 OK     1 min
   SKROTY fcn                   OK     0 min
 
 WYNIKI TRENINGU
 
-  runs/fcn_4000000_czesci_nad  fcn (wdrażalny na KV260)
-      epok 12, najlepsza walidacja 91.80% (epoka 12)
+  runs/fcn_4000000_czesci_tempo  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 92.56% (epoka 11)
       (walidacja wyżej = kroki 40 ms z dobrą klasą)
-      środkowy znak 96.81%  <- jak dpu;  okno w całości 74.87%;  CER 14.86%
-      val_loss: minimum 0.2193 w epoce 9, koniec 0.2200
-  runs/gru_4000000_czesci_nad gru (odniesienie, NIE wdrażalny)   brak wyniku
+      środkowy znak 96.61%  <- jak dpu;  okno w całości 76.60%;  CER 13.91%
+      val_loss: minimum 0.2026 w epoce 11, koniec 0.2103
+  runs/gru_4000000_czesci_tempo gru (odniesienie, NIE wdrażalny)   brak wyniku
 
 KOPERTA I PRZYCZYNA BŁĘDÓW
 
   --- fcn ---
-    czyta (>= 50%): tempo 13-27 WPM, ton 750-750 Hz
-    znak w całości w oknie:   96.7% trafień (2996 próbek)
+    czyta (>= 50%): tempo 10-35 WPM, ton 675-825 Hz
+    znak w całości w oknie:   95.8% trafień (2996 próbek)
     znak obcięty oknem:       75.0% trafień (4 próbek, 0.1% zbioru)
     NIE DA SIĘ ROZSTRZYGNĄĆ — i to jest wynik.
     Obcięcie znaku przez okno praktycznie NIE WYSTĘPUJE:
@@ -59,47 +59,47 @@ PRAWDZIWE NAGRANIA (fcn)
     w całości:    0/1
     w kolejności: 1/1   (DP75HSC)
     nadane: LA3WAA
-    w całości:    1/1   (LA3WAA)
+    w całości:    0/1
     w kolejności: 1/1   (LA3WAA)
     nadane: LA4CIR
     w całości:    0/1
     w kolejności: 1/1   (LA4CIR)
     nadane: OK1FPS
-    w całości:    1/1   (OK1FPS)
+    w całości:    0/1
     w kolejności: 1/1   (OK1FPS)
     nadane: QST DE SN0FMT TEST
     w całości:    1/4   (DE)
-    w kolejności: 4/4   (QST DE SN0FMT TEST)
+    w kolejności: 3/4   (DE SN0FMT TEST)
     nadane: QST DE SN0FMT TEST
     w całości:    3/4   (QST DE TEST)
 
-  RAZEM na nagraniach z zapisaną treścią: w całości 16/26, w kolejności 24/26
-  RAZEM po scaleniu 0.35s: w całości 16/26, w kolejności 24/26
+  RAZEM na nagraniach z zapisaną treścią: w całości 12/26, w kolejności 21/26
+  RAZEM po scaleniu 0.35s: w całości 12/26, w kolejności 21/26
 
 SKRÓTY (fcn) — czy czyta stację, czy cechę generatora
 
-  wszystko wyłączone (czysta stacja)        91.3%
-  zapadanie zasilacza (chirp+sag) ZAWSZE    91.2%
-  zanik (QSB)                               88.3%
-  ARW                                       93.2%
-  tło z banku                               92.8%
-  druga stacja (QRM)                        86.2%
-  trzaski (QRN)                             90.1%
-  dłuższe przerwy                           90.8%
-  pełny realizm                             89.7%
+  wszystko wyłączone (czysta stacja)        90.5%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    92.7%
+  zanik (QSB)                               89.5%
+  ARW                                       93.7%
+  tło z banku                               93.4%
+  druga stacja (QRM)                        86.5%
+  trzaski (QRN)                             89.4%
+  dłuższe przerwy                           92.0%
+  pełny realizm                             90.2%
 
-  OK: czysta stacja 91.3%, pełny realizm 89.7% — skrótu nie widać.
+  OK: czysta stacja 90.5%, pełny realizm 90.2% — skrótu nie widać.
 
 PEŁNE LOGI
-  out/noc_20261014_2058.log
-  out/noc_20261014_2058_diag.log                 12K
-  out/noc_20261014_2058_fcn.log                  6.5M
-  out/noc_20261014_2058_gen.log                  84K
-  out/noc_20261014_2058_koperta_fcn.log          8.0K
-  out/noc_20261014_2058_nagrania_fcn.log         8.0K
-  out/noc_20261014_2058_przepustowosc.log        4.0K
-  out/noc_20261014_2058_skroty_fcn.log           4.0K
-  out/noc_20261014_2058_srodowisko.log           4.0K
-  out/koperta_fcn_20261014_2058.txt              4.0K
+  out/noc_20261015_1840.log
+  out/noc_20261015_1840_diag.log                 12K
+  out/noc_20261015_1840_fcn.log                  6.5M
+  out/noc_20261015_1840_gen.log                  108K
+  out/noc_20261015_1840_koperta_fcn.log          8.0K
+  out/noc_20261015_1840_nagrania_fcn.log         8.0K
+  out/noc_20261015_1840_przepustowosc.log        4.0K
+  out/noc_20261015_1840_skroty_fcn.log           4.0K
+  out/noc_20261015_1840_srodowisko.log           4.0K
+  out/koperta_fcn_20261015_1840.txt              4.0K
 
 Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows

@@ -1,0 +1,154 @@
+======================================================================
+ ODCZYT PRAWDZIWYCH NAGRAŃ: runs/fcn_4000000_czesci_tempo/best.keras
+======================================================================
+ próg pewności 0.95, minimum 3 okien
+
+Nagrywanie (6).wav   (korekta poziomu -10.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 798 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 783-812 Hz)
+  odczyt surowy:  S76C5HNV0AET
+  po scaleniu 0.35s: S76C5HNV0AET
+  nadane: F5OHS
+  w całości:    0/1
+  w kolejności: 0/1
+  po scaleniu:  w całości 0/1, w kolejności 0/1, odczyt krótszy o 0%
+
+Nagrywanie (7).wav   (korekta poziomu -10.6 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 730 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 678-793 Hz)
+  odczyt surowy:  3EBH80BNNTUOD95JH7E1T05HD555NES3DB53APTWTYTCZ1D8DQDB53MTTHF53KV0UG956UIZD5I
+  po scaleniu 0.35s: 3EBH80BNNTUOD95JH7E1T05HD55NES3DB53APTWTYTCZ1D8DQDB53MTHF53KV0UG956UIZD5I
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+Nagrywanie (8).wav   (korekta poziomu -8.6 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 753 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 696-799 Hz)
+  odczyt surowy:  B5T0P6RENJYT095H436XT5A0ETST4EEZ3SW8DE9SM5TT95I3MNN1J05LJ9O0SBHEB69SITT4PM8C4YBXY3
+  po scaleniu 0.35s: B5T0P6RENJYT095H436XT5A0ETST4EEZ3SW8DE9SM5TT95I3MNN1J05LJ9O0SBHEB69SITT4PM8C4YBXY3
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+Nagrywanie (9).wav   (korekta poziomu -10.4 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 733 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 711-789 Hz)
+  odczyt surowy:  5TZQG5AQYY6CD41NM835LU0K1QQ8M0M6S8365SS6R8326B3DM95WWT
+  po scaleniu 0.35s: 5TZQG5AQYY6CD41NM835LU0K1QQ8M0M6S8365SS6R8326B3DM95WWT
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+ic7300_usb_3541kHz_f200_20261009.wav   (korekta poziomu -5.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 765 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 731-787 Hz)
+  odczyt surowy:  GA05ESAAAYD6AA6E1TG8APIG7VBP6SNW9PO6AUN
+  po scaleniu 0.35s: GA05ESAAAYD6AA6E1TG8APIG7VBP6SNW9PO6AUN
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1811.wav   (korekta poziomu -5.2 dB)
+  ton: zaczep w 100% czasu, 2 raz(y) od nowa; mediana tonu 712 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 68% czasu (zakres estymaty 643-1008 Hz)
+  odczyt surowy:  BKEN66DBN7578H4QY9675T5ESD8NLT9LC4446HGIDK75DSCXX264NBSUCQDP5CDP75HHA15MSC6
+  po scaleniu 0.35s: BKEN66DBN7578H4QY9675T5ESD8NLT9LC4446HGIDK75DSCXX264NBSUCQDP5CDP75HHA15MSC6
+  nadane: DP75HSC
+  w całości:    0/1
+  w kolejności: 1/1   (DP75HSC)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 0%
+
+ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_2146.wav   (korekta poziomu -5.5 dB)
+  ton: zaczep w 100% czasu, 2 raz(y) od nowa; mediana tonu 716 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 61% czasu (zakres estymaty 520-863 Hz)
+  odczyt surowy:  LBA53WAA73LA4A87XHZE4O5H4BLA354WA35ALAWAL3WAALLAALAHSWALWALA3WAL3LA315H01AALA35WA5N4IES554SP6MWMFCS4KCLIIB6L08ER3588K4CR815IPUE63D58IIS3ETIHIUTXRTTXDE529LVU
+  po scaleniu 0.35s: LBA53WAA73LA4A87XHZE4O5H4BLA354WA35ALAWAL3WALAALAHSWALWALA3WAL3LA315H01ALA35WA5N4IES554SP6MWMFCS4KCLIIB6L08ER3588K4CR815IPUE63D58IS3ETIHIUTXRTXDE529LVU
+  nadane: LA3WAA
+  w całości:    0/1
+  w kolejności: 1/1   (LA3WAA)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 3%
+
+ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_2153.wav   (korekta poziomu -4.5 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 755 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 82% czasu (zakres estymaty 637-785 Hz)
+  odczyt surowy:  S2MPAGEHH5CANSE2NAGS524FEAAPDYVAL9NGOE64SONOPFURCLLISLKTVSARI445VB5IQ6SNEILA4DUTXEIPB60ZV0XSEY3MEE923GA33N9PDREM080NF5RH0R74AMT80PPCL5FZ6HC65DO7I55IUP1CRVPSX6UR3AT7D3N0N874LSI7TD46BALAXFV38PAAP6HN0TYTN42
+  po scaleniu 0.35s: S2MPAGEH5CANSE2NAGS524FEAAPDYVAL9NGOE64SONOPFURCLLISLKTVSARI445VB5IQ6SNEILA4DUTXEIPB60ZV0XSEY3ME923GA33N9PDREM080NF5RH0R74AMT80PCL5FZ6HC65DO7I55IUP1CRVPSX6UR3AT7D3N0N874LSI7TD46BALAXFV38PAAP6HN0TYTN42
+  nadane: LA4CIR
+  w całości:    0/1
+  w kolejności: 1/1   (LA4CIR)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 1%
+
+ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_1827.wav   (korekta poziomu -6.1 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 774 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 686-836 Hz)
+  odczyt surowy:  PS52B15PITEST4RQLDCOKPJHFPSBOK1IFPSTE5QOBOKRM1FPSOB1BPSTDST6QOCCOKIMFPSDFPSTESTQ0COBHMFPSOV1FIPHTE44804I5JF
+  po scaleniu 0.35s: PS52B15PITEST4RQLDCOKPJHFPSBOK1IFPSTE5QOBOKRM1FPSOB1BPSTDST6QOCCOKIMFPSDFPSTESTQ0COBHMFPSOV1FIPHTE4804I5JF
+  nadane: OK1FPS
+  w całości:    0/1
+  w kolejności: 1/1   (OK1FPS)
+  po scaleniu:  w całości 0/1, w kolejności 1/1, odczyt krótszy o 1%
+
+ic7300_usb_SN0FMT_20261009_c.wav   (korekta poziomu -7.1 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 775 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 757-824 Hz)
+  odczyt surowy:  6H0TNEHS3NDE3SDS3DIEDINEIXDDNDN0K0X0P4094042FMT0TEISTDENN0FMTI6DDIDI2DI22NDTCDDADIDINEE7IHTDIDDU7ANUDDDED5D6DDDIBI2DDADIDDMI56IDINIIS3DID3DIM33DISI33IASBEDDIDN3SHN00
+  po scaleniu 0.35s: 6H0TNEHS3NDE3SDS3DIEDINEIXDDNDN0K0X0P4094042FMT0TEISTDENN0FMTI6DDIDI2DI22NDTCDDADIDINE7IHTDIDDU7ANUDDED5D6DDDIBI2DDADIDDMI56IDINIIS3DID3DIM33DISI3IASBEDDIDN3SHN00
+  nadane: QST DE SN0FMT TEST
+  w całości:    1/4   (DE)
+  w kolejności: 3/4   (DE SN0FMT TEST)
+  po scaleniu:  w całości 1/4, w kolejności 3/4, odczyt krótszy o 2%
+
+ic7300_usb_SN0FMT_3565kHz_20261009.wav   (korekta poziomu -7.0 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 778 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 764-818 Hz)
+  odczyt surowy:  2F6BKHPIBRNTIONXFMT004090948490890800207STEXNEN0IVMTQTTTNFMKQST0DTNS09FNTENNFMT0QS40BYSN8EFCNSTS5MTNQN8DETNN0FMNXTESTXMT0ZQNNDESNCFM0ESTNTMTMQUID6SN09UFMNTE
+  po scaleniu 0.35s: 2F6BKHPIBRNTIONXFMT004090948490890800207STEXNEN0IVMTQTTTNFMKQST0DTNS09FNTENNFMT0QS40BYSN8EFCNSTS5MTNQN8DETNN0FMNXTESTXMT0ZQNNDESNCFM0ESTNTMTMQUID6SN09UFMNTE
+  nadane: QST DE SN0FMT TEST
+  w całości:    3/4   (QST DE TEST)
+  w kolejności: 4/4   (QST DE SN0FMT TEST)
+  po scaleniu:  w całości 3/4, w kolejności 4/4, odczyt krótszy o 0%
+
+ic7300_usb_SN0FMT_3565kHz_20261009_b.wav   (korekta poziomu -7.0 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 794 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 757-827 Hz)
+  odczyt surowy:  0FMNXTESTXMTZQNNDESNYFM0ESTNTMTMQUID6SN0GUFMNTESTEFEMT2ZSTLDEDN0FMNNESTKUFMT86BDSNMOFCTMES
+  po scaleniu 0.35s: 0FMNXTESTXMTZQNNDESNYFM0ESTNTMTMQUID6SN0GUFMNTESTEFEMT2ZSTLDEDN0FMNNESTKUFMT86BDSNMOFCTMES
+  nadane: QST DE SN0FMT TEST
+  w całości:    2/4   (DE TEST)
+  w kolejności: 4/4   (QST DE SN0FMT TEST)
+  po scaleniu:  w całości 2/4, w kolejności 4/4, odczyt krótszy o 0%
+
+mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 700 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 96% czasu (zakres estymaty 598-737 Hz)
+  odczyt surowy:  P58424YC7QCRCQCQBVSMNQ2BVN4Q2BVZGPS5EK5CQCQS4CIQIDESQ2BVCPSEGCQCQCQDIESQ2BVSS63PSEM48P2M6SUDE5SQ2BV09X6A5SD5OM06KSJCS6CAL4UFRSTS5594F850763QSEB5QSE7Q8WQS5S3ID4MYMMRIUMAIUS6MARIU4E00QT0QTHIFBYDGOSZHBYDGOS4Z6IXX4B7WU5824BP2MSAEDES5Q2BVR
+  po scaleniu 0.35s: P58424YC7QCRCQCQBVSMNQ2BVN4Q2BVZGPS5EK5CQCQS4CIQIDESQ2BVCPSEGCQCQCQDIESQ2BVSS63PSEM48P2M6SUDE5SQ2BV09X6A5SD5OM06KSJCS6CAL4UFRSTS5594F850763QSEB5QSE7Q8WQS5S3ID4MYMMRIUMAIUS6MARIU4E00QT0QTHIFBYDGOSZHBYDGOS4Z6IXX4B7WU5824BP2MSAEDES5Q2BVR
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 97% czasu (zakres estymaty 621-825 Hz)
+  odczyt surowy:  60G4C64P8BC568H08610546PSCDXI45863943425U8065Z49S4060F4CF6L890P885CS440X04045925606PU8X5606C30C3480HB5CHDHD0H6I0FCMYNAMEISSMARRUSZMKTRI8U1MA6U8SMARU4MARIUMARIUSEKM84SH79MAIU85FHCQCQCQDESQ2BVSQ2BVSQ2BPSEE7
+  po scaleniu 0.35s: 60G4C64P8BC568H08610546PSCDXI45863943425U8065Z49S4060F4CF6L890P885CS440X04045925606PU8X5606C30C3480HB5CHDHD0H6I0FCMYNAMEISSMARRUSZMKTRI8U1MA6U8SMARU4MARIUMARIUSEKM84SH79MAIU85FHCQCQCQDESQ2BVSQ2BVSQ2BPSE7
+  nadane: CQ SQ2BVN 73
+  w całości:    1/3   (CQ)
+  w kolejności: 1/3   (CQ)
+  po scaleniu:  w całości 1/3, w kolejności 1/3, odczyt krótszy o 0%
+
+mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 750 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 100% czasu (zakres estymaty 680-758 Hz)
+  odczyt surowy:  CQCQCQDESQ2BVSQ2BVSQ2BVNPSEKM
+  po scaleniu 0.35s: CQCQCQDESQ2BVSQ2BVSQ2BVNPSEKM
+  nadane: CQ CQ CQ DE SQ2BVN SQ2BVN
+  w całości:    5/6   (CQx3 DE SQ2BVN)
+  w kolejności: 5/6   (CQx3 DE SQ2BVN)
+  po scaleniu:  w całości 5/6, w kolejności 5/6, odczyt krótszy o 0%
+
+radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  ton: zaczep w 100% czasu, 1 raz(y) od nowa; mediana tonu 839 Hz
+        w zakresie czytelnym dla modelu (670-830 Hz): 44% czasu (zakres estymaty 754-847 Hz)
+  odczyt surowy:  GGD5PNAMMAGSGBBH57FPDAR57BM6DERONAFBEMZEXY1KP9NRCC6SHGZSJ2TIHE09MCDM6C81B7TNTL0C64WREN86IZXPNLTB78ONHLSILNM4QCPS3LDQ02RXE2LO8Q8E678ALE7UP8D8FADZA
+  po scaleniu 0.35s: GGD5PNAMMAGSGBBH57FPDAR57BM6DERONAFBEMZEXY1KP9NRCC6SHGZSJ2TIHE09MCDM6C81B7TNTL0C64WREN86IZXPNLTB78ONHLSILNM4QCPS3LDQ02RXE2LO8Q8E678ALE7UP8D8FADZA
+  nadane: nieodnotowane — odczyt tylko do obejrzenia
+
+----------------------------------------------------------------------
+RAZEM na nagraniach z zapisaną treścią: w całości 12/26, w kolejności 21/26
+RAZEM po scaleniu 0.35s: w całości 12/26, w kolejności 21/26
+
+To jest liczba, która ma znaczenie. Dokładność walidacyjna
+na syntetyku mówi o syntetyku — pierwszy model tego projektu
+miał 98,68% i na paśmie dawał fragmenty.
