@@ -1,0 +1,26 @@
+TRAFNOŚĆ (syntetyk, pełny realizm, 800 klipów na przedział, trafne kroki ze znakiem [%])
+
+  runs/fcn_4000000_czesci_tempo/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    12-18 WPM         73.8    94.0    45.9    95.9   41.9%
+    18-25 WPM         93.8    96.7    68.8    97.4   10.4%
+    25-32 WPM         95.4    95.4     nan    95.8    0.0%
+
+  runs/fcn_4000000_czesci_tempo_s7/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    12-18 WPM         74.0    94.4    45.8    96.1   41.9%
+    18-25 WPM         93.5    96.3    69.8    96.9   10.4%
+    25-32 WPM         95.2    95.2     nan    95.4    0.0%
+
+  runs/fcn_4000000_czesci_tempo_maska/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    12-18 WPM         56.7    93.1     6.3    94.2   41.9%
+    18-25 WPM         85.5    95.1     2.5    96.5   10.4%
+    25-32 WPM         95.3    95.3     nan    95.6    0.0%
+
+  runs/fcn_4000000_czesci_tempo_maska_s7/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    12-18 WPM         56.7    93.2     6.2    94.2   41.9%
+    18-25 WPM         85.8    95.2     5.0    96.3   10.4%
+    25-32 WPM         95.6    95.6     nan    95.8    0.0%
+

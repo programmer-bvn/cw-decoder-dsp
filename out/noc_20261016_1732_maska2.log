@@ -1,0 +1,14 @@
+start 20261016_1732  run runs/fcn_4000000_czesci_tempo_maska_s7
+kod: 31f12ec
+trening rc=0
+  środkowy znak:            96.65%   <- porównywalne z dpu
+  CER:                      20.61%
+koperta rc=0
+nagrania rc=0
+RAZEM na nagraniach z zapisaną treścią: w całości 14/26, w kolejności 24/26
+RAZEM po scaleniu 0.35s: w całości 13/26, w kolejności 24/26
+skroty rc=0
+  pełny realizm                             80.3%
+
+  OK: czysta stacja 79.3%, pełny realizm 80.3% — skrótu nie widać.
+trafnosc rc=0
