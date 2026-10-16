@@ -151,8 +151,17 @@ def wav_to_obraz(path: Path, gain_db: float = 0.0, auto_gain: bool = False,
                         -1.0, 1.0).astype(np.float32)
 
     # Cały spektrogram jednym przebiegiem, tą samą ścieżką co w treningu.
-    full = frontend.normalize_db(
-        frontend.power_to_db(frontend.melspec_power(audio)))
+    # Od 16.10 w TEMPIE WZORCOWYM (C.TEMPO_NORM): tempo mierzone w buforze
+    # przesuwanym w obie strony nagrania (dsp.tempo.tor_tempa), każda ramka
+    # obejmuje tyle czasu, ile przy C.WPM trwałoby HOP_LENGTH. Bez
+    # trenowania dało to 12/26 -> 19/26 słów (HISTORIA „Normalizacja tempa").
+    if C.TEMPO_NORM:
+        from dsp import tempo
+        db, _ = tempo.obraz_w_tempie_wzorcowym(audio)
+        full = frontend.normalize_db(db)
+    else:
+        full = frontend.normalize_db(
+            frontend.power_to_db(frontend.melspec_power(audio)))
     return full.astype(np.float32), gain_db, lock
 
 

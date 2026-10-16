@@ -733,12 +733,14 @@ def test_standalone():
                  "REAL_NOISE_OFFSET_HZ",
                  # Jedna miara S/N i gałka AF (12.10).
                  "SN_REF_BW_HZ", "SN_DB", "TLO_DB", "KARTA_MAX",
-                 "TLUMIK_DB", "TLO_PASMO_HZ"):
+                 "TLUMIK_DB", "TLO_PASMO_HZ",
+                 # Normalizacja tempa (16.10).
+                 "TEMPO_NORM", "TEMPO_ZAKRES", "TEMPO_BLAD", "DROBNY_HOP"):
         ile += 1
         a = getattr(C, name, None)
-        if a is None:                   # stała z dsp/sn.py, nie z config
-            from dsp import sn as _sn
-            a = getattr(_sn, name)
+        if a is None:                   # stała z dsp/sn.py albo dsp/tempo.py
+            from dsp import sn as _sn, tempo as _tempo
+            a = getattr(_sn, name, getattr(_tempo, name, None))
         b = getattr(sa, name, None)
         if a != b:
             same = False
@@ -757,15 +759,21 @@ def test_standalone():
     # 12 ziaren, nie 6: od 10.10 połowa klipów ma prawdziwe tło i obie
     # ścieżki (syntetyczna i z banku) muszą trafić do porównania.
     for seed in range(12):
-        a_audio, a_y, _ = make_project(np.random.default_rng(seed), C.WPM, 0.0)
-        b_audio, b_y, _ = sa.make_clip(np.random.default_rng(seed))
-        img_a = frontend.to_net_image(a_audio)
-        img_b = sa.to_net_image(b_audio)
-        d = float(np.max(np.abs(img_a - img_b)))
+        a_audio, a_y, a_m = make_project(np.random.default_rng(seed), C.WPM,
+                                         0.0)
+        b_audio, b_y, b_m = sa.make_clip(np.random.default_rng(seed))
+        # Obraz i etykiety ramek WSPÓLNĄ drogą (dsp/klip i jej kopia) — od
+        # normalizacji tempa (16.10) obraz nie jest już to_net_image(audio).
+        from dsp import klip as _klip
+        img_a, yf_a, _, _ = _klip.obraz_i_etykiety(a_audio, a_m)
+        img_b, yf_b, _, _ = sa.obraz_i_etykiety(b_audio, b_m)
+        d = (float(np.max(np.abs(img_a - img_b)))
+             if img_a.shape == img_b.shape else float("inf"))
         worst = max(worst, d)
-        if d > 1e-6 or a_y != b_y:
+        if d > 1e-6 or a_y != b_y or not np.array_equal(yf_a, yf_b):
             bad_idx.append(f"ziarno {seed}: różnica {d:.2e}, "
-                           f"etykiety {a_y} vs {b_y}")
+                           f"etykiety {a_y} vs {b_y}, etykiety ramek "
+                           f"różne w {int(np.sum(yf_a != yf_b))}")
 
     check("obrazy z tego samego ziarna identyczne co do bitu",
           not bad_idx,
@@ -1018,9 +1026,13 @@ def test_sciezka_danych():
         with tempfile.TemporaryDirectory() as kat:
             kat = Path(kat)
             for k, ziarno in enumerate((111, 222)):
+                # wpm_norm zgodne z TEMPO_NORM — inaczej _sprawdz_tempo
+                # (16.10) słusznie odrzuci zbiór.
                 np.savez(kat / f"cz_{k:02d}.npz", X=X, y=y,
                          fingerprint=sa.FINGERPRINT,
-                         meta=f"n={n};seed={ziarno};wpm={sa.WPM};realism=1")
+                         meta=f"n={n};seed={ziarno};wpm={sa.WPM};realism=1",
+                         wpm_norm=np.full(len(y), sa.WPM if sa.TEMPO_NORM
+                                          else np.nan, dtype=np.float32))
             Xs, ys, _yf, meta = sa.load_dataset(str(kat / "cz_*.npz"))
             ok = len(ys) == 2 * n and Xs.shape[0] == 2 * n
             check("wzorzec skleja części", ok,
@@ -1060,7 +1072,9 @@ def test_sciezka_danych():
                 yfk = np.zeros((N_PR, C.IMG_FRAMES), dtype=np.uint8)
                 np.savez(kat / f"cz_{k:02d}.npz", X=Xk, y=yk, yf=yfk,
                          fingerprint=sa.FINGERPRINT,
-                         meta=f"n={N_PR};seed={100+k};wpm={sa.WPM};realism=1")
+                         meta=f"n={N_PR};seed={100+k};wpm={sa.WPM};realism=1",
+                         wpm_norm=np.full(N_PR, sa.WPM if sa.TEMPO_NORM
+                                          else np.nan, dtype=np.float32))
 
             pliki = sorted(kat.glob("cz_*.npz"))
             z = sa.ZbiorNaRaty(pliki, BATCH, 0.10, 7)
@@ -1717,6 +1731,51 @@ def test_pomiar_tempa():
           "  ".join(f"{w:.0f}->{m:.1f}" for w, m in bledy))
 
 
+# ==========================================================================
+# TEST 24: NORMALIZACJA TEMPA W KLIPIE (dsp/klip.py, 16.10)
+#
+# Po normalizacji znak ma zajmować w oknie TĘ SAMĄ liczbę ramek przy każdym
+# tempie — o to chodzi (operator: „trenować do prędkości znormalizowanej").
+# Bez normalizacji „0" przy 10 WPM zajmowało ~4x więcej ramek niż przy 40.
+# ==========================================================================
+def test_normalizacja_tempa():
+    section("TEST 24: normalizacja tempa w klipie")
+    from dsp import klip
+    if not C.TEMPO_NORM:
+        check("normalizacja tempa wyłączona (TEMPO_NORM = False)", True)
+        return
+    stare = C.TEMPO_BLAD
+    ramki = {}
+    try:
+        C.TEMPO_BLAD = 0.0
+        for wpm in (10.0, 22.0, 40.0):
+            n = []
+            for k in range(6):
+                img, yf, m, a = klip.klip_sieci(np.random.default_rng(240 + k),
+                                                "0E0", realism=False, wpm=wpm)
+                n.append(int((yf == C.CHAR_TO_ID["E"]).sum()))
+            ramki[wpm] = float(np.mean(n))
+    finally:
+        C.TEMPO_BLAD = stare
+    r = list(ramki.values())
+    check("ten sam znak = tyle samo ramek przy 10, 22 i 40 WPM (+/-1 ramka)",
+          max(r) - min(r) <= 1.0,
+          "  ".join(f"{w:.0f} WPM: {v:.1f} ramki „E\"" for w, v in ramki.items()))
+
+    rng = np.random.default_rng(241)
+    zle = []
+    for _ in range(20):
+        w, w_n, n = klip.tempo_klipu(rng)
+        if not (C.TEMPO_ZAKRES[0] <= w <= C.TEMPO_ZAKRES[1]
+                and abs(w_n / w - 1) <= C.TEMPO_BLAD + 1e-9
+                and abs(n - C.CLIP_SAMPLES * C.WPM / w_n) <= 1):
+            zle.append((w, w_n, n))
+    check("tempo klipu: zakres, błąd pomiaru i długość klipu zgodne z configiem",
+          not zle, f"{len(zle)} niezgodnych z 20" if zle else
+          f"{C.TEMPO_ZAKRES[0]:.0f}-{C.TEMPO_ZAKRES[1]:.0f} WPM, "
+          f"+/-{100 * C.TEMPO_BLAD:.0f}%")
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1731,7 +1790,7 @@ def main() -> int:
              test_tune_poza_pasmem, test_etykiety_ramek,
              test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn,
              test_przerwa_miedzyznakowa, test_jeden_nadajnik,
-             test_pomiar_tempa)
+             test_pomiar_tempa, test_normalizacja_tempa)
 
     for t in tests:
         try:

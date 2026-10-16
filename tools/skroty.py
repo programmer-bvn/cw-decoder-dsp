@@ -28,7 +28,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C
-from dsp import frontend, radio
+from dsp import klip
 
 # Stan „wszystko wyłączone". S/N z górnej połowy — sygnał ma być łatwy.
 CZYSTO = dict(ZAPADANIE_PROB=0.0, QSB_DEPTH=(0.0, 0.0), AGC_PROB=0.0,
@@ -59,9 +59,9 @@ def _zestaw(ustaw: dict, n: int, ziarno: int):
         X, Y = [], []
         while len(X) < n:
             t = "".join(rng.choice(list(C.ALPHABET[1:]), C.CHARS_PER_CLIP))
-            a, m = radio.receive(t, rng, realism=True)
-            X.append(frontend.to_net_image(a))
-            Y.append(frontend.frame_labels(m["spans"], m["offset"], t, a.size))
+            img, yf, _, _ = klip.klip_sieci(rng, t, realism=True)
+            X.append(img)
+            Y.append(yf)
         return np.stack(X)[..., None], np.stack(Y)
     finally:
         for k, v in oryg.items():

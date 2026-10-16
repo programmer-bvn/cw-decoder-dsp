@@ -53,7 +53,7 @@ if __package__ in (None, ""):                      # uruchomienie wprost
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C
-from dsp import frontend, morse, radio
+from dsp import frontend, klip, morse, radio
 
 # Siatka pomiarowa. Tempo obejmuje zakres z config (od 15.10: 12-32 WPM)
 # z zapasem po obu stronach, żeby było widać, GDZIE model milknie, a nie
@@ -99,7 +99,10 @@ def czysty(rng: np.random.Generator, wpm: float, tone: float,
     jest poza rozkładem treningowym i model widziałby coś, czego nigdy
     nie uczył się rozpoznawać.
 
-    Zwraca (audio, znak_etykiety, lab_a, lab_b).
+    Zwraca (OBRAZ sieci, znak_etykiety, ramka_od, ramka_do) — granice
+    znaku z etykiety w ramkach OKNA. Od normalizacji tempa (16.10) obraz
+    liczy dsp/klip, klip ma długość dobraną do tempa, a tempo „zmierzone"
+    jest tu dokładne (sygnał idealny).
     """
     text, znak = _grupa(rng)
     wave, spans = morse.synth_cw(
@@ -107,7 +110,9 @@ def czysty(rng: np.random.Generator, wpm: float, tone: float,
         phase=float(rng.uniform(0, 2 * np.pi)),
         rng=rng, return_spans=True)
 
-    audio = radio.band_noise(C.CLIP_SAMPLES, rng, rms=C.NOISE_RMS, tilt=0.0)
+    n = (int(round(C.CLIP_SAMPLES * C.WPM / wpm)) if C.TEMPO_NORM
+         else C.CLIP_SAMPLES)
+    audio = radio.band_noise(n, rng, rms=C.NOISE_RMS, tilt=0.0)
     offset = _wstaw(audio, wave)
 
     lab_a = lab_b = float("nan")
@@ -115,13 +120,17 @@ def czysty(rng: np.random.Generator, wpm: float, tone: float,
         if tag == C.LABEL_INDEX:
             lab_a, lab_b = a + offset, b + offset
             break
-    return audio, znak, lab_a, lab_b
+    meta = {"text": text, "spans": spans, "offset": offset,
+            "lab_a": lab_a, "lab_b": lab_b,
+            "wpm_norm": float(wpm) if C.TEMPO_NORM else float("nan")}
+    img, _, fa, fb = klip.obraz_i_etykiety(audio, meta)
+    return img, znak, fa, fb
 
 
 # --------------------------------------------------------------------------
 # GEOMETRIA OKNA
 # --------------------------------------------------------------------------
-def widocznosc(lab_a: float, lab_b: float) -> float:
+def widocznosc(fa: float, fb: float) -> float:
     """Jaka część znaku z etykiety mieści się w oknie sieci: 1,0 = cały,
     0,5 = połowa wypadła za kadr, 0,0 = nie ma go wcale.
 
@@ -131,10 +140,10 @@ def widocznosc(lab_a: float, lab_b: float) -> float:
     własnym wzorem, bo dodatkowa ramka z center=True już raz kosztowała
     dwuramkowe przesunięcie.
     """
-    if not np.isfinite(lab_a) or not np.isfinite(lab_b):
+    # Od 16.10 granice przychodzą już W RAMKACH OKNA (dsp/klip liczy je
+    # tą samą drogą co obraz — z normalizacją tempa i bez).
+    if not np.isfinite(fa) or not np.isfinite(fb):
         return float("nan")
-    fa = frontend.sample_to_window_frame(lab_a)
-    fb = frontend.sample_to_window_frame(lab_b)
     if fb <= fa:
         return 0.0
     lo = max(fa, 0.0)
@@ -199,8 +208,8 @@ def _przewiduj(model, obrazy: list[np.ndarray], laby=None,
         if not (np.isfinite(a) and np.isfinite(b)):
             wynik[i] = max(od, key=lambda o: o[3])[2] if od else 0
             continue
-        ka = frontend.sample_to_window_frame(a) / sekwencja.FCN_KROK
-        kb = frontend.sample_to_window_frame(b) / sekwencja.FCN_KROK
+        ka = a / sekwencja.FCN_KROK          # granice już w ramkach okna
+        kb = b / sekwencja.FCN_KROK
         najl, cid = 0.0, 0
         for k0, k1, c, _ in od:
             wsp = min(kb, k1) - max(ka, k0)
@@ -218,8 +227,8 @@ def mierz_koperte(model, n: int, seed: int = 20260909):
     for iw, wpm in enumerate(WPM_SIATKA):
         for it, tone in enumerate(TON_SIATKA):
             for _ in range(n):
-                audio, znak, la, lb = czysty(rng, wpm, tone)
-                obrazy.append(frontend.to_net_image(audio))
+                img, znak, la, lb = czysty(rng, wpm, tone)
+                obrazy.append(img)
                 prawdy.append(C.CHAR_TO_ID[znak])
                 komorki.append((iw, it))
                 laby.append((la, lb))
@@ -248,13 +257,12 @@ def mierz_bledy(model, n: int, seed: int = 20260910):
 
     for _ in range(n):
         text, znak = _grupa(rng)
-        audio, meta = radio.receive(text, rng, n_samples=C.CLIP_SAMPLES,
-                                    realism=True)
-        obrazy.append(frontend.to_net_image(audio))
+        img, _, meta, _ = klip.klip_sieci(rng, text, realism=True)
+        obrazy.append(img)
         prawdy.append(znak)
         wpmy.append(float(meta["wpm"]))
-        widoki.append(widocznosc(meta["lab_a"], meta["lab_b"]))
-        laby.append((meta["lab_a"], meta["lab_b"]))
+        widoki.append(widocznosc(meta["lab_x0"], meta["lab_x1"]))
+        laby.append((meta["lab_x0"], meta["lab_x1"]))
 
     pred_id = _przewiduj(model, obrazy, laby)
     pred = [C.ALPHABET[i] for i in pred_id]

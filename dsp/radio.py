@@ -201,12 +201,28 @@ def wpm_klipu(rng: np.random.Generator, wpm: float = C.WPM) -> float:
     return float(np.clip(w, 5.0, 60.0))
 
 
+def okno_widoczne(n: int, znormalizowany: bool = False) -> tuple[int, int]:
+    """Próbki klipu, które trafiają do okna sieci: (od, do).
+
+    Klip znormalizowany ma długość dobraną do tempa (dsp/klip.py) tak, że po
+    normalizacji okno zajmuje ten sam UŁAMEK klipu co okno w klipie
+    CLIP_SAMPLES — stąd przeliczenie proporcją."""
+    a0 = frontend.window_crop_start(C.CLIP_SAMPLES) * C.HOP_LENGTH
+    if not znormalizowany:
+        a = frontend.window_crop_start(n) * C.HOP_LENGTH
+        return a, a + C.IMG_FRAMES * C.HOP_LENGTH
+    u0 = a0 / C.CLIP_SAMPLES
+    u1 = (a0 + C.IMG_FRAMES * C.HOP_LENGTH) / C.CLIP_SAMPLES
+    return int(round(u0 * n)), int(round(u1 * n))
+
+
 # --------------------------------------------------------------------------
 # QRM — inna stacja w pasmie
 # --------------------------------------------------------------------------
 def add_qrm(audio: np.ndarray, rng: np.random.Generator,
             amp: float, sr: int = C.SR,
-            alphabet: str = C.ALPHABET, realism: bool = True) -> np.ndarray:
+            alphabet: str = C.ALPHABET, realism: bool = True,
+            tempo_szeroki: bool = False) -> np.ndarray:
     """Druga stacja CW: inny ton, inne tempo, inny tekst, inna faza.
 
     Ton jest losowany W CAŁYM pasmie analizy, także blisko tonu stacji
@@ -220,7 +236,11 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
     tone = float(rng.uniform(C.FMIN + 30.0, C.FMAX - 30.0))
     # Tempo, nadajnik i zanik z TYCH SAMYCH rozkładów co stacja docelowa
     # (losuj_nadajnik — dlaczego). Do 14.10: 15-35 WPM, ręka, bez chirpu.
-    wpm = wpm_klipu(rng)
+    # Przy normalizacji tempa obca stacja ma tempo z tego samego szerokiego
+    # rozkładu co nasza (TEMPO_ZAKRES) — w obrazie wypada w innym tempie
+    # niż wzorcowe, jak na paśmie.
+    wpm = (float(rng.uniform(*C.TEMPO_ZAKRES)) if tempo_szeroki
+           else wpm_klipu(rng))
     text = "".join(str(rng.choice(list(alphabet[1:]))) for _ in range(6))
     nad = losuj_nadajnik(rng, realism)
 
@@ -242,8 +262,7 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
     # nadań QRM wypadało w tych odrzuconych brzegach: zbiór miał wtedy
     # znacznik "jest obca stacja", a na obrazie jej nie było. Etykieta
     # opisująca coś, czego nie widać, jest gorsza niż brak etykiety.
-    vis_a = frontend.window_crop_start(audio.size) * C.HOP_LENGTH
-    vis_b = vis_a + C.IMG_FRAMES * C.HOP_LENGTH
+    vis_a, vis_b = okno_widoczne(audio.size, tempo_szeroki)
     lo = vis_a - wave.size + 1          # koniec nadania wpada w okno
     hi = vis_b                          # początek nadania wpada w okno
     start = int(rng.integers(lo, hi))
@@ -355,6 +374,11 @@ def szum_prawdziwy(n: int, rng: np.random.Generator, srodek_hz: float,
     # z pasma są głównie z wąskim (FIL2, 200 Hz) — porównanie obrazów 10.10.
     i = int(rng.integers(0, len(bank)))
     _, a, c = bank[i]
+    # Klip znormalizowany do tempa bywa dłuższy niż najkrótszy plik banku
+    # (przy 8,5 WPM ~10,4 s, plik 490 Hz ma 10 s) — przedłużenie odbiciem
+    # w czasie (szum nie ma kierunku), bez dodatkowych losowań.
+    while a.size <= n:
+        a = np.concatenate([a, a[::-1]])
     s = int(rng.integers(0, a.size - n))
     x = a[s:s + n]
     if rng.random() < 0.5:
@@ -372,7 +396,8 @@ def receive(text: str, rng: np.random.Generator,
             n_samples: int = C.CLIP_SAMPLES,
             sr: int = C.SR,
             wpm: float | None = None,
-            realism: bool = True) -> tuple[np.ndarray, dict]:
+            realism: bool = True,
+            tempo_staly: bool = False) -> tuple[np.ndarray, dict]:
     """Nadanie `text` przepuszczone przez kanał — zwraca (audio, opis).
 
     Opis zawiera WSZYSTKIE wylosowane parametry. To nie ozdoba: gdy model
@@ -410,7 +435,9 @@ def receive(text: str, rng: np.random.Generator,
     # --- stacja docelowa ---
     if text:
         tone = C.TONE_CENTER + float(rng.uniform(-C.TONE_SPREAD, C.TONE_SPREAD))
-        clip_wpm = wpm_klipu(rng, wpm)
+        # tempo_staly: tempo podane z zewnątrz (normalizacja tempa, dsp/klip)
+        # — bez rozrzutu WPM_JITTER, długość klipu jest już do niego dobrana.
+        clip_wpm = float(wpm) if tempo_staly else wpm_klipu(rng, wpm)
         # --- operator, klucz i nadajnik: wspólny rozkład z QRM ---
         nad = losuj_nadajnik(rng, realism)
         fist, fist_drift, gap_jit = (nad["fist"], nad["fist_drift"],
@@ -484,7 +511,8 @@ def receive(text: str, rng: np.random.Generator,
         # ściszał wtedy całość i nasza stacja znikała (ocena operatora).
         qrm_amp = sn.amp_dla_sn(float(rng.uniform(*C.SN_DB)), szum,
                                 C.TONE_CENTER, sr=sr)
-        zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr, realism=realism)
+        zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr, realism=realism,
+                      tempo_szeroki=tempo_staly)
     meta["qrm"] = qrm_amp
 
     n_crashes = 0

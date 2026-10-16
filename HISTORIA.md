@@ -1163,6 +1163,51 @@ OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
 prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
 tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
 
+### Trening w tempie znormalizowanym — przebudowa generatora (16/17.10)
+
+**Decyzja operatora.** „Trenowanie do prędkości znormalizowanej plus minus
+margines na błąd normalizacji — bardzo wolne i bardzo szybkie tempo w oknie
+albo się nie mieści, albo nabiera za dużo; zamiast uczyć różnych temp, uczyć
+małego zakresu, ale różnych wykwintnych zniekształceń."
+
+**Jak.** Stacja (i QRM) nadaje w PRAWDZIWYM tempie z `TEMPO_ZAKRES =
+(10, 40)` — zjawiska fizyczne (narastanie klucza, ARW, zanik) mają stały
+czas w sekundach. Obraz dostaje tempo „zmierzone" = prawdziwe × (1 ±
+`TEMPO_BLAD = 0,15`) i jest liczony w tempie wzorcowym (`C.WPM` = 22):
+widmo co 5 ms, ramka = tyle czasu, ile przy 22 WPM trwa 20 ms. Długość
+klipu dobrana tak, żeby okno zajmowało ten sam ułamek klipu
+(`CLIP_SAMPLES · 22 / tempo`). Jedna droga klip → obraz → etykiety ramek:
+`dsp/klip.py` (kopia w `train_rtx.py`, TEST 12 bit w bit: 12 ziaren,
+różnica 0, 45 stałych). Na nią przepięte: generator, koperta, skróty,
+trafność, X-Ray ocena; odczyt nagrań (`wav2net`) przez `tempo.tor_tempa`.
+`TEMPO_NORM = False` = droga sprzed 16.10.
+
+**Po drodze.**
+- Plik banku 10 s krótszy niż klip przy 8,5 WPM (~10,4 s) — przedłużanie
+  odbiciem w czasie, bez dodatkowych losowań.
+- **Generowanie 5,5× szybsze:** 11 procesów odpalało każdy wątki BLAS na
+  wszystkie rdzenie. Jeden wątek na proces przy `generate` (przed importem
+  numpy): 20 000 próbek 355 s → 65 s; część 200 tys. ~11 min (było ~25 —
+  stare noce też to miały).
+- Strażnik `_sprawdz_tempo`: trening na zbiorze niepasującym do
+  `TEMPO_NORM` (brak/obecność `wpm_norm`) kończy się błędem — inaczej trening
+  i odczyt liczyłyby obraz inaczej i nic by tego nie zgłosiło. Najpierw
+  pominął drogę „jeden plik" (wracała przed sprawdzeniem) — poprawione;
+  potem wywrócił TEST 15 (części testowe bez kolumny) — dostały kolumnę.
+- TEST 24: ten sam znak zajmuje tyle samo ramek przy 10, 22 i 40 WPM;
+  tempo, błąd i długość klipu zgodne z configiem. diag 119/119.
+
+**Stary model (czesci_tempo, bez normalizacji w treningu) na nowej drodze:**
+koperta 10-35 WPM 100% (wcześniej 10 i 35 WPM ~50%); trafność 10-16 WPM:
+ucięte znaki 6% kroków (było 42%), całe 94%; nagrania 19/26 / 22/26.
+Arkusz obrazów: `out/xray_tempo_norm.png` (10-39 WPM, znaki w oknie jak
+~22 WPM). Przedziały tempa w `tools/trafnosc` od teraz 10-16 / 16-25 /
+25-40 (prawdziwe tempo) — tabele sprzed 16.10 niewprost porównywalne.
+
+**Noc do uruchomienia:** `noc.bat 200000 12 256 czesci_norm 40 3000 20 0
+auto fcn` — porównać z czesci_tempo (12/21, 12/19; z normalizacją przy
+odczycie 19/22) i maską.
+
 ### Normalizacja tempa przy odczycie — BEZ trenowania (16.10, wieczór)
 
 **Uwaga operatora.** Telegrafista też nie wie, czy pierwszy element to

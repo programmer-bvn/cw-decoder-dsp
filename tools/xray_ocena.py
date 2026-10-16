@@ -86,20 +86,22 @@ def generuj(n: int, n_nagr: int, out: Path, seed: int) -> None:
     for _ in range(n):
         tekst = ("".join(rng.choice(list(C.ALPHABET[1:]), C.CHARS_PER_CLIP))
                  if rng.random() > C.SILENCE_FRACTION else "")
-        audio, m = radio.receive(tekst, rng)
-        obrazy.append(frontend.to_net_image(audio))
+        from dsp import klip
+        img, _, m, audio = klip.klip_sieci(rng, tekst)
+        obrazy.append(img)
         o = {k: v for k, v in m.items() if k not in ("spans",)}
         o["zrodlo"] = "generator"
         o["plik_szumu"] = bank[m["szum_real"]][0] if m["szum_real"] >= 0 else ""
         # Granice znaków w ramkach OKNA (mogą wychodzić poza 0..IMG_FRAMES —
         # to właśnie znaki ucięte krawędzią).
+        def _ramka(v, _m=m, _a=audio):
+            if np.isfinite(_m.get("wpm_norm", np.nan)):
+                _, sr_s = klip.obraz_klipu(_a, _m["wpm_norm"])
+                return klip.ramka_probki(v, sr_s)
+            return frontend.sample_to_window_frame(v, _a.size)
         o["znaki"] = [
-            [tekst[tag],
-             round(frontend.sample_to_window_frame(float(a) + m["offset"],
-                                                   audio.size), 2),
-             round(frontend.sample_to_window_frame(float(b) + m["offset"],
-                                                   audio.size), 2),
-             tag == C.LABEL_INDEX]
+            [tekst[tag], round(_ramka(float(a) + m["offset"]), 2),
+             round(_ramka(float(b) + m["offset"]), 2), tag == C.LABEL_INDEX]
             for tag, a, b in m["spans"] if 0 <= tag < len(tekst)]
         opisy.append(o)
 

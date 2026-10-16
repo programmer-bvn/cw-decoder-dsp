@@ -28,7 +28,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C
-from dsp import frontend, radio
+from dsp import frontend, klip, radio
 
 
 def make_clip(rng: np.random.Generator, wpm: float, jitter: float,
@@ -57,8 +57,14 @@ def make_clip(rng: np.random.Generator, wpm: float, jitter: float,
         # spodziewanym tonem nie jest znakiem do odczytu.
         text, target = "", 0
 
-    audio, meta = radio.receive(text, rng, n_samples=C.CLIP_SAMPLES,
-                                sr=C.SR, wpm=wpm, realism=realism)
+    if C.TEMPO_NORM:
+        # Tempo prawdziwe i „zmierzone" losowane w dsp/klip — od nich zależy
+        # długość klipu (normalizacja tempa, 16.10). wpm/jitter z wywołania
+        # dotyczą tylko drogi sprzed normalizacji.
+        audio, meta = klip.klip_audio(rng, text, realism=realism)
+    else:
+        audio, meta = radio.receive(text, rng, n_samples=C.CLIP_SAMPLES,
+                                    sr=C.SR, wpm=wpm, realism=realism)
     meta["signal"] = is_signal
     return audio, target, meta
 
@@ -80,7 +86,9 @@ _META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb",
                 "lab_x0", "lab_x1",
                 # Prawdziwe tło (od 10.10): numer pliku w banku szumu
                 # (-1 = syntetyczny) i siła stacji względem tego szumu.
-                "szum_real", "snr_db", "tlo_db")
+                "szum_real", "snr_db", "tlo_db",
+                # Tempo „zmierzone", do którego znormalizowano obraz (16.10).
+                "wpm_norm")
 
 
 def generate(n: int, seed: int, wpm: float, jitter: float,
@@ -104,24 +112,15 @@ def generate(n: int, seed: int, wpm: float, jitter: float,
     t0 = time.time()
     for i in range(n):
         audio, target, meta = make_clip(rng, wpm, jitter, realism=realism)
-        img = frontend.to_net_image(audio)          # JEDNA ścieżka front-endu
+        # JEDNA droga klip -> obraz -> etykiety (dsp/klip, obie wersje:
+        # z normalizacją tempa i bez). Granice znaków są znane DOKŁADNIE, bo
+        # pochodzą z syntezy, więc wyrównanie etykiet do czasu mamy
+        # z konstrukcji i nie potrzeba CTC.
+        img, yf[i], meta["lab_x0"], meta["lab_x1"] = klip.obraz_i_etykiety(
+            audio, meta)
 
         X[i] = np.rint(img * 255.0).astype(np.uint8) if store_u8 else img
         y[i] = target
-        # Granice znaków są znane DOKŁADNIE, bo pochodzą z syntezy — po
-        # rozjeździe klucza, nie z nominalnego timingu. Dlatego wyrównanie
-        # etykiet do czasu mamy z konstrukcji i nie potrzeba CTC.
-        yf[i] = frontend.frame_labels(meta.get("spans", []),
-                                      float(meta.get("offset", 0.0)),
-                                      meta.get("text", ""))
-
-        # Próbki audio -> ramki okna. Przeliczenie siedzi we frontend, bo
-        # zależy od dopełniania w librosie i od wycinania okna — dwóch
-        # rzeczy, które łatwo policzyć o jedną ramkę za dużo.
-        for src, dst in (("lab_a", "lab_x0"), ("lab_b", "lab_x1")):
-            v = meta.get(src, np.nan)
-            meta[dst] = (np.nan if not np.isfinite(v)
-                         else frontend.sample_to_window_frame(v))
 
         for k in _META_FIELDS:
             cols[k][i] = meta.get(k, np.nan)

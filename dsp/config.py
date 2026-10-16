@@ -137,6 +137,22 @@ WPM = 22.0                      # tempo nominalne (środek zakresu)
 # wyjścia fcn (40 ms).
 WPM_JITTER = 10.0
 
+# --- NORMALIZACJA TEMPA (16.10, decyzja operatora) ------------------------
+# Obraz liczony w tempie wzorcowym WPM: każda ramka obejmuje tyle czasu, ile
+# przy WPM trwałoby HOP_LENGTH (dsp/tempo.py, dsp/klip.py). Stacja nadaje
+# w prawdziwym tempie z TEMPO_ZAKRES — zjawiska fizyczne (narastanie klucza,
+# ARW, zanik) mają stały czas w sekundach — a obraz dostaje tempo
+# „zmierzone" z błędem +/-TEMPO_BLAD, jak przy odczycie (dsp.tempo:
+# 93-100% buforów w +/-15%, walidacja 16.10). Operator: „trenowanie do
+# prędkości znormalizowanej plus minus margines na błąd normalizacji —
+# zamiast uczyć różnych temp, uczyć małego zakresu, ale różnych
+# zniekształceń". Bez normalizacji, przy odczycie tylko z normalizacją
+# (bez treningu): 12/26 -> 19/26 słów (HISTORIA „Normalizacja tempa").
+# False = droga sprzed 16.10 (WPM +/- WPM_JITTER, okno 2,56 s).
+TEMPO_NORM = True
+TEMPO_ZAKRES = (10.0, 40.0)     # prawdziwe tempo stacji i QRM [WPM]
+TEMPO_BLAD = 0.15               # błąd tempa „zmierzonego" w treningu (+/-)
+
 DASH_UNITS = 3
 GAP_ELEMENT_UNITS = 1
 GAP_CHAR_UNITS = 3

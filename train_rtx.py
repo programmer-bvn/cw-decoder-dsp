@@ -60,6 +60,15 @@ import sys
 import time
 from pathlib import Path
 
+# GENEROWANIE: jeden wątek biblioteki numerycznej na proces. Generator chodzi
+# na 11 procesach, a każdy bez tego odpalał wątki BLAS na wszystkie rdzenie
+# — rdzenie walczyły ze sobą. ZMIERZONE 16.10 (normalizacja tempa, 20 000
+# próbek): 355 s -> 65 s. Ustawione PRZED importem numpy, bo później biblioteka
+# już nie czyta tych zmiennych. Trening tego nie dostaje.
+if len(sys.argv) > 1 and sys.argv[1] == "generate":
+    for _zm in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        os.environ.setdefault(_zm, "1")
+
 import numpy as np
 
 # Poziom 1 = ukryj tylko INFO. NIE ustawiać 2 — poziom 2 ukrywa WARNING,
@@ -161,6 +170,11 @@ FIST_DRIFT = (0.0, 0.0)
 FIST_DRIFT_TAU_S = 2.0
 GAP_JITTER = (0.0, 0.50)
 GAP_MIN_T = 3.0
+# Normalizacja tempa (16.10) — opis w dsp/config.py przy TEMPO_NORM.
+TEMPO_NORM = True
+TEMPO_ZAKRES = (10.0, 40.0)
+TEMPO_BLAD = 0.15
+DROBNY_HOP = 40
 
 # Zapadanie zasilania nadajnika: naduszenie klucza rozładowuje kondensator,
 # napięcie spada, generator LC się przestraja. Ton spada W TRAKCIE elementu
@@ -691,14 +705,27 @@ def wpm_klipu(rng: np.random.Generator, wpm: float = WPM) -> float:
     return float(np.clip(w, 5.0, 60.0))
 
 
+def okno_widoczne(n: int, znormalizowany: bool = False) -> tuple[int, int]:
+    """Próbki klipu w oknie sieci (dsp/radio.py)."""
+    a0 = window_crop_start(CLIP_SAMPLES) * HOP_LENGTH
+    if not znormalizowany:
+        a = window_crop_start(n) * HOP_LENGTH
+        return a, a + IMG_FRAMES * HOP_LENGTH
+    u0 = a0 / CLIP_SAMPLES
+    u1 = (a0 + IMG_FRAMES * HOP_LENGTH) / CLIP_SAMPLES
+    return int(round(u0 * n)), int(round(u1 * n))
+
+
 def add_qrm(audio: np.ndarray, rng: np.random.Generator,
-            amp: float, sr: int = SR, realism: bool = True) -> np.ndarray:
+            amp: float, sr: int = SR, realism: bool = True,
+            tempo_szeroki: bool = False) -> np.ndarray:
     """Druga stacja: inny ton w CAŁYM pasmie analizy, inny tekst; tempo,
     nadajnik i zanik z tych samych rozkładów co stacja (14.10)."""
     if amp <= 0.0 or audio.size == 0:
         return audio
     tone = float(rng.uniform(FMIN + 30.0, FMAX - 30.0))
-    wpm = wpm_klipu(rng)
+    wpm = (float(rng.uniform(*TEMPO_ZAKRES)) if tempo_szeroki
+           else wpm_klipu(rng))
     text = "".join(str(rng.choice(list(ALPHABET[1:]))) for _ in range(6))
     nad = losuj_nadajnik(rng, realism)
     wave = synth_cw(text, wpm=wpm, tone=tone, amp=amp, sr=sr,
@@ -713,8 +740,7 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
     # nie trafiają do obrazu. Przy losowaniu z całego klipu ok. 12% nadań QRM
     # wypadało w odrzuconych brzegach — zbiór miał znacznik "obca stacja",
     # a na obrazie jej nie było.
-    vis_a = window_crop_start(audio.size) * HOP_LENGTH
-    vis_b = vis_a + IMG_FRAMES * HOP_LENGTH
+    vis_a, vis_b = okno_widoczne(audio.size, tempo_szeroki)
     start = int(rng.integers(vis_a - wave.size + 1, vis_b))
     a0, a1 = max(0, start), min(audio.size, start + wave.size)
     if a1 > a0:
@@ -798,6 +824,11 @@ def szum_prawdziwy(n: int, rng: np.random.Generator, srodek_hz: float,
     # z pasma są głównie z wąskim (FIL2, 200 Hz) — porównanie obrazów 10.10.
     i = int(rng.integers(0, len(bank)))
     _, a, c = bank[i]
+    # Klip znormalizowany do tempa bywa dłuższy niż najkrótszy plik banku
+    # (przy 8,5 WPM ~10,4 s, plik 490 Hz ma 10 s) — przedłużenie odbiciem
+    # w czasie (szum nie ma kierunku), bez dodatkowych losowań.
+    while a.size <= n:
+        a = np.concatenate([a, a[::-1]])
     s = int(rng.integers(0, a.size - n))
     x = a[s:s + n]
     if rng.random() < 0.5:
@@ -862,8 +893,9 @@ def tlo_db(db: np.ndarray, przerwy: np.ndarray, ton_hz: float) -> float:
     return float(10.0 * np.log10(np.median(na_ramke)))
 
 
-def receive(text: str, rng: np.random.Generator, realism: bool = True
-            ) -> tuple[np.ndarray, dict]:
+def receive(text: str, rng: np.random.Generator, realism: bool = True,
+            n_samples: int = CLIP_SAMPLES, wpm: float | None = None,
+            tempo_staly: bool = False) -> tuple[np.ndarray, dict]:
     """Nadanie przepuszczone przez kanał. Zwraca (audio, pełny opis)."""
     meta: dict = {}
     # Prawdziwe tło z banku albo syntetyczne — kolejność losowań MUSI być
@@ -877,15 +909,15 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
     else:
         skala = 1.0
         tilt = float(rng.uniform(*NOISE_TILT)) if realism else 0.0
-        szum = band_noise(CLIP_SAMPLES, rng, rms=NOISE_RMS, tilt=tilt)
+        szum = band_noise(n_samples, rng, rms=NOISE_RMS, tilt=tilt)
         meta.update(noise_rms=NOISE_RMS, noise_tilt=tilt)
     # Stacja z amplitudą 1; swoją dostaje z S/N, gdy szum jest znany.
-    stacja = np.zeros(CLIP_SAMPLES, dtype=np.float32)
+    stacja = np.zeros(n_samples, dtype=np.float32)
     snr = float(rng.uniform(*SN_DB)) if realism else SN_DB[1]
 
     if text:
         tone = TONE_CENTER + float(rng.uniform(-TONE_SPREAD, TONE_SPREAD))
-        wpm = wpm_klipu(rng)
+        wpm = float(wpm) if tempo_staly else wpm_klipu(rng)
         # --- operator, klucz i nadajnik: wspólny rozkład z QRM (14.10) ---
         nad = losuj_nadajnik(rng, realism)
         fist, fist_drift, gap_jit = (nad["fist"], nad["fist_drift"],
@@ -897,13 +929,13 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
                                rng=rng, return_spans=True, **nad)
         qsb = float(rng.uniform(*QSB_DEPTH)) if realism else 0.0
         wave = apply_qsb(wave, rng, depth=qsb)
-        if wave.size < CLIP_SAMPLES:
-            s = (CLIP_SAMPLES - wave.size) // 2
+        if wave.size < n_samples:
+            s = (n_samples - wave.size) // 2
             stacja[s:s + wave.size] += wave
             offset = s
         else:
-            s = (wave.size - CLIP_SAMPLES) // 2
-            stacja += wave[s:s + CLIP_SAMPLES]
+            s = (wave.size - n_samples) // 2
+            stacja += wave[s:s + n_samples]
             offset = -s
 
         # Granice znaku Z ETYKIETY w próbkach klipu, z FAKTYCZNEGO timingu
@@ -933,18 +965,19 @@ def receive(text: str, rng: np.random.Generator, realism: bool = True
         srodek = ((meta["tone"] if text else TONE_CENTER)
                   + float(rng.uniform(-REAL_NOISE_OFFSET_HZ,
                                       REAL_NOISE_OFFSET_HZ)))
-        szum, szum_i = szum_prawdziwy(CLIP_SAMPLES, rng, srodek)
+        szum, szum_i = szum_prawdziwy(n_samples, rng, srodek)
     amp = amp_dla_sn(snr, szum, meta["tone"] if text else TONE_CENTER)
     audio = (szum + amp * stacja).astype(np.float32)
     meta.update(amp=amp if text else 0.0, szum_real=szum_i,
                 snr_db=snr if text else float("nan"))
 
     # Zakłócenia osobno: przy tle z banku idą przez filtr p.cz. (12.10).
-    zak = np.zeros(CLIP_SAMPLES, dtype=np.float32)
+    zak = np.zeros(n_samples, dtype=np.float32)
     qrm = 0.0
     if realism and rng.random() < QRM_PROB:
         qrm = amp_dla_sn(float(rng.uniform(*SN_DB)), szum, TONE_CENTER)
-        zak = add_qrm(zak, rng, amp=qrm, realism=realism)
+        zak = add_qrm(zak, rng, amp=qrm, realism=realism,
+                      tempo_szeroki=tempo_staly)
     meta["qrm"] = qrm
 
     qrn = 0
@@ -1159,7 +1192,7 @@ META_FIELDS = ("tone", "amp", "wpm", "fist", "drift", "qsb", "qrm", "qrn",
                "lab_x0", "lab_x1",
                # Prawdziwe tło (od 10.10): numer pliku w banku (-1 = szum
                # syntetyczny) i siła stacji względem tego szumu.
-               "szum_real", "snr_db", "tlo_db")
+               "szum_real", "snr_db", "tlo_db", "wpm_norm")
 
 
 def clip_frames(n_samples: int = CLIP_SAMPLES) -> int:
@@ -1229,6 +1262,105 @@ def frame_labels(spans, offset: float, text: str,
 
     return y
 
+# --- Normalizacja tempa — kopia dsp/tempo.py + dsp/klip.py (16.10) --------
+def obraz_w_tempie_wzorcowym(audio: np.ndarray, w_n: float, sr: int = SR):
+    """Stałe tempo klipu: (dB [ramki, N_MELS], środki ramek [s])."""
+    x = np.pad(np.asarray(audio, dtype=np.float32).astype(np.float64),
+               N_FFT // 2, mode="constant")
+    n_frames = 1 + (x.size - N_FFT) // DROBNY_HOP
+    frames = np.lib.stride_tricks.as_strided(
+        x, shape=(n_frames, N_FFT),
+        strides=(x.strides[0] * DROBNY_HOP, x.strides[0]))
+    spec = np.fft.rfft(frames * _HANN, n=N_FFT, axis=1)
+    p = spec.real ** 2 + spec.imag ** 2
+    mel = (p @ _MEL_FB.T).astype(np.float64)
+    t_drob = np.arange(mel.shape[0]) * DROBNY_HOP / sr
+    sk = np.cumsum(np.vstack([np.zeros((1, mel.shape[1])), mel]), axis=0)
+    d = HOP_LENGTH / sr * WPM / float(w_n)
+    m = int(np.ceil(t_drob[-1] / d))
+    granice = np.arange(m + 1, dtype=np.float64) * d
+    g = np.clip(np.searchsorted(t_drob, granice), 0, mel.shape[0])
+    a0, a1 = g[:-1], np.maximum(g[1:], g[:-1] + 1)
+    a1 = np.minimum(a1, mel.shape[0])
+    a0 = np.minimum(a0, a1 - 1)
+    sr_moc = (sk[a1] - sk[a0]) / (a1 - a0)[:, None]
+    mp = np.maximum(1e-10, np.asarray(sr_moc, dtype=np.float64))
+    db = (10.0 * np.log10(mp) - 10.0 * np.log10(max(1e-10, DB_REF))
+          ).astype(np.float32)
+    return db, 0.5 * (granice[:-1] + granice[1:])
+
+
+def tempo_klipu(rng: np.random.Generator):
+    w = float(rng.uniform(*TEMPO_ZAKRES))
+    w_n = w * (1.0 + float(rng.uniform(-TEMPO_BLAD, TEMPO_BLAD)))
+    return w, w_n, int(round(CLIP_SAMPLES * WPM / w_n))
+
+
+def obraz_klipu(audio: np.ndarray, w_n: float, sr: int = SR):
+    db, srodki = obraz_w_tempie_wzorcowym(audio, w_n, sr)
+    k = db.shape[0]
+    s0 = max(0, (k - IMG_FRAMES) // 2)
+    db, srodki = db[s0:s0 + IMG_FRAMES], srodki[s0:s0 + IMG_FRAMES]
+    if db.shape[0] < IMG_FRAMES:
+        brak = IMG_FRAMES - db.shape[0]
+        d = HOP_LENGTH / sr * WPM / float(w_n)
+        db = np.vstack([db, np.full((brak, db.shape[1]), DB_MIN - 10.0,
+                                    dtype=db.dtype)])
+        srodki = np.r_[srodki, srodki[-1] + d * np.arange(1, brak + 1)]
+    img = np.clip((db - DB_MIN) / db_span(), 0.0, 1.0).astype(np.float32)
+    return img, srodki
+
+
+def etykiety_klipu(spans, offset: float, text: str, srodki_s, sr: int = SR):
+    y = np.zeros(IMG_FRAMES, dtype=np.uint8)
+    c = np.asarray(srodki_s, dtype=np.float64) * sr
+    for tag, a, b in spans or []:
+        if not (0 <= tag < len(text)):
+            continue
+        cid = CHAR_TO_ID.get(text[tag], 0)
+        if cid == 0:
+            continue
+        a2, b2 = float(a) + offset, float(b) + offset
+        m = (c >= a2) & (c <= b2)
+        if m.any():
+            y[m] = cid
+        else:
+            mid = 0.5 * (a2 + b2)
+            if c[0] <= mid <= c[-1]:
+                y[int(np.argmin(np.abs(c - mid)))] = cid
+    return y
+
+
+def klip_audio(rng: np.random.Generator, text: str, realism: bool = True):
+    if not TEMPO_NORM:
+        return receive(text, rng, realism=realism)
+    w, w_n, n = tempo_klipu(rng)
+    audio, meta = receive(text, rng, realism=realism, n_samples=n, wpm=w,
+                          tempo_staly=True)
+    meta["wpm_norm"] = w_n
+    return audio, meta
+
+
+def obraz_i_etykiety(audio: np.ndarray, meta: dict, sr: int = SR):
+    text = meta.get("text", "")
+    spans = meta.get("spans", [])
+    offset = float(meta.get("offset", 0.0))
+    w_n = meta.get("wpm_norm", float("nan"))
+    if w_n is not None and np.isfinite(w_n):
+        img, srodki = obraz_klipu(audio, w_n, sr)
+        yf = etykiety_klipu(spans, offset, text, srodki, sr)
+        idx = np.arange(len(srodki), dtype=np.float64)
+        do_ramki = lambda v: float(np.interp(v / sr, srodki, idx, left=-1.0,
+                                             right=float(len(srodki))))
+    else:
+        img = to_net_image(audio, sr)
+        yf = frame_labels(spans, offset, text)
+        do_ramki = lambda v: sample_to_window_frame(v)
+    lab = [float("nan") if not np.isfinite(meta.get(k, np.nan))
+           else do_ramki(meta[k]) for k in ("lab_a", "lab_b")]
+    return img, yf, lab[0], lab[1]
+
+
 def make_clip(rng: np.random.Generator, realism: bool = True):
     """Jeden klip + etykieta + opis. Etykietą jest ŚRODKOWY znak."""
     if rng.random() > SILENCE_FRACTION:
@@ -1238,7 +1370,7 @@ def make_clip(rng: np.random.Generator, realism: bool = True):
         target = CHAR_TO_ID[chars[LABEL_INDEX]]
     else:
         text, target = "", 0
-    audio, meta = receive(text, rng, realism=realism)
+    audio, meta = klip_audio(rng, text, realism=realism)
     return audio, target, meta
 
 
@@ -1257,15 +1389,10 @@ def _gen_chunk(args):
     texts = []
     for i in range(count):
         audio, target, meta = make_clip(rng, realism=realism)
-        X[i] = np.rint(to_net_image(audio) * 255.0).astype(np.uint8)
+        img, yf[i], meta["lab_x0"], meta["lab_x1"] = obraz_i_etykiety(
+            audio, meta)
+        X[i] = np.rint(img * 255.0).astype(np.uint8)
         y[i] = target
-        yf[i] = frame_labels(meta.get("spans", []),
-                             float(meta.get("offset", 0.0)),
-                             meta.get("text", ""))
-        for src, dst in (("lab_a", "lab_x0"), ("lab_b", "lab_x1")):
-            v = meta.get(src, np.nan)
-            meta[dst] = (np.nan if not np.isfinite(v)
-                         else sample_to_window_frame(v))
         for k in META_FIELDS:
             cols[k][i] = meta.get(k, np.nan)
         texts.append(meta["text"])
@@ -1600,6 +1727,7 @@ def _pliki_zbioru(spec: str) -> list:
     from glob import glob
     p = Path(spec)
     if p.is_file():
+        _sprawdz_tempo([p])
         return [p]
     trafienia = sorted(Path(x) for x in glob(spec))
     if not trafienia:
@@ -1608,7 +1736,25 @@ def _pliki_zbioru(spec: str) -> list:
             f"Najpierw: python {Path(__file__).name} generate --n 200000\n"
             f"albo w czesciach: python {Path(__file__).name} generate "
             f"--n 200000 --shards 5 --out czesci/morse.npz")
+    _sprawdz_tempo(trafienia)
     return trafienia
+
+
+def _sprawdz_tempo(pliki: list) -> None:
+    """Zbiór musi pasować do TEMPO_NORM — inaczej trening na obrazach bez
+    normalizacji, a odczyt nagrań z normalizacją (albo odwrotnie), i nic
+    tego nie zgłasza. Znak rozpoznawczy: kolumna wpm_norm (od 16.10)."""
+    for p in pliki:
+        with np.load(p, allow_pickle=False) as d:
+            ma = "wpm_norm" in d.files and bool(
+                np.isfinite(np.asarray(d["wpm_norm"][:100])).any())
+        if ma != TEMPO_NORM:
+            raise SystemExit(
+                f"{p}: zbiór {'Z' if ma else 'BEZ'} normalizacji tempa, a "
+                f"TEMPO_NORM = {TEMPO_NORM}.\n"
+                f"Obrazy treningu i odczytu nagrań byłyby liczone inaczej. "
+                f"Wygeneruj zbiór od nowa (inny katalog) albo zmień "
+                f"TEMPO_NORM w dsp/config.py i train_rtx.py.")
 
 
 def _sprawdz_odcisk(data, gdzie: Path):

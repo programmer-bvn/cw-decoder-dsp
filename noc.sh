@@ -670,7 +670,7 @@ if [ "$GENERUJ" = "1" ]; then
         exit 1
     fi
     if [ "$CZESCI" -gt 1 ]; then
-        echo "generuję $CZESCI części po $N_PROBEK próbek (~25 min każda, pomiar 14.10)..."
+        echo "generuję $CZESCI części po $N_PROBEK próbek (~11 min każda, pomiar 16.10: jeden wątek BLAS na proces)..."
         # Części tam, gdzie wskazuje wzorzec zbioru: "kat/nazwa_*.npz" ->
         # --out "kat/nazwa.npz" (train_rtx dopisuje _00, _01...). Do 10.10
         # było na sztywno czesci/morse_N.npz — zbiór w innym katalogu

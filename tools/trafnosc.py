@@ -27,9 +27,11 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C
-from dsp import frontend, radio
+from dsp import klip
 
-PRZEDZIALY = ((12, 18), (18, 25), (25, 32))
+# Tempo PRAWDZIWE. Od normalizacji tempa (16.10) model ma czytać 10-40 WPM;
+# tabele sprzed 16.10 miały 12-18 / 18-25 / 25-32 i nie są wprost porównywalne.
+PRZEDZIALY = ((10, 16), (16, 25), (25, 40))
 # Środek okna = DOKŁADNIE to, co odczyt nagrań bierze z każdego okna:
 # dsp.sekwencja.kroki_nagrania(krok_okna=32) zszywa środkowe 32 ramki,
 # czyli kroki 24-39 z 64. Do 16.10 13:50 było 16-47 (połowa okna) —
@@ -38,27 +40,36 @@ SRODEK = (24, 40)
 
 
 def zestaw(wpm_od: float, wpm_do: float, n: int, ziarno: int):
-    """Klipy z tempem w [wpm_od, wpm_do), etykiety kroków i maska uciętych."""
-    stare = C.WPM, C.WPM_JITTER
-    C.WPM, C.WPM_JITTER = 0.5 * (wpm_od + wpm_do), 0.5 * (wpm_do - wpm_od)
+    """Klipy z PRAWDZIWYM tempem w [wpm_od, wpm_do), etykiety kroków i maska
+    uciętych. Tempo przez TEMPO_ZAKRES (normalizacja, 16.10) albo WPM +/-
+    JITTER (droga sprzed normalizacji). Ucięty = odcinek etykiet dotykający
+    krawędzi okna — ta sama definicja co maska w treningu (_maska_uciete)."""
+    stare = C.WPM, C.WPM_JITTER, C.TEMPO_ZAKRES
+    if C.TEMPO_NORM:
+        C.TEMPO_ZAKRES = (float(wpm_od), float(wpm_do))
+    else:
+        C.WPM, C.WPM_JITTER = 0.5 * (wpm_od + wpm_do), 0.5 * (wpm_do - wpm_od)
     try:
         rng = np.random.default_rng(ziarno)
         X, Y, U = [], [], []
         while len(X) < n:
             t = "".join(rng.choice(list(C.ALPHABET[1:]), C.CHARS_PER_CLIP))
-            a, m = radio.receive(t, rng, realism=True)
-            X.append(frontend.to_net_image(a))
-            Y.append(frontend.frame_labels(m["spans"], m["offset"], t, a.size))
+            img, yf, _, _ = klip.klip_sieci(rng, t, realism=True)
+            X.append(img)
+            Y.append(yf)
             u = np.zeros(C.IMG_FRAMES, bool)
-            for _, s0, s1 in m["spans"]:
-                fa = frontend.sample_to_window_frame(s0 + m["offset"], a.size)
-                fb = frontend.sample_to_window_frame(s1 + m["offset"], a.size)
-                if fa < 0 or fb > C.IMG_FRAMES:
-                    u[max(0, int(np.ceil(fa))):
-                      min(C.IMG_FRAMES, int(np.floor(fb)) + 1)] = True
+            for kraniec in (0, C.IMG_FRAMES - 1):
+                c = yf[kraniec]
+                if c == 0:
+                    continue
+                k = kraniec
+                krok = 1 if kraniec == 0 else -1
+                while 0 <= k < C.IMG_FRAMES and yf[k] == c:
+                    u[k] = True
+                    k += krok
             U.append(u)
     finally:
-        C.WPM, C.WPM_JITTER = stare
+        C.WPM, C.WPM_JITTER, C.TEMPO_ZAKRES = stare
     Y, U = np.stack(Y), np.stack(U)
     yk = np.where(Y[:, 0::2] > 0, Y[:, 0::2], Y[:, 1::2])   # jak _do_float
     uk = U[:, 0::2] | U[:, 1::2]

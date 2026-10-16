@@ -192,10 +192,17 @@ def obraz_w_tempie_wzorcowym(audio: np.ndarray, sr: int = C.SR,
     t_drob = np.arange(mel.shape[0]) * DROBNY_HOP / sr
     sk = np.cumsum(np.vstack([np.zeros((1, mel.shape[1])), mel]), axis=0)
     krok0 = C.HOP_LENGTH / sr                                 # 20 ms
-    granice = [0.0]
-    while granice[-1] < t_drob[-1]:
-        w = float(np.interp(granice[-1], t_tor, wpm))
-        granice.append(granice[-1] + krok0 * WPM_WZORZEC / w)
+    if np.asarray(wpm).size == 1:
+        # Tempo stałe (klip treningowy): granice k * d, bez sumowania kroków
+        # — szybciej i bez narastania błędu zaokrągleń (kopia w train_rtx).
+        d = krok0 * WPM_WZORZEC / float(np.asarray(wpm).ravel()[0])
+        m = int(np.ceil(t_drob[-1] / d))
+        granice = list(np.arange(m + 1, dtype=np.float64) * d)
+    else:
+        granice = [0.0]
+        while granice[-1] < t_drob[-1]:
+            w = float(np.interp(granice[-1], t_tor, wpm))
+            granice.append(granice[-1] + krok0 * WPM_WZORZEC / w)
     g = np.searchsorted(t_drob, np.array(granice))
     g = np.clip(g, 0, mel.shape[0])
     a0, a1 = g[:-1], np.maximum(g[1:], g[:-1] + 1)
