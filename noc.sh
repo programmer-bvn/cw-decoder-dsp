@@ -889,6 +889,34 @@ skroty () {
     return $RC
 }
 
+# --- TRAFNOŚĆ: znaki całe / ucięte / środek okna ------------------------
+#  val_accuracy liczy też znaki ucięte krawędzią okna, na których trafić się
+#  nie da; przy 12-18 WPM to ~40% kroków ze znakiem (HISTORIA „Wolne
+#  tempo", 16.10). Ta tabela mówi, jak model czyta to, z czego składa się
+#  odczyt nagrań — i ma mniejszy rozrzut niż 26 słów z nagrań. Tylko fcn.
+trafnosc () {
+    local ARCH="$1" RUN="$2"
+    if [ "$ARCH" != "fcn" ]; then
+        echo "  tylko dla fcn — pomijam"
+        return 0
+    fi
+    if [ ! -f "$RUN/best.keras" ]; then
+        echo "  brak $RUN/best.keras"
+        return 1
+    fi
+    local WYNIK="$LOGI/trafnosc_${ARCH}_${STEMPEL}.txt"
+    ETAP_LOG="$LOGI/noc_${STEMPEL}_trafnosc_${ARCH}.log"
+    python -m tools.trafnosc "$RUN/best.keras" --out "$WYNIK" \
+        > "$ETAP_LOG" 2>&1
+    local RC=$?
+    if [ -f "$WYNIK" ]; then
+        sed -n '3,$p' "$WYNIK"
+    else
+        tail -12 "$ETAP_LOG"
+    fi
+    return $RC
+}
+
 # --- PRZEPUSTOWOŚĆ ------------------------------------------------------
 #  Odpowiada na pytanie, które przez cały projekt było ZAŁOŻENIEM, a nie
 #  pomiarem: czy tempo treningu wyznacza karta, czy potok wejściowy.
@@ -913,6 +941,7 @@ etap "TRENING $ARCH -> $RUN_DPU"  trenuj "$ARCH" "$RUN_DPU"
 etap "KOPERTA $ARCH"              koperta "$ARCH" "$RUN_DPU"
 etap "NAGRANIA $ARCH"             nagrania "$ARCH" "$RUN_DPU"
 etap "SKROTY $ARCH"               skroty "$ARCH" "$RUN_DPU"
+etap "TRAFNOSC $ARCH"             trafnosc "$ARCH" "$RUN_DPU"
 
 if [ "$TRENUJ_GRU" = "1" ]; then
     etap "TRENING gru -> $RUN_GRU"  trenuj gru "$RUN_GRU"
@@ -1050,6 +1079,14 @@ PY
         echo
     done
 
+    F="$LOGI/trafnosc_${ARCH}_${STEMPEL}.txt"
+    if [ -f "$F" ]; then
+        echo "TRAFNOŚĆ ($ARCH) — znaki całe / ucięte / środek okna"
+        echo
+        sed -n '3,$p' "$F"
+        echo
+    fi
+
     F="$LOGI/skroty_${ARCH}_${STEMPEL}.txt"
     if [ -f "$F" ]; then
         echo "SKRÓTY ($ARCH) — czy czyta stację, czy cechę generatora"
@@ -1101,7 +1138,8 @@ if [ -z "$KOD_COMMIT" ]; then
 else
     WYNIKI=( 'runs/**/log.csv' 'runs/**/state.json'
              "$LOGI/noc_*.log" "$LOGI/noc_*_kod.diff" "$LOGI/koperta_*.txt"
-             "$LOGI/nagrania_*.txt" "$LOGI/skroty_*.txt" "$RANO" )
+             "$LOGI/nagrania_*.txt" "$LOGI/skroty_*.txt"
+             "$LOGI/trafnosc_*.txt" "$RANO" )
     # Po jednym wzorcu, i commit z NAZWAMI plików, nie wzorcami: wzorzec,
     # który nic nie łapie (np. brak *_kod.diff, gdy kod = commit, albo brak
     # nagrań), wywraca CAŁE "git add" i cały commit — nic by nie weszło.
