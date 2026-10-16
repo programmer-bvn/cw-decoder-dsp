@@ -1688,6 +1688,35 @@ def test_jeden_nadajnik():
           f"{100 * C.ZAPADANIE_PROB:.0f}% (przed 14.10: prawie 100%)")
 
 
+# ==========================================================================
+# TEST 23: POMIAR TEMPA (dsp/tempo.py, 16.10)
+#
+# Pod normalizację tempa: z bufora 8 s ma wyjść tempo w +/-5% przy S/N
+# 10 dB, od wolnego do szybkiego. Walidacja 16.10: 93-100% buforów w +/-15%
+# także przy S/N 5 dB, z ARW, bankiem i QRM.
+# ==========================================================================
+def test_pomiar_tempa():
+    section("TEST 23: pomiar tempa z bufora")
+    from dsp import morse, sn, tempo
+    rng = np.random.default_rng(23)
+    n = 8 * C.SR
+    bledy = []
+    for wpm in (12.0, 20.0, 30.0):
+        env = morse.keying_envelope("CQ CQ DE SQ2BVN SQ2BVN TEST K TU 73",
+                                    wpm=wpm)
+        env = env[:n] if env.size >= n else np.pad(env, (0, n - env.size))
+        t = np.arange(n) / C.SR
+        szum = radio.band_noise(n, rng, rms=0.015, tilt=-0.5).astype(np.float64)
+        a = szum + sn.amp_dla_sn(10.0, szum, 750.0) * env * np.sin(
+            2 * np.pi * 750.0 * t)
+        r = tempo.zmierz_tempo(a.astype(np.float32))
+        bledy.append((wpm, r["wpm"]))
+    zle = [b for b in bledy if not (np.isfinite(b[1]) and
+                                    abs(b[1] - b[0]) <= 0.05 * b[0])]
+    check("tempo z bufora 8 s w +/-5% (12, 20, 30 WPM, S/N 10 dB)", not zle,
+          "  ".join(f"{w:.0f}->{m:.1f}" for w, m in bledy))
+
+
 def main() -> int:
     print("=" * 70)
     print("DIAGNOSTYKA ŁAŃCUCHA DSP")
@@ -1701,7 +1730,8 @@ def main() -> int:
              test_dpu_model, test_melref, test_sciezka_danych,
              test_tune_poza_pasmem, test_etykiety_ramek,
              test_dekoder_fcn, test_prawdziwe_tlo, test_jedna_miara_sn,
-             test_przerwa_miedzyznakowa, test_jeden_nadajnik)
+             test_przerwa_miedzyznakowa, test_jeden_nadajnik,
+             test_pomiar_tempa)
 
     for t in tests:
         try:

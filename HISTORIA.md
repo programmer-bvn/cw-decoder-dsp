@@ -1136,6 +1136,33 @@ każde porównanie nocy o kilka słów jest niepewne. Nowe: wolne tempo przy
 pełnym realizmie słabe w obu modelach (12-15 WPM 67%, 15-18 WPM 82%), choć
 na sygnale idealnym 100%. mic1 (12 WPM) i mic3 (15 WPM) są w tym zakresie.
 
+### Pomiar tempa z bufora — pod normalizację tempa (16.10)
+
+**Pomysł operatora.** Zamiast łatać skutki stałego okna (maska, podwajanie
+okien — „cerowanie"): okno w JEDNOSTKACH, nie w sekundach. „Do bufora
+nabierać ileś elementów, z tego szacować tempo i normalizować do tempa
+standardowego, tak jak się normalizuje amplitudę." Krok 1 — sam pomiar
+(`dsp/tempo.py`), bez zmiany treningu.
+
+**Metoda.** Obwiednia ±50 Hz przy tonie, bloki 5 ms, Otsu → odcinki;
+dopasowanie jednostki u i wagi b: znak = k·u + b (k 1,3), przerwa = k·u − b
+(k 1,3,7), błąd względny. Pierwszy przebieg przy wygładzeniu 10/20/30/45 ms,
+drugi z wygładzeniem u/2, wygrywa najmniejszy błąd poza granicą siatki.
+
+**Walidacja na syntetyku** (bufor 8 s, 10-35 WPM, 6 buforów na komórkę):
+w ±15% — czysto i ARW 100%, bank 95-100%, QRM 93-98%, pogrubione znaki
+(waga +0,3 u) 100%, przy S/N 5, 10 i 20 dB. Po drodze: jeden przebieg
+zawyżał wolne tempo przy S/N 5 dB o 40-60% (szum tnie długie znaki); stała
+wygładzenia 10 ms dobijała na nagraniach z radia do granicy siatki (40 WPM).
+
+**Nagrania** (bufor 8 s co 4 s): stabilnie — mic1 14,6, mic2 19,5, mic3
+20,0 WPM (nazwa „15wpm" zawyżona; niezależny pomiar z 14.10: jednostka
+60 ms = 20 WPM), SN0FMT ×3 15-17, radio1 20,9, f200 18,7. Szeroki rozrzut
+(~20-38 WPM) w nagraniach z kilkoma stacjami (DP75HSC, LA3WAA, LA4CIR,
+OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
+prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
+tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
+
 ### Maska uciętych znaków — pierwszy trening (16.10)
 
 `runs/fcn_4000000_czesci_tempo_maska`: zbiór, ustawienia i ziarno 42 jak
