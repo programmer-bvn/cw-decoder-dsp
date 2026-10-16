@@ -1136,6 +1136,37 @@ każde porównanie nocy o kilka słów jest niepewne. Nowe: wolne tempo przy
 pełnym realizmie słabe w obu modelach (12-15 WPM 67%, 15-18 WPM 82%), choć
 na sygnale idealnym 100%. mic1 (12 WPM) i mic3 (15 WPM) są w tym zakresie.
 
+### Wolne tempo „słabe" — to głównie ucięte znaki (16.10)
+
+**Objaw.** Na syntetyku przy pełnym realizmie 12-15 WPM 67%, 15-18 WPM 82%
+trafnych kroków, a koperta (środkowy znak, sygnał idealny) — 100%.
+
+**Test „po jednym" w dwóch przedziałach tempa** (czesci_tempo, S/N 15-30):
+już CZYSTA stacja 79,4% przy 12-18 WPM wobec 99,7% przy 22-28; żadne
+zjawisko kanału nie tłumaczy różnicy (wszystkie wiersze −14…−28 pkt).
+
+**Przyczyna (zmierzone, 400 klipów):**
+
+| | wszystkie kroki | znaki całe | ucięte krawędzią | środek okna | udział uciętych |
+|---|---|---|---|---|---|
+| czysto 12-18 WPM | 78,0 | **97,1** | 47,8 | 94,8 | **38,7%** |
+| czysto 22-28 WPM | 99,8 | 99,9 | 90,6 | 99,9 | 1,2% |
+| realizm 12-18 WPM | 72,3 | **94,0** | 45,1 | 91,4 | **44,3%** |
+| realizm 22-28 WPM | 96,8 | 96,9 | 81,9 | 96,6 | 0,7% |
+
+Przy wolnym tempie znaki są długie i prawie połowa kroków ze znakiem należy
+do znaków uciętych krawędzią okna — na nich model zgaduje (~46%). Na znakach
+całych wolne tempo 94-97%. „Słabość" to w dużej części miara licząca ucięte
+znaki; prawdziwa różnica w środku okna (z niego składa się odczyt nagrań)
+to 91-95 wobec 97-100%. Trening uczy jednak sieć zgadywania na prawie
+połowie kroków ze znakiem przy wolnym tempie — to argument za maską.
+
+**Co zrobione.** `train_rtx.py train --maska-uciete` (`_maska_uciete`):
+kroki znaku dotykającego krawędzi okna mają w TRENINGU wagę 0; walidacja
+i pomiary bez maski (porównywalne z nocami przed). Maska liczona z etykiet
+kroków — bez nowego zbioru. Test jednostkowy i trening próbny obiema drogami
+(z rotacją i bez) na CPU; diag 116/116.
+
 ### Zanik zasilania w trakcie generowania zbioru (14.10)
 
 **Objaw.** Noc `czesci_nad` (start 18:14) przerwana zanikiem zasilania

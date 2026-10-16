@@ -1994,6 +1994,35 @@ def _do_float(img, label, *rest):
     return (img, label, rest[0]) if rest else (img, label)
 
 
+def _maska_uciete(img, label):
+    """Waga 0 dla kroków znaku UCIĘTEGO krawędzią okna — tylko w treningu.
+
+    PO CO (16.10). Znak, którego część jest poza oknem, dostaje w etykietach
+    pełną klasę (frontend.frame_labels), choć z widocznej części nie da się
+    go rozpoznać: pół kreski to końcówka „T", „M", „O" albo „0" (operator,
+    12.10). Zmierzone na czesci_tempo: przy 12-18 WPM 39-44% kroków ze
+    znakiem należy do znaków uciętych i model trafia na nich w ~46% —
+    zgaduje; przy 22-28 WPM to 1% kroków. Sieć była uczona zgadywania.
+
+    Ucięty = odcinek tej samej klasy (≠ 0), który zaczyna się w pierwszym
+    albo kończy w ostatnim kroku okna. Znak zaczynający się dokładnie na
+    krawędzi też tu wpada — rzadko i bez szkody (mniej przykładów, nie
+    błędne). Walidacja i pomiary NIE są maskowane: liczby zostają
+    porównywalne z nocami sprzed maski.
+    """
+    import tensorflow as tf
+    lab = tf.cast(label, tf.int32)
+
+    def od_krawedzi(l):
+        pierwszy = l[:, :1]
+        rowne = tf.cast(tf.equal(l, pierwszy) & (pierwszy > 0), tf.float32)
+        return tf.math.cumprod(rowne, axis=1)
+
+    lewa = od_krawedzi(lab)
+    prawa = tf.reverse(od_krawedzi(tf.reverse(lab, [1])), [1])
+    return img, label, 1.0 - tf.maximum(lewa, prawa)
+
+
 def ramki_na_kroki(yf: np.ndarray) -> np.ndarray:
     """Etykiety na ramkę [..., IMG_FRAMES] -> na krok fcn [..., FCN_KROKI].
 
@@ -2444,6 +2473,15 @@ def train(args):
         del X
         ds_tr = make_pipeline(Xtr, ytr, None, args.batch, True, weights=w)
 
+    if getattr(args, "maska_uciete", False):
+        if not fcn:
+            raise SystemExit("--maska-uciete ma sens tylko dla --arch fcn")
+        import tensorflow as tf
+        ds_tr = ds_tr.map(_maska_uciete, num_parallel_calls=tf.data.AUTOTUNE)
+        print("MASKA UCIĘTYCH: kroki znaku przy krawędzi okna mają w treningu "
+              "wagę 0 (walidacja bez maski)")
+        ds_meta = (ds_meta + ";maska_uciete=1") if ds_meta else "maska_uciete=1"
+
     def raport(model):
         if not fcn:
             confusion_report(model, ds_va, y_val)
@@ -2588,6 +2626,9 @@ def main(argv=None):
                    help="przerwij, jeśli karta nie jest widziana — do "
                         "treningu zostawianego na noc")
     t.add_argument("--no-class-weights", action="store_true")
+    t.add_argument("--maska-uciete", action="store_true",
+                   help="fcn: kroki znaku uciętego krawędzią okna z wagą 0 "
+                        "w treningu (16.10, opis przy _maska_uciete)")
 
     args = ap.parse_args(argv)
 
