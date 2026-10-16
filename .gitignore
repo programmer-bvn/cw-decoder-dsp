@@ -80,6 +80,12 @@ out/noc_????????_????_fcn.log
 # bez modelu i bez nagran (te sa poza repo, 106 MB).
 !out/nagrania_*.txt
 
+# Strażnik skrótów i trafność całe/ucięte/środek (od 14.10 i 16.10) — tak
+# samo nieodtwarzalne bez wag. Do 16.10 skroty_*.txt łapało out/*.txt
+# i do gita szła tylko kopia tabeli w logu etapu.
+!out/skroty_*.txt
+!out/trafnosc_*.txt
+
 # --- zgłoszenia od operatorów: zawierają audio i znaki wywoławcze ---
 # Trafiają do biblioteki próbek po przejrzeniu, nie wprost do repo.
 zgloszenia/

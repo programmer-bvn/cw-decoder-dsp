@@ -1,0 +1,14 @@
+SKRÓTY: runs/fcn_4000000_czesci_tempo_s7/best.keras
+  300 klipów na wiersz, S/N 15-30 dB; trafne kroki ze znakiem
+
+  wszystko wyłączone (czysta stacja)        89.9%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    93.0%
+  zanik (QSB)                               88.8%
+  ARW                                       94.4%
+  tło z banku                               94.0%
+  druga stacja (QRM)                        86.9%
+  trzaski (QRN)                             89.9%
+  dłuższe przerwy                           92.2%
+  pełny realizm                             89.5%
+
+  OK: czysta stacja 89.9%, pełny realizm 89.5% — skrótu nie widać.

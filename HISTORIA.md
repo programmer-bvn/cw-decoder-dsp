@@ -1136,6 +1136,28 @@ każde porównanie nocy o kilka słów jest niepewne. Nowe: wolne tempo przy
 pełnym realizmie słabe w obu modelach (12-15 WPM 67%, 15-18 WPM 82%), choć
 na sygnale idealnym 100%. mic1 (12 WPM) i mic3 (15 WPM) są w tym zakresie.
 
+### Rozrzut miary nagrań — powtórka treningu (16.10)
+
+`runs/fcn_4000000_czesci_tempo_s7`: TE SAME ustawienia i zbiór co
+`czesci_tempo`, inne ziarno podziału (wagi startowe i tak losowe przy
+każdym treningu). Środkowy znak 96,72% (96,61), CER 14,09% (13,91), SKRÓTY
+OK (czysta 89,9 / pełny 89,5). Nagrania:
+
+| | w całości | w kolejności |
+|---|---|---|
+| czesci_tempo | 12/26 | 21/26 |
+| czesci_tempo_s7 (powtórka) | 12/26 | 19/26 |
+
+Pod sumami słowa się przetasowały: SN0FMT_c w kolejności 3/4 → 1/4,
+DP75HSC i OK1FPS w kolejności 1/1 → 0/1, mic2 1/3 → 2/3 w całości i 1/3 →
+3/3 w kolejności. **Między dwoma identycznymi treningami pojedyncze
+nagranie potrafi przeskoczyć o 2 słowa, a suma o 2.** Z jednej pary nie da
+się podać rozrzutu, ale wniosek praktyczny: różnice nocy o 2-3 słowa na
+26 to szum. Różnica czesci_nad (16/24) wobec czesci_tempo (12/21, 12/19)
+— 4 słowa w całości — jest na granicy; nie rozstrzygnięta. Porównania
+modeli opierać na `tools/trafnosc` (syntetyk, stałe klipy), a nagrania
+traktować jako sprawdzian kierunku, dopóki nie przybędzie nagrań.
+
 ### Wolne tempo „słabe" — to głównie ucięte znaki (16.10)
 
 **Objaw.** Na syntetyku przy pełnym realizmie 12-15 WPM 67%, 15-18 WPM 82%
