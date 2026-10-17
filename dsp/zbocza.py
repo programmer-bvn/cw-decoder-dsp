@@ -172,19 +172,22 @@ def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
 # rozcięta: Q -> ?). Jeden próg 0,5 robił z każdego zachwiania zbocze.
 PROG_WL = 0.6           # element zaczyna się powyżej
 PROG_WYL = 0.3          # ... i kończy dopiero poniżej
-MIN_ODCINEK_U = 0.5     # impuls / przerwa krótsze niż tyle jednostek grzebienia -> sklej
+# Impuls / przerwa krótsze niż tyle jednostek -> sklejane z sąsiadami.
+# Pierwsza wersja (17.10, tester_4) brała u z pomiaru tempa okna i czyściła
+# KAŻDE okno: szum wygładzony w „znaki" przechodził bramkę (radio1, Nagrywanie
+# (8): śmieci zamiast ciszy), a prawdziwe kropki znikały (mic1: N -> T).
+# Teraz u z GRZEBIENIA i tylko w oknach, które bramkę już przeszły
+# (tools/tester_zbocza.droga, czysc=...).
+MIN_ODCINEK_U = 0.5
 
 
 def odcinki_z_przebiegu(p: np.ndarray, prog: float | None = None,
-                        histereza: tuple[float, float] | None = None,
-                        min_s: float | None = None
+                        histereza: tuple[float, float] | None = None
                         ) -> list[tuple[bool, float]]:
     """P(klucz) co 5 ms -> [(czy_znak, czas_s), ...] jak grzebien.odcinki_przebiegu.
 
     prog: jeden próg (domyślnie 0,5, gdy brak histerezy).
-    histereza: (próg włączenia, próg wyłączenia).
-    min_s: odcinki (znak albo przerwa) krótsze niż tyle sekund wchłaniane
-    przez sąsiadów — najkrótszy pierwszy, aż żaden nie zostanie."""
+    histereza: (próg włączenia, próg wyłączenia)."""
     p = np.asarray(p, dtype=np.float64)
     if p.size < 20:
         return []
@@ -203,7 +206,14 @@ def odcinki_z_przebiegu(p: np.ndarray, prog: float | None = None,
     zm = np.flatnonzero(np.diff(on.astype(np.int8))) + 1
     gr = np.r_[0, zm, on.size]
     d = HOP_ZBOCZA / C.SR
-    odc = [[bool(on[a]), (b - a) * d] for a, b in zip(gr[:-1], gr[1:])]
+    return [(bool(on[a]), (b - a) * d) for a, b in zip(gr[:-1], gr[1:])]
+
+
+def sklej_krotkie(odcinki: list[tuple[bool, float]], min_s: float
+                  ) -> list[tuple[bool, float]]:
+    """Odcinki (znak albo przerwa) krótsze niż min_s wchłaniane przez
+    sąsiadów — najkrótszy pierwszy, aż żaden nie zostanie."""
+    odc = [[a, b] for a, b in odcinki]
     if min_s:
         while len(odc) > 2:
             wew = range(1, len(odc) - 1)

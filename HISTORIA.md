@@ -1308,6 +1308,17 @@ przechodzi bramkę tam, gdzie stacji nie ma) i zjada prawdziwe kropki
 (N -> T). Słowa ze znanych plików nie rozróżniają wariantów — za mało
 słów; różnice widać w tekście.
 
+**Odrzucanie krótkich impulsów, wersja 2** (decyzja operatora: przerobić,
+nie usuwać). Jednostka z GRZEBIENIA okna, czyszczenie tylko w oknach po
+bramce (bramka decyduje na przebiegu z samą histerezą), potem grzebień
+jeszcze raz (`zbocza.sklej_krotkie`, `tester_zbocza.droga(czysc=...)`;
+`out/zbocza/tester_5.txt`). Śmieci na nagraniach bez stacji znikły
+(Nagrywanie (8): cisza; radio1: 1 okno, jak sama histereza). mic1: „2BKN"
+naprawione, ale „BVN SQ" nadal „BVT SQ" — tam, gdzie histereza sama dawała
+dobrze. Hipoteza (bez pomiaru): histereza skraca przerwę między kreską
+a kropką N poniżej 0,5 u i sklejanie łączy je w jeden element. Słowa 21/26
+jak bez czyszczenia; pewność grzebienia o 0,01-0,04 wyżej. Zysku nie ma.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
