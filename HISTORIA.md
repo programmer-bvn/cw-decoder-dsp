@@ -1163,6 +1163,34 @@ OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
 prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
 tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
 
+### Noc normalizacji tempa (16/17.10) — syntetyk skok, nagrania nie
+
+`runs/fcn_4000000_czesci_norm` (4 mln, 12 epok, fcn, generator z normalizacją):
+
+| | czesci_tempo | **czesci_norm** |
+|---|---|---|
+| walidacja | 92,6% | **96,9%** |
+| CER | 13,9% | **5,3%** |
+| okno w całości | 76,6% | **91,2%** |
+| SKRÓTY czysta / pełny | 90,5 / 90,2 | **98,7 / 96,0** |
+| trafność całe 10-16 / 16-25 / 25-40 WPM | 94,0 / 96,2 / 94,4 (*) | **97,6 / 96,4 / 94,4** |
+| nagrania (w całości / w kolejności) | 19 / 22 (*) | 14 / 22 |
+
+(*) czesci_tempo odczytane z normalizacją tempa przy odczycie (bez niej
+12 / 21). Koperta czesci_norm: 10-35 WPM.
+
+**Nagrania gorzej w całości** — głównie SN0FMT 3565 (4/4 → 1/4, w kolejności
+4/4 oba): „SN0FMT" czytane „SN9FM", „SN8T". **Test czułości na tempo**
+(obraz liczony z tempem zmierzonym × 0,75…1,3): nowy model wąsko dostrojony
+— przy ×0,75 i ×1,3 milknie (0/0), stary czyta dalej; nowy ma maksimum
+często OBOK tempa zmierzonego (SN0FMT ×0,85: 3/4, ×1,0: 1/4).
+
+**Hipoteza (do sprawdzenia):** niedopasowanie RYTMU prawdziwych nagrań do
+treningu — (1) błąd pomiaru tempa większy niż zapas TEMPO_BLAD ±15%,
+(2) WAGA kluczowania, której generator nie ma: zmierzone w nagraniach
+pogrubienie znaków +0,1…+0,5 u (pogłos, ARW, ustawienie keyera). Stary model
+widział wiele długości bezwzględnych i był na to przypadkiem odporny.
+
 ### Trening w tempie znormalizowanym — przebudowa generatora (16/17.10)
 
 **Decyzja operatora.** „Trenowanie do prędkości znormalizowanej plus minus
