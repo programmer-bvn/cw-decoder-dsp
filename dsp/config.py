@@ -151,7 +151,9 @@ WPM_JITTER = 10.0
 # False = droga sprzed 16.10 (WPM +/- WPM_JITTER, okno 2,56 s).
 TEMPO_NORM = True
 TEMPO_ZAKRES = (10.0, 40.0)     # prawdziwe tempo stacji i QRM [WPM]
-TEMPO_BLAD = 0.15               # błąd tempa „zmierzonego" w treningu (+/-)
+# 17.10: 0,15 -> 0,25. Model czesci_norm milkł przy błędzie tempa 25-30%
+# i miał maksimum OBOK tempa zmierzonego (SN0FMT x0,85) — zapas za wąski.
+TEMPO_BLAD = 0.25               # błąd tempa „zmierzonego" w treningu (+/-)
 
 DASH_UNITS = 3
 GAP_ELEMENT_UNITS = 1
@@ -260,7 +262,12 @@ QRN_AMP = (0.1, 0.6)            # amplituda impulsu
 FIST = (0.0, 0.0)               # szum na element (+/- udział długości)
 FIST_DRIFT = (0.0, 0.0)         # zakres wolnego błądzenia tempa (+/- udział)
 FIST_DRIFT_TAU_S = 2.0          # stała czasowa błądzenia [s]
-GAP_JITTER = (0.0, 0.50)        # przerwa międzyznakowa: 3 t x (1 + 0...0,5)
+# 17.10: do 10 t (było do 4,5 t) — nadawanie z klawiatury, „misio wciska
+# litery po kolei" (operator). Klejenia (< 3 t) nadal nie ma: GAP_MIN_T.
+GAP_JITTER = (0.0, 2.33)        # przerwa międzyznakowa: 3 t x (1 + 0...2,33)
+# Waga kluczowania [u]: znak dłuższy, przerwa po nim krótsza o tyle samo
+# (morse.keying_envelope). Zmierzone 16-17.10 na nagraniach: +0,1...+0,5.
+WAGA_ZAKRES = (-0.1, 0.5)
 # Dolna granica przerwy międzyznakowej [t, w lokalnym tempie] — bezpiecznik
 # na wypadek włączenia klucza ręcznego. Bez niej rozjazdy mnożyły się do
 # 1,56 t, a okno FFT 64 ms skraca przerwę w obrazie o ~0,7 t przy 14 WPM:

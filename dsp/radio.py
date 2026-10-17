@@ -175,7 +175,7 @@ def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
     if not realism:
         return dict(fist=0.0, fist_drift=0.0, gap_jitter=0.0, drift_hz=0.0,
                     chirp_hz=0.0, sag_db=0.0, sag_tau_ms=60.0,
-                    hum_depth=0.0, hum_hz=100.0)
+                    hum_depth=0.0, hum_hz=100.0, waga=0.0)
     p = dict(fist=float(rng.uniform(*C.FIST)),
              fist_drift=float(rng.uniform(*C.FIST_DRIFT)),
              gap_jitter=float(rng.uniform(*C.GAP_JITTER)),
@@ -191,6 +191,7 @@ def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
     if rng.random() < C.HUM_PROB:
         p["hum_depth"] = float(rng.uniform(*C.HUM_DEPTH))
         p["hum_hz"] = float(rng.choice(C.HUM_HZ))
+    p["waga"] = float(rng.uniform(*C.WAGA_ZAKRES))
     return p
 
 
@@ -397,7 +398,8 @@ def receive(text: str, rng: np.random.Generator,
             sr: int = C.SR,
             wpm: float | None = None,
             realism: bool = True,
-            tempo_staly: bool = False) -> tuple[np.ndarray, dict]:
+            tempo_staly: bool = False,
+            z_kluczem: bool = False) -> tuple[np.ndarray, dict]:
     """Nadanie `text` przepuszczone przez kanał — zwraca (audio, opis).
 
     Opis zawiera WSZYSTKIE wylosowane parametry. To nie ozdoba: gdy model
@@ -445,10 +447,13 @@ def receive(text: str, rng: np.random.Generator,
         drift, chirp, sag, hum = (nad["drift_hz"], nad["chirp_hz"],
                                   nad["sag_db"], nad["hum_depth"])
 
-        wave, spans = morse.synth_cw(
+        wyn = morse.synth_cw(
             text, wpm=clip_wpm, tone=tone, amp=1.0, sr=sr,
             phase=float(rng.uniform(0, 2 * np.pi)),
-            rng=rng, return_spans=True, **nad)
+            rng=rng, return_spans=True, return_env=z_kluczem, **nad)
+        # z_kluczem (17.10): prawdziwy przebieg klucza dla sieci zboczy —
+        # bez wpływu na losowania, więc kopia w train_rtx go nie potrzebuje.
+        wave, spans, env_k = wyn if z_kluczem else (*wyn, None)
 
         qsb = float(rng.uniform(*C.QSB_DEPTH)) if realism else 0.0
         wave = apply_qsb(wave, rng, depth=qsb, sr=sr)
@@ -458,10 +463,18 @@ def receive(text: str, rng: np.random.Generator,
             s = (n_samples - wave.size) // 2
             stacja[s:s + wave.size] += wave
             offset = s                 # nadanie zaczyna się w próbce s klipu
+            if env_k is not None:
+                klucz = np.zeros(n_samples, dtype=np.float32)
+                klucz[s:s + env_k.size] = env_k
         else:
             s = (wave.size - n_samples) // 2
             stacja += wave[s:s + n_samples]
             offset = -s                # klip zaczyna się w próbce s nadania
+            if env_k is not None:
+                klucz = env_k[s:s + n_samples].astype(np.float32)
+        if env_k is not None:
+            meta["klucz"] = klucz
+            meta["waga"] = nad["waga"]
 
         # Położenie znaku Z ETYKIETY w próbkach klipu. Liczone z FAKTYCZNYCH
         # granic, po rozjeździe klucza — nie z nominalnego timingu, bo przy

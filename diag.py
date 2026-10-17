@@ -724,6 +724,7 @@ def test_standalone():
                  # Bez nich zabezpieczenie przed rozjazdem miałoby dziurę
                  # dokładnie w tej części, którą właśnie się zmieniło.
                  "FIST_DRIFT", "FIST_DRIFT_TAU_S", "GAP_JITTER", "GAP_MIN_T",
+                 "WAGA_ZAKRES",
                  "ZAPADANIE_PROB", "CHIRP_HZ", "SAG_DB", "SAG_TAU_MS",
                  "HUM_PROB", "HUM_DEPTH", "HUM_HZ",
                  "AGC_PROB", "AGC_TAU_MS", "AGC_DEPTH",
@@ -1656,6 +1657,16 @@ def test_przerwa_miedzyznakowa():
         dot = C.dot_seconds(14.0) * C.SR
         for k in range(len(spans) - 1):
             naj = min(naj, (spans[k + 1][1] - spans[k][2]) / dot)
+    # Waga (17.10): kropka 1+w, przerwa w znaku 1-w, takt 2 u bez zmian.
+    env = morse.keying_envelope("S", wpm=14.0, ramp_ms=0.0, waga=0.3)
+    dot = C.dot_seconds(14.0) * C.SR
+    on = env > 0.5
+    zm = np.flatnonzero(np.diff(on.astype(np.int8))) + 1
+    odc = np.diff(np.r_[0, zm, on.size]) / dot
+    check("waga 0,3: kropka 1,3 u, przerwa w znaku 0,7 u, takt 2,0 u",
+          len(odc) >= 4 and abs(odc[0] - 1.3) < 0.02 and abs(odc[1] - 0.7) < 0.02
+          and abs(odc[0] + odc[1] - 2.0) < 0.02,
+          " ".join(f"{x:.2f}" for x in odc[:5]))
     check("najkrótsza przerwa między znakami >= GAP_MIN_T (pełny rozjazd)",
           naj >= C.GAP_MIN_T - 0.02,
           f"{naj:.2f} t przy fist={max(C.FIST)}, gap_jitter="

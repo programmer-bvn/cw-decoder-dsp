@@ -168,12 +168,13 @@ QRN_AMP = (0.1, 0.6)
 FIST = (0.0, 0.0)
 FIST_DRIFT = (0.0, 0.0)
 FIST_DRIFT_TAU_S = 2.0
-GAP_JITTER = (0.0, 0.50)
+GAP_JITTER = (0.0, 2.33)
 GAP_MIN_T = 3.0
+WAGA_ZAKRES = (-0.1, 0.5)
 # Normalizacja tempa (16.10) — opis w dsp/config.py przy TEMPO_NORM.
 TEMPO_NORM = True
 TEMPO_ZAKRES = (10.0, 40.0)
-TEMPO_BLAD = 0.15
+TEMPO_BLAD = 0.25
 DROBNY_HOP = 40
 
 # Zapadanie zasilania nadajnika: naduszenie klucza rozładowuje kondensator,
@@ -450,7 +451,8 @@ def keying_envelope(text: str, wpm: float = WPM, sr: int = SR,
                     ramp_ms: float = KEY_RAMP_MS, fist: float = 0.0,
                     drift: float = 0.0, gap_jitter: float = 0.0,
                     rng: np.random.Generator | None = None,
-                    return_spans: bool = False):
+                    return_spans: bool = False,
+                    waga: float = 0.0):
     """Obwiednia kluczowania w [0, 1].
 
     Granice elementów liczone są od zera (round(pozycja * dot)), więc błąd
@@ -498,6 +500,15 @@ def keying_envelope(text: str, wpm: float = WPM, sr: int = SR,
                 u = max(u, GAP_MIN_T * (1.0 + slow[i]))
             out.append((m, u, tag))
         seq = out
+
+    # WAGA (17.10): znak dłuższy o `waga` jednostki, przerwa po nim krótsza
+    # o tyle samo — takt (znak + przerwa) bez zmian. Tak robią ustawienie
+    # weight w keyerze, pogłos, filtr p.cz. i ARW. Zmierzone na nagraniach
+    # (dsp.tempo, grzebień): +0,1...+0,5 u; generator do 17.10 miał zawsze
+    # 1:1, a model z normalizacją tempa okazał się na to wąski.
+    if waga != 0.0:
+        seq = [(m_, (u_ + waga) if m_ else max(0.3, u_ - waga), t_)
+               for (m_, u_, t_) in seq]
 
     dot = dot_seconds(wpm) * sr
     total = sum(n for _, n, _ in seq)
@@ -554,7 +565,8 @@ def synth_cw(text: str, wpm: float = WPM, tone: float = TONE_CENTER,
              sag_db: float = 0.0, sag_tau_ms: float = 60.0,
              hum_depth: float = 0.0, hum_hz: float = 100.0,
              rng: np.random.Generator | None = None,
-             return_spans: bool = False):
+             return_spans: bool = False,
+             waga: float = 0.0):
     """Tekst -> nadanie CW. Bez szumu.
 
     DWA RÓŻNE ZJAWISKA CZĘSTOTLIWOŚCIOWE:
@@ -566,7 +578,7 @@ def synth_cw(text: str, wpm: float = WPM, tone: float = TONE_CENTER,
     """
     out = keying_envelope(text, wpm, sr, ramp_ms, fist=fist,
                           drift=fist_drift, gap_jitter=gap_jitter, rng=rng,
-                          return_spans=return_spans)
+                          return_spans=return_spans, waga=waga)
     env, spans = out if return_spans else (out, [])
     if env.size == 0:
         return (env, spans) if return_spans else env
@@ -682,7 +694,7 @@ def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
     if not realism:
         return dict(fist=0.0, fist_drift=0.0, gap_jitter=0.0, drift_hz=0.0,
                     chirp_hz=0.0, sag_db=0.0, sag_tau_ms=60.0,
-                    hum_depth=0.0, hum_hz=100.0)
+                    hum_depth=0.0, hum_hz=100.0, waga=0.0)
     p = dict(fist=float(rng.uniform(*FIST)),
              fist_drift=float(rng.uniform(*FIST_DRIFT)),
              gap_jitter=float(rng.uniform(*GAP_JITTER)),
@@ -696,6 +708,7 @@ def losuj_nadajnik(rng: np.random.Generator, realism: bool = True) -> dict:
     if rng.random() < HUM_PROB:
         p["hum_depth"] = float(rng.uniform(*HUM_DEPTH))
         p["hum_hz"] = float(rng.choice(HUM_HZ))
+    p["waga"] = float(rng.uniform(*WAGA_ZAKRES))
     return p
 
 

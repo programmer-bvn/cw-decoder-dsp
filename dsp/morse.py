@@ -99,7 +99,8 @@ def keying_envelope(text: str, wpm: float = C.WPM, sr: int = C.SR,
                     drift: float = 0.0,
                     gap_jitter: float = 0.0,
                     rng: np.random.Generator | None = None,
-                    return_spans: bool = False):
+                    return_spans: bool = False,
+                    waga: float = 0.0):
     """Obwiednia kluczowania w zakresie [0, 1], próbkowana z sr.
 
     Timing: pozycje granic elementów liczone są w jednostkach, a na próbki
@@ -165,6 +166,15 @@ def keying_envelope(text: str, wpm: float = C.WPM, sr: int = C.SR,
                 u = max(u, C.GAP_MIN_T * (1.0 + slow[i]))
             out.append((is_m, u, tag))
         seq = out
+
+    # WAGA (17.10): znak dłuższy o `waga` jednostki, przerwa po nim krótsza
+    # o tyle samo — takt (znak + przerwa) bez zmian. Tak robią ustawienie
+    # weight w keyerze, pogłos, filtr p.cz. i ARW. Zmierzone na nagraniach
+    # (dsp.tempo, grzebień): +0,1...+0,5 u; generator do 17.10 miał zawsze
+    # 1:1, a model z normalizacją tempa okazał się na to wąski.
+    if waga != 0.0:
+        seq = [(m_, (u_ + waga) if m_ else max(0.3, u_ - waga), t_)
+               for (m_, u_, t_) in seq]
 
     dot = C.dot_seconds(wpm) * sr                 # próbki na jednostkę (float)
     total = sum(n for _, n, _ in seq)
@@ -254,7 +264,9 @@ def synth_cw(text: str, wpm: float = C.WPM, tone: float = C.TONE_CENTER,
              hum_depth: float = 0.0,
              hum_hz: float = 100.0,
              rng: np.random.Generator | None = None,
-             return_spans: bool = False):
+             return_spans: bool = False,
+             waga: float = 0.0,
+             return_env: bool = False):
     """Tekst -> nadanie CW jako float32. Bez szumu — szum dodaje generator.
 
     DWA RÓŻNE ZJAWISKA CZĘSTOTLIWOŚCIOWE, których nie wolno mieszać:
@@ -276,8 +288,9 @@ def synth_cw(text: str, wpm: float = C.WPM, tone: float = C.TONE_CENTER,
     """
     out = keying_envelope(text, wpm, sr, ramp_ms, fist=fist,
                           drift=fist_drift, gap_jitter=gap_jitter, rng=rng,
-                          return_spans=return_spans)
+                          return_spans=return_spans, waga=waga)
     env, spans = out if return_spans else (out, [])
+    klucz = env.copy() if return_env else None
     if env.size == 0:
         return (env, spans) if return_spans else env
 
@@ -313,6 +326,10 @@ def synth_cw(text: str, wpm: float = C.WPM, tone: float = C.TONE_CENTER,
                          * np.sin(2.0 * np.pi * float(hum_hz) * t))
 
     wave = (amp * a_env * np.sin(ph)).astype(np.float32)
+    if return_env:
+        # Prawdziwy przebieg klucza (0..1, z narastaniem) — etykieta dla
+        # sieci zboczy (17.10): gdzie BYŁO zbocze, zanim tor je zniekształcił.
+        return (wave, spans, klucz) if return_spans else (wave, klucz)
     return (wave, spans) if return_spans else wave
 
 

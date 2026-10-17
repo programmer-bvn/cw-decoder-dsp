@@ -1163,6 +1163,53 @@ OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
 prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
 tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
 
+### Dwuetapowy dekoder: najpierw zbocza, potem znaki — punkt 1 (17.10)
+
+**Pomysł operatora.** Rozdzielić odzyskiwanie zboczy kluczowania od
+rozpoznawania znaków, jak przy kolorowaniu czarno-białych zdjęć. Pierwsza
+sieć patrzy na widmo i odtwarza, gdzie BYŁO zbocze, zanim tor nadawczy,
+filtr p.cz., ARW i szum je przesunęły i rozmyły („kość" na końcach znaków).
+Druga sieć albo tabela Morse'a czyta już przebieg wyprostowany, przez
+grzebień i normalizację tempa.
+
+**Generator — rytm bliższy nagraniom** (hipoteza z nocy czesci_norm):
+- WAGA kluczowania `WAGA_ZAKRES = (-0,1, 0,5)` u: znak dłuższy, przerwa
+  po nim krótsza o tyle samo, takt bez zmian (`morse.keying_envelope`,
+  losowana w `losuj_nadajnik` — ta sama dla stacji i QRM);
+- przerwa między literami 3-10 t (`GAP_JITTER = (0, 2,33)`; było do 4,5 t)
+  — nadawanie z klawiatury; klejenia nadal nie ma (QLF);
+- zapas błędu tempa `TEMPO_BLAD` 0,15 → 0,25.
+diag: kontrola wagi w TEST 21 (kropka 1,30 u, przerwa 0,70 u przy wadze 0,3);
+120/120, TEST 12 bit w bit (46 stałych).
+
+**Etykieta zboczy.** `radio.receive(..., z_kluczem=True)` oddaje prawdziwy
+przebieg klucza (`synth_cw(return_env=True)`), wyrównany do klipu, oraz wagę
+nadajnika. Bez wpływu na losowania, więc kopia w `train_rtx` go nie potrzebuje.
+`dsp/zbocza.py`: widmo co 5 ms z oknem 32 ms (N_FFT 256), 512 ramek
+(2,56 s), tempo PRAWDZIWE; klucz uśredniony ±2,5 ms wokół środka ramki.
+Arkusz kontrolny (8 klipów, klucz na obrazie) — etykiety leżą na znakach.
+
+**Odniesienie — próg klasyczny** (przekrój ±60 Hz przy tonie, Otsu, jak
+grzebień; 400 klipów na przedział, tolerancja pół jednostki):
+
+| S/N | błąd mediana / 90% | pominięte | fałszywe | narastające / opadające |
+|---|---|---|---|---|
+| -3..3 dB | 5,0 / 13,9 ms | 10% | 126% | -2,5 / +1,7 ms |
+| 3..10 dB | 4,9 / 9,0 ms | 5% | 19% | -4,7 / +4,4 ms |
+| 10..20 dB | 6,7 / 10,1 ms | 3,5% | 4,7% | -7,5 / +6,5 ms |
+| 20..31 dB | 9,9 / 12,5 ms | 4,3% | 2,7% | -10,1 / +9,5 ms |
+
+**„Kość" zmierzona.** Próg poszerza znak SYMETRYCZNIE, a o ile — zależy od
+poziomu: silniejszy sygnał rozlany przez okno wcześniej przekracza próg.
+Przy dobrym S/N błąd jest prawie czysto systematyczny (IQR 2 ms przy
+przesunięciu ±10 ms), więc da się go oddać — zgodnie z intuicją operatora
+o „wyprzedzaniu". Przy słabym sygnale błąd jest przypadkowy (fałszywe
+zbocza z szumu), tam pomóc może tylko wiedza o kształcie zbocza.
+
+**Narzędzie:** `tools/zbocza_trening.py` (generuj / trenuj / ocen).
+Sieć DPU-bezpieczna: pasma zwijane pulowaniem (1,2), sploty po czasie
+z dylatacją 1-32 (zasięg ±0,65 s), wyjście logit na ramkę.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
