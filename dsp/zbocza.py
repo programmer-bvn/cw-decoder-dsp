@@ -38,8 +38,12 @@ ZNAKOW_W_KLIPIE = 4                # więcej zboczy na klip niż 3
 # dB, zmierzone 12.10) i SN0FMT po wyrównaniu poziomu: czarne tło. Z szumem
 # dosypanym do 25 dB mic1-3 czytane prawie bezbłędnie (mic3 6/6 słów, próg
 # klasyczny 1/6). Narastanie: IC-7300 ma do wyboru 2/4/6/8 ms.
+# POGLOS (17.10, zboczy_3): ogon po elemencie zmierzony na mikrofonie
+# (tools/ogon.py: -26...-29 dB przy 10 ms, ~10 dB na 50 ms, garb 15-30 ms).
 ZAKRESY_ZBOCZY = {"SN_DB": (-3.0, 45.0), "TLO_DB": (-32.0, 7.0),
-                  "KEY_RAMP_MS": (2.0, 8.0)}
+                  "KEY_RAMP_MS": (2.0, 8.0),
+                  "POGLOS": {"prob": 0.4, "L_db": (-35.0, -18.0),
+                             "tau_ms": (20.0, 80.0), "pre_ms": (0.0, 15.0)}}
 
 
 _FB = None

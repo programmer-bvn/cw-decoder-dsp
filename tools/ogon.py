@@ -60,25 +60,30 @@ def wczytaj(n):
     t, f = tune.track_tone(a); a = tune.retune(a, t, f)
     g = wav2net.auto_gain_db(a); return np.clip(a * 10 ** (g / 20), -1, 1).astype(np.float32)
 
-pliki = ["mic1_manipulator_12wpm.wav", "mic2_manipulator_20wpm.wav", "mic3_pamiec_15wpm.wav",
-         "ic7300_usb_SN0FMT_3565kHz_20261009.wav", "ic7300_usb_SN0FMT_3565kHz_20261009_b.wav",
-         "ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_2146.wav", "ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1811.wav"]
-pokaz = [10, 20, 30, 40, 60, 80, 120, 160, 200, 300]
-ix = [int(np.flatnonzero(TAU == t)[0]) for t in pokaz]
-print("dB względem znaku, mediana po zboczach.  OPAD = po zboczu opadającym (ogon), NAR = przed narastającym (lustrzanie)")
-print(f"{'':34s} {'zboczy':>6s} " + " ".join(f"{t:>5d}" for t in pokaz) + "   podłoga")
-fig, ax = plt.subplots(1, 1, figsize=(11, 6))
-for ramp in (2.0, 5.0, 8.0):
-    rng = np.random.default_rng(0)
-    w = morse.synth_cw("PSE K CQ CQ DE SQ2BVN K", wpm=15, tone=C.TONE_CENTER, amp=0.3, ramp_ms=ramp, rng=rng)
-    w = np.r_[np.zeros(4000), w, np.zeros(4000)].astype(np.float32) + 1e-5 * np.random.default_rng(1).standard_normal(w.size + 8000).astype(np.float32)
-    o, n, pod, no, nn = krzywe(w)
-    print(f"{'syntetyk, narastanie ' + str(ramp) + ' ms':34s} {no:6d} " + " ".join(f"{o[i]:5.0f}" for i in ix) + f"   {pod:6.0f}")
-    ax.plot(TAU, o, "k--" if ramp == 5.0 else "k:", lw=1, label=f"syntetyk {ramp:.0f} ms")
-for n in pliki:
-    o, nr, pod, no, nn = krzywe(wczytaj(n))
-    print(f"{n[:34]:34s} {no:6d} " + " ".join(f"{o[i]:5.0f}" for i in ix) + f"   {pod:6.0f}")
-    print(f"{'   NAR (przed narastającym)':34s} {nn:6d} " + " ".join(f"{nr[i]:5.0f}" for i in ix))
-    ax.plot(TAU, o, lw=1, label=n[:30])
-ax.set_xlabel("ms po zboczu opadającym"); ax.set_ylabel("dB względem znaku"); ax.set_ylim(-70, 3); ax.grid(alpha=.3); ax.legend(fontsize=7)
-fig.tight_layout(); fig.savefig("out/zbocza/ogon.png", dpi=90)
+def main():
+    pliki = ["mic1_manipulator_12wpm.wav", "mic2_manipulator_20wpm.wav", "mic3_pamiec_15wpm.wav",
+             "ic7300_usb_SN0FMT_3565kHz_20261009.wav", "ic7300_usb_SN0FMT_3565kHz_20261009_b.wav",
+             "ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_2146.wav", "ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1811.wav"]
+    pokaz = [10, 20, 30, 40, 60, 80, 120, 160, 200, 300]
+    ix = [int(np.flatnonzero(TAU == t)[0]) for t in pokaz]
+    print("dB względem znaku, mediana po zboczach.  OPAD = po zboczu opadającym (ogon), NAR = przed narastającym (lustrzanie)")
+    print(f"{'':34s} {'zboczy':>6s} " + " ".join(f"{t:>5d}" for t in pokaz) + "   podłoga")
+    fig, ax = plt.subplots(1, 1, figsize=(11, 6))
+    for ramp in (2.0, 5.0, 8.0):
+        rng = np.random.default_rng(0)
+        w = morse.synth_cw("PSE K CQ CQ DE SQ2BVN K", wpm=15, tone=C.TONE_CENTER, amp=0.3, ramp_ms=ramp, rng=rng)
+        w = np.r_[np.zeros(4000), w, np.zeros(4000)].astype(np.float32) + 1e-5 * np.random.default_rng(1).standard_normal(w.size + 8000).astype(np.float32)
+        o, n, pod, no, nn = krzywe(w)
+        print(f"{'syntetyk, narastanie ' + str(ramp) + ' ms':34s} {no:6d} " + " ".join(f"{o[i]:5.0f}" for i in ix) + f"   {pod:6.0f}")
+        ax.plot(TAU, o, "k--" if ramp == 5.0 else "k:", lw=1, label=f"syntetyk {ramp:.0f} ms")
+    for n in pliki:
+        o, nr, pod, no, nn = krzywe(wczytaj(n))
+        print(f"{n[:34]:34s} {no:6d} " + " ".join(f"{o[i]:5.0f}" for i in ix) + f"   {pod:6.0f}")
+        print(f"{'   NAR (przed narastającym)':34s} {nn:6d} " + " ".join(f"{nr[i]:5.0f}" for i in ix))
+        ax.plot(TAU, o, lw=1, label=n[:30])
+    ax.set_xlabel("ms po zboczu opadającym"); ax.set_ylabel("dB względem znaku"); ax.set_ylim(-70, 3); ax.grid(alpha=.3); ax.legend(fontsize=7)
+    fig.tight_layout(); fig.savefig("out/zbocza/ogon.png", dpi=90)
+
+
+if __name__ == "__main__":
+    main()

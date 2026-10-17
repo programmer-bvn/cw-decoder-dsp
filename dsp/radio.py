@@ -73,6 +73,32 @@ def band_noise(n: int, rng: np.random.Generator, rms: float = C.NOISE_RMS,
 # --------------------------------------------------------------------------
 # QSB — zanik
 # --------------------------------------------------------------------------
+def dodaj_poglos(wave: np.ndarray, rng: np.random.Generator, par: dict,
+                 sr: int = C.SR) -> tuple[np.ndarray, float]:
+    """Pogłos: sygnał + jego splot z szumem gasnącym wykładniczo.
+
+    ZMIERZONE 17.10 (tools/ogon.py) na nagraniach mikrofonowych: po zboczu
+    opadającym ton zostaje 8-10 dB nad podłogą przez ~40 ms (mic1: -26 dB
+    przy 10 ms, garb przy 15-30 ms, -36 dB przy 60 ms), a PRZED zboczem
+    narastającym tego nie ma. Sieć zboczy brała ten ogon za ciąg dalszy znaku
+    (mic1, N -> D). Poziom ogona = stosunek RMS pogłosu do RMS sygnału [dB];
+    opóźnienie wstępne daje garb. Zwraca (sygnał, poziom_db)."""
+    from scipy.signal import fftconvolve
+    poziom = float(rng.uniform(*par["L_db"]))
+    tau = float(rng.uniform(*par["tau_ms"])) * 1e-3
+    pre = float(rng.uniform(*par["pre_ms"])) * 1e-3
+    n = int((pre + 6.0 * tau) * sr)
+    t = np.arange(n) / sr
+    h = rng.standard_normal(n) * np.where(t >= pre, np.exp(-(t - pre) / tau), 0.0)
+    r = fftconvolve(np.asarray(wave, dtype=np.float64), h)[:wave.size]
+    rms_w = float(np.sqrt(np.mean(np.square(wave, dtype=np.float64))))
+    rms_r = float(np.sqrt(np.mean(np.square(r))))
+    if rms_w <= 0.0 or rms_r <= 0.0:
+        return wave, float("nan")
+    r *= 10.0 ** (poziom / 20.0) * rms_w / rms_r
+    return (wave + r).astype(np.float32), poziom
+
+
 def apply_qsb(audio: np.ndarray, rng: np.random.Generator,
               depth: float, rate_hz: tuple[float, float] = (0.15, 1.5),
               sr: int = C.SR) -> np.ndarray:
@@ -465,6 +491,8 @@ def receive(text: str, rng: np.random.Generator,
 
         qsb = float(rng.uniform(*C.QSB_DEPTH)) if realism else 0.0
         wave = apply_qsb(wave, rng, depth=qsb, sr=sr)
+        if "POGLOS" in zak_ and rng.random() < zak_["POGLOS"]["prob"]:
+            wave, meta["poglos_db"] = dodaj_poglos(wave, rng, zak_["POGLOS"], sr)
 
         # Wstawienie w klip: wyśrodkowane, bo etykietą jest środkowy znak.
         if wave.size < n_samples:
