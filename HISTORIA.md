@@ -1278,6 +1278,36 @@ same były dobre (zmierzone z obwiedni pliku). Nowy
 między literami 3 u, między słowami 7 u (przerwa >= 5 u), bez luk —
 pliki `*_wzorcowo.wav`. mic1 zmierzony z pliku: 1/3/1/3/7 u ±0,1.
 
+**Ton w ciszy po przestrojeniu (operator, 17.10, mic1 26,0-26,3 s).**
+W nagraniu w tym miejscu jest tylko wolne falowanie podłogi (kilka Hz,
+-39 dB względem znaku); `tune.retune` przesuwał CAŁE widmo o +53 Hz i robił
+z niego ton ~53 Hz narastający i opadający. Przy dużym przesunięciu
+(ton 400 -> 750 Hz) przydźwięk 50/100 Hz wszedłby w pasmo CW. Poprawka:
+sygnał analityczny bez składowych < `RETUNE_FMIN_HZ` = 200 Hz
+(`out/zbocza/mic1_26s_zrodlo.png`). Odczyt nagrań bez zmian (21/26
+i 13/26 — ton był poza pasmem obrazu 400-1200 Hz), diag 120/120.
+
+**Histereza i odrzucanie krótkich impulsów (pomysły operatora, 17.10).**
+Deformacja w regeneracie mic1 ~16 s (nagranie 27-31 s, „BVN SQ" czytane
+„BVD S?"): wyjście sieci po kropce N wisiało na 0,5-0,9 (doklejony element),
+w kresce Q spadło do 0,35 (kreska rozcięta). `zbocza.odcinki_z_przebiegu`:
+histereza (włącz 0,6 / wyłącz 0,3) i opcjonalnie sklejanie odcinków
+krótszych niż 0,5 u (u z pomiaru tempa okna). `out/zbocza/tester_4.txt`:
+
+| | jeden próg 0,5 | histereza | histereza + krótkie |
+|---|---|---|---|
+| słowa (w całości / w kolejności) | 21/26 21/26 | 21/26 21/26 | 21/26 21/26 |
+| mic1 ~16 s | „BVDS?2BVN" | **„BVNSQ2BVN"** | „BVTSQ2BVN" + „2BKN" |
+| okna SN0FMT (bramka) | 23 / 17 / 28 | 33 / 18 / 30 | 34 / 19 / 30 |
+| radio1, Nagrywanie (8): bez stacji do czytania | cisza | prawie cisza | **śmieci** („EMRITITEEM…") |
+
+Histereza: naprawia wskazane miejsce, więcej okien przechodzi bramkę,
+pewność grzebienia w górę, regresji w słowach brak. Odrzucanie krótkich
+impulsów w tej postaci szkodzi: wygładza szum w „znaki" (więcej okien
+przechodzi bramkę tam, gdzie stacji nie ma) i zjada prawdziwe kropki
+(N -> T). Słowa ze znanych plików nie rozróżniają wariantów — za mało
+słów; różnice widać w tekście.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

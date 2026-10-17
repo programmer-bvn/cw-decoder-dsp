@@ -3,7 +3,7 @@ znamy, więc sprawdzian pośredni: grzebień na przebiegu z SIECI kontra grzebie
 na progu KLASYCZNYM (grzebien.odcinki_przebiegu) — te same okna 8 s co 4 s,
 ta sama bramka S/N >= 3 dB, odczyt tabelą Morse'a z nut. Miary: pewność
 grzebienia (jak dobrze krawędzie leżą na siatce) i słowa z pliku .txt.
-Zapisuje regenerowane WAV obu dróg do odsłuchu.
+Zapisuje regenerat wzorcowy każdej drogi do odsłuchu.
 
     python -m tools.tester_zbocza runs/zbocza_1/best.keras out/zbocza/regenerat [S/N]
 
@@ -69,9 +69,13 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     dosyp = float(sys.argv[3]) if len(sys.argv) > 3 else None
     n8, k4 = 8 * C.SR, 4 * C.SR
-    sumy = np.zeros((2, 2), int); razem = 0
-    print("grzebień na progu KLASYCZNYM vs na wyjściu SIECI ZBOCZY; tabela Morse'a z nut")
-    print(f"{'nagranie':42s} {'pewność kl/sieć':>15s} {'okien kl/sieć':>13s}   słowa kl   słowa sieć")
+    # Drogi: próg klasyczny, sieć z jednym progiem, sieć z histerezą,
+    # sieć z histerezą i odrzucaniem krótkich impulsów (17.10).
+    DROGI = ("klasyczna", "siec", "siec_hist", "siec_hk")
+    sumy = np.zeros((len(DROGI), 2), int); razem = 0
+    print("grzebień + tabela Morse'a z nut; drogi: " + ", ".join(DROGI))
+    print(f"{'nagranie':42s} " + " ".join(f"{d:>14s}" for d in DROGI)
+          + "   (pewność/okien, słowa w całości)")
     for p in sorted(Path("probki").glob("*.wav")):
         chce = nagrania.oczekiwane(p.with_suffix(".txt"))
         a = frontend.load_audio(p)
@@ -92,35 +96,39 @@ def main():
             starty.append(a.size - n8)
         pz = Z.przebieg_sieci(a, model)
         r5 = n8 // Z.HOP_ZBOCZA
-        kl, si = [], []
+        oo = {d: [] for d in DROGI}
         for s in starty:
             u0 = tempo.zmierz_tempo(a[s:s + n8])["u_s"]
             wyg = 0.5 * u0 if np.isfinite(u0) else 0.015
-            kl.append(grzebien.odcinki_przebiegu(a[s:s + n8], wygladzenie_s=wyg))
+            oo["klasyczna"].append(grzebien.odcinki_przebiegu(a[s:s + n8], wygladzenie_s=wyg))
             j = s // Z.HOP_ZBOCZA
-            si.append(Z.odcinki_z_przebiegu(pz[j:j + r5]))
-        wyniki = [droga(a, oo, starty, n8) for oo in (kl, si)]
-        for nazwa, (tekst, nuty_, _, _) in zip(("klasyczna", "siec"), wyniki):
-            u_med = float(np.median([u for _, _, u in nuty_])) if nuty_ else 0.06
-            reg = grzebien.regeneruj([(ts, el) for ts, el, _ in nuty_], u_med,
-                                     dlugosc_s=a.size / C.SR)
-            sf.write(out / f"{p.stem}_{nazwa}.wav", reg, C.SR)
+            pp = pz[j:j + r5]
+            hist = (Z.PROG_WL, Z.PROG_WYL)
+            oo["siec"].append(Z.odcinki_z_przebiegu(pp))
+            oo["siec_hist"].append(Z.odcinki_z_przebiegu(pp, histereza=hist))
+            oo["siec_hk"].append(Z.odcinki_z_przebiegu(
+                pp, histereza=hist,
+                min_s=Z.MIN_ODCINEK_U * u0 if np.isfinite(u0) else None))
+        wyniki = [droga(a, oo[d], starty, n8) for d in DROGI]
+        for nazwa, (tekst, nuty_, _, _) in zip(DROGI, wyniki):
             sf.write(out / f"{p.stem}_{nazwa}_wzorcowo.wav",
                      grzebien.regeneruj_wzorcowo(nuty_), C.SR)
-        pe = [np.median(w[2]) if w[2] else float("nan") for w in wyniki]
-        ok = [len(w[2]) for w in wyniki]
-        w = ""
+        kol = []
+        sl = [slowa(x[0], chce) for x in wyniki] if chce else None
+        for k, w_ in enumerate(wyniki):
+            pe = np.median(w_[2]) if w_[2] else float("nan")
+            sw = f" {sl[k][0]}/{len(chce)}" if chce else "    "
+            kol.append(f"{pe:4.2f}/{len(w_[2]):3d}{sw:>5s}")
         if chce:
             razem += len(chce)
-            sl = [slowa(x[0], chce) for x in wyniki]
-            for k in range(2):
+            for k in range(len(DROGI)):
                 sumy[k] += sl[k]
-            w = "   ".join(f"{x}/{len(chce)} {y}/{len(chce)}" for x, y in sl)
-        print(f"{p.name[:42]:42s} {pe[0]:6.2f} / {pe[1]:4.2f}   {ok[0]:4d} / {ok[1]:3d}      {w}")
+        print(f"{p.name[:42]:42s} " + " ".join(f"{x:>14s}" for x in kol))
         if not chce:
-            print(f"    kl:   {wyniki[0][0][:70]}\n    sieć: {wyniki[1][0][:70]}")
-    print(f"{'RAZEM słowa (w całości / w kolejności)':42s} {'':26s} "
-          + "   ".join(f"{x}/{razem} {y}/{razem}" for x, y in sumy))
+            for d, w_ in zip(DROGI, wyniki):
+                print(f"    {d:10s}: {w_[0][:70]}")
+    print(f"{'RAZEM słowa w całości / w kolejności':42s} "
+          + " ".join(f"{f'{x}/{razem} {y}/{razem}':>14s}" for x, y in sumy))
 
 
 if __name__ == "__main__":

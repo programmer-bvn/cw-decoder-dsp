@@ -166,13 +166,51 @@ def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
     return p[:n]
 
 
-def odcinki_z_przebiegu(p: np.ndarray, prog: float = 0.5
+# Histereza i odrzucanie krótkich impulsów (17.10, pomysły operatora).
+# mic1, 27-31 s: wyjście sieci po kropce N wisiało na 0,5-0,9 (z ogona
+# powstał doklejony element: N -> D), w kresce Q spadło do 0,35 (kreska
+# rozcięta: Q -> ?). Jeden próg 0,5 robił z każdego zachwiania zbocze.
+PROG_WL = 0.6           # element zaczyna się powyżej
+PROG_WYL = 0.3          # ... i kończy dopiero poniżej
+MIN_ODCINEK_U = 0.5     # impuls / przerwa krótsze niż tyle jednostek grzebienia -> sklej
+
+
+def odcinki_z_przebiegu(p: np.ndarray, prog: float | None = None,
+                        histereza: tuple[float, float] | None = None,
+                        min_s: float | None = None
                         ) -> list[tuple[bool, float]]:
-    """P(klucz) co 5 ms -> [(czy_znak, czas_s), ...] jak grzebien.odcinki_przebiegu."""
-    on = np.asarray(p) >= prog
-    if on.size < 20:
+    """P(klucz) co 5 ms -> [(czy_znak, czas_s), ...] jak grzebien.odcinki_przebiegu.
+
+    prog: jeden próg (domyślnie 0,5, gdy brak histerezy).
+    histereza: (próg włączenia, próg wyłączenia).
+    min_s: odcinki (znak albo przerwa) krótsze niż tyle sekund wchłaniane
+    przez sąsiadów — najkrótszy pierwszy, aż żaden nie zostanie."""
+    p = np.asarray(p, dtype=np.float64)
+    if p.size < 20:
         return []
+    if histereza is not None:
+        wl, wyl = histereza
+        on = np.zeros(p.size, bool)
+        stan = bool(p[0] >= wl)
+        for i, v in enumerate(p):
+            if stan and v < wyl:
+                stan = False
+            elif not stan and v >= wl:
+                stan = True
+            on[i] = stan
+    else:
+        on = p >= (0.5 if prog is None else prog)
     zm = np.flatnonzero(np.diff(on.astype(np.int8))) + 1
     gr = np.r_[0, zm, on.size]
     d = HOP_ZBOCZA / C.SR
-    return [(bool(on[a]), (b - a) * d) for a, b in zip(gr[:-1], gr[1:])]
+    odc = [[bool(on[a]), (b - a) * d] for a, b in zip(gr[:-1], gr[1:])]
+    if min_s:
+        while len(odc) > 2:
+            wew = range(1, len(odc) - 1)
+            k = min(wew, key=lambda i: odc[i][1])
+            if odc[k][1] >= min_s:
+                break
+            # krótki odcinek znika: sąsiedzi (ten sam stan) łączą się z nim
+            odc[k - 1][1] += odc[k][1] + odc[k + 1][1]
+            del odc[k:k + 2]
+    return [(a, b) for a, b in odc]

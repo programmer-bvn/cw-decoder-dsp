@@ -192,6 +192,11 @@ def _parabolic(sp: np.ndarray, f: np.ndarray, k: int) -> float:
     return float(f[k] + delta * (f[1] - f[0]))
 
 
+# Poniżej tego nie ma tonu CW (C.FMIN = 400 Hz); jest podłoga, przydźwięk
+# sieci 50/100/150 Hz i falowanie mikrofonu.
+RETUNE_FMIN_HZ = 200.0
+
+
 def retune(audio: np.ndarray, times: np.ndarray, freqs: np.ndarray,
            target: float = C.TONE_CENTER, sr: int = C.SR,
            smooth_s: float = 5.0) -> np.ndarray:
@@ -205,8 +210,6 @@ def retune(audio: np.ndarray, times: np.ndarray, freqs: np.ndarray,
     Faza jest CAŁKĄ z chwilowego przesunięcia, nie iloczynem — inaczej
     zmienne w czasie przesunięcie rozjechałoby fazę i rozmyło ton.
     """
-    from scipy.signal import hilbert
-
     x = np.asarray(audio, dtype=np.float64)
     # Estymata przepuszczona przez medianę bieżącą — bez tego błądzenie
     # losowe pętli przenosi się wprost na przestrojenie.
@@ -217,7 +220,16 @@ def retune(audio: np.ndarray, times: np.ndarray, freqs: np.ndarray,
     shift = np.where(np.isfinite(f_s), target - f_s, 0.0)
 
     phase = 2.0 * np.pi * np.cumsum(shift) / sr
-    return np.real(hilbert(x) * np.exp(1j * phase)).astype(np.float32)
+    # Sygnał analityczny BEZ tego, co poniżej RETUNE_FMIN_HZ. 17.10 operator
+    # wskazał na regeneracie mic1 (26,0-26,3 s) ton narastający i opadający
+    # w ciszy między znakami. Źródło: wolne falowanie podłogi w nagraniu
+    # (mikrofon, kilka Hz, -39 dB względem znaku) — przestrojenie o +53 Hz
+    # robiło z niego ton ~53 Hz. Przy przesunięciu o kilkaset Hz (ton 400 Hz
+    # -> 750) przydźwięk 50/100 Hz trafiłby prosto w pasmo CW.
+    X = np.fft.fft(x)
+    f = np.fft.fftfreq(x.size, 1.0 / sr)
+    an = np.fft.ifft(X * np.where(f >= RETUNE_FMIN_HZ, 2.0, 0.0))
+    return np.real(an * np.exp(1j * phase)).astype(np.float32)
 
 
 def bandpass(audio: np.ndarray, center: float = C.TONE_CENTER,
