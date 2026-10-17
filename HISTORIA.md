@@ -1163,6 +1163,30 @@ OK1FPS, Nagrywanie 6-9) — mediana ~27 WPM typowa dla zawodów; czy to
 prawda nagrania, czy błąd pomiaru — nie rozstrzygnięte (brak znanego
 tempa tych stacji). TEST 23 w `diag.py`; diag 117/117.
 
+### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
+
+**Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
+siatce jednostki, przerwy między znakami sprowadzone do 3 u, „wirtualny
+przebieg prostokątny" przyłożony jak grzebień do gwintu. Wynik = „nuty",
+z których: regenerator (czysty sygnał, „idealny filtr CW"), tester sieci
+(sieć na regeneracie vs tabela Morse'a z tych samych nut), odczyt
+klasyczny; docelowo fuzja dróg z wagami jak w metrologii.
+
+**Zrobione.** `dsp/grzebien.py` (dopasowanie u i wagi b do położeń
+krawędzi, odporna funkcja błędu, pewność), `tools/tester_grzebien.py`.
+
+**Syntetyk:** tempo mediana < 3% (stałe +1,5-2,5% przy dobrym S/N — do
+wyjaśnienia); odczyt klasyczny z nut CER 0% od 10 dB, mediana 0% przy
+3-5 dB, 37% przy 0 dB; pewność 0,93-0,97 / ~0,85 przy 0 dB.
+
+**Nagrania** (model czesci_tempo): sieć surowy 19/22, tabela 14/16, sieć
+na regeneracie 4/13. Regenerat musi mieć szum jak w treningu (pierwsza
+wersja bez szumu — tło ~-40 dB poza rozkładem). W SN0FMT_c tabela i
+regenerat dają ciągi „DDDD" — **operator odsłuchał: to naprawdę D (ktoś
+stroił nadajnik)**. Grzebień miał rację, sieć na surowym czytała tam
+przypadkowe znaki: podział winy działa (tu: SYGNAŁ). Pewność grzebienia
+odróżnia nagrania: SN0FMT 0,92-0,98, zawody/mic/F5OHS 0,72-0,79.
+
 ### Noc normalizacji tempa (16/17.10) — syntetyk skok, nagrania nie
 
 `runs/fcn_4000000_czesci_norm` (4 mln, 12 epok, fcn, generator z normalizacją):
