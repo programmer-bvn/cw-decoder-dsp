@@ -1210,6 +1210,24 @@ zbocza z szumu), tam pomóc może tylko wiedza o kształcie zbocza.
 Sieć DPU-bezpieczna: pasma zwijane pulowaniem (1,2), sploty po czasie
 z dylatacją 1-32 (zasięg ±0,65 s), wyjście logit na ramkę.
 
+**Pierwszy trening (17.10, `runs/zbocza_1`):** 200 tys. klipów (2 × 100 tys.,
+~2 min generowania na część), 20 epok po ~9 min, val_loss 0,083. Ocena na
+150 nowych klipach na przedział, te same klipy dla obu metod:
+
+| S/N | klasyczna: mediana / 90% | **sieć: mediana / 90%** | fałszywe kl. / sieć | przesunięcie sieci |
+|---|---|---|---|---|
+| -3..3 dB | 4,8 / 13,9 ms | **2,6 / 9,9 ms** | 115% / 22% | -0,3 / +0,2 ms |
+| 3..10 dB | 4,8 / 8,9 ms | **0,9 / 3,1 ms** | 21% / 5,0% | -0,1 / +0,1 ms |
+| 10..20 dB | 6,9 / 10,1 ms | **0,4 / 1,3 ms** | 2,5% / 1,7% | -0,1 / +0,1 ms |
+| 20..31 dB | 9,9 / 12,3 ms | **0,2 / 0,8 ms** | 3,1% / 5,9% | -0,1 / +0,1 ms |
+
+Przesunięcie „kości" znikło całkowicie, błąd przy dobrym S/N spadł ~40×,
+fałszywe zbocza przy słabym — 5×. Uwaga: to SYNTETYK z tego samego
+generatora, co trening; na nagraniach prawdy nie znamy — sprawdzian to
+grzebień na wyjściu sieci (pewność, odczyt tabelą) i ucho operatora.
+Przy 20-31 dB fałszywych więcej niż przy 10-20 (5,9 vs 1,7%) — do zbadania
+(QRM silniejsza od stacji? przesterowanie?).
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
