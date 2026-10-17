@@ -284,3 +284,8 @@ Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
 ============================================================
 
 --- historia treningu ---
+warning: in the working copy of 'runs/fcn_4000000_czesci_tempo/log.csv', CRLF will be replaced by LF the next time Git touches it
+commit: 834f7a2 trening 20261015_1840: historia przebiegów i pomiary
+
+Koniec: 2026-10-16 06:21
+Do przeczytania: out/RANO.txt

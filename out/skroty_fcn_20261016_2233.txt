@@ -1,0 +1,14 @@
+SKRÓTY: runs/fcn_4000000_czesci_norm/best.keras
+  300 klipów na wiersz, S/N 15-30 dB; trafne kroki ze znakiem
+
+  wszystko wyłączone (czysta stacja)        98.7%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    98.9%
+  zanik (QSB)                               98.7%
+  ARW                                       99.1%
+  tło z banku                               98.2%
+  druga stacja (QRM)                        97.0%
+  trzaski (QRN)                             98.4%
+  dłuższe przerwy                           98.4%
+  pełny realizm                             96.0%
+
+  OK: czysta stacja 98.7%, pełny realizm 96.0% — skrótu nie widać.

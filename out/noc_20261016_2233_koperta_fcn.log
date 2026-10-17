@@ -1,0 +1,99 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792206988.600711    5913 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1792206991.682650    5913 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 72 variables whereas the saved optimizer has 76 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1792207011.951759    5967 service.cc:153] XLA service 0x70e6b0058560 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1792207011.952356    5967 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1792207011.962712    5967 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1792207012.063562    5967 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1792207015.910518    5967 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+======================================================================
+ KOPERTA I BŁĘDY: runs/fcn_4000000_czesci_norm/best.keras
+======================================================================
+ front-end: ALPHABET= ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;CLIP_SECONDS=4.0;DB_MAX=24.0;DB_MIN=-30.0;DB_REF=1.0;FMAX=1200.0;FMIN=400.0;HOP_LENGTH=160;IMG_BINS=32;IMG_FRAMES=128;MEL_CONVENTION=librosa/slaney;N_FFT=512;N_MELS=32;SR=8000
+ siatka: 9x9 komórek po 40 próbek; błędy z 3000 próbek
+
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       550    650    675    725    750    775    825    850    950
+  ---------------------------------------------------------------------------
+     10            .     15    100    100    100    100    100     10      .
+     12            .     12    100    100    100    100    100      5      .
+     15            .     22    100    100    100    100    100      .      .
+     18            .     12    100    100    100    100    100      2      .
+     22            .     15    100    100    100    100    100      .      .
+     25            .      5    100    100    100    100    100      .      .
+     28            .     10    100    100    100    100    100      .      .
+     32            .      8    100    100    100    100    100      5      .
+     35            .      .    100    100    100    100    100      .      2
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+  czyta (>= 50%): tempo 10-35 WPM, ton 675-825 Hz
+
+PRZYCZYNA GUBIENIA: błąd wobec widoczności znaku w oknie
+
+  widoczność    próbek   trafień   zgubiony el.
+  ------------------------------------------------
+  poniżej 50%         0         -              -
+  50-90%              0         -              -
+  90-100%             0         -              -
+  cały (100%)      3000     97.0%           0.8%
+
+WYROK: za mało danych w kubełkach — podnieś --n-bledy
+
+ROZKŁAD WOBEC TEMPA
+
+  WPM        próbek  trafień  zgub.el.  wstaw.  kr/kre  obciętych
+  ------------------------------------------------------------------
+   5-11         205    97.6%      0.5%    1.0%    0.0%       0.0%
+  12-14         281    98.9%      0.4%    0.4%    0.0%       0.0%
+  15-17         311    97.7%      1.0%    0.3%    1.0%       0.0%
+  18-20         275    98.2%      0.4%    0.7%    0.0%       0.0%
+  21-23         320    95.9%      1.9%    0.9%    0.6%       0.0%
+  24-26         289    96.9%      0.3%    1.0%    0.7%       0.0%
+  27-60        1319    96.4%      0.8%    1.2%    0.7%       0.0%
+
+TRAFIENIA WOBEC DŁUGOŚCI KODU
+
+  elementów   próbek   trafień   przykłady
+  ----------------------------------------------------
+      1          204     94.1%   E T
+      2          373     97.1%   A I M N
+      3          643     96.4%   D G K O R S U W
+      4          924     97.0%   B C F H J L P Q V X Y Z
+      5          856     98.2%   cyfry 0-9
+
+  krótkie (1-2 elementy): 96.0%  (577 próbek)
+  długie  (4-5 elementów): 97.6%  (1780 próbek)
+  Różnica tylko 1.6 pp — zależności NIE MA.
+  Czyli gubienie krótkich znaków na nagraniach bierze się
+  nie z samej sieci, a z czegoś dalej: najpewniej z tego,
+  że długie znaki trwają dłużej, zbierają więcej okien
+  i wygrywają przy scalaniu powtórzeń.
+
+  najgorzej czytane znaki:
+    G --.     92.8%  (69 próbek)
+    Z --..    92.9%  (84 próbek)
+    E .       93.2%  (118 próbek)
+    U ..-     93.8%  (64 próbek)
+    7 --...   94.4%  (89 próbek)
+
+NAJCZĘSTSZE POMYŁKI
+
+  0 -----  -> 1 .----       2x   kropka/kreska
+  T -      -> N -.          2x   wstawiony element
+  M --     -> D -..         2x   wstawiony element
+  T -      -> I ..          2x   wstawiony element
+  U ..-    -> H ....        2x   wstawiony element
+  G --.    -> F ..-.        2x   wstawiony element
+  7 --...  -> Q --.-        2x   zgubiony element
+  E .      ->   (cisza)     2x   wzięty za ciszę
+  6 -....  -> C -.-.        2x   zgubiony element
+  7 --...  -> Z --..        2x   zgubiony element
+  Z --..   -> 7 --...       1x   wstawiony element
+  G --.    -> N -.          1x   zgubiony element
+
+zapisane: out/koperta_fcn_20261016_2233.txt
