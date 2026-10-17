@@ -1269,6 +1269,15 @@ ale czyta śmieci); OK1FPS 1 okno z 10; Nagrywanie (7), (9) — 0 okien.
 Hipoteza SN0FMT (kliksy/narastanie) — po rozszerzeniu zakresów sieć czyta
 SN0FMT poprawnie; które z trzech rozszerzeń zadziałało, nie rozdzielone.
 
+**Regenerat „źle się słucha" (operator, 17.10).** `grzebien.regeneruj`
+stawiał znaki na siatce, ale początki znaków zostawiał jak w nagraniu
+i brał jedno tempo (medianę) na całość: przerwy między literami 4-10 u,
+cisza tam, gdzie okno nie przeszło bramki (mic1: pierwsze 11 s). Znaki
+same były dobre (zmierzone z obwiedni pliku). Nowy
+`grzebien.regeneruj_wzorcowo`: każdy znak w jednostce swojego okna,
+między literami 3 u, między słowami 7 u (przerwa >= 5 u), bez luk —
+pliki `*_wzorcowo.wav`. mic1 zmierzony z pliku: 1/3/1/3/7 u ±0,1.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

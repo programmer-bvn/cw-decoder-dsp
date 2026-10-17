@@ -175,6 +175,47 @@ def regeneruj(nuty_: list, u: float, sr: int = C.SR,
     return (amp * env * np.sin(2 * np.pi * ton_hz * t)).astype(np.float32)
 
 
+# Próg słowa: przerwa między znakami >= tyle jednostek to przerwa między
+# słowami (połowa drogi między 3 u a 7 u).
+PROG_SLOWA_U = 5.0
+
+
+def regeneruj_wzorcowo(nuty_u: list, sr: int = C.SR,
+                       ton_hz: float = C.TONE_CENTER, amp: float = 0.3
+                       ) -> np.ndarray:
+    """Regenerat w PEŁNI znormalizowany (17.10, operator: „źle się słucha"
+    regeneratu, który miał znaki na siatce, ale przerwy między nimi jak
+    w nagraniu i jedno tempo na całość). Tu: każdy znak w jednostce SWOJEGO
+    okna, przerwa między literami 3 u, między słowami 7 u (próg
+    PROG_SLOWA_U) — jak z dobrego keyera. Wejście: [(start_s, el, u_s), ...]."""
+    odc, t = [], 0.0
+    prev_koniec = None
+    for ts, el, u in nuty_u:
+        if prev_koniec is not None:
+            przerwa_u = (ts - prev_koniec) / u
+            t += (7 if przerwa_u >= PROG_SLOWA_U else 3) * u
+        for k, d in el:
+            odc.append((t + k * u, d * u))
+        dl = (el[-1][0] + el[-1][1]) * u
+        t += dl
+        prev_koniec = ts + dl
+    n = int(round((t + 0.5) * sr))
+    env = np.zeros(n, dtype=np.float32)
+    rampa = max(1, int(C.KEY_RAMP_MS * 1e-3 * sr))
+    for a_s, d_s in odc:
+        a = int(round(a_s * sr))
+        z = min(n, int(round((a_s + d_s) * sr)))
+        blok = np.ones(z - a, dtype=np.float32)
+        r = min(rampa, (z - a) // 2)
+        if r > 0:
+            w = 0.5 - 0.5 * np.cos(np.pi * np.arange(r) / r)
+            blok[:r] = w
+            blok[-r:] = w[::-1]
+        env[a:z] = np.maximum(env[a:z], blok)
+    tt = np.arange(n) / sr
+    return (amp * env * np.sin(2 * np.pi * ton_hz * tt)).astype(np.float32)
+
+
 def zmierz(audio: np.ndarray, ton_hz: float = C.TONE_CENTER,
            sr: int = C.SR) -> dict:
     """Grzebień na buforze: tempo z dsp.tempo jako start, dopasowanie

@@ -105,6 +105,8 @@ def main():
             reg = grzebien.regeneruj([(ts, el) for ts, el, _ in nuty_], u_med,
                                      dlugosc_s=a.size / C.SR)
             sf.write(out / f"{p.stem}_{nazwa}.wav", reg, C.SR)
+            sf.write(out / f"{p.stem}_{nazwa}_wzorcowo.wav",
+                     grzebien.regeneruj_wzorcowo(nuty_), C.SR)
         pe = [np.median(w[2]) if w[2] else float("nan") for w in wyniki]
         ok = [len(w[2]) for w in wyniki]
         w = ""
