@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+grzebień na progu KLASYCZNYM vs na wyjściu SIECI ZBOCZY; tabela Morse'a z nut
+nagranie                                   pewność kl/sieć okien kl/sieć   słowa kl   słowa sieć
+Nagrywanie (6).wav                            nan /  nan      0 /   0      0/1 0/1   0/1 0/1
+Nagrywanie (7).wav                           0.85 / 0.93      1 /   1      
+    kl:   EDK5JM
+    sieć: T
+Nagrywanie (8).wav                            nan /  nan      0 /   0      
+    kl:   
+    sieć: 
+Nagrywanie (9).wav                           0.91 /  nan      2 /   0      
+    kl:   CQCQDEEDE?
+    sieć: 
+ic7300_usb_3541kHz_f200_20261009.wav         0.90 / 0.85      2 /   1      
+    kl:   EE
+    sieć: T
+ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1   0.91 / 0.95     10 /   4      0/1 0/1   0/1 0/1
+ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_21   0.89 / 0.98     13 /  13      1/1 1/1   1/1 1/1
+ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_21   0.88 / 0.91      5 /   5      0/1 0/1   0/1 0/1
+ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_18   0.87 / 0.87     10 /   3      0/1 0/1   0/1 0/1
+ic7300_usb_SN0FMT_20261009_c.wav             0.98 / 0.89     30 /   7      2/4 3/4   0/4 0/4
+ic7300_usb_SN0FMT_3565kHz_20261009.wav       0.92 / 0.87     34 /   6      4/4 4/4   0/4 0/4
+ic7300_usb_SN0FMT_3565kHz_20261009_b.wav     0.92 /  nan     17 /   0      4/4 4/4   0/4 0/4
+mic1_manipulator_12wpm.wav                   0.92 / 0.88     61 /  42      
+    kl:   QCQCQBVNSQ2B?MO?0??M?OTO????CQOTO?0BVN?OTOCQCQCQOTO?0??NPSEKO?0MOADES?
+    sieć: QC?B4NSQ26VNS?2BVQC?CQ2BVNPSEKICQ??C?DESQ26VSP2MHADESQ2BVN???GADKSFER?
+mic2_manipulator_20wpm.wav                   0.91 / 0.89     42 /  13      1/3 2/3   0/3 0/3
+mic3_pamiec_15wpm.wav                        0.92 / 0.87      7 /   5      1/6 2/6   1/6 2/6
+radio1_14020_dwie_stacje.wav                 0.92 /  nan     17 /   0      
+    kl:   KOO?OM???O?M?OO0?OO00OOOJ0?O?OTO0?MOR?G?K?O0EOO?OTO0?M?OOOMOTOOOO0MM?M
+    sieć: 
+RAZEM słowa (w całości / w kolejności)                                13/26 16/26   2/26 3/26

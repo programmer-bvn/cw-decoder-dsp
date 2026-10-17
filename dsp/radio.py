@@ -399,7 +399,8 @@ def receive(text: str, rng: np.random.Generator,
             wpm: float | None = None,
             realism: bool = True,
             tempo_staly: bool = False,
-            z_kluczem: bool = False) -> tuple[np.ndarray, dict]:
+            z_kluczem: bool = False,
+            zakresy: dict | None = None) -> tuple[np.ndarray, dict]:
     """Nadanie `text` przepuszczone przez kanał — zwraca (audio, opis).
 
     Opis zawiera WSZYSTKIE wylosowane parametry. To nie ozdoba: gdy model
@@ -432,7 +433,12 @@ def receive(text: str, rng: np.random.Generator,
     # nie odwrotnie. Do 12.10 syntetyk losował amplitudę, a bank jasność
     # szumu — dwa różne światy (HISTORIA „Poziom zamiast normalizacji").
     stacja = np.zeros(n_samples, dtype=np.float32)
-    snr = float(rng.uniform(*C.SN_DB)) if realism else C.SN_DB[1]
+    # zakresy (17.10): nadpisanie SN_DB / TLO_DB / KEY_RAMP_MS dla sieci
+    # zboczy (dsp/zbocza). Bez nich ta sama liczba losowań co wcześniej —
+    # główny generator i kopia w train_rtx bez zmian (TEST 12).
+    zak_ = zakresy or {}
+    sn_zakres = zak_.get("SN_DB", C.SN_DB)
+    snr = float(rng.uniform(*sn_zakres)) if realism else sn_zakres[1]
 
     # --- stacja docelowa ---
     if text:
@@ -442,6 +448,8 @@ def receive(text: str, rng: np.random.Generator,
         clip_wpm = float(wpm) if tempo_staly else wpm_klipu(rng, wpm)
         # --- operator, klucz i nadajnik: wspólny rozkład z QRM ---
         nad = losuj_nadajnik(rng, realism)
+        if "KEY_RAMP_MS" in zak_:
+            nad["ramp_ms"] = float(rng.uniform(*zak_["KEY_RAMP_MS"]))
         fist, fist_drift, gap_jit = (nad["fist"], nad["fist_drift"],
                                      nad["gap_jitter"])
         drift, chirp, sag, hum = (nad["drift_hz"], nad["chirp_hz"],
@@ -475,6 +483,7 @@ def receive(text: str, rng: np.random.Generator,
         if env_k is not None:
             meta["klucz"] = klucz
             meta["waga"] = nad["waga"]
+            meta["ramp_ms"] = nad.get("ramp_ms", C.KEY_RAMP_MS)
 
         # Położenie znaku Z ETYKIETY w próbkach klipu. Liczone z FAKTYCZNYCH
         # granic, po rozjeździe klucza — nie z nominalnego timingu, bo przy
@@ -556,7 +565,8 @@ def receive(text: str, rng: np.random.Generator,
     # o STACJĘ — przy słabej stacji szum szedł „po sam dach" (ocena
     # operatora, out/ocena/partia1). Poziom mierzony w przerwach między
     # znakami, po ARW, tak jak tools/sn mierzy nagrania (TLO_DB).
-    cel = float(rng.uniform(*C.TLO_DB)) if realism else C.TLO_DB[1]
+    tlo_zakres = zak_.get("TLO_DB", C.TLO_DB)
+    cel = float(rng.uniform(*tlo_zakres)) if realism else tlo_zakres[1]
     db = frontend.power_to_db(frontend.melspec_power(audio, sr))
     przerwy = (sn.przerwy_z_klucza(amp * stacja) if text
                else np.ones(db.shape[0], dtype=bool))

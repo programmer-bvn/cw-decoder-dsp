@@ -38,8 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C, sn, tempo, zbocza as Z
 
-POLA = ("snr_db", "wpm", "tone", "waga")
-PRZEDZIALY_SN = ((-3, 3), (3, 10), (10, 20), (20, 31))
+POLA = ("snr_db", "wpm", "tone", "waga", "ramp_ms", "tlo_db")
+PRZEDZIALY_SN = ((-3, 3), (3, 10), (10, 20), (20, 31), (31, 46))
 
 
 # --------------------------------------------------------------------------
@@ -150,7 +150,7 @@ def trenuj(zbior: Path, katalog: Path, epoki: int, batch: int) -> None:
     m = model_zboczy()
     m.compile(optimizer=keras.optimizers.Adam(1e-3),
               loss=keras.losses.BinaryCrossentropy(from_logits=True))
-    m.summary(print_fn=lambda s: print(s) if "Total" in s or "Trainable" in s else None)
+    print(f"sieć zboczy: {m.count_params()} parametrów")
     katalog.mkdir(parents=True, exist_ok=True)
     m.fit(ds(tr, True), validation_data=ds(va, False), epochs=epoki, verbose=2,
           callbacks=[

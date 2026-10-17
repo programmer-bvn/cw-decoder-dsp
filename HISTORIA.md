@@ -1228,6 +1228,47 @@ grzebień na wyjściu sieci (pewność, odczyt tabelą) i ucho operatora.
 Przy 20-31 dB fałszywych więcej niż przy 10-20 (5,9 vs 1,7%) — do zbadania
 (QRM silniejsza od stacji? przesterowanie?).
 
+**Na nagraniach — `tools/tester_zbocza`** (grzebień na wyjściu sieci kontra
+grzebień na progu klasycznym, te same okna 8 s, ta sama bramka, tabela Morse'a
+z nut; `out/zbocza/tester_1*.txt`). Sieć zboczy_1 na surowych nagraniach:
+słowa 2/26 (klasyczna 13/26) — przegrana. Składanie okien sprawdzone
+(pojedyncze okno = przebieg z zakładek, `out/zbocza/nagrania_p.png`).
+**Przyczyna: obrazy czystsze niż w treningu.** LA3WAA (szum w tle) — zbocza
+prawie idealne; mic1-3 i SN0FMT po wyrównaniu poziomu mają tło czarne
+(mikrofon: tło -30...-20 dB, zmierzone 12.10; trening: od -12 dB, S/N do
+30 dB). Sprawdzian: szum dosypany do S/N 25 dB → słowa sieć 11/26 (klasyczna
+16/26), **mic3 6/6 (klasyczna 1/6), mic2 3/3, mic1 prawie bez błędu**
+(„CQCQCQDESQ2BVNPSEK…", klasyczna „…CQOTO?0BVN…").
+**SN0FMT nadal 0/4** — w KRÓTKICH przerwach zostaje energia przy tonie,
+szersza od tonu (pasma 7-19 przy tonie 12-16), w długiej przerwie tło
+czarne (`out/zbocza/sn0fmt_p.png`); sieć daje tam 0,5-0,75. Hipotezy (bez
+pomiaru): twarde kluczowanie nadajnika (kliksy — generator miał zawsze
+narastanie 5 ms), ARW, pogłos/wielodrogowość. Do oceny przez operatora.
+**Poprawka (zboczy_2):** dla sieci zboczy szersze zakresy
+(`zbocza.ZAKRESY_ZBOCZY`: S/N do 45 dB, tło od -32 dB, narastanie 2-8 ms —
+IC-7300 ma 2/4/6/8 ms), przez `radio.receive(zakresy=...)`; bez nich
+losowania jak wcześniej (TEST 12).
+
+**Zboczy_2 (17.10, `runs/zbocza_2`, 200 tys., 20 epok, val_loss 0,079).**
+Syntetyk — jak zboczy_1, plus nowy przedział 31-46 dB: sieć 0,1 / 0,5 ms
+(klasyczna 10,7 / 13,9 ms, przesunięcie -11 / +10 ms). Nagrania SUROWE, bez
+dosypywania szumu (`out/zbocza/tester_2.txt`):
+
+| | próg klasyczny + grzebień | **sieć zboczy + grzebień** |
+|---|---|---|
+| słowa w całości / w kolejności | 13/26 / 16/26 | **21/26 / 21/26** |
+| SN0FMT (trzy nagrania) | 10/12 | **11/12** |
+| mic3 / mic2 / DP75HSC | 1/6 / 1/3 / 0/1 | **6/6 / 2/3 / 1/1** |
+| pewność grzebienia (mediana) | 0,85-0,98 | 0,92-0,99 |
+
+To SAMA TABELA Morse'a z nut — bez drugiej sieci. Dla porównania najlepszy
+odczyt główną siecią: czesci_tempo z normalizacją przy odczycie 19/26 / 22/26.
+mic1 (bez pliku .txt): „QCQCQBVNSQ2BVDS?2BVNPSEKCQCQCQDESQ2BVNPSEK…".
+**Słabo:** radio1 (dwie stacje) — 0 okien przez bramkę (klasyczna 17,
+ale czyta śmieci); OK1FPS 1 okno z 10; Nagrywanie (7), (9) — 0 okien.
+Hipoteza SN0FMT (kliksy/narastanie) — po rozszerzeniu zakresów sieć czyta
+SN0FMT poprawnie; które z trzech rozszerzeń zadziałało, nie rozdzielone.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

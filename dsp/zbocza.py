@@ -32,6 +32,15 @@ N_FFT_ZBOCZA = 256                 # 32 ms
 RAMKI_ZBOCZA = 512                 # 2,56 s
 ZNAKOW_W_KLIPIE = 4                # więcej zboczy na klip niż 3
 
+# Zakresy szersze niż w głównym generatorze (17.10, tester_zbocza na
+# nagraniach): runs/zbocza_1 (SN_DB -3..30, tło od -12 dB, narastanie 5 ms)
+# gubił się na obrazach CZYSTSZYCH niż w treningu — mikrofon (tło -30...-20
+# dB, zmierzone 12.10) i SN0FMT po wyrównaniu poziomu: czarne tło. Z szumem
+# dosypanym do 25 dB mic1-3 czytane prawie bezbłędnie (mic3 6/6 słów, próg
+# klasyczny 1/6). Narastanie: IC-7300 ma do wyboru 2/4/6/8 ms.
+ZAKRESY_ZBOCZY = {"SN_DB": (-3.0, 45.0), "TLO_DB": (-32.0, 7.0),
+                  "KEY_RAMP_MS": (2.0, 8.0)}
+
 
 _FB = None
 
@@ -82,7 +91,7 @@ def klip_zboczy(rng: np.random.Generator, realism: bool = True):
     wpm = float(rng.uniform(*C.TEMPO_ZAKRES))
     audio, meta = radio.receive(tekst, rng, n_samples=C.CLIP_SAMPLES,
                                 wpm=wpm, realism=realism, tempo_staly=True,
-                                z_kluczem=bool(tekst))
+                                z_kluczem=bool(tekst), zakresy=ZAKRESY_ZBOCZY)
     obraz, s0 = wytnij(obraz_zboczy(audio))
     k = meta.get("klucz")
     if k is None:
@@ -134,3 +143,36 @@ def blad_zboczy(p_pred: np.ndarray, p_true: np.ndarray, tol_ramek: float
             out["pominiete"] += 1
         out["falszywe"] += int((~uzyte).sum())
     return out
+
+
+# --------------------------------------------------------------------------
+# Sieć na długim nagraniu
+# --------------------------------------------------------------------------
+def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
+                   ) -> np.ndarray:
+    """P(klucz) co 5 ms na całym nagraniu: okna 512 ramek na zakładkę
+    (krok 256), z każdego brana środkowa połowa — brzegi okna sieć widzi
+    tylko z jednej strony."""
+    import tensorflow as tf
+    obraz = obraz_zboczy(audio)
+    n = obraz.shape[0]
+    pad = (RAMKI_ZBOCZA - krok) // 2
+    x = np.concatenate([np.zeros((pad, obraz.shape[1]), np.float32), obraz,
+                        np.zeros((RAMKI_ZBOCZA, obraz.shape[1]), np.float32)])
+    starty = list(range(0, n, krok))
+    okna = np.stack([x[s:s + RAMKI_ZBOCZA] for s in starty])[..., None]
+    logit = model.predict(okna, verbose=0, batch_size=32)
+    p = tf.sigmoid(logit).numpy()[:, pad:pad + krok].reshape(-1)
+    return p[:n]
+
+
+def odcinki_z_przebiegu(p: np.ndarray, prog: float = 0.5
+                        ) -> list[tuple[bool, float]]:
+    """P(klucz) co 5 ms -> [(czy_znak, czas_s), ...] jak grzebien.odcinki_przebiegu."""
+    on = np.asarray(p) >= prog
+    if on.size < 20:
+        return []
+    zm = np.flatnonzero(np.diff(on.astype(np.int8))) + 1
+    gr = np.r_[0, zm, on.size]
+    d = HOP_ZBOCZA / C.SR
+    return [(bool(on[a]), (b - a) * d) for a, b in zip(gr[:-1], gr[1:])]

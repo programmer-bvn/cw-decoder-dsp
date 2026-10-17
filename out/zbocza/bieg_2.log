@@ -1,0 +1,236 @@
+WYNIK: 120/120 kontroli przeszło
+======================================================================
+kontrola: ramp [2.4, 2.6, 2.6, 3.1, 3.2] tlo min -38.6 sn max 44.9
+zapisano out/zbocza/z2/czesc_0.npz (1614 MB, 161 s)
+zapisano out/zbocza/z2/czesc_1.npz (1614 MB, 154 s)
+zbiór 200000 klipów: trening 190000, walidacja 10000
+Model: "siec_zboczy"
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+│ widmo_5ms           │ (None, 512, 32,   │          0 │ -                 │
+│ (InputLayer)        │ 1)                │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d (Conv2D)     │ (None, 512, 32,   │        480 │ widmo_5ms[0][0]   │
+│                     │ 32)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalization │ (None, 512, 32,   │        128 │ conv2d[0][0]      │
+│ (BatchNormalizatio… │ 32)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu (ReLU)        │ (None, 512, 32,   │          0 │ batch_normalizat… │
+│                     │ 32)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ max_pooling2d       │ (None, 512, 16,   │          0 │ re_lu[0][0]       │
+│ (MaxPooling2D)      │ 32)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_1 (Conv2D)   │ (None, 512, 16,   │     23,040 │ max_pooling2d[0]… │
+│                     │ 48)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 16,   │        192 │ conv2d_1[0][0]    │
+│ (BatchNormalizatio… │ 48)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_1 (ReLU)      │ (None, 512, 16,   │          0 │ batch_normalizat… │
+│                     │ 48)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ max_pooling2d_1     │ (None, 512, 8,    │          0 │ re_lu_1[0][0]     │
+│ (MaxPooling2D)      │ 48)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_2 (Conv2D)   │ (None, 512, 8,    │     46,080 │ max_pooling2d_1[… │
+│                     │ 64)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 8,    │        256 │ conv2d_2[0][0]    │
+│ (BatchNormalizatio… │ 64)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_2 (ReLU)      │ (None, 512, 8,    │          0 │ batch_normalizat… │
+│                     │ 64)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ max_pooling2d_2     │ (None, 512, 4,    │          0 │ re_lu_2[0][0]     │
+│ (MaxPooling2D)      │ 64)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_3 (Conv2D)   │ (None, 512, 4,    │     92,160 │ max_pooling2d_2[… │
+│                     │ 96)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 4,    │        384 │ conv2d_3[0][0]    │
+│ (BatchNormalizatio… │ 96)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_3 (ReLU)      │ (None, 512, 4,    │          0 │ batch_normalizat… │
+│                     │ 96)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ max_pooling2d_3     │ (None, 512, 2,    │          0 │ re_lu_3[0][0]     │
+│ (MaxPooling2D)      │ 96)               │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_4 (Conv2D)   │ (None, 512, 2,    │    184,320 │ max_pooling2d_3[… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 2,    │        512 │ conv2d_4[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_4 (ReLU)      │ (None, 512, 2,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ max_pooling2d_4     │ (None, 512, 1,    │          0 │ re_lu_4[0][0]     │
+│ (MaxPooling2D)      │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_5 (Conv2D)   │ (None, 512, 1,    │     81,920 │ max_pooling2d_4[… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_5[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_5 (ReLU)      │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add (Add)           │ (None, 512, 1,    │          0 │ max_pooling2d_4[… │
+│                     │ 128)              │            │ re_lu_5[0][0]     │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_6 (Conv2D)   │ (None, 512, 1,    │     81,920 │ add[0][0]         │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_6[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_6 (ReLU)      │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add_1 (Add)         │ (None, 512, 1,    │          0 │ add[0][0],        │
+│                     │ 128)              │            │ re_lu_6[0][0]     │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_7 (Conv2D)   │ (None, 512, 1,    │     81,920 │ add_1[0][0]       │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_7[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_7 (ReLU)      │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add_2 (Add)         │ (None, 512, 1,    │          0 │ add_1[0][0],      │
+│                     │ 128)              │            │ re_lu_7[0][0]     │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_8 (Conv2D)   │ (None, 512, 1,    │     81,920 │ add_2[0][0]       │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_8[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_8 (ReLU)      │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add_3 (Add)         │ (None, 512, 1,    │          0 │ add_2[0][0],      │
+│                     │ 128)              │            │ re_lu_8[0][0]     │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_9 (Conv2D)   │ (None, 512, 1,    │     81,920 │ add_3[0][0]       │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_9[0][0]    │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_9 (ReLU)      │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add_4 (Add)         │ (None, 512, 1,    │          0 │ add_3[0][0],      │
+│                     │ 128)              │            │ re_lu_9[0][0]     │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ conv2d_10 (Conv2D)  │ (None, 512, 1,    │     81,920 │ add_4[0][0]       │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ batch_normalizatio… │ (None, 512, 1,    │        512 │ conv2d_10[0][0]   │
+│ (BatchNormalizatio… │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ re_lu_10 (ReLU)     │ (None, 512, 1,    │          0 │ batch_normalizat… │
+│                     │ 128)              │            │                   │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ add_5 (Add)         │ (None, 512, 1,    │          0 │ add_4[0][0],      │
+│                     │ 128)              │            │ re_lu_10[0][0]    │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ logit (Conv2D)      │ (None, 512, 1, 1) │        129 │ add_5[0][0]       │
+├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+│ reshape (Reshape)   │ (None, 512)       │          0 │ logit[0][0]       │
+└─────────────────────┴───────────────────┴────────────┴───────────────────┘
+ Total params: 842,273 (3.21 MB)
+ Trainable params: 840,001 (3.20 MB)
+ Non-trainable params: 2,272 (8.88 KB)
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/20
+2969/2969 - 732s - 247ms/step - loss: 0.1261 - val_loss: 0.1257 - learning_rate: 0.0010
+Epoch 2/20
+2969/2969 - 556s - 187ms/step - loss: 0.1042 - val_loss: 0.1026 - learning_rate: 0.0010
+Epoch 3/20
+2969/2969 - 557s - 188ms/step - loss: 0.0977 - val_loss: 0.1009 - learning_rate: 0.0010
+Epoch 4/20
+2969/2969 - 556s - 187ms/step - loss: 0.0933 - val_loss: 0.0976 - learning_rate: 0.0010
+Epoch 5/20
+2969/2969 - 554s - 187ms/step - loss: 0.0899 - val_loss: 0.0943 - learning_rate: 0.0010
+Epoch 6/20
+2969/2969 - 554s - 186ms/step - loss: 0.0875 - val_loss: 0.0933 - learning_rate: 0.0010
+Epoch 7/20
+2969/2969 - 554s - 186ms/step - loss: 0.0855 - val_loss: 0.0900 - learning_rate: 0.0010
+Epoch 8/20
+2969/2969 - 553s - 186ms/step - loss: 0.0837 - val_loss: 0.0946 - learning_rate: 0.0010
+Epoch 9/20
+2969/2969 - 553s - 186ms/step - loss: 0.0823 - val_loss: 0.0876 - learning_rate: 0.0010
+Epoch 10/20
+2969/2969 - 553s - 186ms/step - loss: 0.0808 - val_loss: 0.0869 - learning_rate: 0.0010
+Epoch 11/20
+2969/2969 - 553s - 186ms/step - loss: 0.0798 - val_loss: 0.0899 - learning_rate: 0.0010
+Epoch 12/20
+2969/2969 - 555s - 187ms/step - loss: 0.0786 - val_loss: 0.0835 - learning_rate: 0.0010
+Epoch 13/20
+2969/2969 - 553s - 186ms/step - loss: 0.0777 - val_loss: 0.0841 - learning_rate: 0.0010
+Epoch 14/20
+2969/2969 - 553s - 186ms/step - loss: 0.0767 - val_loss: 0.0877 - learning_rate: 0.0010
+Epoch 15/20
+2969/2969 - 554s - 186ms/step - loss: 0.0733 - val_loss: 0.0829 - learning_rate: 5.0000e-04
+Epoch 16/20
+2969/2969 - 554s - 187ms/step - loss: 0.0724 - val_loss: 0.0810 - learning_rate: 5.0000e-04
+Epoch 17/20
+2969/2969 - 555s - 187ms/step - loss: 0.0716 - val_loss: 0.0799 - learning_rate: 5.0000e-04
+Epoch 18/20
+2969/2969 - 555s - 187ms/step - loss: 0.0710 - val_loss: 0.0806 - learning_rate: 5.0000e-04
+Epoch 19/20
+2969/2969 - 555s - 187ms/step - loss: 0.0704 - val_loss: 0.0815 - learning_rate: 5.0000e-04
+Epoch 20/20
+2969/2969 - 555s - 187ms/step - loss: 0.0681 - val_loss: 0.0792 - learning_rate: 2.5000e-04
+model runs/zbocza_2/best.keras, 150 klipów na przedział S/N (błąd zbocza: |mediana| i 90%, przesunięcie narast./opad. ze znakiem)
+S/N  -3..  3 dB klasyczna: mediana   4.9 ms, 90%  14.8 ms; pominięte 16.3%, fałszywe 107.5%; przesunięcie  -0.9/ +1.0 ms
+S/N  -3..  3 dB sieć     : mediana   2.7 ms, 90%  11.0 ms; pominięte 13.1%, fałszywe  24.7%; przesunięcie  +0.3/ -0.3 ms
+S/N   3.. 10 dB klasyczna: mediana   4.6 ms, 90%   8.8 ms; pominięte  3.2%, fałszywe  19.0%; przesunięcie  -4.6/ +4.1 ms
+S/N   3.. 10 dB sieć     : mediana   1.0 ms, 90%   3.3 ms; pominięte  1.3%, fałszywe   4.9%; przesunięcie  +0.0/ -0.1 ms
+S/N  10.. 20 dB klasyczna: mediana   6.5 ms, 90%  10.0 ms; pominięte  5.0%, fałszywe   4.6%; przesunięcie  -7.0/ +6.0 ms
+S/N  10.. 20 dB sieć     : mediana   0.4 ms, 90%   1.7 ms; pominięte  1.9%, fałszywe   7.4%; przesunięcie  +0.1/ -0.2 ms
+S/N  20.. 31 dB klasyczna: mediana   9.8 ms, 90%  12.4 ms; pominięte  4.0%, fałszywe   1.8%; przesunięcie -10.1/ +9.6 ms
+S/N  20.. 31 dB sieć     : mediana   0.2 ms, 90%   0.7 ms; pominięte  0.5%, fałszywe   3.9%; przesunięcie  +0.1/ -0.2 ms
+S/N  31.. 46 dB klasyczna: mediana  10.7 ms, 90%  13.9 ms; pominięte  5.1%, fałszywe   1.2%; przesunięcie -11.1/+10.4 ms
+S/N  31.. 46 dB sieć     : mediana   0.1 ms, 90%   0.5 ms; pominięte  0.1%, fałszywe   0.6%; przesunięcie  +0.1/ -0.1 ms
+grzebień na progu KLASYCZNYM vs na wyjściu SIECI ZBOCZY; tabela Morse'a z nut
+nagranie                                   pewność kl/sieć okien kl/sieć   słowa kl   słowa sieć
+Nagrywanie (6).wav                            nan /  nan      0 /   0      0/1 0/1   0/1 0/1
+Nagrywanie (7).wav                           0.85 /  nan      1 /   0      
+    kl:   EDK5JM
+    sieć: 
+Nagrywanie (8).wav                            nan /  nan      0 /   0      
+    kl:   
+    sieć: 
+Nagrywanie (9).wav                           0.91 /  nan      2 /   0      
+    kl:   CQCQDEEDE?
+    sieć: 
+ic7300_usb_3541kHz_f200_20261009.wav         0.90 / 0.92      2 /   1      
+    kl:   EE
+    sieć: 
+ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1   0.91 / 0.95     10 /   7      0/1 0/1   1/1 1/1
+ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_21   0.89 / 0.98     13 /  14      1/1 1/1   1/1 1/1
+ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_21   0.88 / 0.93      5 /   6      0/1 0/1   0/1 0/1
+ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_18   0.87 / 0.94     10 /   1      0/1 0/1   0/1 0/1
+ic7300_usb_SN0FMT_20261009_c.wav             0.98 / 0.92     30 /  28      2/4 3/4   3/4 3/4
+ic7300_usb_SN0FMT_3565kHz_20261009.wav       0.92 / 0.93     34 /  23      4/4 4/4   4/4 4/4
+ic7300_usb_SN0FMT_3565kHz_20261009_b.wav     0.92 / 0.93     17 /  17      4/4 4/4   4/4 4/4
+mic1_manipulator_12wpm.wav                   0.92 / 0.97     61 /  61      
+    kl:   QCQCQBVNSQ2B?MO?0??M?OTO????CQOTO?0BVN?OTOCQCQCQOTO?0??NPSEKO?0MOADES?
+    sieć: QCQCQBVNSQ2BVDS?2BVNPSEKCQCQCQDESQ2BVNPSEKCQCQCQDESQ2BVNPSEKSP2MSADESQ
+mic2_manipulator_20wpm.wav                   0.91 / 0.96     42 /  39      1/3 2/3   2/3 2/3
+mic3_pamiec_15wpm.wav                        0.92 / 0.99      7 /   7      1/6 2/6   6/6 6/6
+radio1_14020_dwie_stacje.wav                 0.92 /  nan     17 /   0      
+    kl:   KOO?OM???O?M?OO0?OO00OOOJ0?O?OTO0?MOR?G?K?O0EOO?OTO0?M?OOOMOTOOOO0MM?M
+    sieć: 
+RAZEM słowa (w całości / w kolejności)                                13/26 16/26   21/26 21/26
+KONIEC
