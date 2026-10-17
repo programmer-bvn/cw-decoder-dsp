@@ -166,19 +166,15 @@ def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
     return p[:n]
 
 
-# Histereza i odrzucanie krótkich impulsów (17.10, pomysły operatora).
+# Histereza (17.10, pomysł operatora).
 # mic1, 27-31 s: wyjście sieci po kropce N wisiało na 0,5-0,9 (z ogona
 # powstał doklejony element: N -> D), w kresce Q spadło do 0,35 (kreska
 # rozcięta: Q -> ?). Jeden próg 0,5 robił z każdego zachwiania zbocze.
 PROG_WL = 0.6           # element zaczyna się powyżej
 PROG_WYL = 0.3          # ... i kończy dopiero poniżej
-# Impuls / przerwa krótsze niż tyle jednostek -> sklejane z sąsiadami.
-# Pierwsza wersja (17.10, tester_4) brała u z pomiaru tempa okna i czyściła
-# KAŻDE okno: szum wygładzony w „znaki" przechodził bramkę (radio1, Nagrywanie
-# (8): śmieci zamiast ciszy), a prawdziwe kropki znikały (mic1: N -> T).
-# Teraz u z GRZEBIENIA i tylko w oknach, które bramkę już przeszły
-# (tools/tester_zbocza.droga, czysc=...).
-MIN_ODCINEK_U = 0.5
+# Odrzucanie krótkich impulsów (sklejanie odcinków < 0,5 u) sprawdzone
+# 17.10 w dwóch wersjach i USUNIĘTE: zysku brak, a niszczy informację,
+# którą grzebień naprawia sam (HISTORIA, „Histereza i odrzucanie...").
 
 
 def odcinki_z_przebiegu(p: np.ndarray, prog: float | None = None,
@@ -208,19 +204,3 @@ def odcinki_z_przebiegu(p: np.ndarray, prog: float | None = None,
     d = HOP_ZBOCZA / C.SR
     return [(bool(on[a]), (b - a) * d) for a, b in zip(gr[:-1], gr[1:])]
 
-
-def sklej_krotkie(odcinki: list[tuple[bool, float]], min_s: float
-                  ) -> list[tuple[bool, float]]:
-    """Odcinki (znak albo przerwa) krótsze niż min_s wchłaniane przez
-    sąsiadów — najkrótszy pierwszy, aż żaden nie zostanie."""
-    odc = [[a, b] for a, b in odcinki]
-    if min_s:
-        while len(odc) > 2:
-            wew = range(1, len(odc) - 1)
-            k = min(wew, key=lambda i: odc[i][1])
-            if odc[k][1] >= min_s:
-                break
-            # krótki odcinek znika: sąsiedzi (ten sam stan) łączą się z nim
-            odc[k - 1][1] += odc[k][1] + odc[k + 1][1]
-            del odc[k:k + 2]
-    return [(a, b) for a, b in odc]

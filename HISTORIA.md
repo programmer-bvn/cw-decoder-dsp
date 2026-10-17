@@ -1319,6 +1319,34 @@ dobrze. Hipoteza (bez pomiaru): histereza skraca przerwę między kreską
 a kropką N poniżej 0,5 u i sklejanie łączy je w jeden element. Słowa 21/26
 jak bez czyszczenia; pewność grzebienia o 0,01-0,04 wyżej. Zysku nie ma.
 
+**Hipoteza sprawdzona — i odrzucanie USUNIĘTE** (operator: „zmierz najpierw
+tę przerwę w N"). mic1, N od 27,34 s, u grzebienia 79 ms: próg 0,5 — kreska
+250 ms, przerwa 25 ms + okruchy; histereza — kreska 285 ms (3,6 u), przerwa
+35 ms (0,44 u), kropka 105 ms; sklejanie (< 40 ms) — jeden element 425 ms
+= T. Przerwę skraca już SIEĆ: po kresce P schodzi powoli (0,54 0,54 0,31
+0,32 0,60), do zera tylko na ~20 ms. Sama histereza czyta dobrze, bo
+grzebień dociąga 3,6/0,44/1,3 u do 3/1/1. Sklejanie niszczy to, co grzebień
+umie naprawić — usunięte (`zbocza.sklej_krotkie`, droga `siec_hk`).
+
+**Ogon po elemencie — pomiar** (`tools/ogon.py`, `out/zbocza/ogon.txt`,
+wykres `ogon.png`). Obwiednia przy tonie po zboczu opadającym, dB względem
+znaku, mediana po zboczach; syntetyk tym samym torem schodzi do -79 dB
+po 20 ms (dowolne narastanie 2-8 ms):
+
+| ms po zboczu | 10 | 20 | 30 | 40 | 60 | 120 | podłoga |
+|---|---|---|---|---|---|---|---|
+| mic1 | -26 | -28 | -28 | -31 | -36 | -37 | -37 |
+| mic1 PRZED narastającym (lustro) | -35 | -37 | -37 | -38 | -38 | -37 | |
+| mic2 | -29 | -29 | -24 | -30 | -31 | -33 | -32 |
+| SN0FMT | -24 | -25 | -28 | -28 | -31 | -25 | -20 |
+
+Mikrofon: po zboczu ~8-10 dB nad podłogą przez ~40 ms, z garbem przy
+15-30 ms; przed zboczem narastającym tego nie ma — ogon jest niesymetryczny,
+czyli pogłos albo wybrzmiewanie (hipoteza: pomieszczenie, ~10 dB na 50 ms,
+RT60 ~0,3 s). Radio (SN0FMT): po ~80 ms poziom ROŚNIE do -18 dB przy 200 ms
+— hipoteza: ARW odzyskuje wzmocnienie i podciąga szum. Generator sieci zboczy
+nie ma pogłosu; ARW ma (`apply_agc`), ale nie wiadomo, czy z takim czasem.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

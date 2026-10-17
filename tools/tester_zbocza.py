@@ -32,12 +32,8 @@ def slowa(tekst, chce):
     return pod, kol
 
 
-def droga(a, oo_okna, starty, n8, czysc=None):
-    """Nuty z kolejnych okien (jak tools/tester_grzebien) -> (tekst, nuty, pewn, wpm).
-
-    czysc(odcinki, u_s) -> odcinki: poprawka odcinków okna, które przeszło
-    bramkę, z jednostką z grzebienia; grzebień dopasowany wtedy jeszcze raz.
-    Bramka decyduje na odcinkach SUROWYCH — czyszczenie nie wpuszcza okien."""
+def droga(a, oo_okna, starty, n8):
+    """Nuty z kolejnych okien (jak tools/tester_grzebien) -> (tekst, nuty, pewn, wpm)."""
     wszystkie, pewn, wpm, granica = [], [], [], 0.0
     for i, s in enumerate(starty):
         u0 = tempo.zmierz_tempo(a[s:s + n8])["u_s"]
@@ -52,11 +48,6 @@ def droga(a, oo_okna, starty, n8, czysc=None):
         if not (np.isfinite(s_n) and s_n >= 3.0 and r["pewnosc"] >= 0.85):
             continue
         oo = oo_okna[i]
-        if czysc is not None:
-            oo = czysc(oo, r["u_s"])
-            r2 = grzebien.dopasuj_grzebien(oo, u_start=r["u_s"])
-            if np.isfinite(r2["u_s"]):
-                r = r2
         pewn.append(r["pewnosc"]); wpm.append(r["wpm"])
         for st, el in grzebien.nuty(oo, r["u_s"], r["waga"] * r["u_s"]):
             ts = s / C.SR + st
@@ -79,10 +70,8 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     dosyp = float(sys.argv[3]) if len(sys.argv) > 3 else None
     n8, k4 = 8 * C.SR, 4 * C.SR
-    # Drogi: próg klasyczny, sieć z jednym progiem, sieć z histerezą,
-    # sieć z histerezą i odrzucaniem krótkich impulsów (17.10; jednostka
-    # z grzebienia, tylko okna po bramce).
-    DROGI = ("klasyczna", "siec", "siec_hist", "siec_hk")
+    # Drogi: próg klasyczny, sieć z jednym progiem, sieć z histerezą (17.10).
+    DROGI = ("klasyczna", "siec", "siec_hist")
     sumy = np.zeros((len(DROGI), 2), int); razem = 0
     print("grzebień + tabela Morse'a z nut; drogi: " + ", ".join(DROGI))
     print(f"{'nagranie':42s} " + " ".join(f"{d:>14s}" for d in DROGI)
@@ -117,10 +106,7 @@ def main():
             hist = (Z.PROG_WL, Z.PROG_WYL)
             oo["siec"].append(Z.odcinki_z_przebiegu(pp))
             oo["siec_hist"].append(Z.odcinki_z_przebiegu(pp, histereza=hist))
-        oo["siec_hk"] = oo["siec_hist"]
-        czysc = lambda o, u: Z.sklej_krotkie(o, Z.MIN_ODCINEK_U * u)
-        wyniki = [droga(a, oo[d], starty, n8,
-                        czysc=czysc if d == "siec_hk" else None) for d in DROGI]
+        wyniki = [droga(a, oo[d], starty, n8) for d in DROGI]
         for nazwa, (tekst, nuty_, _, _) in zip(DROGI, wyniki):
             sf.write(out / f"{p.stem}_{nazwa}_wzorcowo.wav",
                      grzebien.regeneruj_wzorcowo(nuty_), C.SR)
