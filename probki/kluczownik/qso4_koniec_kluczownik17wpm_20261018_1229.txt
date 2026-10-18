@@ -1,0 +1,11 @@
+# NAGRANIE KLUCZOWNIKA — tools/radio/nagraj_kluczownik.py
+
+nadane:        DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO OK? = 73 ES GL = SQ2BVN/2 QRT ~ E E
+nadajnik:      IC-7300MK2, kluczownik wewnętrzny, tekst przez CI-V 0x17 (qso4_koniec.txt)
+tempo zadane:  17.0 WPM (CI-V 0x14 0x0C)
+klucz:         kluczownik — rytm maszynowy
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania
+radio:         COM5 115200 bod, adres 0xB6; karta: urządzenie 15
+czas:          20261018_1229
+szczyt:        0.983
+karta:         bez zgłoszeń (przepełnienia itp.)

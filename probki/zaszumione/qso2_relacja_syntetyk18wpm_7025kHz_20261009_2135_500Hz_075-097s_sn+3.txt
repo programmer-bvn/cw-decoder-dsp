@@ -4,4 +4,4 @@ nadane:        SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 579 579
 tor:           syntetyk: morse.synth_cw 18 WPM, rytm maszynowy, narastanie 5 ms
 szum:          szum_ic7300_usb_7025kHz_20261009_2135_500Hz_075-097s.wav (pas -6 dB, środek 756 Hz)
 ton:           756 Hz (przesunięty na środek pasa szumu)
-S/N:           zadane +3.0 dB, zmierzone +3.5 dB (dsp/sn, 500 Hz)
+S/N:           zadane +3.0 dB, zmierzone +3.4 dB (dsp/sn, 500 Hz)

@@ -4,4 +4,4 @@ nadane:        VVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ
 tor:           syntetyk: morse.synth_cw 18 WPM, rytm maszynowy, narastanie 5 ms
 szum:          szum_ic7300_usb_7025kHz_20261009_2135_500Hz_075-097s.wav (pas -6 dB, środek 756 Hz)
 ton:           756 Hz (przesunięty na środek pasa szumu)
-S/N:           zadane +10.0 dB, zmierzone +10.0 dB (dsp/sn, 500 Hz)
+S/N:           zadane +10.0 dB, zmierzone +10.1 dB (dsp/sn, 500 Hz)

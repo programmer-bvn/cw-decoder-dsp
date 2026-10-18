@@ -74,9 +74,7 @@ def main() -> None:
     if a.syntetyk:
         tekst_plik = Path(a.zrodlo[0])
         tekst = tekst_plik.read_text(encoding="utf-8").strip()
-        czysty = morse.synth_cw(tekst, wpm=a.syntetyk, tone=C.TONE_CENTER,
-                                amp=0.3, rng=np.random.default_rng(0))
-        czysty = np.r_[np.zeros(C.SR), czysty, np.zeros(C.SR)].astype(np.float32)
+        czysty = None                    # ton od razu na środku pasa szumu (niżej)
         nazwa = f"{tekst_plik.stem}_syntetyk{a.syntetyk:.0f}wpm"
         tor = f"syntetyk: morse.synth_cw {a.syntetyk:.0f} WPM, rytm maszynowy, narastanie {C.KEY_RAMP_MS:.0f} ms"
     else:
@@ -92,8 +90,15 @@ def main() -> None:
     szum_plik = pliki[0]
     srodek = srodek_pasa(szum_plik.with_suffix(".txt"))
 
-    t, f = tune.track_tone(czysty)
-    czysty = tune.retune(czysty, t, f, target=srodek)
+    if czysty is None:
+        czysty = morse.synth_cw(tekst, wpm=a.syntetyk, tone=srodek, amp=0.3,
+                                rng=np.random.default_rng(0))
+        # Bez szumu PRZED nadaniem: tune.track_tone zaczepia się wtedy na
+        # szpilce szumu banku i nie puszcza (HISTORIA 18.10, otwarte).
+        czysty = np.r_[czysty, np.zeros(C.SR)].astype(np.float32)
+    else:
+        t, f = tune.track_tone(czysty)
+        czysty = tune.retune(czysty, t, f, target=srodek)
     szum = szum_dlugosci(frontend.load_audio(szum_plik), czysty.size).astype(np.float64)
     nosna = amplituda_nosnej(czysty, srodek)
 

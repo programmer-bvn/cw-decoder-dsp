@@ -1407,6 +1407,39 @@ z tekstu, dopóki nie ma nagrań). Pierwszy zestaw: 5 tekstów x S/N 20/10/6/3/0
 dB, szum 7025 kHz FIL 500 Hz; S/N zmierzone = zadane ±0,5 dB (przy 0 dB
 +1,1...+1,4 — miara zawyża przy słabym sygnale).
 
+**Pierwsze nagrania z kluczownika (18.10, 17 WPM, podsłuch USB, 14,040 MHz
+CW-R).** Po drodze:
+- `mic2wav` ucinał nagranie (27 s -> 10,7 s): pętla kończyła się po czasie
+  zegarowym, a bloki czekały w kolejce — przeliczanie co blok nie nadążało
+  przy generowaniu zbioru na wszystkich rdzeniach. Teraz kolejka dopisywana
+  po zamknięciu strumienia; `latency="high"` (były dziury 1-13 ms w znakach).
+- Początek ucięty: karta oddaje dźwięk ~2-3 s po otwarciu strumienia —
+  kluczownik rusza 3 s po „NAGRYWANIE TRWA".
+- „VVV =" w jednym nagraniu nadawał operator RĘCZNIE — podsłuch klucza
+  ręcznego też idzie na USB (nagrania z ręki tą samą drogą). Moja hipoteza
+  o stacji na paśmie była błędna.
+- Podsłuch IC-7300MK2 nie jest idealny: zbocza ~1 ms (kliknięcia do 3 kHz),
+  amplituda siada w elemencie (0,55 -> 0,4) i różni się między elementami
+  (hipoteza: ARW), szum pasma 20 m w filtrze CW w przerwach.
+**Wynik** (`tester_zbocza` na `probki/kluczownik`, 94 słowa): próg klasyczny
++ grzebień 66/94, **sieć zboczy_3 + grzebień 84/94**; pewność 0,95-1,00;
+grzebień: 16,9 WPM przy 17 zadanych.
+
+**Pętla tonu na nagraniu zaczynającym się od szumu — OTWARTE.** Zestaw
+zaszumiony (sekunda szumu banku przed nadaniem): `tune.track_tone`
+zaczepiała się w pierwszym bloku na szpilce szumu (556 Hz; szpilki w bloku
+200 ms wystają 15-17 dB ponad medianę, próg zaczepu 8 dB) i trzymała szum
+do końca — stacji 40 dB silniejszej przy 756 Hz nie przejęła (strefa
+zaczepu ±12 Hz). Do tego cyfrowa cisza (same zera) dawała zaczep na
+dowolnym prążku — **naprawione** (blok zer = brak sygnału; prawdziwe
+nagrania: tor tonu bit w bit bez zmian). Sprawdzone i odrzucone:
+(1) próg zaczepu 15 dB — szpilki szumu go przekraczają; (2) zaczep po 0,3 s
+w tym samym miejscu — mic3: wygrał stały przydźwięk 539 Hz zamiast stacji
+750 Hz; (3) pierwszy zaczep z całego nagrania (80. percentyl widma) —
+naprawia zestaw, ale zmienia ton na 4 z 16 nagrań z kilkoma sygnałami
+(DP75HSC, OK1FPS, Nagrywanie 6 i 9), bez miary, który wybór jest dobry.
+Na razie `zaszum` zaczyna nadanie od pierwszej próbki.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

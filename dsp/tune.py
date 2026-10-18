@@ -97,6 +97,18 @@ def track_tone(audio: np.ndarray, sr: int = C.SR,
         # Podłoga 1e-30 nie wystarcza: dla sygnału syntetycznego, w którym
         # połowa pasma jest dokładnie zerowa, mediana wychodzi 0 i log10
         # daje dzielenie przez zero. Skalujemy podłogę do mocy sygnału.
+        # Cyfrowa cisza (same zera): nie ma czego śledzić. 18.10 — syntetyk
+        # z sekundą zer na początku (tools/zaszum): podłoga skalowana do mocy
+        # prążka dawała 120 dB „S/N" na dowolnym prążku i pętla zaczepiała się
+        # na przypadkowej częstotliwości (401 Hz -> przestrojenie o 355 Hz za dużo).
+        if float(sp[band].max()) <= 1e-20:
+            if not np.isnan(f_est):          # jak WYBIEG niżej
+                silent_s += step_s
+                if silent_s > hold_s:
+                    f_est = np.nan
+            times.append(start / sr)
+            freqs.append(f_est)
+            continue
         floor = float(np.median(sp[band]))
         if floor <= 0.0:
             floor = max(float(sp[band].max()), 1e-30) * 1e-12

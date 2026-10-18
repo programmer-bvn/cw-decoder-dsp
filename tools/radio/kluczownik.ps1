@@ -12,7 +12,11 @@
 #     w gotowości słychać podsłuch CW bez nadawania). 01 = pół-, 02 = pełny
 #     break-in — wtedy radio by NADAWAŁO; skrypt odmawia.
 #   - tryb (0x04) musi być CW albo CW-R (03 / 07);
-#   - brak odpowiedzi radia = odmowa.
+#   - brak odpowiedzi radia = odmowa;
+#   - W TRAKCIE gry co ~0,3 s odczyt stanu nadawania (0x1C 0x00): 01 =
+#     radio nadaje -> natychmiast stop kluczownika i przerwanie (18.10).
+#     -Trwanie N: tyle sekund od startu skrypt czuwa (kluczownik gra z bufora
+#     jeszcze po wysłaniu ostatniej ramki).
 # DTR i RTS wyłączone PRZED otwarciem portu (w Icomach bywają PTT/kluczem).
 # Ctrl+C albo błąd: w bloku finally idzie 0x17 0xFF (stop kluczownika).
 #
@@ -24,7 +28,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Plik,
     [string[]]$Porty = @("COM5", "COM4"),
     [int[]]$Bauds = @(115200, 19200),
-    [switch]$Sucho
+    [switch]$Sucho,
+    [double]$Trwanie = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,6 +62,12 @@ function Ramka($sp, [byte]$adr, [byte[]]$dane) {
         }
     }
     return $null
+}
+
+function Nadaje($sp, [byte]$adr) {
+    $o = Ramka $sp $adr @([byte]0x1C, [byte]0x00)
+    if ($null -eq $o -or $o.Count -lt 2) { return $true }     # brak odczytu = traktuj jak nadawanie
+    return ($o[1] -ne 0x00)
 }
 
 $tekst = (Get-Content -Raw -Encoding UTF8 $Plik).Trim() -replace "\s+", " "
@@ -94,11 +105,18 @@ try {
     if ($bk[1] -ne 0x00) {
         throw ("Break-in WŁĄCZONY (0x{0:X2}: 01 pół, 02 pełny) — radio by NADAWAŁO. Wyłącz BK-IN i uruchom ponownie." -f $bk[1])
     }
-    "tryb CW, break-in wyłączony — kluczownik zagra tylko podsłuch"
+    if (Nadaje $sp ([byte]$adr)) { throw "Radio NADAJE albo nie podaje stanu (0x1C 0x00) — nic nie wysłano." }
+    "tryb CW, break-in wyłączony, odbiór — kluczownik zagra tylko podsłuch"
+    $ks = Ramka $sp ([byte]$adr) @([byte]0x14, [byte]0x0C)
+    if ($null -ne $ks -and $ks.Count -ge 3) {
+        $v = [int](($ks[1] -shr 4) * 1000 + ($ks[1] -band 15) * 100 + ($ks[2] -shr 4) * 10 + ($ks[2] -band 15))
+        "tempo kluczownika: {0:N1} WPM (poziom {1}/255)" -f (6 + $v * 42.0 / 255), $v
+    }
     "tekst ($($tekst.Length) znaków): $tekst"
     if ($Sucho) { "-Sucho: bezpieczniki przeszły, nic nie wysłano"; $sukces = $true; return }
 
     # --- wysyłanie w ramkach po 30 znaków ---
+    $start = Get-Date
     for ($i = 0; $i -lt $tekst.Length; $i += 30) {
         $kawal = $tekst.Substring($i, [Math]::Min(30, $tekst.Length - $i))
         $dane = @([byte]0x17) + [System.Text.Encoding]::ASCII.GetBytes($kawal)
@@ -107,9 +125,15 @@ try {
             $o = Ramka $sp ([byte]$adr) $dane
             if ($null -ne $o -and $o.Count -ge 1 -and $o[0] -eq 0xFB) { break }   # OK
             if (++$proby -gt 600) { throw "Kluczownik nie przyjmuje tekstu (ostatnia odpowiedź: $o)." }
+            if (Nadaje $sp ([byte]$adr)) { throw "RADIO NADAJE — przerwane." }
             Start-Sleep -Milliseconds 200                                           # FA = bufor pełny
         }
+        if (Nadaje $sp ([byte]$adr)) { throw "RADIO NADAJE — przerwane." }
         "  wysłane: $kawal"
+    }
+    while (((Get-Date) - $start).TotalSeconds -lt $Trwanie) {
+        if (Nadaje $sp ([byte]$adr)) { throw "RADIO NADAJE — przerwane." }
+        Start-Sleep -Milliseconds 300
     }
     "gotowe - kluczownik dogrywa bufor"
     $sukces = $true

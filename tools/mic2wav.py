@@ -191,8 +191,12 @@ def record(seconds: float, device, out_path: Path | None,
 
     t0 = time.time()
     try:
+        # latency="high": większy bufor karty. 18.10, nagranie kluczownika przy
+        # generowaniu zbioru na wszystkich rdzeniach — dziury 1-13 ms w znakach.
         with sd.InputStream(samplerate=dev_sr, channels=n_kan, dtype="float32",
-                            blocksize=C.MIC_BLOCK, device=device, callback=cb):
+                            blocksize=C.MIC_BLOCK, device=device, callback=cb,
+                            latency="high"):
+            print("NAGRYWANIE TRWA", flush=True)
             while True:
                 elapsed = time.time() - t0
                 if not monitor_only and elapsed >= seconds:
@@ -241,6 +245,17 @@ def record(seconds: float, device, out_path: Path | None,
                       end="", flush=True)
     except KeyboardInterrupt:
         print("\n  przerwane")
+
+    # Bloki, których pętla nie zdążyła przeliczyć (pomiar, przepróbkowanie
+    # i widmo co blok) — 18.10, nagranie kluczownika w trakcie generowania
+    # zbioru na wszystkich rdzeniach: z 27 s zapisało się 10,7 s, reszta
+    # została w kolejce. Strumień jest już zamknięty, kolejka kompletna.
+    if not monitor_only:
+        while not q.empty():
+            caly = q.get_nowait()
+            chunks.append(caly[:, 0])
+            if surowe:
+                surowe_kawalki.append(caly)
 
     print()
     if monitor_only or not chunks:
