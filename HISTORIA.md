@@ -1385,6 +1385,30 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Cepstrum przebiegu kluczowania — drugi, niezależny pomiar jednostki (19.10)
+
+**Pomysł operatora** (prędkościomierz mikrofalowy, 2008): cepstrum (widmo
+z logarytmu widma) pokazuje rytm powtarzających się odstępów — „prążek na
+jeden i na trzy". Liczone na P(klucz) z sieci zboczy_3, okna 8 s co 4 s
+(okno Hanninga, FFT x4, log mocy, odwrotna FFT), wykres
+`out/cepstrum_obwiedni.png`.
+**Zmierzone:** ostre UJEMNE szpilki dokładnie przy 1 u, 3 u i 7 u (prostokąt
+długości T ma zera widma co 1/T -> okresowe dołki w log widma -> ujemny
+szczyt cepstrum przy T), słaby dodatni przy 4 u — na kluczowniku, ręce
+i mikrofonie (mic1: 80/240 ms). Autokorelacja daje to samo słabiej.
+Najgłębszy punkt sam: mediana dobra w 4 z 5 nagrań, okna często 2u/3u.
+**Suma cepstrum przy u + 3u + 0,5·7u** (proporcje Morse'a), siatka 1 ms:
+
+| nagranie | grzebień u | cepstrum u | okna zgodne ±5% |
+|---|---|---|---|
+| kluczownik qso1 / qso2 | 70 / 70 ms | 70 / 70 ms | 4/4, 24/24 |
+| ręka SP2KKB / CQ (różne odstępy) | 70 / 70 ms | 70 / 70 ms | 34/34, 27/28 |
+| mic1 (mikrofon, pogłos) | 80 ms | 80 ms | 63/63 |
+
+Zastosowania (do zrobienia): fuzja z grzebieniem (zgodne -> pewność,
+niezgodne -> okno podejrzane; zamiast części bramki S/N), punkt startowy
+grzebienia, cepstrum AUDIO do echa/wielodrogowości (pogłos mic, ogon DX).
+
 ### Pętla tonu: „ton kluczowany" — zestaw z prawdą i nowa metoda (18/19.10)
 
 **Zestaw** (`tools/test_tonu.py`, decyzja operatora: zamiast sumatora
