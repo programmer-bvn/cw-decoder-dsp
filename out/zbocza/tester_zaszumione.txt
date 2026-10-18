@@ -1,0 +1,28 @@
+grzebień + tabela Morse'a z nut; drogi: klasyczna, siec, siec_hist
+nagranie                                        klasyczna           siec      siec_hist   (pewność/okien, słowa w całości)
+qso1_cq_syntetyk18wpm_7025kHz_20261009_213   nan/  0  0/7   nan/  0  0/7   nan/  0  0/7
+qso1_cq_syntetyk18wpm_7025kHz_20261009_213  0.97/  5  7/7  1.00/  5  7/7  1.00/  5  7/7
+qso1_cq_syntetyk18wpm_7025kHz_20261009_213  0.94/  5  7/7  1.00/  5  7/7  1.00/  5  7/7
+qso1_cq_syntetyk18wpm_7025kHz_20261009_213  0.95/  3  2/7  0.99/  3  2/7  0.99/  3  2/7
+qso1_cq_syntetyk18wpm_7025kHz_20261009_213  0.97/  5  7/7  0.99/  5  7/7  0.99/  5  7/7
+qso2_relacja_syntetyk18wpm_7025kHz_2026100   nan/  0 0/28   nan/  0 0/28   nan/  0 0/28
+qso2_relacja_syntetyk18wpm_7025kHz_2026100 0.96/ 24 28/28 0.99/ 24 28/28 0.99/ 24 28/28
+qso2_relacja_syntetyk18wpm_7025kHz_2026100 0.94/ 24 28/28 0.99/ 24 28/28 1.00/ 24 28/28
+qso2_relacja_syntetyk18wpm_7025kHz_2026100 0.97/ 21 20/28 0.99/ 21 23/28 0.99/ 21 23/28
+qso2_relacja_syntetyk18wpm_7025kHz_2026100 0.97/ 24 28/28 0.99/ 24 28/28 0.99/ 24 28/28
+qso3_odpowiedz_syntetyk18wpm_7025kHz_20261   nan/  0 0/27   nan/  0 0/27   nan/  0 0/27
+qso3_odpowiedz_syntetyk18wpm_7025kHz_20261 0.96/ 26 27/27 0.99/ 26 27/27 0.99/ 26 27/27
+qso3_odpowiedz_syntetyk18wpm_7025kHz_20261 0.94/ 26 27/27 0.99/ 26 27/27 1.00/ 26 27/27
+qso3_odpowiedz_syntetyk18wpm_7025kHz_20261 0.97/ 15 11/27 0.99/ 15 12/27 0.99/ 15 12/27
+qso3_odpowiedz_syntetyk18wpm_7025kHz_20261 0.97/ 26 27/27 0.99/ 26 27/27 0.99/ 26 27/27
+qso4_koniec_syntetyk18wpm_7025kHz_20261009   nan/  0 0/17   nan/  0 0/17   nan/  0 0/17
+qso4_koniec_syntetyk18wpm_7025kHz_20261009 0.96/ 15 17/17 0.99/ 15 17/17 0.99/ 15 17/17
+qso4_koniec_syntetyk18wpm_7025kHz_20261009 0.94/ 15 17/17 0.99/ 15 17/17 1.00/ 15 17/17
+qso4_koniec_syntetyk18wpm_7025kHz_20261009  0.97/ 10 9/17  0.99/ 10 9/17  0.99/ 10 9/17
+qso4_koniec_syntetyk18wpm_7025kHz_20261009 0.97/ 15 17/17 0.99/ 15 17/17 0.99/ 15 17/17
+qso5_cyfry_syntetyk18wpm_7025kHz_20261009_   nan/  0 0/15   nan/  0 0/15   nan/  0 0/15
+qso5_cyfry_syntetyk18wpm_7025kHz_20261009_ 0.97/ 25 15/15 0.99/ 25 15/15 0.99/ 25 15/15
+qso5_cyfry_syntetyk18wpm_7025kHz_20261009_ 0.94/ 25 15/15 0.99/ 25 15/15 0.99/ 25 15/15
+qso5_cyfry_syntetyk18wpm_7025kHz_20261009_ 0.97/ 19 10/15 0.99/ 19 10/15 0.99/ 19 10/15
+qso5_cyfry_syntetyk18wpm_7025kHz_20261009_ 0.97/ 25 15/15 0.99/ 25 15/15 0.99/ 25 15/15
+RAZEM słowa w całości / w kolejności       334/470 343/470 338/470 344/470 338/470 344/470

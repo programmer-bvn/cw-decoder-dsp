@@ -1440,6 +1440,19 @@ naprawia zestaw, ale zmienia ton na 4 z 16 nagrań z kilkoma sygnałami
 (DP75HSC, OK1FPS, Nagrywanie 6 i 9), bez miary, który wybór jest dobry.
 Na razie `zaszum` zaczyna nadanie od pierwszej próbki.
 
+**Zestaw zaszumiony — wynik** (`out/zbocza/tester_zaszumione.txt`; sygnał
+kluczownika z tekstu 18 WPM + szum banku 7025 kHz FIL 500 Hz; 94 słowa na
+poziom; sieć zboczy_3 + grzebień, z histerezą):
+
+| S/N zadane (zmierzone) | +20 | +10 | +6 | +3 (3,3-3,6) | 0 (1,0-1,4) |
+|---|---|---|---|---|---|
+| słowa | 94/94 | 94/94 | 94/94 | 56/94 | 0/94 |
+
+Przy 3 i 0 dB odcina BRAMKA (okno czytane, gdy S/N >= 3 dB): przy +3 dB
+część okien odpada (qso1: 3 z 5), przy 0 dB wszystkie. Odczytu okien, które
+przeszły, nie psuje szum — ograniczeniem jest próg bramki, nie sieć.
+Próg klasyczny + grzebień: 334/470 (sieć 338/470).
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
