@@ -1,0 +1,13 @@
+# NAGRANIE Z RĘKI — operator SQ2BVN, manipulator, 18.10 18:42
+
+nadane:        CQ CQ CQ DE SP2KKB SP2KKB SP2KKB PSE K
+               (wg operatora; znak SP2KKB wybrany jako wygodniejszy do nadawania;
+               liczba powtórzeń całości nieodnotowana — słowa liczone raz;
+               „PSE K” na końcu potwierdzone przez operatora)
+uwagi:         NA KOŃCU KLUCZ SIĘ SKLEIŁ (operator) — odczyt końcówki „S E KKD H*K KKB VE”
+               to skutek usterki, nie błąd dekodera. Przy manipulatorze z kluczownikiem
+               sklejony styk daje ciąg kropek/kresek w tempie kluczownika (H, *), nie długi element.
+klucz:         ręczny (manipulator; operator: styki czasem się kleją albo nie stykają), tempo kluczownika 17 WPM
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; ANTENA ODŁĄCZONA (szum własny odbiornika)
+radio:         COM5 115200 adres 0xB6: FE FE E0 B6 03 86 94 00 50 00 FD   tryb: FE FE E0 B6 04 03 03 FD 
+przycięte:     0.16 s z przodu (szum sprzed nadania; surowe/ pełne)
