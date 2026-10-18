@@ -1,0 +1,277 @@
+============================================================
+ NOC TRENINGOWA  2026-10-18 11:18
+============================================================
+ zbiór:  czesci_znaki/morse_200000_*.npz  (200000 próbek)
+ epoki:  12   batch: 256
+ log:    out/noc_20261018_1118.log
+
+--- środowisko ---
+ładuję srodowisko/rtx3050_setenv.sh
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+
+--- paszport ---
+commit:  171a886 2026-10-18 11:18 Alfabet sieci + przecinek i kropka (45 klas) -- operator: moga sie pojawiac w tekstach
+gałąź:   main
+zmiany:  1 plików poza commitem — różnica w out/noc_20261018_1118_kod.diff
+            M tools/mic2wav.py
+venv:    /root/venv_gpu  (natywny system plików WSL)
+pakiety: tensorflow 2.21.0, keras 3.15.1, numpy 2.5.3, scipy 1.18.1, librosa 1.0.0
+import tensorflow: 15 s   (venv: /root/venv_gpu)
+
+--- karta ---
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792315116.487564     639 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.21.0 | GPU: ['/physical_device:GPU:0']
+
+ROTACJA CZĘŚCI WŁĄCZONA
+  zbiór 4000000 próbek potrzebowałby ~41000 MB naraz,
+  wolne jest 23161 MB. Części pójdą po kolei — w pamięci
+  będzie leżeć jedna (~820 MB) plus walidacja.
+  Koszt przy zmierzonych 289 MB/s: ~3 s na część na epokę.
+
+--- diag.py ---
+======================================================================
+WYNIK: 120/120 kontroli przeszło
+======================================================================
+
+--- zbiór ---
+wzorzec: czesci_znaki/morse_200000_*.npz   (20 x 200000 = 4000000 próbek)
+czesci_znaki/morse_200000_*.npz: brak plikow
+wolne miejsce: 271446 MB, potrzeba ~18448 MB
+generuję 20 części po 200000 próbek (~11 min każda, pomiar 16.10: jeden wątek BLAS na proces)...
+
+[20/20] czesci_znaki/morse_200000_19.npz
+generuję 200000 próbek na 11 procesach (400 kawałków po 500)
+  rdzeni widocznych: 12, wolnych: 1
+  500/200000  20s  pozostało ~7949s     1000/200000  20s  pozostało ~3965s     1500/200000  20s  pozostało ~2637s     2000/200000  20s  pozostało ~1973s     2500/200000  20s  pozostało ~1574s     3000/200000  20s  pozostało ~1309s     3500/200000  20s  pozostało ~1119s     4000/200000  20s  pozostało ~977s     4500/200000  20s  pozostało ~866s     5000/200000  20s  pozostało ~777s     5500/200000  20s  pozostało ~705s     6000/200000  35s  pozostało ~1130s     6500/200000  35s  pozostało ~1042s     7000/200000  35s  pozostało ~970s     7500/200000  36s  pozostało ~931s     8000/200000  36s  pozostało ~871s     8500/200000  36s  pozostało ~817s     9000/200000  36s  pozostało ~770s     9500/200000  37s  pozostało ~733s     10000/200000  37s  pozostało ~695s     10500/200000  37s  pozostało ~669s     11000/200000  37s  pozostało ~637s     11500/200000  52s  pozostało ~857s     12000/200000  52s  pozostało ~819s     12500/200000  53s  pozostało ~791s     13000/200000  54s  pozostało ~774s     13500/200000  54s  pozostało ~744s     14000/200000  54s  pozostało ~715s     14500/200000  54s  pozostało ~689s     15000/200000  54s  pozostało ~664s     15500/200000  54s  pozostało ~641s     16000/200000  54s  pozostało ~620s     16500/200000  55s  pozostało ~614s     17000/200000  69s  pozostało ~748s     17500/200000  69s  pozostało ~724s     18000/200000  69s  pozostało ~702s     18500/200000  70s  pozostało ~687s     19000/200000  70s  pozostało ~667s     19500/200000  71s  pozostało ~659s     20000/200000  71s  pozostało ~642s     20500/200000  71s  pozostało ~624s     21000/200000  71s  pozostało ~608s     21500/200000  72s  pozostało ~599s     22000/200000  72s  pozostało ~583s     22500/200000  86s  pozostało ~679s     23000/200000  86s  pozostało ~665s     23500/200000  86s  pozostało ~649s     24000/200000  87s  pozostało ~636s     24500/200000  87s  pozostało ~622s     25000/200000  88s  pozostało ~614s     25500/200000  89s  pozostało ~607s     26000/200000  89s  pozostało ~595s     26500/200000  89s  pozostało ~582s     27000/200000  89s  pozostało ~570s     27500/200000  89s  pozostało ~560s     28000/200000  103s  pozostało ~631s     28500/200000  103s  pozostało ~619s     29000/200000  104s  pozostało ~612s     29500/200000  104s  pozostało ~600s     30000/200000  105s  pozostało ~592s     30500/200000  105s  pozostało ~583s     31000/200000  106s  pozostało ~576s     31500/200000  106s  pozostało ~565s     32000/200000  106s  pozostało ~556s     32500/200000  106s  pozostało ~548s     33000/200000  107s  pozostało ~541s     33500/200000  119s  pozostało ~592s     34000/200000  119s  pozostało ~583s     34500/200000  121s  pozostało ~580s     35000/200000  121s  pozostało ~572s     35500/200000  122s  pozostało ~563s     36000/200000  122s  pozostało ~555s     36500/200000  123s  pozostało ~549s     37000/200000  123s  pozostało ~540s     37500/200000  123s  pozostało ~533s     38000/200000  123s  pozostało ~526s     38500/200000  123s  pozostało ~517s     39000/200000  135s  pozostało ~558s     39500/200000  136s  pozostało ~554s     40000/200000  138s  pozostało ~551s     40500/200000  138s  pozostało ~542s     41000/200000  138s  pozostało ~537s     41500/200000  139s  pozostało ~529s     42000/200000  139s  pozostało ~523s     42500/200000  139s  pozostało ~517s     43000/200000  140s  pozostało ~510s     43500/200000  141s  pozostało ~506s     44000/200000  141s  pozostało ~499s     44500/200000  152s  pozostało ~532s     45000/200000  153s  pozostało ~527s     45500/200000  155s  pozostało ~525s     46000/200000  155s  pozostało ~519s     46500/200000  155s  pozostało ~512s     47000/200000  156s  pozostało ~506s     47500/200000  157s  pozostało ~503s     48000/200000  157s  pozostało ~496s     48500/200000  157s  pozostało ~490s     49000/200000  157s  pozostało ~483s     49500/200000  158s  pozostało ~482s     50000/200000  169s  pozostało ~507s     50500/200000  171s  pozostało ~505s     51000/200000  171s  pozostało ~500s     51500/200000  171s  pozostało ~494s     52000/200000  172s  pozostało ~490s     52500/200000  174s  pozostało ~488s     53000/200000  174s  pozostało ~481s     53500/200000  174s  pozostało ~475s     54000/200000  174s  pozostało ~469s     54500/200000  175s  pozostało ~466s     55000/200000  175s  pozostało ~462s     55500/200000  185s  pozostało ~483s     56000/200000  187s  pozostało ~482s     56500/200000  189s  pozostało ~480s     57000/200000  189s  pozostało ~474s     57500/200000  189s  pozostało ~469s     58000/200000  191s  pozostało ~468s     58500/200000  191s  pozostało ~462s     59000/200000  191s  pozostało ~457s     59500/200000  191s  pozostało ~452s     60000/200000  192s  pozostało ~448s     60500/200000  192s  pozostało ~443s     61000/200000  202s  pozostało ~460s     61500/200000  204s  pozostało ~460s     62000/200000  205s  pozostało ~456s     62500/200000  206s  pozostało ~453s     63000/200000  206s  pozostało ~448s     63500/200000  207s  pozostało ~445s     64000/200000  208s  pozostało ~442s     64500/200000  208s  pozostało ~437s     65000/200000  208s  pozostało ~432s     65500/200000  208s  pozostało ~428s     66000/200000  209s  pozostało ~425s     66500/200000  219s  pozostało ~439s     67000/200000  220s  pozostało ~437s     67500/200000  222s  pozostało ~435s     68000/200000  222s  pozostało ~430s     68500/200000  222s  pozostało ~426s     69000/200000  225s  pozostało ~427s     69500/200000  225s  pozostało ~422s     70000/200000  225s  pozostało ~417s     70500/200000  225s  pozostało ~414s     71000/200000  225s  pozostało ~409s     71500/200000  227s  pozostało ~408s     72000/200000  234s  pozostało ~416s     72500/200000  237s  pozostało ~418s     73000/200000  238s  pozostało ~414s     73500/200000  238s  pozostało ~410s     74000/200000  239s  pozostało ~406s     74500/200000  241s  pozostało ~406s     75000/200000  241s  pozostało ~402s     75500/200000  241s  pozostało ~398s     76000/200000  242s  pozostało ~395s     76500/200000  242s  pozostało ~391s     77000/200000  244s  pozostało ~391s     77500/200000  251s  pozostało ~396s     78000/200000  253s  pozostało ~396s     78500/200000  254s  pozostało ~393s     79000/200000  254s  pozostało ~389s     79500/200000  255s  pozostało ~386s     80000/200000  258s  pozostało ~387s     80500/200000  258s  pozostało ~383s     81000/200000  259s  pozostało ~380s     81500/200000  259s  pozostało ~376s     82000/200000  259s  pozostało ~372s     82500/200000  261s  pozostało ~372s     83000/200000  267s  pozostało ~377s     83500/200000  271s  pozostało ~379s     84000/200000  271s  pozostało ~375s     84500/200000  271s  pozostało ~371s     85000/200000  272s  pozostało ~368s     85500/200000  274s  pozostało ~366s     86000/200000  275s  pozostało ~364s     86500/200000  275s  pozostało ~361s     87000/200000  276s  pozostało ~358s     87500/200000  276s  pozostało ~354s     88000/200000  279s  pozostało ~356s     88500/200000  284s  pozostało ~358s     89000/200000  287s  pozostało ~358s     89500/200000  288s  pozostało ~355s     90000/200000  288s  pozostało ~353s     90500/200000  289s  pozostało ~349s     91000/200000  291s  pozostało ~348s     91500/200000  292s  pozostało ~346s     92000/200000  293s  pozostało ~344s     92500/200000  293s  pozostało ~340s     93000/200000  293s  pozostało ~337s     93500/200000  296s  pozostało ~337s     94000/200000  301s  pozostało ~339s     94500/200000  304s  pozostało ~340s     95000/200000  305s  pozostało ~337s     95500/200000  306s  pozostało ~334s     96000/200000  306s  pozostało ~331s     96500/200000  308s  pozostało ~330s     97000/200000  310s  pozostało ~329s     97500/200000  310s  pozostało ~325s     98000/200000  310s  pozostało ~322s     98500/200000  310s  pozostało ~319s     99000/200000  313s  pozostało ~319s     99500/200000  319s  pozostało ~322s     100000/200000  321s  pozostało ~321s     100500/200000  322s  pozostało ~318s     101000/200000  323s  pozostało ~317s     101500/200000  323s  pozostało ~314s     102000/200000  325s  pozostało ~312s     102500/200000  326s  pozostało ~310s     103000/200000  326s  pozostało ~307s     103500/200000  326s  pozostało ~304s     104000/200000  326s  pozostało ~301s     104500/200000  330s  pozostało ~302s     105000/200000  336s  pozostało ~304s     105500/200000  338s  pozostało ~303s     106000/200000  338s  pozostało ~300s     106500/200000  339s  pozostało ~298s     107000/200000  340s  pozostało ~296s     107500/200000  341s  pozostało ~293s     108000/200000  342s  pozostało ~291s     108500/200000  343s  pozostało ~289s     109000/200000  343s  pozostało ~287s     109500/200000  343s  pozostało ~284s     110000/200000  347s  pozostało ~284s     110500/200000  352s  pozostało ~285s     111000/200000  355s  pozostało ~285s     111500/200000  355s  pozostało ~282s     112000/200000  356s  pozostało ~279s     112500/200000  356s  pozostało ~277s     113000/200000  357s  pozostało ~275s     113500/200000  359s  pozostało ~274s     114000/200000  359s  pozostało ~271s     114500/200000  362s  pozostało ~270s     115000/200000  362s  pozostało ~267s     115500/200000  364s  pozostało ~266s     116000/200000  369s  pozostało ~267s     116500/200000  372s  pozostało ~267s     117000/200000  372s  pozostało ~264s     117500/200000  373s  pozostało ~262s     118000/200000  373s  pozostało ~259s     118500/200000  373s  pozostało ~257s     119000/200000  375s  pozostało ~256s     119500/200000  376s  pozostało ~253s     120000/200000  376s  pozostało ~251s     120500/200000  379s  pozostało ~250s     121000/200000  381s  pozostało ~249s     121500/200000  386s  pozostało ~249s     122000/200000  388s  pozostało ~248s     122500/200000  389s  pozostało ~246s     123000/200000  390s  pozostało ~244s     123500/200000  390s  pozostało ~242s     124000/200000  390s  pozostało ~239s     124500/200000  393s  pozostało ~238s     125000/200000  393s  pozostało ~236s     125500/200000  393s  pozostało ~233s     126000/200000  396s  pozostało ~232s     126500/200000  398s  pozostało ~231s     127000/200000  402s  pozostało ~231s     127500/200000  405s  pozostało ~230s     128000/200000  405s  pozostało ~228s     128500/200000  405s  pozostało ~226s     129000/200000  408s  pozostało ~225s     129500/200000  408s  pozostało ~222s     130000/200000  410s  pozostało ~221s     130500/200000  410s  pozostało ~218s     131000/200000  410s  pozostało ~216s     131500/200000  413s  pozostało ~215s     132000/200000  414s  pozostało ~213s     132500/200000  419s  pozostało ~213s     133000/200000  421s  pozostało ~212s     133500/200000  421s  pozostało ~210s     134000/200000  422s  pozostało ~208s     134500/200000  423s  pozostało ~206s     135000/200000  425s  pozostało ~205s     135500/200000  426s  pozostało ~203s     136000/200000  427s  pozostało ~201s     136500/200000  427s  pozostało ~198s     137000/200000  429s  pozostało ~197s     137500/200000  430s  pozostało ~196s     138000/200000  436s  pozostało ~196s     138500/200000  438s  pozostało ~194s     139000/200000  438s  pozostało ~192s     139500/200000  439s  pozostało ~190s     140000/200000  440s  pozostało ~188s     140500/200000  441s  pozostało ~187s     141000/200000  442s  pozostało ~185s     141500/200000  442s  pozostało ~183s     142000/200000  443s  pozostało ~181s     142500/200000  447s  pozostało ~180s     143000/200000  447s  pozostało ~178s     143500/200000  452s  pozostało ~178s     144000/200000  454s  pozostało ~177s     144500/200000  455s  pozostało ~175s     145000/200000  456s  pozostało ~173s     145500/200000  457s  pozostało ~171s     146000/200000  458s  pozostało ~170s     146500/200000  459s  pozostało ~167s     147000/200000  459s  pozostało ~165s     147500/200000  460s  pozostało ~164s     148000/200000  463s  pozostało ~163s     148500/200000  464s  pozostało ~161s     149000/200000  469s  pozostało ~161s     149500/200000  470s  pozostało ~159s     150000/200000  471s  pozostało ~157s     150500/200000  472s  pozostało ~155s     151000/200000  473s  pozostało ~154s     151500/200000  474s  pozostało ~152s     152000/200000  475s  pozostało ~150s     152500/200000  476s  pozostało ~148s     153000/200000  476s  pozostało ~146s     153500/200000  480s  pozostało ~145s     154000/200000  481s  pozostało ~144s     154500/200000  485s  pozostało ~143s     155000/200000  486s  pozostało ~141s     155500/200000  488s  pozostało ~140s     156000/200000  489s  pozostało ~138s     156500/200000  489s  pozostało ~136s     157000/200000  491s  pozostało ~135s     157500/200000  491s  pozostało ~133s     158000/200000  492s  pozostało ~131s     158500/200000  492s  pozostało ~129s     159000/200000  497s  pozostało ~128s     159500/200000  498s  pozostało ~126s     160000/200000  502s  pozostało ~125s     160500/200000  503s  pozostało ~124s     161000/200000  504s  pozostało ~122s     161500/200000  506s  pozostało ~121s     162000/200000  506s  pozostało ~119s     162500/200000  508s  pozostało ~117s     163000/200000  509s  pozostało ~115s     163500/200000  509s  pozostało ~114s     164000/200000  509s  pozostało ~112s     164500/200000  513s  pozostało ~111s     165000/200000  515s  pozostało ~109s     165500/200000  517s  pozostało ~108s     166000/200000  520s  pozostało ~106s     166500/200000  521s  pozostało ~105s     167000/200000  523s  pozostało ~103s     167500/200000  523s  pozostało ~101s     168000/200000  524s  pozostało ~100s     168500/200000  525s  pozostało ~98s     169000/200000  526s  pozostało ~97s     169500/200000  526s  pozostało ~95s     170000/200000  530s  pozostało ~94s     170500/200000  532s  pozostało ~92s     171000/200000  534s  pozostało ~91s     171500/200000  537s  pozostało ~89s     172000/200000  538s  pozostało ~88s     172500/200000  540s  pozostało ~86s     173000/200000  540s  pozostało ~84s     173500/200000  541s  pozostało ~83s     174000/200000  542s  pozostało ~81s     174500/200000  542s  pozostało ~79s     175000/200000  543s  pozostało ~78s     175500/200000  546s  pozostało ~76s     176000/200000  549s  pozostało ~75s     176500/200000  552s  pozostało ~73s     177000/200000  553s  pozostało ~72s     177500/200000  554s  pozostało ~70s     178000/200000  556s  pozostało ~69s     178500/200000  557s  pozostało ~67s     179000/200000  558s  pozostało ~66s     179500/200000  558s  pozostało ~64s     180000/200000  558s  pozostało ~62s     180500/200000  559s  pozostało ~60s     181000/200000  563s  pozostało ~59s     181500/200000  566s  pozostało ~58s     182000/200000  569s  pozostało ~56s     182500/200000  569s  pozostało ~55s     183000/200000  571s  pozostało ~53s     183500/200000  572s  pozostało ~51s     184000/200000  573s  pozostało ~50s     184500/200000  575s  pozostało ~48s     185000/200000  575s  pozostało ~47s     185500/200000  575s  pozostało ~45s     186000/200000  576s  pozostało ~43s     186500/200000  579s  pozostało ~42s     187000/200000  582s  pozostało ~40s     187500/200000  585s  pozostało ~39s     188000/200000  586s  pozostało ~37s     188500/200000  588s  pozostało ~36s     189000/200000  589s  pozostało ~34s     189500/200000  590s  pozostało ~33s     190000/200000  592s  pozostało ~31s     190500/200000  592s  pozostało ~30s     191000/200000  592s  pozostało ~28s     191500/200000  593s  pozostało ~26s     192000/200000  596s  pozostało ~25s     192500/200000  600s  pozostało ~23s     193000/200000  601s  pozostało ~22s     193500/200000  603s  pozostało ~20s     194000/200000  605s  pozostało ~19s     194500/200000  606s  pozostało ~17s     195000/200000  607s  pozostało ~16s     195500/200000  609s  pozostało ~14s     196000/200000  609s  pozostało ~12s     196500/200000  609s  pozostało ~11s     197000/200000  610s  pozostało ~9s     197500/200000  611s  pozostało ~8s     198000/200000  613s  pozostało ~6s     198500/200000  613s  pozostało ~5s     199000/200000  614s  pozostało ~3s     199500/200000  615s  pozostało ~2s     200000/200000  616s  pozostało ~0s   
+
+Zapisano czesci_znaki/morse_200000_19.npz  (826 MB, uint8)
+klasa 0 (puste radio): 29973 (15.0%)
+znaki: min 3771, max 3984 na klasę
+QRM 35%   QRN 30%   QSB>0.3 43%
+
+Gotowe. Trening: --dataset 'czesci_znaki/morse_200000_*.npz'
+
+============================================================
+ PRZEPUSTOWOSC     15:06
+============================================================
+    potok wejściowy                       360154 próbek/s   (0.7 ms/krok)
+    model na karcie                         8545 próbek/s   (30.0 ms/krok)
+    trening                                 8392 próbek/s   (30.5 ms/krok)
+  WĄSKIM GARDŁEM JEST KARTA — tak ma być.
+    Wejście dowozi 360154 próbek/s, karta bierze 8545.
+  OK, 0 min
+
+============================================================
+ TRENING fcn -> runs/fcn_4000000_czesci_znaki     15:07
+============================================================
+[1m15307/15307[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m943s[0m 62ms/step - accuracy: 0.9265 - loss: 0.1994 - val_accuracy: 0.9222 - val_loss: 0.2185 - learning_rate: 0.0010
+[1m15307/15307[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m943s[0m 62ms/step - accuracy: 0.9270 - loss: 0.1977 - val_accuracy: 0.9229 - val_loss: 0.2180 - learning_rate: 0.0010
+  kroki z dobrą klasą:      92.32%   (val_accuracy)
+
+  środkowy znak:            96.07%   <- porównywalne z dpu
+  okno odczytane w całości: 76.41%
+  CER:                      14.19%
+  OK, 190 min
+
+============================================================
+ KOPERTA fcn     18:17
+============================================================
+KOPERTA: gdzie model czyta (sygnał idealny, % trafień)
+
+  WPM \ ton       550    650    675    725    750    775    825    850    950
+  ---------------------------------------------------------------------------
+     10            .     18    100    100    100    100    100     22      .
+     12            .      8    100    100    100    100    100     25      .
+     15            .      5    100    100    100    100    100     15      .
+     18            .      2    100    100    100    100    100     12      .
+     22            .      .    100    100    100    100    100      5      .
+     25            .      .    100    100    100    100    100      2      2
+     28            .      2    100    100    100    100    100      2      .
+     32            2      2    100    100    100    100    100      2      .
+     35            .      2    100    100    100    100    100      5      .
+
+  kropka = ZERO trafień. Nie "gorzej" — model milczy.
+
+WYROK: za mało danych w kubełkach — podnieś --n-bledy
+
+  OK, 1 min
+
+============================================================
+ NAGRANIA fcn     18:19
+============================================================
+    w całości:    0/1
+    w kolejności: 0/1
+    w całości:    1/1   (DP75HSC)
+    w kolejności: 1/1   (DP75HSC)
+    w całości:    1/1   (LA3WAA)
+    w kolejności: 1/1   (LA3WAA)
+    w całości:    0/1
+    w kolejności: 0/1
+    w całości:    0/1
+    w kolejności: 0/1
+    w całości:    1/4   (DE)
+    w kolejności: 2/4   (DE TEST)
+    w całości:    0/4
+    w kolejności: 1/4   (SN0FMT)
+    w całości:    0/4
+    w kolejności: 0/4
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+    w całości:    25/36   (CQx3 DEx3 SQ2BVNx3 PSE SP2MSA GA DR OM FER UR CALL RST ISx2 559x2 QSB QRM QTH)
+    w kolejności: 32/36   (CQx3 DEx3 SQ2BVNx3 PSE SP2MSAx2 GA DR OM FER URx2 CALL RST ISx2 559x2 QSB QRM QRN MY NAME MARIUS QTH HW)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+    w całości:    2/3   (CQ SQ2BVN)
+    w kolejności: 2/3   (CQ SQ2BVN)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+    w całości:    5/6   (CQx3 SQ2BVNx2)
+    w kolejności: 5/6   (CQx3 SQ2BVNx2)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+  RAZEM na nagraniach z zapisaną treścią: w całości 35/62, w kolejności 44/62
+  RAZEM po scaleniu 0.35s: w całości 35/62, w kolejności 44/62
+  OK, 3 min
+
+============================================================
+ SKROTY fcn     18:23
+============================================================
+  wszystko wyłączone (czysta stacja)        95.6%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    95.1%
+  zanik (QSB)                               94.5%
+  ARW                                       95.5%
+  tło z banku                               94.6%
+  druga stacja (QRM)                        91.1%
+  trzaski (QRN)                             94.9%
+  dłuższe przerwy                           91.4%
+  pełny realizm                             88.0%
+
+  OK: czysta stacja 95.6%, pełny realizm 88.0% — skrótu nie widać.
+  OK, 0 min
+
+============================================================
+ TRAFNOSC fcn     18:24
+============================================================
+  runs/fcn_4000000_czesci_znaki/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    10-16 WPM         89.2    96.5    65.7    96.9   23.8%
+    16-25 WPM         88.1    96.4    54.8    96.6   19.9%
+    25-40 WPM         87.8    96.0    58.8    96.7   21.9%
+
+  OK, 0 min
+
+gru POMINIETE (osma pozycja = 1, zeby wlaczyc).
+Noc 9/10.09: dpu i gru dały identyczne 97,51%, przy 4x dłuższym
+treningu i węższej kopercie tonu dla gru. Pytanie zamknięte.
+
+============================================================
+============================================================
+ NOC 2026-10-18  --  co wyszło
+============================================================
+
+KOD:   171a886ae9b3 (main) + zmiany w 1 plikach
+       różnica od commita: out/noc_20261018_1118_kod.diff
+VENV:  /root/venv_gpu
+
+ETAPY
+  PRZEPUSTOWOSC                OK     0 min
+  TRENING fcn -> runs/fcn_4000000_czesci_znaki OK     190 min
+  KOPERTA fcn                  OK     1 min
+  NAGRANIA fcn                 OK     3 min
+  SKROTY fcn                   OK     0 min
+  TRAFNOSC fcn                 OK     0 min
+
+WYNIKI TRENINGU
+
+  runs/fcn_4000000_czesci_znaki  fcn (wdrażalny na KV260)
+      epok 12, najlepsza walidacja 92.32% (epoka 10)
+      (walidacja wyżej = kroki 40 ms z dobrą klasą)
+      środkowy znak 96.07%  <- jak dpu;  okno w całości 76.41%;  CER 14.19%
+      val_loss: minimum 0.2126 w epoce 10, koniec 0.2180
+  runs/gru_4000000_czesci_znaki gru (odniesienie, NIE wdrażalny)   brak wyniku
+
+KOPERTA I PRZYCZYNA BŁĘDÓW
+
+  --- fcn ---
+    czyta (>= 50%): tempo 10-35 WPM, ton 675-825 Hz
+
+PRAWDZIWE NAGRANIA (fcn)
+
+  mic1_manipulator_12wpm.wav   (korekta poziomu -2.8 dB)
+  mic2_manipulator_20wpm.wav   (korekta poziomu -12.7 dB)
+  mic3_pamiec_15wpm.wav   (korekta poziomu -12.3 dB)
+  radio1_14020_dwie_stacje.wav   (korekta poziomu -6.7 dB)
+
+    nadane: F5OHS
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: nieodnotowane — odczyt tylko do obejrzenia
+    nadane: DP75HSC
+    w całości:    1/1   (DP75HSC)
+    w kolejności: 1/1   (DP75HSC)
+    nadane: LA3WAA
+    w całości:    1/1   (LA3WAA)
+    w kolejności: 1/1   (LA3WAA)
+    nadane: LA4CIR
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: OK1FPS
+    w całości:    0/1
+    w kolejności: 0/1
+    nadane: QST DE SN0FMT TEST
+    w całości:    1/4   (DE)
+    w kolejności: 2/4   (DE TEST)
+    nadane: QST DE SN0FMT TEST
+    w całości:    0/4
+
+  RAZEM na nagraniach z zapisaną treścią: w całości 35/62, w kolejności 44/62
+  RAZEM po scaleniu 0.35s: w całości 35/62, w kolejności 44/62
+
+TRAFNOŚĆ (fcn) — znaki całe / ucięte / środek okna
+
+  runs/fcn_4000000_czesci_znaki/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    10-16 WPM         89.2    96.5    65.7    96.9   23.8%
+    16-25 WPM         88.1    96.4    54.8    96.6   19.9%
+    25-40 WPM         87.8    96.0    58.8    96.7   21.9%
+
+
+SKRÓTY (fcn) — czy czyta stację, czy cechę generatora
+
+  wszystko wyłączone (czysta stacja)        95.6%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    95.1%
+  zanik (QSB)                               94.5%
+  ARW                                       95.5%
+  tło z banku                               94.6%
+  druga stacja (QRM)                        91.1%
+  trzaski (QRN)                             94.9%
+  dłuższe przerwy                           91.4%
+  pełny realizm                             88.0%
+
+  OK: czysta stacja 95.6%, pełny realizm 88.0% — skrótu nie widać.
+
+PEŁNE LOGI
+  out/noc_20261018_1118.log
+  out/noc_20261018_1118_diag.log                 12K
+  out/noc_20261018_1118_fcn.log                  6.5M
+  out/noc_20261018_1118_gen.log                  108K
+  out/noc_20261018_1118_koperta_fcn.log          4.0K
+  out/noc_20261018_1118_nagrania_fcn.log         8.0K
+  out/noc_20261018_1118_przepustowosc.log        4.0K
+  out/noc_20261018_1118_skroty_fcn.log           4.0K
+  out/noc_20261018_1118_srodowisko.log           4.0K
+  out/noc_20261018_1118_trafnosc_fcn.log         4.0K
+  out/koperta_fcn_20261018_1118.txt              4.0K
+
+Na GitHub:  noc.bat wypycha sam po nocy; po nocy z WSL — git push z Windows
+============================================================
+
+--- historia treningu ---

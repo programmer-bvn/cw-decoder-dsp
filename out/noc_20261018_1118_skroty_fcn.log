@@ -1,0 +1,25 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792340589.386768   25288 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1792340591.971898   25288 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 72 variables whereas the saved optimizer has 76 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1792340597.294940   25343 service.cc:153] XLA service 0x7d9814035d70 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1792340597.295525   25343 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1792340597.305827   25343 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1792340597.410097   25343 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1792340600.428350   25343 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+SKRÓTY: runs/fcn_4000000_czesci_znaki/best.keras
+  300 klipów na wiersz, S/N 15-30 dB; trafne kroki ze znakiem
+
+  wszystko wyłączone (czysta stacja)        95.6%
+  zapadanie zasilacza (chirp+sag) ZAWSZE    95.1%
+  zanik (QSB)                               94.5%
+  ARW                                       95.5%
+  tło z banku                               94.6%
+  druga stacja (QRM)                        91.1%
+  trzaski (QRN)                             94.9%
+  dłuższe przerwy                           91.4%
+  pełny realizm                             88.0%
+
+  OK: czysta stacja 95.6%, pełny realizm 88.0% — skrótu nie widać.

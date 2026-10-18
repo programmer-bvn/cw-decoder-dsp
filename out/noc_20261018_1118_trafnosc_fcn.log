@@ -1,0 +1,19 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792340645.100829   25843 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1792340678.576765   25843 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/saving/saving_lib.py:869: UserWarning: Skipping variable loading for optimizer 'adam', because it has 72 variables whereas the saved optimizer has 76 variables. 
+  saveable.load_own_variables(store)
+I0000 00:00:1792340680.039292   25911 service.cc:153] XLA service 0x7f4fe0036360 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1792340680.039850   25911 service.cc:161]   StreamExecutor [0]: NVIDIA GeForce RTX 3050, Compute Capability 8.6 (Driver: 13.4.0; Runtime: 12.9.0; Toolkit: 12.5.0; DNN: 9.26.0)
+I0000 00:00:1792340680.050456   25911 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1792340680.154980   25911 cuda_dnn.cc:461] Loaded cuDNN version 92600
+I0000 00:00:1792340682.999622   25911 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+TRAFNOŚĆ (syntetyk, pełny realizm, 400 klipów na przedział, trafne kroki ze znakiem [%])
+
+  runs/fcn_4000000_czesci_znaki/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    10-16 WPM         89.2    96.5    65.7    96.9   23.8%
+    16-25 WPM         88.1    96.4    54.8    96.6   19.9%
+    25-40 WPM         87.8    96.0    58.8    96.7   21.9%
+

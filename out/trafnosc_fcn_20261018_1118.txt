@@ -1,0 +1,8 @@
+TRAFNOŚĆ (syntetyk, pełny realizm, 400 klipów na przedział, trafne kroki ze znakiem [%])
+
+  runs/fcn_4000000_czesci_znaki/best.keras
+    tempo         wszystkie    całe  ucięte  środek  udział uciętych
+    10-16 WPM         89.2    96.5    65.7    96.9   23.8%
+    16-25 WPM         88.1    96.4    54.8    96.6   19.9%
+    25-40 WPM         87.8    96.0    58.8    96.7   21.9%
+
