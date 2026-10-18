@@ -3,7 +3,8 @@
 nadane:        VVV CQ CQ CQ DE SQ2BVN K
                (wg operatora 18.10: na początku VVV, potem „CQ CQ CQ DE SQ2BVN K kilka razy,
                różne odstępy"; liczba powtórzeń nieodnotowana — słowa liczone raz)
-klucz:         ręczny (manipulator), tempo kluczownika bez zmian (17 WPM), odstępy celowo różne
+klucz:         ręczny (manipulator z dźwigniami napinanymi magnesami stałymi — dźwignia czasem nie wraca na czas; operator 18.10)
+               tempo kluczownika bez zmian (17 WPM), odstępy celowo różne
 tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; ANTENA ODŁĄCZONA (szum własny odbiornika)
 radio:         COM5 115200 adres 0xB6: FE FE E0 B6 03 86 94 00 50 00 FD   tryb: FE FE E0 B6 04 03 03 FD 
 przycięte:     3.96 s z przodu (szum sprzed nadania; surowe/ pełne)
