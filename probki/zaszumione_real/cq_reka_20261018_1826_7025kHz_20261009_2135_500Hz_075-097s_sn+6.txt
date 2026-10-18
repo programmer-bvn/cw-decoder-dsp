@@ -1,0 +1,7 @@
+# PRÓBKA ZASZUMIONA — tools/zaszum.py (18.10)
+
+nadane:        VVV CQ CQ CQ DE SQ2BVN K
+tor:           nagranie cq_reka_20261018_1826.wav
+szum:          szum_ic7300_usb_7025kHz_20261009_2135_500Hz_075-097s.wav (pas -6 dB, środek 756 Hz)
+ton:           756 Hz (przesunięty na środek pasa szumu)
+S/N:           zadane +6.0 dB, zmierzone +5.2 dB (dsp/sn, 500 Hz)

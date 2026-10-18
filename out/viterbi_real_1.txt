@@ -1,0 +1,83 @@
+nagranie                                                     tabela  viterbi   u wybrane
+probki/zaszumione_real/cq_reka_20261018_1826_3566kHz_20261   0/6      6/6       70 ms
+      tabela : 
+      viterbi: A RRR VVU V V VV VV EE E CQ CQ D E SQ2 BVN S Q2B VN K CQ CQ CQ CQ CQ D E I S Q2B3N S Q2BVN S72BVN I I I I I KK
+probki/zaszumione_real/cq_reka_20261018_1826_3566kHz_20261   1/6      6/6       70 ms
+      tabela : VVVVV
+      viterbi: T RRR VVU V V VV VV EE E CQ CQ D E SQ2 BVN S Q2B VN K CQ CQ CQ CQ CQ D E I S Q2B3N S Q2BVN SQ2BVN I I I I I KK
+probki/zaszumione_real/cq_reka_20261018_1826_3566kHz_20261   6/6      6/6       70 ms
+probki/zaszumione_real/cq_reka_20261018_1826_3566kHz_20261   0/6      6/6       71 ms
+      tabela : 
+      viterbi: A RRR VVU V V VV VV EE E CQ CQ N E HQ2 GVN S Q25 VN K CQ CQ C= C7 CQ 5E M S Q2B3T S Q2BVN S72*N I I I I S KKBI
+probki/zaszumione_real/cq_reka_20261018_1826_7025kHz_20261   0/6      6/6       70 ms
+      tabela : 
+      viterbi: A RRR VVU V V VV VV *Q CQ D E SQ2 BVN S Q2B VN K CQ CQ CQ CQ CQ D E S Q2B3N S Q2BVN SQ2BVN I I I I I KKB CQ CQ
+probki/zaszumione_real/cq_reka_20261018_1826_7025kHz_20261   1/6      6/6       70 ms
+      tabela : VVVVVSQ2B
+      viterbi: A RRR VVU V V VV VV CQ CQ D E SQ2 BVN S Q2B VN K CQ CQ CQ CQ CQ D E S Q2B3N S Q2BVN SQ2BVN I I I I I KKB CQ CQ
+probki/zaszumione_real/cq_reka_20261018_1826_7025kHz_20261   6/6      6/6       70 ms
+probki/zaszumione_real/cq_reka_20261018_1826_7025kHz_20261   0/6      6/6       71 ms
+      tabela : 
+      viterbi: M RRR VVU V V VV VV EHQ CQ D I SQ2 BVN SQ2BEUN K CQ CQ CQ CQ CQE D E S Q2B3N S Q2BVN SQ2BVN I I E I I KKB CMT 
+probki/zaszumione_real/kkb_reka_20261018_1842_3566kHz_2026   0/8      8/8       70 ms
+      tabela : 
+      viterbi: Q ( CQ CQ CQ CMN CQ C Q DE SP2KKB SP2CMB SP2KKB SP2 K KB SP2K KB CQ CQ CQ DT S P2K KB SP2KKB SP2KKB SP2KKB PSE
+probki/zaszumione_real/kkb_reka_20261018_1842_3566kHz_2026   0/8      8/8       70 ms
+      tabela : 
+      viterbi: Q ( CQ CQ CQ CMN CQ C Q DE SP2KKB SP2CKB SP2K KB SP2 K KB SP2K KB CQ CQ CQ DI S P2K KB SP2KKB SP2KKB SP2KKB PS
+probki/zaszumione_real/kkb_reka_20261018_1842_3566kHz_2026   8/8      8/8       70 ms
+probki/zaszumione_real/kkb_reka_20261018_1842_3566kHz_2026   0/8      8/8       72 ms
+      tabela : 
+      viterbi: Q ( CQ CQ CQ CMN CQ C Q N E SP2KVB SP2CMD SP2KKB SP2 K KB SP2K KB CQ CQ K Q DN S P2KKG SP2KKB SP2KKB SP2MKB PS
+probki/zaszumione_real/kkb_reka_20261018_1842_7025kHz_2026   0/8      8/8       70 ms
+      tabela : 
+      viterbi: Q ( CQ CQ CQ CMN CQ C Q DE SP2KKB SP2K KB SP2K KB SP2 K KB SP2K KB CQ CQ CQ DE S P2KKB SP2KKB SP2KKB SP2KKB PS
+probki/zaszumione_real/kkb_reka_20261018_1842_7025kHz_2026   0/8      8/8       70 ms
+      tabela : CMNC
+      viterbi: Q ( CQ CQ CQ CMN CQ C Q DE SP2KKB SP2K KB SP2K KB SP2 K KB SP2K KB CQ CQ CQ DE S P2KKB SP2KKB SP2KKB SP2KKB PS
+probki/zaszumione_real/kkb_reka_20261018_1842_7025kHz_2026   8/8      8/8       70 ms
+probki/zaszumione_real/kkb_reka_20261018_1842_7025kHz_2026   0/8      8/8       71 ms
+      tabela : 
+      viterbi: Q * CQ TNQ K Q ECMN CQ C Q DE SP*KKB SP2 K KB SP*K KD SP2 K KB SP2K KB CQ CQ CQ DE S P2KBD SP2KKB SP2*KB S*2KK
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    27/28      70 ms
+      tabela : 
+      viterbi: SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL * UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARNUSZ = QTH BYDGO
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    28/28      70 ms
+      tabela : 
+      viterbi: SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARIUSZ = QTH BYDGO
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610  28/28    28/28      70 ms
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    22/28      70 ms
+      tabela : 
+      viterbi: SP2MSA DE SQ2BVN = GA DR OM * TKS FER UR CA5L * UR RST IS 5*9 579 QSB = MY NAME IS MSHIUSZ UAUNM* = QTH BYDGOS
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    27/28      70 ms
+      tabela : 
+      viterbi: SP2MSA DE SQ2BVN = GR DR OM = TKS FER UR CALL TU UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARIUSZ = QTH BYDG
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    28/28      70 ms
+      tabela : 
+      viterbi: SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARIUSZ = QTH BYDGO
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610  28/28    28/28      70 ms
+probki/zaszumione_real/qso2_relacja_kluczownik17wpm_202610   0/28    19/28      72 ms
+      tabela : 
+      viterbi: AP2MSA DE SQ2BVN = GA DR XM = TKS FEH HR CALL TU UR RST IS 5Q9 579 *B = MY NAME IS MARIUSZ MARIUSZ = QTU 5YDGO
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15    14/15      70 ms
+      tabela : 
+      viterbi: VVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ = 5NN F99 579 339 = 14.025 7.028 3.565 = ? /
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15    15/15      70 ms
+      tabela : 
+      viterbi: VVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ = 5NN 599 579 339 = 14.025 7.028 3.565 = ? /
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018  15/15    15/15      70 ms
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15     8/15      71 ms
+      tabela : 
+      viterbi: VVV VVV = TEST 1234567O*0 0987654321 = SBKDEFGHIJKLMNOPMTRSTUVWXIMZ DT 5NN G99 579 *39 **4*025 Z.*28 3.F65 = ?
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15    13/15      70 ms
+      tabela : 
+      viterbi: WVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ = 5NN 599 579 339 = 14.*5 7.028 3.565 = ? / 
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15    15/15      70 ms
+      tabela : 2345
+      viterbi: VVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ = 5NN 599 579 339 = 14.025 7.028 3.565 = ? /
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018  15/15    15/15      70 ms
+probki/zaszumione_real/qso5_cyfry_kluczownik17wpm_20261018   0/15    11/15      71 ms
+      tabela : 
+      viterbi: WVV VVV = TEST 1234567890 0987654321 = ABCMEFGHIJK5MNOPQRS=VWXYZ = 5NN 59* 579 339 = 14.*5 7.028 3*565 = * / ,
+  RAZEM probki/zaszumione_real: tabela 116/456, viterbi 425/456
+RAZEM: tabela 116/456, viterbi 425/456

@@ -69,6 +69,8 @@ def main() -> None:
     ap.add_argument("--sn", type=float, nargs="+", default=[20, 10, 6, 3, 0])
     ap.add_argument("--szum", default="7025kHz_20261009_2135_500Hz",
                     help="fragment nazwy pliku w probki/szum")
+    ap.add_argument("--katalog", type=Path, default=WYJSCIE,
+                    help="gdzie zapisać (domyślnie probki/zaszumione)")
     a = ap.parse_args()
 
     if a.syntetyk:
@@ -80,6 +82,11 @@ def main() -> None:
     else:
         wav, tekst_plik = Path(a.zrodlo[0]), Path(a.zrodlo[1])
         tekst = tekst_plik.read_text(encoding="utf-8").strip()
+        # opis nagrania (pole „nadane:") zamiast czystego tekstu
+        import re as _re
+        m = _re.search(r"^nadane:\s*(.*)$", tekst, _re.M)
+        if m:
+            tekst = m.group(1).strip()
         czysty = frontend.load_audio(wav)
         nazwa = wav.stem
         tor = f"nagranie {wav.name}"
@@ -102,13 +109,13 @@ def main() -> None:
     szum = szum_dlugosci(frontend.load_audio(szum_plik), czysty.size).astype(np.float64)
     nosna = amplituda_nosnej(czysty, srodek)
 
-    WYJSCIE.mkdir(parents=True, exist_ok=True)
+    a.katalog.mkdir(parents=True, exist_ok=True)
     for cel in a.sn:
         amp = sn.amp_dla_sn(cel, szum, srodek)
         x = czysty.astype(np.float64) * (amp / nosna) + szum
         x = (x * (0.5 / np.max(np.abs(x)))).astype(np.float32)
         zm = sn.zmierz_sn(x, srodek)["sn_db"]
-        wyj = WYJSCIE / f"{nazwa}_{szum_plik.stem.split('_', 3)[3]}_sn{cel:+.0f}.wav"
+        wyj = a.katalog / f"{nazwa}_{szum_plik.stem.split('_', 3)[3]}_sn{cel:+.0f}.wav"
         sf.write(wyj, x, C.SR)
         wyj.with_suffix(".txt").write_text(
             "# PRÓBKA ZASZUMIONA — tools/zaszum.py (18.10)\n\n"

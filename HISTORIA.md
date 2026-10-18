@@ -1417,6 +1417,22 @@ SQ2BVN SQ2BVN PSE K"). Do zrobienia: gramatyka liter (tylko istniejące
 kody, bez „*"), strojenie wag na osobnym zestawie, odczyt pliku -> tekst
 całą nową drogą, praca na żywo.
 
+**Zaszumione PRAWDZIWE nagrania** (`probki/zaszumione_real`: ręka CQ
+i SP2KKB, kluczownik qso2 i qso5, szum banku 7025 i 3566 kHz FIL 500 Hz;
+`tools/zaszum.py --katalog`, treść z pola „nadane:" opisu; zmierzone S/N
+~1 dB niższe od zadanego), `out/viterbi_real_1.txt`:
+
+| S/N | tabela + bramka | **Viterbi** | ręka | kluczownik |
+|---|---|---|---|---|
+| +6 dB | 114/114 | **114/114** | 28/28 | 86/86 |
+| +3 dB | 2/114 | **114/114** | 28/28 | 86/86 |
+| 0 dB | 0/114 | **109/114** | 28/28 | 81/86 |
+| -3 dB | 0/114 | **88/114** | 28/28 | 60/86 |
+
+Ręka liczona łagodnie (słowo raz, powtórzeń wiele). `tools/odczyt.py`:
+plik -> tekst całą nową drogą (ton kluczowany, sieć zboczy, cepstrum +
+grzebień, Viterbi).
+
 ### Cepstrum przebiegu kluczowania — drugi, niezależny pomiar jednostki (19.10)
 
 **Pomysł operatora** (prędkościomierz mikrofalowy, 2008): cepstrum (widmo

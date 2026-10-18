@@ -1,0 +1,7 @@
+# PRÓBKA ZASZUMIONA — tools/zaszum.py (18.10)
+
+nadane:        SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARIUSZ = QTH BYDGOSZCZ BYDGOSZCZ = HW? + SP2MSA DE SQ2BVN (
+tor:           nagranie qso2_relacja_kluczownik17wpm_20261018_1409.wav
+szum:          szum_ic7300_usb_3566kHz_20261009_2126_500Hz_077-092s.wav (pas -6 dB, środek 756 Hz)
+ton:           756 Hz (przesunięty na środek pasa szumu)
+S/N:           zadane -3.0 dB, zmierzone -1.5 dB (dsp/sn, 500 Hz)
