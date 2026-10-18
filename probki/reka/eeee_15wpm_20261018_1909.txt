@@ -1,6 +1,6 @@
 # NAGRANIE Z RĘKI — EEEE przy 15 WPM, operator SQ2BVN, 18.10 19:09 (test usterek manipulatora)
 
-nadane:        E (pojedyncze kropki w kółko, ok. 45 s) — zamierzone 34 x E
+nadane:        E E E E … (pojedyncze kropki w kółko; liczba zamierzona w polu pomiar)
 klucz:         manipulator z dźwigniami na magnesach stałych (dźwignia czasem nie wraca / nie styka)
 tempo:         kluczownik 15,1 WPM (CI-V 0x14 0x0C)
 tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; antena odłączona

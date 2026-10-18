@@ -512,6 +512,10 @@ def receive(text: str, rng: np.random.Generator,
             meta["klucz"] = klucz
             meta["waga"] = nad["waga"]
             meta["ramp_ms"] = nad.get("ramp_ms", C.KEY_RAMP_MS)
+            # Granice WSZYSTKICH znaków w próbkach klipu (18.10, drugi etap
+            # dsp/etap2): (indeks znaku w tekście, początek, koniec).
+            meta["znaki"] = [(int(t_), int(a_) + offset, int(b_) + offset)
+                             for t_, a_, b_ in spans]
 
         # Położenie znaku Z ETYKIETY w próbkach klipu. Liczone z FAKTYCZNYCH
         # granic, po rozjeździe klucza — nie z nominalnego timingu, bo przy

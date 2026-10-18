@@ -1,6 +1,6 @@
 # NAGRANIE Z RĘKI — TTTT przy 20 WPM, operator SQ2BVN, 18.10 19:12 (test usterek manipulatora, dźwignia kreski)
 
-nadane:        T (pojedyncze kreski w kółko, ok. 45 s) — zamierzone 44 x T
+nadane:        T T T T … (pojedyncze kreski w kółko; liczba zamierzona w polu pomiar)
 klucz:         manipulator z dźwigniami na magnesach stałych (dźwignia czasem nie wraca / nie styka)
 tempo:         kluczownik 19,8 WPM (CI-V 0x14 0x0C)
 tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; antena odłączona

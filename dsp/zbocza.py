@@ -157,17 +157,29 @@ def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
     """P(klucz) co 5 ms na całym nagraniu: okna 512 ramek na zakładkę
     (krok 256), z każdego brana środkowa połowa — brzegi okna sieć widzi
     tylko z jednej strony."""
+    return przebieg_z_obrazow([obraz_zboczy(audio)], model, krok)[0]
+
+
+def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2
+                       ) -> list:
+    """Jak przebieg_sieci, ale dla wielu obrazów naraz — jedno wywołanie
+    sieci na wszystkie okna (zbiór drugiego etapu: setki tysięcy klipów;
+    pojedyncze wywołania kosztowałyby ~30 ms narzutu każde)."""
     import tensorflow as tf
-    obraz = obraz_zboczy(audio)
-    n = obraz.shape[0]
     pad = (RAMKI_ZBOCZA - krok) // 2
-    x = np.concatenate([np.zeros((pad, obraz.shape[1]), np.float32), obraz,
-                        np.zeros((RAMKI_ZBOCZA, obraz.shape[1]), np.float32)])
-    starty = list(range(0, n, krok))
-    okna = np.stack([x[s:s + RAMKI_ZBOCZA] for s in starty])[..., None]
-    logit = model.predict(okna, verbose=0, batch_size=32)
-    p = tf.sigmoid(logit).numpy()[:, pad:pad + krok].reshape(-1)
-    return p[:n]
+    okna, gdzie = [], []
+    for obraz in obrazy:
+        n = obraz.shape[0]
+        x = np.concatenate([np.zeros((pad, obraz.shape[1]), np.float32),
+                            np.asarray(obraz, np.float32),
+                            np.zeros((RAMKI_ZBOCZA, obraz.shape[1]), np.float32)])
+        st = list(range(0, n, krok))
+        gdzie.append((len(okna), len(st), n))
+        okna.extend(x[s:s + RAMKI_ZBOCZA] for s in st)
+    logit = model.predict(np.stack(okna)[..., None], verbose=0, batch_size=256)
+    p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
+    return [p[i0:i0 + k].reshape(-1)[:n] for i0, k, n in gdzie]
+
 
 
 # Histereza (17.10, pomysł operatora).
