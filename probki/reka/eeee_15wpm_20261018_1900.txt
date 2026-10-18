@@ -1,0 +1,11 @@
+# NAGRANIE 18.10 19:00 — miało być EEEE z ręki przy 15 WPM (operator)
+
+nadane:        nieodnotowane — odczyt tylko do obejrzenia
+uwagi:         W nagraniu NIE MA EEEE. Surowy sygnał (48 kHz): „CQ CQ CQ CQ CQ DE SP2KKB SP2KKB
+               SP2KKB SP2KKB SP2K…”, elementy 79/238 ms, powtórzenia SP2KKB co 6,6-6,8 s —
+               rytm maszynowy. Operator w tym czasie stukał dźwignię, żeby ją rozluźnić.
+               Prawdopodobnie odtwarzanie pamięci kluczownika (hipoteza, nie pomiar); CI-V
+               od 14:15 wysyłało tylko odczyty. Próba ciszy 19:10 (18 s, nikt nie kluczuje):
+               ani jednego impulsu tonu.
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; antena odłączona
+tempo:         kluczownik 15,1 WPM (CI-V 0x14 0x0C); grzebień 15,0 WPM
