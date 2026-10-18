@@ -1,0 +1,18 @@
+grzebień + tabela Morse'a z nut; drogi: klasyczna, siec, siec_hist
+nagranie                                        klasyczna           siec      siec_hist   (pewność/okien, słowa w całości)
+qso1_cq_kluczownik17wpm_20261018_1224.wav   0.92/  6  5/7  1.00/  6  7/7  1.00/  6  7/7
+qso1_cq_kluczownik17wpm_20261018_1327.wav   0.93/  5  7/7  0.98/  5  7/7  0.98/  5  7/7
+qso1_cq_kluczownik17wpm_20261018_1409.wav   0.94/  5  0/7  0.99/  5  7/7  0.99/  5  7/7
+qso2_relacja_kluczownik17wpm_20261018_1225  0.91/ 26 9/28 0.98/ 26 28/28 0.98/ 26 28/28
+qso2_relacja_kluczownik17wpm_20261018_1328 0.94/ 25 28/28 0.99/ 25 28/28 0.99/ 25 28/28
+qso2_relacja_kluczownik17wpm_20261018_1409  0.94/ 25 1/28 0.99/ 25 28/28 0.99/ 25 28/28
+qso3_odpowiedz_kluczownik17wpm_20261018_12 0.91/ 28 16/27 0.99/ 28 27/27 0.99/ 28 27/27
+qso3_odpowiedz_kluczownik17wpm_20261018_13 0.94/ 27 27/27 0.99/ 27 27/27 0.99/ 27 27/27
+qso3_odpowiedz_kluczownik17wpm_20261018_14  0.93/ 28 1/27 0.99/ 28 27/27 0.99/ 28 27/27
+qso4_koniec_kluczownik17wpm_20261018_1229. 0.92/ 14 14/17 1.00/ 17 16/17 1.00/ 17 16/17
+qso4_koniec_kluczownik17wpm_20261018_1332. 0.94/ 16 17/17 0.99/ 16 17/17 0.99/ 16 17/17
+qso4_koniec_kluczownik17wpm_20261018_1413.  0.94/ 16 0/17 0.98/ 16 17/17 0.98/ 16 17/17
+qso5_cyfry_kluczownik17wpm_20261018_1230.w 0.92/ 27 11/15 0.99/ 27 15/15 0.99/ 27 15/15
+qso5_cyfry_kluczownik17wpm_20261018_1333.w 0.94/ 27 15/15 0.98/ 27 14/15 0.98/ 27 15/15
+qso5_cyfry_kluczownik17wpm_20261018_1415.w  0.94/ 27 0/15 0.99/ 27 15/15 0.99/ 27 15/15
+RAZEM słowa w całości / w kolejności       151/282 161/282 280/282 281/282 281/282 281/282

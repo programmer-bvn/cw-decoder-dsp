@@ -1458,6 +1458,11 @@ szumu wystarczył do zaczepu); oryginał `surowe/` pełny, przycięcie w opisie.
 próg klasyczny + grzebień 149, **sieć zboczy + grzebień 186, z histerezą
 187**. Na 20 m skok 84 -> 93/94 tylko przez właściwy zaczep tonu — słabość
 pętli kosztowała też na 20 m (tam ~2 s szumu przed kluczownikiem).
+**Bez anteny** (6 m, antena odłączona, szum własny odbiornika z ARW; szczyt
+0,51 we wszystkich pięciu): sieć zboczy + grzebień **94/94**, próg klasyczny
++ grzebień **2/94** (pewność grzebienia 0,94, a tekst śmieciowy — próg Otsu
+na równym szumie odbiornika; nie badane). Razem 282 słowa: sieć 280-281,
+klasyczna 151.
 
 **Zestaw zaszumiony — wynik** (`out/zbocza/tester_zaszumione.txt`; sygnał
 kluczownika z tekstu 18 WPM + szum banku 7025 kHz FIL 500 Hz; 94 słowa na
