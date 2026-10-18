@@ -109,7 +109,7 @@ DB_MIN = -30.0
 DB_MAX = 24.0
 
 # --- alfabet: indeks = klasa; 0 = "puste radio" ---
-ALPHABET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=?/+(~"
+ALPHABET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=?/+(~,."
 N_CLASSES = len(ALPHABET)
 CHAR_TO_ID = {c: i for i, c in enumerate(ALPHABET)}
 ID_TO_CHAR = {i: c for i, c in enumerate(ALPHABET)}
@@ -124,7 +124,7 @@ MORSE_DICT = {
     "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-",
     "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----.",
     "=": "-...-", "?": "..--..", "/": "-..-.", "+": ".-.-.",
-    "(": "-.--.", "~": "...-.-",
+    "(": "-.--.", "~": "...-.-", ",": "--..--", ".": ".-.-.-",
 }
 
 # --- timing CW ---

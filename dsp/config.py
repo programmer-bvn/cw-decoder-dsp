@@ -93,11 +93,12 @@ DB_MAX = 24.0                   # to i wszystko głośniejsze -> 1.0
 # 18.10: + 6 znaków z każdej łączności (decyzja operatora po odsłuchu mic1:
 # „=" między członami relacji, „?" po HW). Kody ITU-R M.1677-1. KN i SK nie
 # mają znaku pisarskiego: KN = „(" (w ITU ten sam kod co nawias otwierający),
-# SK = „~" (umowa projektu). Przecinek i kropka pominięte — w łączności
-# amatorskiej rzadkie, a „,” (19 jedn.) byłby najdłuższym znakiem obok „0".
+# SK = „~" (umowa projektu). Przecinek i kropka dodane tego samego dnia
+# („mogą się pojawiać w tekstach" — operator); „," ma 19 jednostek, tyle
+# co „0", więc okno sieci bez zmian.
 # Dopisane NA KOŃCU: modele 37-klasowe sprzed 18.10 czytają się dalej.
-ALPHABET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=?/+(~"
-N_CLASSES = len(ALPHABET)       # 43; indeks 0 = "puste radio" (tylko szum)
+ALPHABET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=?/+(~,."
+N_CLASSES = len(ALPHABET)       # 45; indeks 0 = "puste radio" (tylko szum)
 
 CHAR_TO_ID = {c: i for i, c in enumerate(ALPHABET)}
 ID_TO_CHAR = {i: c for i, c in enumerate(ALPHABET)}
@@ -112,7 +113,7 @@ MORSE_DICT = {
     "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-",
     "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----.",
     "=": "-...-", "?": "..--..", "/": "-..-.", "+": ".-.-.",
-    "(": "-.--.", "~": "...-.-",
+    "(": "-.--.", "~": "...-.-", ",": "--..--", ".": ".-.-.-",
 }
 
 # --- Timing ---------------------------------------------------------------
