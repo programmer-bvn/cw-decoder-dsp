@@ -1439,6 +1439,25 @@ w tym samym miejscu — mic3: wygrał stały przydźwięk 539 Hz zamiast stacji
 naprawia zestaw, ale zmienia ton na 4 z 16 nagrań z kilkoma sygnałami
 (DP75HSC, OK1FPS, Nagrywanie 6 i 9), bez miary, który wybór jest dobry.
 Na razie `zaszum` zaczyna nadanie od pierwszej próbki.
+Ten sam problem na PRAWDZIWYM nagraniu: kluczownik na 6 m (50,009 MHz, CW,
+FIL3) — pusty odbiornik z ARW daje głośny szum (szczyt ~0,25 przy sygnale
+0,6, za to równy: szczyty nagrań 0,80-0,86, na 20 m 0,64-0,98); rejestrator
+nagrywa ~3-4 s szumu przed kluczownikiem; pętla zaczepiła się na szumie
+(672 Hz, potem wędrówka 645-677 Hz) — qso1: 0 okien, qso2: 19 z 26.
+Sprawdzone i odrzucone jeszcze dwa: (4) zaczep tylko na prążku wąskim
+(ponad sąsiedztwo 40-150 Hz) — bez zmian, bo to nie kliknięcie, a szum;
+(5) puszczanie zaczepu, gdy trafienia z ostatniej sekundy rozjeżdżają się
+> 5 Hz — naprawia 6 m i syntetyk, ale zmienia ton na 9 prawdziwych
+nagraniach stacji (dryf, chirp, zanik też „wędrują"). Do zrobienia porządnie:
+zestaw z tonem znanym co do herca (np. nagrania kluczownika ze znanym tonem
+podsłuchu + nagrania z pasma z opisem) i dopiero na nim zmiana pętli.
+**Obejście w testach:** `nagraj_kluczownik.przytnij` — nagranie zaczyna się
+0,1 s przed pierwszym znakiem (0,3 s to wciąż za dużo: blok 200 ms samego
+szumu wystarczył do zaczepu); oryginał `surowe/` pełny, przycięcie w opisie.
+**Po przycięciu** (`out/zbocza/tester_kluczownik.txt`, 20 m + 6 m, 188 słów):
+próg klasyczny + grzebień 149, **sieć zboczy + grzebień 186, z histerezą
+187**. Na 20 m skok 84 -> 93/94 tylko przez właściwy zaczep tonu — słabość
+pętli kosztowała też na 20 m (tam ~2 s szumu przed kluczownikiem).
 
 **Zestaw zaszumiony — wynik** (`out/zbocza/tester_zaszumione.txt`; sygnał
 kluczownika z tekstu 18 WPM + szum banku 7025 kHz FIL 500 Hz; 94 słowa na

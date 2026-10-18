@@ -4,8 +4,10 @@ nadane:        SQ2BVN DE DL1ABC/P = R TNX FB RPT = UR RST 599, 5NN = NAME HANS, 
 nadajnik:      IC-7300MK2, kluczownik wewnętrzny, tekst przez CI-V 0x17 (qso3_odpowiedz.txt)
 tempo zadane:  17.0 WPM (CI-V 0x14 0x0C)
 klucz:         kluczownik — rytm maszynowy
+pasmo:         14,040062 MHz, CW-R, FIL3 (CI-V 03/04 o 12:20)
 tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania
 radio:         COM5 115200 bod, adres 0xB6; karta: urządzenie 15
 czas:          20261018_1227
 szczyt:        0.763
 karta:         bez zgłoszeń (przepełnienia itp.)
+przycięte:     2.16 s z przodu (szum sprzed kluczownika; surowe/ pełne)

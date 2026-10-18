@@ -1,0 +1,13 @@
+# NAGRANIE KLUCZOWNIKA — tools/radio/nagraj_kluczownik.py
+
+nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN PSE K
+nadajnik:      IC-7300MK2, kluczownik wewnętrzny, tekst przez CI-V 0x17 (qso1_cq.txt)
+tempo zadane:  17.0 WPM (CI-V 0x14 0x0C)
+klucz:         kluczownik — rytm maszynowy
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; ANTENA ODŁĄCZONA (szum własny odbiornika)
+pasmo:         50,009000 MHz, CW, FIL3 (CI-V przed nagraniem)
+radio:         COM5 115200 bod, adres 0xB6; karta: urządzenie 15
+czas:          20261018_1409
+szczyt:        0.510
+przycięte:     4.35 s z przodu (szum sprzed kluczownika; surowe/ pełne)
+karta:         bez zgłoszeń (przepełnienia itp.)

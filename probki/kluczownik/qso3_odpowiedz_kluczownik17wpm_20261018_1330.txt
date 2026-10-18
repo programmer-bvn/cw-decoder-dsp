@@ -1,0 +1,13 @@
+# NAGRANIE KLUCZOWNIKA — tools/radio/nagraj_kluczownik.py
+
+nadane:        SQ2BVN DE DL1ABC/P = R TNX FB RPT = UR RST 599, 5NN = NAME HANS, QTH NR. BERLIN = WX SUNNY, TEMP 18 C = RIG IC7300, ANT DIPOLE. = HW? + SQ2BVN DE DL1ABC/P (
+nadajnik:      IC-7300MK2, kluczownik wewnętrzny, tekst przez CI-V 0x17 (qso3_odpowiedz.txt)
+tempo zadane:  17.0 WPM (CI-V 0x14 0x0C)
+klucz:         kluczownik — rytm maszynowy
+pasmo:         50,009000 MHz, CW, FIL3 (CI-V 03/04 przed i po)
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania
+radio:         COM5 115200 bod, adres 0xB6; karta: urządzenie 15
+czas:          20261018_1330
+szczyt:        0.822
+karta:         bez zgłoszeń (przepełnienia itp.)
+przycięte:     4.24 s z przodu (szum sprzed kluczownika; surowe/ pełne)
