@@ -1385,6 +1385,38 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
+
+**Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
+do przebiegu, w komórkach prawdopodobieństwa zepsutego elementu, odczyt =
+najbardziej prawdopodobny ciąg zgodny z gramatyką Morse'a („najkorzystniejsza
+tabela prawdopodobieństw"; jak maska przesuwana po zapisie F2F w kasowniku);
+bez bramki. `dsp/viterbi.py`: semi-Markow po odcinkach (kropka 1 u, kreska
+3 u, przerwy 1 / ~3,5 / 7 u, cisza >= 10 u), wynik odcinka = 0,3 x suma
+log P ramek (filtr dopasowany do długości) + kara log-normalna za długość;
+siatka „sprężysta" (każdy odcinek własna długość). `tools/tester_viterbi.py`.
+Wejście: P z sieci zboczy_3, pętla tonu = ton kluczowany.
+**Pierwsza wersja (u tylko z cepstrum)** `out/viterbi_1.txt`: 777/828
+(tabela 685); dwa nagrania przy 20 dB po 0 słów — cepstrum dało 110 ms
+zamiast 67 ms. **Jednostka też jest parametrem** (`dekoduj_najlepiej`:
+kandydatki z cepstrum i z grzebienia, wygrywa lepszy wynik Viterbiego na
+ramkę), `out/viterbi_2.txt`:
+
+| | tabela + bramka | **Viterbi** |
+|---|---|---|
+| pasmo + mikrofon (probki) | 53/62 | **56/62** |
+| kluczownik | 281/282 | **282/282** |
+| ręka | 14/14 | 14/14 |
+| zaszumione 0-20 dB | 337/470 | **469/470** |
+| w tym 0 dB / 3 dB | 0/94 / 55/94 | **93/94 / 94/94** |
+| **RAZEM** | 685/828 | **821/828** |
+
+Nowe na paśmie: F5OHS w Nagrywanie (6) (pierwszy raz kiedykolwiek), OK1FPS,
+mic2. Spacje między słowami z odcinków PS/CI wychodzą same („CQ CQ CQ DE
+SQ2BVN SQ2BVN PSE K"). Do zrobienia: gramatyka liter (tylko istniejące
+kody, bez „*"), strojenie wag na osobnym zestawie, odczyt pliku -> tekst
+całą nową drogą, praca na żywo.
+
 ### Cepstrum przebiegu kluczowania — drugi, niezależny pomiar jednostki (19.10)
 
 **Pomysł operatora** (prędkościomierz mikrofalowy, 2008): cepstrum (widmo

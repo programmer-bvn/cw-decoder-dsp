@@ -85,6 +85,7 @@ out/noc_????????_????_fcn.log
 # i do gita szła tylko kopia tabeli w logu etapu.
 !out/skroty_*.txt
 !out/trafnosc_*.txt
+!out/viterbi_*.txt
 
 # --- zgłoszenia od operatorów: zawierają audio i znaki wywoławcze ---
 # Trafiają do biblioteki próbek po przejrzeniu, nie wprost do repo.
