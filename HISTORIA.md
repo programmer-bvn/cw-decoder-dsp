@@ -1385,6 +1385,30 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Drugi etap — sieć na wyjściu sieci zboczy, pierwszy trening (18/19.10)
+
+`dsp/etap2.py`, `tools/etap2_trening.py`. Wejście: P(klucz) z sieci zboczy_3
+przeskalowane do 4 próbek na jednostkę (u z grzebienia; w treningu prawdziwe
+u x (1 ± 10%)), okno 64 u; wyjście co 1 u: klasa znaku (45) albo przerwa.
+Zbiór: klipy generatora sieci zboczy przepuszczone przez PRAWDZIWĄ sieć zboczy
+(2 okna na klip), 400 tys., ~23 min na 200 tys.; 20 epok po ~71 s;
+dokładność kroków: walidacja 89,2% (na 20 tys. próbek: 87% — zbiór x20 prawie
+nic). Ocena: wszystkie nagrania z treścią (358 słów), te same nuty co tabela:
+
+| odczyt | słowa |
+|---|---|
+| tabela (grzebień) | 348/358 |
+| drugi etap, sklejanie „każda zmiana klasy = znak" | 347/358 |
+| **drugi etap, sklejanie odcinkami** | **350/358** |
+
+Sklejanie: odcinek kroków niezerowych = jeden znak (klasa większościowa),
+przerwa krótsza niż 2 kroki go nie dzieli. Naprawiło qso5 („579" -> „5709":
+9 = ----. dostawało na początku kroki „0"). Lepiej od tabeli: OK1FPS, mic2,
+qso4; gorzej: mic1 (31 vs 32: „KK", „GG", „7" na początku — rozcięcia
+przerwą >= 2 kroków; pogłos mikrofonu?). Różnica 350 vs 348 mieści się
+w rozrzucie — na razie REMIS. Ograniczenie: dokładność kroków 89% to głównie
+granice znaków (który krok to jeszcze znak), nie rozpoznanie.
+
 ### Drugi etap — główna sieć znaków na regeneracie: gorzej (18.10, wieczór)
 
 15 nagrań kluczownika (20 m, 6 m, bez anteny; 282 słowa), słowa w całości:

@@ -1,0 +1,31 @@
+  probki/Nagrywanie (6).wav                            tabela   0/1  etap2   0/1
+  probki/ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1811 tabela   1/1  etap2   1/1
+  probki/ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_2146. tabela   1/1  etap2   1/1
+  probki/ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_2153. tabela   0/1  etap2   0/1
+  probki/ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_1827. tabela   0/1  etap2   1/1
+  probki/ic7300_usb_SN0FMT_20261009_c.wav              tabela   3/4  etap2   3/4
+  probki/ic7300_usb_SN0FMT_3565kHz_20261009.wav        tabela   4/4  etap2   4/4
+  probki/ic7300_usb_SN0FMT_3565kHz_20261009_b.wav      tabela   4/4  etap2   4/4
+  probki/mic1_manipulator_12wpm.wav                    tabela  32/36  etap2  31/36
+      tabela: QCQCQBVNSQ2BVNSQ2BVNPSEKCQCQCQDESQ2BVNPSEKCQCQCQDESQ2BVNPSEKSP2MSADESQ2BVN===GADROM==TKSFE
+      etap2 : 7QCQCQCQCQBVNSQ2BVNSQ2BVNPSEKCQCQCQDESQ2BVNPSEKKCQCQCQDESQ2BVNPSEKP2MSADESQ2BVN===GGADROM=
+  probki/mic2_manipulator_20wpm.wav                    tabela   2/3  etap2   3/3
+  probki/mic3_pamiec_15wpm.wav                         tabela   6/6  etap2   6/6
+  probki/kluczownik/qso1_cq_kluczownik17wpm_20261018_1 tabela   7/7  etap2   7/7
+  probki/kluczownik/qso1_cq_kluczownik17wpm_20261018_1 tabela   7/7  etap2   7/7
+  probki/kluczownik/qso1_cq_kluczownik17wpm_20261018_1 tabela   7/7  etap2   7/7
+  probki/kluczownik/qso2_relacja_kluczownik17wpm_20261 tabela  28/28  etap2  28/28
+  probki/kluczownik/qso2_relacja_kluczownik17wpm_20261 tabela  28/28  etap2  28/28
+  probki/kluczownik/qso2_relacja_kluczownik17wpm_20261 tabela  28/28  etap2  28/28
+  probki/kluczownik/qso3_odpowiedz_kluczownik17wpm_202 tabela  27/27  etap2  27/27
+  probki/kluczownik/qso3_odpowiedz_kluczownik17wpm_202 tabela  27/27  etap2  27/27
+  probki/kluczownik/qso3_odpowiedz_kluczownik17wpm_202 tabela  27/27  etap2  27/27
+  probki/kluczownik/qso4_koniec_kluczownik17wpm_202610 tabela  16/17  etap2  17/17
+  probki/kluczownik/qso4_koniec_kluczownik17wpm_202610 tabela  17/17  etap2  17/17
+  probki/kluczownik/qso4_koniec_kluczownik17wpm_202610 tabela  17/17  etap2  17/17
+  probki/kluczownik/qso5_cyfry_kluczownik17wpm_2026101 tabela  15/15  etap2  15/15
+  probki/kluczownik/qso5_cyfry_kluczownik17wpm_2026101 tabela  15/15  etap2  15/15
+  probki/kluczownik/qso5_cyfry_kluczownik17wpm_2026101 tabela  15/15  etap2  15/15
+  probki/reka/cq_reka_20261018_1826.wav                tabela   6/6  etap2   6/6
+  probki/reka/kkb_reka_20261018_1842.wav               tabela   8/8  etap2   8/8
+RAZEM: tabela 348/358, drugi etap 350/358

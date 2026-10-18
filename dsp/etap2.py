@@ -136,9 +136,34 @@ def odczyt(p: np.ndarray, u_s: float, model) -> str:
     logit = model.predict(okna, verbose=0, batch_size=128)
     k = np.argmax(logit, axis=-1)[:, KROKI // 4: KROKI // 4 + pol].reshape(-1)
     k = k[:int(np.ceil(pn.size / K))]
-    out, prev = [], 0
-    for c in k:
-        if c != prev and c != 0:
-            out.append(C.ALPHABET[c])
-        prev = c
-    return "".join(out)
+    return "".join(C.ALPHABET[c] for c in sklej(k))
+
+
+# Pierwsza wersja odczytu (18.10, runs/etap2_1): każda zmiana klasy = nowy znak.
+# Na 358 słowach: 347 (tabela 348). Błędy z SKLEJANIA, nie z rozpoznania:
+# qso5 „579" -> „5709" (9 = ----. dostaje na początku kroki „0" = -----),
+# mic1 „K" -> „KK", „G" -> „GG" (znak rozcięty jednym krokiem przerwy).
+# Przerwa międzyznakowa (3 u) daje >= 2 kroki 0, w znaku krok 0 wypada
+# najwyżej pojedynczo.
+PRZERWA_MIN_KROKOW = 2
+
+
+def sklej(k: np.ndarray) -> list[int]:
+    """Kroki -> znaki: odcinek niezerowy (przerwy krótsze niż
+    PRZERWA_MIN_KROKOW nie dzielą) = jeden znak, klasa większościowa."""
+    k = np.asarray(k)
+    nz = k != 0
+    # zasyp pojedyncze (krótkie) przerwy między krokami niezerowymi
+    zm = np.flatnonzero(np.diff(np.r_[0, nz.astype(np.int8), 0]))
+    starty, konce = zm[::2], zm[1::2]
+    odc = []
+    for a, b in zip(starty, konce):
+        if odc and a - odc[-1][1] < PRZERWA_MIN_KROKOW:
+            odc[-1][1] = b
+        else:
+            odc.append([a, b])
+    out = []
+    for a, b in odc:
+        w = k[a:b]; w = w[w != 0]
+        out.append(int(np.bincount(w).argmax()))
+    return out
