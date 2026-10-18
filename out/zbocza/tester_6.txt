@@ -1,0 +1,37 @@
+grzebień + tabela Morse'a z nut; drogi: klasyczna, siec, siec_hist
+nagranie                                        klasyczna           siec      siec_hist   (pewność/okien, słowa w całości)
+Nagrywanie (6).wav                           nan/  0  0/1   nan/  0  0/1   nan/  0  0/1
+Nagrywanie (7).wav                          0.85/  1        nan/  0       0.88/  5     
+    klasyczna : EDK5JM
+    siec      : 
+    siec_hist : ?KU5NNTUEDK5AMMDK5?MM
+Nagrywanie (8).wav                           nan/  0        nan/  0        nan/  0     
+    klasyczna : 
+    siec      : 
+    siec_hist : 
+Nagrywanie (9).wav                          0.91/  2        nan/  0        nan/  0     
+    klasyczna : CQCQDEEDE?
+    siec      : 
+    siec_hist : 
+ic7300_usb_3541kHz_f200_20261009.wav        0.90/  2       0.86/  1       0.89/  2     
+    klasyczna : EE
+    siec      : EE
+    siec_hist : EEE
+ic7300_usb_DP75HSC_3526kHz_FIL3_20261010_1  0.91/ 10  0/1  0.98/  9  1/1  0.97/ 10  1/1
+ic7300_usb_LA3WAA_7007kHz_FIL2_20261009_21  0.89/ 13  1/1  0.99/ 14  1/1  0.98/ 14  1/1
+ic7300_usb_LA4CIR_5355kHz_FIL2_20261009_21  0.88/  5  0/1  0.89/  6  0/1  0.89/  8  0/1
+ic7300_usb_OK1FPS_7028kHz_FIL3_20261010_18  0.87/ 10  0/1  0.86/ 11  0/1  0.88/ 15  0/1
+ic7300_usb_SN0FMT_20261009_c.wav            0.98/ 30  2/4  0.92/ 29  3/4  0.92/ 32  3/4
+ic7300_usb_SN0FMT_3565kHz_20261009.wav      0.92/ 34  4/4  0.93/ 28  4/4  0.95/ 35  4/4
+ic7300_usb_SN0FMT_3565kHz_20261009_b.wav    0.92/ 17  4/4  0.97/ 18  4/4  0.98/ 19  4/4
+mic1_manipulator_12wpm.wav                  0.92/ 61       0.99/ 62       0.99/ 62     
+    klasyczna : QCQCQBVNSQ2B?MO?0??M?OTO????CQOTO?0BVN?OTOCQCQCQOTO?0??NPSEKO?0MOADES?
+    siec      : QCQCQBVNSQ2BVNSQ2BVNPSEKCQCQCQDESQ2BVNPSEKCQCQCQDESQ2BVNPSEKSP2MSADESQ
+    siec_hist : QCQCQBVNSQ2BVNSQ2BVNPSEKCQCQCQDESQ2BVNPSEKCQCQCQDESQ2BVNPSEKSP2MSADESQ
+mic2_manipulator_20wpm.wav                  0.91/ 42  1/3  0.97/ 43  2/3  0.98/ 43  2/3
+mic3_pamiec_15wpm.wav                       0.92/  7  1/6  0.97/  7  6/6  0.99/  7  6/6
+radio1_14020_dwie_stacje.wav                0.92/ 17        nan/  0       0.88/  3     
+    klasyczna : KOO?OM???O?M?OO0?OO00OOOJ0?O?OTO0?MOR?G?K?O0EOO?OTO0?M?OOOMOTOOOO0MM?M
+    siec      : 
+    siec_hist : R?GTEEEEEEMNMRKE?
+RAZEM słowa w całości / w kolejności          13/26 16/26    21/26 21/26    21/26 21/26

@@ -1347,6 +1347,20 @@ RT60 ~0,3 s). Radio (SN0FMT): po ~80 ms poziom ROŚNIE do -18 dB przy 200 ms
 — hipoteza: ARW odzyskuje wzmocnienie i podciąga szum. Generator sieci zboczy
 nie ma pogłosu; ARW ma (`apply_agc`), ale nie wiadomo, czy z takim czasem.
 
+**Zboczy_3 — pogłos w generatorze** (`radio.dodaj_poglos`: sygnał + splot
+z szumem gasnącym wykładniczo; `ZAKRESY_ZBOCZY["POGLOS"]`: 40% klipów,
+poziom -35...-18 dB, stała 20-80 ms, opóźnienie 0-15 ms — zakres obejmuje
+ogon mic1 z obu stron; domyślna droga bit w bit). 200 tys., 20 epok,
+val_loss 0,080. Syntetyk jak zboczy_2 (0,1-3,0 ms mediana).
+**mic1, N od 27,34 s:** kreska 240 ms (3,03 u), przerwa 75-80 ms (1,0 u),
+kropka 80 ms (1,01 u); P sieci czyste 0/1 (zboczy_2: przerwa 25-35 ms,
+ogon 0,3-0,6). Przyczyna usunięta u źródła — mic1 czytany dobrze już
+z jednym progiem, bez histerezy. Nagrania (`out/zbocza/tester_6.txt`):
+słowa 21/26 jak zboczy_2; więcej okien przez bramkę (SN0FMT jeden próg
+28 / 18 / 29, było 23 / 17 / 28), pewność mic1 0,99. **Gorzej:** na nagraniach
+bez czytelnej stacji histereza przepuszcza śmieci — radio1 3 okna
+(„R?GTEEEEEEMNMRKE?", zboczy_2: 1 okno), Nagrywanie (7) 5 okien.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
