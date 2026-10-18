@@ -450,9 +450,10 @@ def _tabela_dlugosci(prawdy, pred) -> list[str]:
     w = ["TRAFIENIA WOBEC DŁUGOŚCI KODU", ""]
     w.append("  elementów   próbek   trafień   przykłady")
     w.append("  " + "-" * 52)
-    # Pelne grupy, sprawdzone wobec C.MORSE_DICT: 2 + 4 + 8 + 12 + 10 = 36.
+    # Pelne grupy, sprawdzone wobec C.MORSE_DICT: 2 + 4 + 8 + 12 + 14 + 2 = 42.
     PRZYKLADY = {1: "E T", 2: "A I M N", 3: "D G K O R S U W",
-                 4: "B C F H J L P Q V X Y Z", 5: "cyfry 0-9"}
+                 4: "B C F H J L P Q V X Y Z", 5: "cyfry 0-9 = / + (",
+                 6: "? ~"}
     for n in sorted(ile):
         proc = 100.0 * traf[n] / ile[n]
         w.append(f"  {n:^9d} {ile[n]:8d}   {proc:6.1f}%   "

@@ -17,7 +17,7 @@ Trzy rzeczy zrobione inaczej niż w poprzednich trenerach:
    na kopię przy podziale na zbiory — stąd brał się "trainer_outofmemor".
 
 3. PODZIAŁ JEST WARSTWOWY (stratified). Klasa 0 to 15% zbioru, a pozostałe
-   36 klas dzielą się resztą po ~2,4%. Przy losowym podziale 10% na
+   42 klasy (od 18.10; wcześniej 36) dzielą się resztą po ~2%. Przy losowym podziale 10% na
    walidację rzadsza klasa może dostać kilka próbek i val_accuracy przestaje
    znaczyć cokolwiek dla tej klasy.
 """
@@ -70,8 +70,8 @@ def stratified_split(y: np.ndarray, val_fraction: float, seed: int):
 def class_weights(y: np.ndarray) -> np.ndarray:
     """Wagi wyrównujące udział klas: waga = n / (liczba_klas * licznik).
 
-    PO CO. Generator daje 15% klipów "puste radio" (klasa 0) i po ~2,4% na
-    każdy z 36 znaków. To sześciokrotna przewaga jednej klasy, a najtańsze
+    PO CO. Generator daje 15% klipów "puste radio" (klasa 0) i po ~2% na
+    każdy z 42 znaków (do 18.10: 36). To sześciokrotna przewaga jednej klasy, a najtańsze
     minimum funkcji straty przy takim rozkładzie to "zawsze odpowiadaj 0" —
     daje 15% dokładności bez uczenia się czegokolwiek. Model dokładnie w to
     wpadał: 100% trafień na klasie 0 i 0% na znakach.

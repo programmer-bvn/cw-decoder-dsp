@@ -1378,6 +1378,12 @@ mianownik słów w testerze rośnie, sumy sprzed 18.10 niewprost porównywalne.
 zbiór, trening, model pod KV260). Operator podał „? = --..--, ! = ..--.." —
 w ITU --..-- to przecinek, ..--.. to „?", i ..--.. jest w nagraniu po HW.
 Operator zapisał „+" po QRN i po QTH; w nagraniu w obu miejscach jest -...-.
+**Decyzja operatora (18.10): dodać znaki do głównej sieci, kody wg ITU**
+(„mam jakieś nawyki z wojska"). `C.ALPHABET` + `= ? / + ( ~` (KN = „(",
+SK = „~"), 43 klasy, dopisane na końcu — stare modele czytają się dalej;
+przecinek i kropka pominięte (rzadkie, „," byłby najdłuższy). Najdłuższy
+znak nadal „0" (19 jedn.; nowe 13-15), okno bez zmian. Obie kopie, diag
+120/120. Noc `czesci_znaki`.
 
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
