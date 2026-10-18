@@ -5,7 +5,7 @@ ta sama bramka S/N >= 3 dB, odczyt tabelą Morse'a z nut. Miary: pewność
 grzebienia (jak dobrze krawędzie leżą na siatce) i słowa z pliku .txt.
 Zapisuje regenerat wzorcowy każdej drogi do odsłuchu.
 
-    python -m tools.tester_zbocza runs/zbocza_1/best.keras out/zbocza/regenerat [S/N]
+    python -m tools.tester_zbocza runs/zbocza_1/best.keras out/zbocza/regenerat [S/N|-] [katalog]
 
 S/N (opcja): do nagrania dosypany szum pasmowy do tego S/N [dB] — DIAGNOSTYKA
 zakresu treningu: czy sieć gubi się na obrazach czystszych niż w treningu.
@@ -68,7 +68,10 @@ def main():
                                     else "runs/zbocza_1/best.keras")
     out = Path(sys.argv[2] if len(sys.argv) > 2 else "out/zbocza/regenerat")
     out.mkdir(parents=True, exist_ok=True)
-    dosyp = float(sys.argv[3]) if len(sys.argv) > 3 else None
+    dosyp = (float(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3] != "-"
+             else None)
+    # 4. argument: katalog nagrań (domyślnie probki; np. probki/zaszumione)
+    katalog = Path(sys.argv[4]) if len(sys.argv) > 4 else Path("probki")
     n8, k4 = 8 * C.SR, 4 * C.SR
     # Drogi: próg klasyczny, sieć z jednym progiem, sieć z histerezą (17.10).
     DROGI = ("klasyczna", "siec", "siec_hist")
@@ -76,7 +79,7 @@ def main():
     print("grzebień + tabela Morse'a z nut; drogi: " + ", ".join(DROGI))
     print(f"{'nagranie':42s} " + " ".join(f"{d:>14s}" for d in DROGI)
           + "   (pewność/okien, słowa w całości)")
-    for p in sorted(Path("probki").glob("*.wav")):
+    for p in sorted(katalog.glob("*.wav")):
         chce = nagrania.oczekiwane(p.with_suffix(".txt"))
         a = frontend.load_audio(p)
         t, f = tune.track_tone(a)

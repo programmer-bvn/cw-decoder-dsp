@@ -1,0 +1,7 @@
+# PRÓBKA ZASZUMIONA — tools/zaszum.py (18.10)
+
+nadane:        SQ2BVN DE DL1ABC/P = R TNX FB RPT = UR RST 599, 5NN = NAME HANS, QTH NR. BERLIN = WX SUNNY, TEMP 18 C = RIG IC7300, ANT DIPOLE. = HW? + SQ2BVN DE DL1ABC/P (
+tor:           syntetyk: morse.synth_cw 18 WPM, rytm maszynowy, narastanie 5 ms
+szum:          szum_ic7300_usb_7025kHz_20261009_2135_500Hz_075-097s.wav (pas -6 dB, środek 756 Hz)
+ton:           756 Hz (przesunięty na środek pasa szumu)
+S/N:           zadane +20.0 dB, zmierzone +20.1 dB (dsp/sn, 500 Hz)

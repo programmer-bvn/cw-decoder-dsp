@@ -1385,6 +1385,28 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Lepsze próbki testowe: kluczownik IC-7300MK2 + naturalny szum pasma (18.10)
+
+**Dlaczego.** 26 słów i rozrzut ±2 to za mało, żeby rozróżniać warianty
+(histereza: różnice widać tylko w tekście). Operator: tekst znany co do znaku,
+nadany automatem, potem z ręki z różnymi przerwami, „bez wychodzenia w eter".
+**Radio** (źródła w rozmowie 18.10): podsłuch CW na karcie USB — SET >
+Connectors > USB AF/IF Output > AF Beep/Speech… Output = ON (RemoteTx,
+IC-7300MK2; domyślnie OFF i podsłuchu na USB nie ma — zgodne z obserwacją
+operatora). Tekst do kluczownika przez CI-V 0x17 (Hamlib `icom_send_morse`:
+do 30 znaków w ramce, FA = bufor pełny, 0x17 0xFF = stop); break-in odczyt
+0x16 0x47 (00 wył., 01 pół, 02 pełny). Przy BK-IN OFF kluczownik gra tylko
+podsłuch (instrukcja IC-7300).
+**Zrobione:** `probki/teksty/qso*.txt` (5 tekstów, wszystkie 44 znaki);
+`tools/radio/kluczownik.ps1` (URUCHAMIA OPERATOR; odmawia przy break-in
+innym niż 00, trybie innym niż CW, braku odpowiedzi; `-Sucho` = same
+bezpieczniki; parsowanie odpowiedzi sprawdzone na podstawionym porcie);
+`tools/zaszum.py` (czysty sygnał + szum z `probki/szum` przy zadanym S/N,
+ton na środku pasa -6 dB szumu; `--syntetyk WPM` = sygnał kluczownika
+z tekstu, dopóki nie ma nagrań). Pierwszy zestaw: 5 tekstów x S/N 20/10/6/3/0
+dB, szum 7025 kHz FIL 500 Hz; S/N zmierzone = zadane ±0,5 dB (przy 0 dB
++1,1...+1,4 — miara zawyża przy słabym sygnale).
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na
