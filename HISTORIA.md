@@ -1385,6 +1385,46 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Pętla tonu: „ton kluczowany" — zestaw z prawdą i nowa metoda (18/19.10)
+
+**Zestaw** (`tools/test_tonu.py`, decyzja operatora: zamiast sumatora
+rezystorowego — dodawanie nagrań programowo): stacja = nagranie kluczownika
+IC-7300MK2 przesunięte na ton w środku filtra (±30 Hz, tak dostraja
+operator), szum naturalny (bank + szum własny odbiornika; pas -6 dB zmierzony;
+stacja w pasie), 0-5 s szumu przed nadaniem, obok: nic / druga stacja /
+stała nośna 60-200 Hz dalej, -10 / 0 / +6 dB. 150 przypadków; plik banku
+z wąskim prążkiem (7025 kHz FIL 230 Hz: 18,5 dB przy 770 Hz) wykluczony.
+Miara: udział czasu nadania z pętlą w ±10 Hz od tonu stacji.
+
+**Metoda** (`tune.track_tone_kluczowany`): w oknie 6 s dla każdej
+częstotliwości kontrast kluczowania (90. - 10. percentyl mocy) — stacja CW
+kluczowana, szum skacze, nośna/przydźwięk stałe. Kontrast >= 10 dB tylko
+ODSIEWA; spośród kluczowanych (nie słabszych niż 10 dB od najgłośniejszego)
+wygrywa bliższy środka filtra; bez przeskoku, gdy poprzedni wciąż kandyduje.
+Po drodze (każde zmierzone na zestawie):
+
+| wersja | na tonie | bez obok | stacja obok | nośna obok |
+|---|---|---|---|---|
+| obecna `track_tone` | 31,7% | 65,7% | 12,6% | 6,6% |
+| kontrast wybiera | 48,8% | 59,2% | 42,7% | 41,4% |
+| kontrast odsiewa, poziom wybiera | 62,5% | 99,7% | 33,0% | 44,0% |
+| odniesienie mocy jedno, nie mediana bloku | 79,5% | 100% | 33,1% | 100% |
+| bliższy środka filtra wygrywa | 78,4% | 100% | 31,8% | 97,8% |
+| środek filtra z cichego percentyla (20.) | 83,9% | 98,4% | 51,7% | 97,8% |
+| **środek z 5. percentyla** | **90,3%** | **98,5%** | **72,5%** | **97,8%** |
+
+Kluczowe błędy po drodze: (1) kliknięcia twardych zboczy podsłuchu są
+„kluczowane" na całym paśmie — kontrast nie może wybierać, tylko odsiewać;
+(2) mediana pasma w bloku skacze 36 dB przy kluczowaniu — stała nośna
+względem niej wyglądała na kluczowaną (kontrast 30 dB); (3) środek filtra
+ze średniego widma = najsilniejsza stacja; z 20. percentyla przy szybkim
+kluczowaniu nadal obca stacja (blok 200 ms prawie zawsze łapie element).
+Docelowo przy pracy z radiem środek = ton podsłuchu (CW pitch) z CI-V.
+**Na prawdziwych nagraniach:** kluczownik i ręka — ten sam ton co obecna
+(760 Hz), EEEE 19:09: obecna 794 Hz (źle), nowa 760; różne tony na DP75HSC,
+LA3WAA, LA4CIR, Nagrywanie (6), (7), radio1 — rozstrzyga odczyt (tester
+z obiema pętlami, w toku). Domyślna pętla jeszcze BEZ ZMIAN.
+
 ### Drugi etap — sieć na wyjściu sieci zboczy, pierwszy trening (18/19.10)
 
 `dsp/etap2.py`, `tools/etap2_trening.py`. Wejście: P(klucz) z sieci zboczy_3

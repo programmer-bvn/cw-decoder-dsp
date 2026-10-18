@@ -296,3 +296,97 @@ def lock_report(times: np.ndarray, freqs: np.ndarray,
             f"        w zakresie czytelnym dla modelu "
             f"({lo:.0f}-{hi:.0f} Hz): {100.0*w_zakresie:.0f}% czasu "
             f"(zakres estymaty {f.min():.0f}-{f.max():.0f} Hz)")
+
+
+# --------------------------------------------------------------------------
+# TON KLUCZOWANY (18.10) — kandydat na następcę track_tone, w ocenie
+# --------------------------------------------------------------------------
+# Stacja CW na swojej częstotliwości raz jest głośna, raz cicha (kluczowanie);
+# szpilki szumu skaczą po częstotliwościach; nośna, przydźwięk i radiolatarnia
+# są głośne bez przerw. Dla każdej częstotliwości: różnica między głośnymi
+# (KL_GORA percentyl) a cichymi (KL_DOL) chwilami w oknie KL_OKNO_S — kontrast
+# kluczowania. Przy podobnym kontraście: ta, która wygrywała dotąd, potem
+# bliższa środka filtra (tam operator dostraja swoją stację).
+# Zestaw z prawdą: tools/test_tonu.py (obecna pętla: 29% czasu na tonie).
+KL_OKNO_S = 6.0
+KL_KROK_S = 0.25
+KL_GORA, KL_DOL = 90, 10
+KL_KONTRAST_DB = 10.0
+# Kandydaci: kluczowani, nie słabsi niż KL_REMIS_DB od najgłośniejszego;
+# wygrywa BLIŻSZY ŚRODKA FILTRA (operator dostraja tam swoją stację i trzyma
+# ją, choćby obok weszła mocniejsza). Przy 3 dB („głośniejszy wygrywa"):
+# druga stacja obok — 33% czasu na tonie.
+KL_REMIS_DB = 10.0
+KL_WYGLADZ_HZ = 5.0
+
+
+def track_tone_kluczowany(audio: np.ndarray, sr: int = C.SR,
+                          fmin: float = C.FMIN, fmax: float = C.FMAX,
+                          block_s: float = BLOCK_S, step_s: float = STEP_S
+                          ) -> tuple[np.ndarray, np.ndarray]:
+    audio = np.asarray(audio, dtype=np.float64)
+    nb = max(64, int(round(block_s * sr)))
+    ns = max(1, int(round(step_s * sr)))
+    nfft = 1 << int(np.ceil(np.log2(nb * 4)))
+    starty = list(range(0, max(1, audio.size - nb), ns))
+    f = np.fft.rfftfreq(nfft, 1.0 / sr)
+    band = (f >= fmin) & (f <= fmax)
+    fb = f[band]
+    win = np.hanning(nb)
+    S = np.empty((len(starty), band.sum()))
+    for i, s in enumerate(starty):
+        S[i] = (np.abs(np.fft.rfft(audio[s:s + nb] * win, n=nfft)) ** 2)[band]
+    times = np.array(starty) / sr
+    if not len(starty):
+        return times, np.zeros(0)
+    k = max(1, int(round(KL_WYGLADZ_HZ / (f[1] - f[0]))))
+    S = np.apply_along_axis(lambda r: np.convolve(r, np.ones(2 * k + 1) / (2 * k + 1), mode="same"), 1, S)
+    # Odniesienie JEDNO dla całości, nie mediana w każdym bloku: kliknięcia
+    # zboczy podnoszą całe pasmo w chwili kluczowania, mediana bloku skakała
+    # 36 dB, a stała nośna względem niej wyglądała na kluczowaną (kontrast 30 dB).
+    med = max(float(np.median(S)), 1e-30)
+    D = 10.0 * np.log10(np.maximum(S, 1e-30) / med)
+    # Środek filtra z SZUMU: 5. percentyl w czasie (przerwy), wygładzony
+    # ±30 Hz, pas -6 dB. Pierwsza wersja (średnie widmo) wyznaczała „pas"
+    # wokół najsilniejszej stacji — środkiem była stacja obca.
+    tlo = np.percentile(S, 5, axis=0)
+    kk = max(1, int(round(30.0 / (f[1] - f[0]))))
+    tlo = np.convolve(tlo, np.ones(2 * kk + 1) / (2 * kk + 1), mode="same")
+    pas = fb[tlo >= tlo.max() / 4.0]
+    srodek = 0.5 * (pas.min() + pas.max()) if pas.size else C.TONE_CENTER
+    ocena_t, ocena_f = [], []
+    poprz = np.nan
+    pol = KL_OKNO_S / 2.0
+    for tc in np.arange(0.0, times[-1] + 1e-9, KL_KROK_S):
+        w = (times >= tc - pol) & (times <= tc + pol)
+        if w.sum() < 8:
+            ocena_t.append(tc); ocena_f.append(poprz); continue
+        gora = np.percentile(D[w], KL_GORA, axis=0)
+        dol = np.percentile(D[w], KL_DOL, axis=0)
+        # kontrast kluczowania tylko ODSIEWA (nośna, przydźwięk); wybiera
+        # poziom w chwilach wciśnięcia. Pierwsza wersja (wybór po samym
+        # kontraście): kliknięcia twardych zboczy podsłuchu IC-7300 są
+        # „kluczowane" na całym paśmie — 59% przypadków bez zakłócenia.
+        ok = (gora >= ACQUIRE_SNR_DB) & (gora - dol >= KL_KONTRAST_DB)
+        if not ok.any():
+            ocena_t.append(tc); ocena_f.append(poprz); continue
+        poz = np.where(ok, gora, -np.inf)
+        lm = np.flatnonzero((poz[1:-1] >= poz[:-2]) & (poz[1:-1] >= poz[2:]) & ok[1:-1]) + 1
+        if not lm.size:
+            lm = np.array([int(np.argmax(poz))])
+        lm = lm[poz[lm] >= poz[lm].max() - KL_REMIS_DB]
+        kand = fb[lm]
+        j = lm[np.argmin(np.abs(kand - srodek))]
+        # bez przeskoku: poprzedni zostaje, jeśli jest wśród kandydatów
+        # i nie dalej od środka niż o CAPTURE_HZ więcej niż wybrany
+        if np.isfinite(poprz) and np.any(np.abs(kand - poprz) <= CAPTURE_HZ):
+            jp = lm[np.argmin(np.abs(kand - poprz))]
+            if abs(fb[jp] - srodek) <= abs(fb[j] - srodek) + CAPTURE_HZ:
+                j = jp
+        fj = _parabolic(10.0 ** (gora / 10.0), fb, int(j))
+        poprz = fj
+        ocena_t.append(tc); ocena_f.append(fj)
+    ocena_f = np.asarray(ocena_f, dtype=np.float64)
+    # z ocen co KL_KROK_S na siatkę bloków: najbliższa ocena (bez mieszania NaN)
+    idx = np.clip(np.round(times / KL_KROK_S).astype(int), 0, ocena_f.size - 1)
+    return times, ocena_f[idx]
