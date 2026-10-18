@@ -1,34 +1,25 @@
-"""ŚLEDZENIE TONU: zaczep się na jedną stację i TRZYMAJ ją.
+"""ŚLEDZENIE TONU: która częstotliwość to NASZA stacja — i trzymanie jej.
 
-Front-end patrzy w pasmo FMIN..FMAX, czyli 800 Hz szerokości. Na zapchanym
-pasmie mieści się w nim kilka stacji — zmierzone na raw_radio_14_020MHz.wav:
-845 Hz przy 0 dB i 790 Hz przy -5,4 dB, czyli 55 Hz od siebie. Model uczono,
-że "nasza" stacja jest przy 750 +/- 80 Hz i że jest jedna. Przy dwóch
-naraz odczyt rozsypuje się na serie '5' (.....).
+Front-end patrzy w pasmo FMIN..FMAX (800 Hz). Na zapchanym paśmie mieści się
+w nim kilka stacji (raw_radio_14_020MHz.wav: 845 Hz przy 0 dB i 790 Hz przy
+-5,4 dB). Zanik (QSB) sprawia, że korespondent słabnie, a obca stacja wychodzi
+na prowadzenie — dekoder „najmocniejszy prążek" przeskoczyłby na nią.
+Operator raz dostrojony trzyma się swojego tonu.
 
-DLACZEGO NIE "NAJMOCNIEJSZY TON W OKNIE"
-----------------------------------------
-Najprostsze rozwiązanie — w każdym oknie znajdź najmocniejszy prążek
-i przesuń go na 750 Hz — jest BŁĘDNE, i to nie subtelnie. Na falach
-krótkich zanik (QSB) regularnie sprawia, że korespondent słabnie,
-a przypadkowa stacja obok wychodzi na prowadzenie w słyszalności.
-Dekoder wybierający maksimum przeskoczyłby wtedy na obcą stację w środku
-nadania. Operator tego nie robi: raz dostrojony trzyma się swojego tonu
-i przeczekuje zanik.
+TON KLUCZOWANY (od 19.10; HISTORIA „Pętla tonu: ton kluczowany"):
+w oknie KL_OKNO_S dla każdej częstotliwości kontrast kluczowania — różnica
+między głośnymi (KL_GORA percentyl) a cichymi (KL_DOL) chwilami. Stacja CW
+na swojej częstotliwości raz jest głośna, raz cicha; szpilki szumu skaczą po
+częstotliwościach; nośna, przydźwięk, radiolatarnia są głośne bez przerw.
+Kontrast ODSIEWA, wybiera bliskość środka filtra (tam operator dostraja swoją
+stację), bez przeskoku, gdy poprzedni wybór wciąż kandyduje.
 
-Stąd konstrukcja jak w pętli fazowej, z trzema stanami:
-
-    SZUKANIE  brak zaczepu; wybieramy najmocniejszy prążek w pasmie,
-              ale tylko gdy wystaje ponad tło o ACQUIRE_SNR_DB
-    ZACZEP    szukamy prążka WYŁĄCZNIE w okolicy +/-CAPTURE_HZ od
-              bieżącej estymaty i uśredniamy ją wykładniczo. Stacja
-              mocniejsza, ale odległa, jest ignorowana — to jest sedno
-    WYBIEG    w oknie nie ma nic ponad progiem; TRZYMAMY ostatnią
-              częstotliwość do HOLD_S sekund. Dłuższa cisza zwalnia zaczep
-
-Wąskie pasmo zaczepu (CAPTURE_HZ) pozwala nadążyć za dryfem VFO — model
-kanału zakłada do 8 Hz na klip 4 s, czyli 2 Hz/s — a jednocześnie nie daje
-przeskoczyć na stację 55 Hz dalej.
+Do 18.10 pętla fazowa (SZUKANIE / ZACZEP ±CAPTURE_HZ / WYBIEG) zaczepiała się
+w pierwszym bloku na tym, co było najmocniejsze — przy nagraniu zaczynającym
+się od szumu na szpilce szumu — i nie puszczała. Zestaw z prawdziwym tonem
+(tools/test_tonu.py, 150 przypadków): stara 31,7% czasu na tonie, ta 90,3%;
+na prawdziwych nagraniach słowa bez zmian (53/62, 14/14), więcej okien
+przechodzi bramkę (EEEE 19:09: 3 -> 11; stara siedziała na 794 Hz zamiast 760).
 """
 
 from __future__ import annotations
@@ -41,119 +32,19 @@ from . import config as C
 BLOCK_S = 0.20            # okno analizy częstotliwości [s]; 5 Hz rozdzielczości
 STEP_S = 0.05             # krok analizy [s]
 ACQUIRE_SNR_DB = 8.0      # ile ponad tło musi wystawać prążek, żeby się zaczepić
-# Próg utrzymania zaczepu. Niżej niż przy szukaniu, bo sygnał w zaniku
-# słabnie, a pętla ma go wtedy TRZYMAĆ. 6 dB nad medianą pasma to poziom,
-# przy którym szum w przerwie nie utrzymuje zaczepu, a słaby sygnał jeszcze
-# tak. (Podniesienie z 3 na 6 dB nie zmieniło zachowania na nagraniach
-# testowych — zostaje jako wartość ostrożniejsza, nie jako naprawa.)
-TRACK_SNR_DB = 6.0
-# Połowa szerokości okna śledzenia. 12 Hz z zapasem pokrywa dryf VFO
+# Strefa „ten sam kandydat co poprzednio". 12 Hz z zapasem pokrywa dryf VFO
 # (model kanału zakłada 8 Hz na klip 4 s, czyli 2 Hz/s, a krok pętli to
 # 0,05 s), a nie pozwala przejść na stację odległą o kilkadziesiąt herców.
 # ZMIERZONE: przy 25 Hz pętla na raw_radio_14_020MHz.wav przewędrowała
 # 95 Hz między dwiema stacjami (751-845 Hz) — czyli zrobiła dokładnie to,
 # czego ta konstrukcja ma nie robić.
 CAPTURE_HZ = 12.0
-HOLD_S = 3.0              # jak długo trzymamy ton bez sygnału (wybieg)
-SMOOTH = 0.25             # waga nowej estymaty; mniejsza = spokojniejsza pętla
 
 
 def _spectrum(block: np.ndarray, sr: int, nfft: int):
     win = np.hanning(block.size)
     sp = np.abs(np.fft.rfft(block * win, n=nfft)) ** 2
     return sp, np.fft.rfftfreq(nfft, 1.0 / sr)
-
-
-def track_tone(audio: np.ndarray, sr: int = C.SR,
-               fmin: float = C.FMIN, fmax: float = C.FMAX,
-               block_s: float = BLOCK_S, step_s: float = STEP_S,
-               capture_hz: float = CAPTURE_HZ, hold_s: float = HOLD_S
-               ) -> tuple[np.ndarray, np.ndarray]:
-    """Zwraca (czasy, częstotliwość) — estymatę tonu w kolejnych krokach.
-
-    Częstotliwość jest NaN, gdy pętla nie ma zaczepu. W czasie wybiegu
-    zwracana jest ostatnia znana wartość, bo dokładnie tak zachowuje się
-    operator: przy zaniku nie przestraja odbiornika.
-    """
-    audio = np.asarray(audio, dtype=np.float64)
-    nb = max(64, int(round(block_s * sr)))
-    ns = max(1, int(round(step_s * sr)))
-    nfft = 1 << int(np.ceil(np.log2(nb * 4)))       # nadpróbkowanie widma
-
-    times, freqs = [], []
-    f_est = np.nan
-    silent_s = 0.0
-
-    for start in range(0, max(1, audio.size - nb), ns):
-        block = audio[start:start + nb]
-        if block.size < nb:
-            break
-        sp, f = _spectrum(block, sr, nfft)
-
-        band = (f >= fmin) & (f <= fmax)
-        if not band.any():
-            break
-        # Tło: mediana mocy w pasmie. Odporna na jeden silny prążek.
-        # Podłoga 1e-30 nie wystarcza: dla sygnału syntetycznego, w którym
-        # połowa pasma jest dokładnie zerowa, mediana wychodzi 0 i log10
-        # daje dzielenie przez zero. Skalujemy podłogę do mocy sygnału.
-        # Cyfrowa cisza (same zera): nie ma czego śledzić. 18.10 — syntetyk
-        # z sekundą zer na początku (tools/zaszum): podłoga skalowana do mocy
-        # prążka dawała 120 dB „S/N" na dowolnym prążku i pętla zaczepiała się
-        # na przypadkowej częstotliwości (401 Hz -> przestrojenie o 355 Hz za dużo).
-        if float(sp[band].max()) <= 1e-20:
-            if not np.isnan(f_est):          # jak WYBIEG niżej
-                silent_s += step_s
-                if silent_s > hold_s:
-                    f_est = np.nan
-            times.append(start / sr)
-            freqs.append(f_est)
-            continue
-        floor = float(np.median(sp[band]))
-        if floor <= 0.0:
-            floor = max(float(sp[band].max()), 1e-30) * 1e-12
-
-        if np.isnan(f_est):
-            # --- SZUKANIE: cały pasmo, wysoki próg ---
-            k = int(np.flatnonzero(band)[np.argmax(sp[band])])
-            snr = 10.0 * np.log10(max(float(sp[k]), 1e-30) / floor)
-            if snr >= ACQUIRE_SNR_DB:
-                f_est = _parabolic(sp, f, k)
-                silent_s = 0.0
-        else:
-            # --- ZACZEP: tylko okolica bieżącej estymaty ---
-            near = band & (np.abs(f - f_est) <= capture_hz)
-            if near.any():
-                k = int(np.flatnonzero(near)[np.argmax(sp[near])])
-                snr = 10.0 * np.log10(max(float(sp[k]), 1e-30) / floor)
-            else:
-                snr = -99.0
-            if snr >= TRACK_SNR_DB:
-                f_new = _parabolic(sp, f, k)
-                f_est = (1.0 - SMOOTH) * f_est + SMOOTH * f_new
-                # Licznik wybiegu MALEJE, a nie zeruje się, żeby sporadyczne
-                # trafienie w szczyt szumu nie utrzymywało zaczepu przez
-                # długą ciszę.
-                #
-                # UCZCIWA UWAGA: dodałem to, szukając przyczyny szerokiego
-                # zakresu tonu na 4-minutowym nagraniu (621-825 Hz).
-                # Nie pomogło — bo przyczyny nie było w pętli. Wykres
-                # pokazał, że w tych fragmentach nagranie NIE ZAWIERA
-                # kluczowanego sygnału (poziom ciągły -5 dB zamiast skoków
-                # -25/+20 dB), a pętla wiernie śledziła to, co tam jest.
-                # Zmiana zostaje, bo jest poprawna sama w sobie, ale nie
-                # rozwiązała problemu, którego nie było.
-                silent_s = max(0.0, silent_s - step_s)
-            else:
-                # --- WYBIEG: trzymamy ostatnią częstotliwość ---
-                silent_s += step_s
-                if silent_s > hold_s:
-                    f_est = np.nan
-
-        times.append(start / sr)
-        freqs.append(f_est)
-
-    return np.asarray(times), np.asarray(freqs)
 
 
 def smooth_track(times: np.ndarray, freqs: np.ndarray,
@@ -299,7 +190,7 @@ def lock_report(times: np.ndarray, freqs: np.ndarray,
 
 
 # --------------------------------------------------------------------------
-# TON KLUCZOWANY (18.10) — kandydat na następcę track_tone, w ocenie
+# TON KLUCZOWANY (18/19.10) — track_tone; opis na początku pliku
 # --------------------------------------------------------------------------
 # Stacja CW na swojej częstotliwości raz jest głośna, raz cicha (kluczowanie);
 # szpilki szumu skaczą po częstotliwościach; nośna, przydźwięk i radiolatarnia
@@ -320,7 +211,7 @@ KL_REMIS_DB = 10.0
 KL_WYGLADZ_HZ = 5.0
 
 
-def track_tone_kluczowany(audio: np.ndarray, sr: int = C.SR,
+def track_tone(audio: np.ndarray, sr: int = C.SR,
                           fmin: float = C.FMIN, fmax: float = C.FMAX,
                           block_s: float = BLOCK_S, step_s: float = STEP_S
                           ) -> tuple[np.ndarray, np.ndarray]:

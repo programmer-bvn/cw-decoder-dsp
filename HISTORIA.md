@@ -1447,7 +1447,14 @@ Docelowo przy pracy z radiem środek = ton podsłuchu (CW pitch) z CI-V.
 **Na prawdziwych nagraniach:** kluczownik i ręka — ten sam ton co obecna
 (760 Hz), EEEE 19:09: obecna 794 Hz (źle), nowa 760; różne tony na DP75HSC,
 LA3WAA, LA4CIR, Nagrywanie (6), (7), radio1 — rozstrzyga odczyt (tester
-z obiema pętlami, w toku). Domyślna pętla jeszcze BEZ ZMIAN.
+z obiema pętlami). **Tester na prawdziwych nagraniach:** słowa sieci
+zboczy identyczne w KAŻDYM nagraniu (pasmo + mikrofon 53/62, ręka 14/14),
+więcej okien przez bramkę (mic1 62 -> 64, mic2 43 -> 45, CQ ręka 24 -> 26,
+EEEE 3 -> 11). **Od 19.10 `tune.track_tone` = ton kluczowany**; pętla fazowa
+usunięta (opis w nagłówku tune.py i tutaj). diag 120/120. Na nieprzyciętych
+oryginałach kluczownika (3-4 s szumu przed nadaniem, 6 m: wcześniej 0 okien)
+poza tonem 0-1% czasu -> **obejście `nagraj_kluczownik.przytnij` usunięte**
+(nagrania już przycięte zostają, pole „przycięte" w ich opisach).
 
 ### Drugi etap — sieć na wyjściu sieci zboczy, pierwszy trening (18/19.10)
 

@@ -39,34 +39,6 @@ def ps(*arg: str) -> tuple[int, str]:
     return r.returncode, tekst
 
 
-def przytnij(wav: Path) -> float:
-    """Przycina z przodu szum sprzed kluczownika: zostaje 0,1 s przed
-    pierwszym znakiem. Zwraca przycięte sekundy. Oryginał (surowe/) bez zmian.
-
-    Po co (18.10): tune.track_tone zaczepia się na szumie, gdy nagranie
-    zaczyna się od samego szumu, i nie przechodzi na stację (HISTORIA, „Pętla
-    tonu ... OTWARTE"; na 6 m: 0 okien w qso1). Rejestrator potrzebuje ~3 s
-    przed kluczownikiem. Test ma mierzyć odczyt, słabość pętli — osobno."""
-    import soundfile as sf
-    from scipy.signal import hilbert
-    from dsp import tune
-    x = frontend.load_audio(wav)
-    X = np.abs(np.fft.rfft(x))
-    fr = np.fft.rfftfreq(x.size, 1 / C.SR)
-    pas = (fr > C.FMIN) & (fr < C.FMAX)
-    ton = float(fr[pas][np.argmax(X[pas])])
-    e = np.abs(hilbert(tune.bandpass(x, ton, 60.0).astype(np.float64)))
-    k = int(0.01 * C.SR)
-    e = np.convolve(e, np.ones(k) / k, mode="same")
-    nad = np.flatnonzero(e > 0.5 * np.percentile(e, 99))
-    if not nad.size:
-        return 0.0
-    start = max(0, int(nad[0] - 0.1 * C.SR))
-    if start:
-        sf.write(wav, x[start:], C.SR, subtype="PCM_16")
-    return start / C.SR
-
-
 def civ_pasmo() -> str:
     """Częstotliwość i tryb z CI-V (tylko odczyt: civ_odczyt.ps1, polecenia 03/04)."""
     r = subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
@@ -145,7 +117,6 @@ def main() -> None:
         print(log[-800:])
         raise SystemExit("Nagranie się nie zapisało.")
 
-    przyciete = przytnij(wav)
     x = frontend.load_audio(wav)
     szczyt = float(np.max(np.abs(x))) if x.size else 0.0
     print(f"nagranie: {x.size / C.SR:.1f} s, szczyt {szczyt:.3f}")
@@ -162,7 +133,6 @@ def main() -> None:
         f"radio:         {radio}; karta: urządzenie {a.device}\n"
         f"czas:          {stempel}\n"
         f"szczyt:        {szczyt:.3f}\n"
-        f"przycięte:     {przyciete:.2f} s z przodu (szum sprzed kluczownika; surowe/ pełne)\n"
         f"karta:         {'; '.join(status) if status else 'bez zgłoszeń (przepełnienia itp.)'}\n",
         encoding="utf-8")
     print(f"zapisano {wav} + opis")

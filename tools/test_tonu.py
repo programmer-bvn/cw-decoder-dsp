@@ -3,7 +3,7 @@
     python -m tools.test_tonu generuj            # out/test_tonu/*.wav + prawda.json
     python -m tools.test_tonu ocen               # obecna dsp.tune.track_tone
 
-Po co: tune.track_tone zaczepia się na szumie, gdy nagranie zaczyna się od
+Po co: pętla fazowa (do 18.10) zaczepiała się na szumie, gdy nagranie zaczyna się od
 samego szumu (HISTORIA 18.10, „Pętla tonu ... OTWARTE"; na 20 m kosztowało
 9 z 94 słów). Pięć poprawek odrzuconych, bo nie było czym rozstrzygnąć, który
 ton jest dobry. Tu prawda jest znana z budowy (decyzja operatora: zamiast
@@ -178,14 +178,16 @@ def ocen_petle(track, nazwa: str = "") -> dict:
     return {"srednio": float(tr.mean()), "wyniki": wyn}
 
 
-METODY = {"obecna": "track_tone", "kluczowany": "track_tone_kluczowany"}
+# Funkcja z dsp.tune do oceny (19.10: track_tone = ton kluczowany, 90,3%;
+# poprzednia pętla fazowa 31,7% — HISTORIA).
+METODY = {"track_tone": "track_tone"}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("generuj"); g.add_argument("--n", type=int, default=150); g.add_argument("--seed", type=int, default=1)
-    o = sub.add_parser("ocen"); o.add_argument("--metoda", default="obecna", choices=list(METODY))
+    o = sub.add_parser("ocen"); o.add_argument("--metoda", default="track_tone", choices=list(METODY))
     a = ap.parse_args()
     if a.cmd == "generuj":
         generuj(a.n, a.seed)
