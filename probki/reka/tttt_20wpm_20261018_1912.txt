@@ -1,0 +1,10 @@
+# NAGRANIE Z RĘKI — TTTT przy 20 WPM, operator SQ2BVN, 18.10 19:12 (test usterek manipulatora, dźwignia kreski)
+
+nadane:        T (pojedyncze kreski w kółko, ok. 45 s) — zamierzone 44 x T
+klucz:         manipulator z dźwigniami na magnesach stałych (dźwignia czasem nie wraca / nie styka)
+tempo:         kluczownik 19,8 WPM (CI-V 0x14 0x0C)
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; antena odłączona
+pomiar:        surowy sygnał 48 kHz: 44 znaki — 34 x T (77%); M (--) 1 (kreska dołożona);
+               naprzemienne N (-.) 3, C (-.-.) 1 (obie dźwignie naraz); same kropki S (...) 3,
+               6 kropek 2 (zahaczenie o dźwignię kropki). Brakujących elementów brak.
+               Przerwy między T: mediana 13,8 u (10/90%: 11,3/15,3 u).
