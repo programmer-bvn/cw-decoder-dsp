@@ -1385,6 +1385,25 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Drugi etap — główna sieć znaków na regeneracie: gorzej (18.10, wieczór)
+
+15 nagrań kluczownika (20 m, 6 m, bez anteny; 282 słowa), słowa w całości:
+
+| droga | czesci_norm (37 znaków) | czesci_znaki (45 znaków) |
+|---|---|---|
+| główna sieć na SUROWYM nagraniu (normalizacja tempa przy odczycie) | 238 | **256** |
+| główna sieć na regeneracie wzorcowym z nut sieci zboczy (+ szum 25 dB) | 140 | 161 |
+| **sieć zboczy + grzebień + tabela** | — | **281** |
+
+Nowa sieć znaków na nagraniach lepsza od czesci_norm (256 vs 238), choć na
+syntetyku gorsza (CER 14,2 vs 5,3%). Regenerat jako wejście głównej sieci
+— spadek o ~40% (jak 17.10: 4/13): regenerat (czysty sinus, idealne
+narastanie, przerwy 3/7 u) jest poza tym, co główna sieć widziała w treningu.
+**Wniosek:** drugi etap nie przez regenerat i główną sieć, tylko sieć
+uczona na WYJŚCIU sieci zboczy (przebieg P(klucz), tempo znormalizowane),
+z błędami takimi, jakie sieć zboczy naprawdę robi. Do tego czasu najlepszy
+odczyt: sieć zboczy + grzebień + tabela. Skrypt: scratch `drugi_etap.py`.
+
 ### Lepsze próbki testowe: kluczownik IC-7300MK2 + naturalny szum pasma (18.10)
 
 **Dlaczego.** 26 słów i rozrzut ±2 to za mało, żeby rozróżniać warianty
