@@ -8,3 +8,7 @@ pomiar:        surowy sygnał 48 kHz (obwiednia, próg 50%): 34 znaki — 31 x E
                dźwignia kropki przytrzymana dłużej niż jeden element -> kluczownik dał drugą kropkę.
                Wzorów naprzemiennych (·−·…) brak; brakujących kropek (przerwa > 2x mediany) brak.
                Przerwy między E: mediana 15,3 u (10/90%: 10,8/20,5 u).
+mechanika:     (operator 18.10) tuleje z tworzywa, korpus minimalnie się przesuwa i zmniejsza odstęp
+               styków (~0,2 mm, luźny gwint — trudno ustawić); stuknięcie w dźwignię go przywraca.
+               Za duży odstęp przy słabym napinaczu magnetycznym = długi powrót dźwigni.
+               Zamówiony VK-6 do porównania.

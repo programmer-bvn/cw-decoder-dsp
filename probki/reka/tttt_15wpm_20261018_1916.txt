@@ -8,3 +8,7 @@ pomiar:        surowy sygnał 48 kHz: 36 znaków — 22 x T (61%); same kropki I
                (zahaczenie o dźwignię kropki); naprzemienne N 2, A 1 (obie dźwignie).
                Pierwsze 14 T bez błędu, potem błędy gęsto. Brakujących elementów brak.
                Przerwy między T: mediana 10,3 u.
+mechanika:     (operator 18.10) tuleje z tworzywa, korpus minimalnie się przesuwa i zmniejsza odstęp
+               styków (~0,2 mm, luźny gwint — trudno ustawić); stuknięcie w dźwignię go przywraca.
+               Za duży odstęp przy słabym napinaczu magnetycznym = długi powrót dźwigni.
+               Zamówiony VK-6 do porównania.

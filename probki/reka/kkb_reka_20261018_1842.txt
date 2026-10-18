@@ -12,3 +12,7 @@ klucz:         ręczny (manipulator z dźwigniami napinanymi magnesami stałymi 
 tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania; ANTENA ODŁĄCZONA (szum własny odbiornika)
 radio:         COM5 115200 adres 0xB6: FE FE E0 B6 03 86 94 00 50 00 FD   tryb: FE FE E0 B6 04 03 03 FD 
 przycięte:     0.16 s z przodu (szum sprzed nadania; surowe/ pełne)
+mechanika:     (operator 18.10) tuleje z tworzywa, korpus minimalnie się przesuwa i zmniejsza odstęp
+               styków (~0,2 mm, luźny gwint — trudno ustawić); stuknięcie w dźwignię go przywraca.
+               Za duży odstęp przy słabym napinaczu magnetycznym = długi powrót dźwigni.
+               Zamówiony VK-6 do porównania.
