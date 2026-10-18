@@ -1,6 +1,7 @@
 # OPIS PRÓBKI — tę część wypełniasz ręcznie, narzędzie jej nie nadpisuje.
 
-nadane:        litery zgodnie z definicja, odstepy przypadkowe (tresc nieodnotowana)
+nadane:        CQ CQ CQ DE SQ2BVN PSE K ... SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 559 559 QSB QRM QRN = MY NAME MARIUS MARIUS = QTH IS BYDGOSZCZ BYDGOSZCZ = HW? SP2MSA DE SQ2BVN K
+               (wg odsluchu operatora 18.10, „mniej wiecej"; = i ? potwierdzone w nutach: 11 x -...-, 2 x ..--..)
 nadajnik:      IC-7300MK2  (nadawanie wlasne, SQ2BVN)
 odbiornik:     nie dotyczy — nagranie tonu kontrolnego nadajnika
 klucz:         manipulator (paddle) — elementy poprawne, przerwy ludzkie

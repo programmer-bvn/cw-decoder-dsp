@@ -1361,6 +1361,24 @@ słowa 21/26 jak zboczy_2; więcej okien przez bramkę (SN0FMT jeden próg
 bez czytelnej stacji histereza przepuszcza śmieci — radio1 3 okna
 („R?GTEEEEEEMNMRKE?", zboczy_2: 1 okno), Nagrywanie (7) 5 okien.
 
+### Znaki spoza alfabetu: „=" i „?" w każdej łączności (18.10)
+
+**Objaw.** Operator odsłuchał regenerat mic1 (zboczy_3) w całości: typowa
+pierwsza relacja („SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS
+559 559 … HW? …"). Odczyt tabelą miał w miejscach „=" znak „?" (kod nieznany).
+**Przyczyna.** `C.ALPHABET` — i 37 klas głównej sieci — to spacja, A-Z, 0-9.
+Żadnych znaków przestankowych ani skrótów proceduralnych. **Zmierzone w nutach
+mic1:** 11 x -...- („="), 2 x ..--.. („?" po HW, wg ITU). Odczyt teraz:
+„SP2 MSA DE SQ2 BVN = = = GA DR OM = = TKS FER C ALL = … HW ?? SP2MSA DESQ2BVN K".
+**Zrobione:** `grzebien.ZNAKI_DODATKOWE` (= ? / , . + KN SK, kody ITU-R
+M.1677-1), błąd HH = 7+ kropek („więcej niż 6" — operator), kod nieznany
+teraz „*". Opis `probki/mic1_manipulator_12wpm.txt` dostał treść (`nadane:`) —
+mianownik słów w testerze rośnie, sumy sprzed 18.10 niewprost porównywalne.
+**Otwarte:** główna sieć tych znaków nie zna (decyzja operatora: zmiana klas,
+zbiór, trening, model pod KV260). Operator podał „? = --..--, ! = ..--.." —
+w ITU --..-- to przecinek, ..--.. to „?", i ..--.. jest w nagraniu po HW.
+Operator zapisał „+" po QRN i po QTH; w nagraniu w obu miejscach jest -...-.
+
 ### Grzebień — odzyskanie taktu, nuty, regenerator, tester (17.10)
 
 **Pomysł operatora.** Jak odzyskiwanie zegara: wewnątrz znaku krawędzie na

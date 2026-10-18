@@ -135,16 +135,31 @@ def nuty(on_off: list[tuple[bool, float]], u: float, b: float) -> list:
     return out
 
 
-_ODWROTNY = {v: k for k, v in C.MORSE_DICT.items()}
+# Znaki spoza alfabetu sieci (C.ALPHABET ma tylko A-Z i 0-9), a obecne
+# w każdej łączności — 18.10 operator odsłuchał mic1: „=" między członami
+# relacji, „?" po HW. Zmierzone w nutach mic1 (sieć zboczy_3): 11 x -...-
+# i 2 x ..--.. — wcześniej tabela dawała w ich miejscu „?" (nieznany kod).
+# Kody wg ITU-R M.1677-1; AR/KN/SK/błąd jako skróty proceduralne.
+ZNAKI_DODATKOWE = {
+    "=": "-...-", "?": "..--..", "/": "-..-.", ",": "--..--", ".": ".-.-.-",
+    "+": ".-.-.", "<KN>": "-.--.", "<SK>": "...-.-",
+}
+# Błąd (HH): operator 18.10 — „więcej kropek niż 6"; ręka nie liczy dokładnie 8.
+BLAD_MIN_KROPEK = 7
+NIEZNANY = "*"          # kod spoza tabeli; do 18.10 był „?", teraz to znak
+_ODWROTNY = {v: k for k, v in {**C.MORSE_DICT, **ZNAKI_DODATKOWE}.items()}
 
 
 def odczyt_klasyczny(nuty_: list) -> str:
     """Nuty -> tekst według tabeli Morse'a (bez sieci): element 1 u =
-    kropka, ≥ 2 u = kreska. Nieznany kod -> '?'."""
+    kropka, ≥ 2 u = kreska. Nieznany kod -> NIEZNANY."""
     tekst = []
     for start, el in nuty_:
         kod = "".join("." if d < 2 else "-" for _, d in el)
-        tekst.append(_ODWROTNY.get(kod, "?"))
+        if len(kod) >= BLAD_MIN_KROPEK and set(kod) == {"."}:
+            tekst.append("<HH>")
+        else:
+            tekst.append(_ODWROTNY.get(kod, NIEZNANY))
     return "".join(tekst)
 
 
