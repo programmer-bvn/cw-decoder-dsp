@@ -1406,6 +1406,25 @@ nagranie kluczownika (to samo tempo 17 WPM!) 30/60/120/200 Hz obok,
    (60% klipów, połowa 30-200 Hz obok, -10...+12 dB względem naszej;
    `radio.receive` + `add_qrm(ton=)`; domyślna droga bit w bit) -> zboczy_4.
 
+**Zboczy_4** (`runs/zbocza_4`, 200 tys., 20 epok, val_loss 0,100 — zboczy_3:
+0,080; `out/zbocza/bieg_4.log`, `out/viterbi_3_zb3.txt` vs `out/viterbi_4_zb4.txt`):
+
+| zestaw (Viterbi) | zboczy_3 | zboczy_4 |
+|---|---|---|
+| QRM | 75/257 | 81/257 |
+| pasmo + mikrofon | 56/62 | 54/62 |
+| kluczownik | 282/282 | 281/282 |
+| zaszumione syntetyczne | 469/470 | 459/470 |
+| zaszumione prawdziwe | 425/456 | 414/456 |
+| RAZEM | **1321/1541** | 1303/1541 |
+
+Syntetyk: błąd zbocza nieco większy (np. 10-20 dB: 0,5 / 1,9 ms vs 0,4 / 1,5).
+**Odrzucone** — domyślna zostaje zboczy_3; zakres QRM w `ZAKRESY_ZBOCZY`
+zostawiony do następnych prób. Test QRM ma najtrudniejszy przypadek (obie
+stacje: ten sam kluczownik, to samo tempo). Hipoteza (bez pomiaru): samych
+danych za mało — potrzebna drobniejsza skala częstotliwości wokół stacji
+(pasma mel ~48 Hz przy 750 Hz) albo jawny kanał „to jest nasza stacja".
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

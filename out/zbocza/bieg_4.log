@@ -1,0 +1,54 @@
+start Mon Oct 19 02:08:20 CEST 2026
+WYNIK: 120/120 kontroli przeszło
+======================================================================
+  RAZEM probki: tabela 53/62, viterbi 56/62
+  RAZEM probki/kluczownik: tabela 281/282, viterbi 282/282
+  RAZEM probki/reka: tabela 14/14, viterbi 14/14
+  RAZEM probki/zaszumione: tabela 337/470, viterbi 469/470
+  RAZEM probki/zaszumione_real: tabela 116/456, viterbi 425/456
+  RAZEM probki/qrm: tabela 37/257, viterbi 75/257
+RAZEM: tabela 838/1541, viterbi 1321/1541
+zapisano out/zbocza/z4/czesc_0.npz (1614 MB, 179 s)
+zapisano out/zbocza/z4/czesc_1.npz (1614 MB, 177 s)
+  self.data_adapter = data_adapters.get_data_adapter(
+zbiór 200000 klipów: trening 190000, walidacja 10000
+sieć zboczy: 842273 parametrów
+2969/2969 - 714s - 241ms/step - loss: 0.1668 - val_loss: 0.1474 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1377 - val_loss: 0.1372 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1287 - val_loss: 0.1406 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1224 - val_loss: 0.1264 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.1175 - val_loss: 0.1293 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1137 - val_loss: 0.1251 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1107 - val_loss: 0.1180 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.1083 - val_loss: 0.1207 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1060 - val_loss: 0.1130 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1042 - val_loss: 0.1098 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.1023 - val_loss: 0.1092 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.1009 - val_loss: 0.1193 - learning_rate: 0.0010
+2969/2969 - 547s - 184ms/step - loss: 0.0997 - val_loss: 0.1068 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.0984 - val_loss: 0.1115 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.0973 - val_loss: 0.1090 - learning_rate: 0.0010
+2969/2969 - 546s - 184ms/step - loss: 0.0924 - val_loss: 0.1024 - learning_rate: 5.0000e-04
+2969/2969 - 546s - 184ms/step - loss: 0.0910 - val_loss: 0.1090 - learning_rate: 5.0000e-04
+2969/2969 - 546s - 184ms/step - loss: 0.0902 - val_loss: 0.1026 - learning_rate: 5.0000e-04
+2969/2969 - 546s - 184ms/step - loss: 0.0870 - val_loss: 0.1002 - learning_rate: 2.5000e-04
+2969/2969 - 546s - 184ms/step - loss: 0.0860 - val_loss: 0.1007 - learning_rate: 2.5000e-04
+model runs/zbocza_4/best.keras, 150 klipów na przedział S/N (błąd zbocza: |mediana| i 90%, przesunięcie narast./opad. ze znakiem)
+S/N  -3..  3 dB klasyczna: mediana   5.0 ms, 90%  14.6 ms; pominięte 16.5%, fałszywe 108.1%; przesunięcie  -0.9/ +0.5 ms
+S/N  -3..  3 dB sieć     : mediana   2.8 ms, 90%  11.7 ms; pominięte 14.2%, fałszywe  28.9%; przesunięcie  +0.4/ -0.2 ms
+S/N   3.. 10 dB klasyczna: mediana   4.5 ms, 90%   8.6 ms; pominięte  5.2%, fałszywe  19.4%; przesunięcie  -4.4/ +3.9 ms
+S/N   3.. 10 dB sieć     : mediana   1.0 ms, 90%   3.8 ms; pominięte  2.6%, fałszywe  14.0%; przesunięcie  +0.3/ -0.3 ms
+S/N  10.. 20 dB klasyczna: mediana   5.9 ms, 90%   9.7 ms; pominięte  5.1%, fałszywe   7.1%; przesunięcie  -6.3/ +5.6 ms
+S/N  10.. 20 dB sieć     : mediana   0.5 ms, 90%   1.9 ms; pominięte  2.9%, fałszywe   9.3%; przesunięcie  +0.3/ -0.2 ms
+S/N  20.. 31 dB klasyczna: mediana   9.5 ms, 90%  11.8 ms; pominięte  7.5%, fałszywe   5.7%; przesunięcie  -9.8/ +9.3 ms
+S/N  20.. 31 dB sieć     : mediana   0.3 ms, 90%   1.4 ms; pominięte  1.6%, fałszywe   9.4%; przesunięcie  +0.2/ -0.2 ms
+S/N  31.. 46 dB klasyczna: mediana  10.2 ms, 90%  13.5 ms; pominięte 11.2%, fałszywe   7.6%; przesunięcie -10.5/+10.0 ms
+S/N  31.. 46 dB sieć     : mediana   0.2 ms, 90%   1.0 ms; pominięte  1.4%, fałszywe   6.5%; przesunięcie  +0.2/ -0.2 ms
+  RAZEM probki: tabela 52/62, viterbi 54/62
+  RAZEM probki/kluczownik: tabela 281/282, viterbi 281/282
+  RAZEM probki/reka: tabela 14/14, viterbi 14/14
+  RAZEM probki/zaszumione: tabela 331/470, viterbi 459/470
+  RAZEM probki/zaszumione_real: tabela 114/456, viterbi 414/456
+  RAZEM probki/qrm: tabela 38/257, viterbi 81/257
+RAZEM: tabela 830/1541, viterbi 1303/1541
+KONIEC Mon Oct 19 06:29:48 CEST 2026
