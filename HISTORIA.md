@@ -1385,6 +1385,30 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Ile znaków poprawnie — nasz dekoder vs klasyczny (19.10)
+
+Pytanie operatora: „w ilu procentach udaje się zdekodować wszystkie znaki" —
+miara ZNAKOWA na pełnym tekście (odległość edycyjna), nagrania o treści
+znanej co do znaku. Dekoder klasyczny (`tools/klasyczny.py`, jak na
+mikrokontrolerze): filtr ±100 Hz, prostowanie, wygładzenie 10 ms, komparator
+z progiem adaptacyjnym (szczyt/tło) i histerezą 10%, jednostka adaptacyjna,
+kropka < 2 u, przerwy 2 / 5 u, drzewko. `out/klasyczny_1.txt`.
+Błędy na 100 nadanych znaków:
+
+| nagranie | S/N | klasyczny | **nasz** |
+|---|---|---|---|
+| kluczownik IC-7300 (USB) | czyste | 8,0 | **0,4** |
+| syntetyk + szum pasma | 20 / 10 / 6 dB | 0 / 0 / 9,7 | **0 / 0 / 0** |
+| syntetyk + szum pasma | 3 / 0 dB | 79 / 349 | **0 / 0,7** |
+| kluczownik + szum pasma | 6 / 3 dB | 55 / 250 | **0 / 0** |
+| kluczownik + szum pasma | 0 / -3 dB | 464 / 685 | **2,1 / 13,4** |
+
+(> 100 = więcej fałszywych znaków niż nadanych.) Nasz: 11/15 czystych nagrań
+kluczownika całkiem bez błędu; część z 0,4% to wada nagrania (12:24 —
+pierwsza kreska ucięta przed poprawką startu rejestratora: oba czytają „AN").
+Klasyczny na prawdziwym podsłuchu IC-7300 gubi się już bez szumu (twarde
+zbocza, wahania amplitudy). Ręka: treść nieznana co do znaku — nie liczone.
+
 ### Druga stacja obok (QRM) — najsłabszy punkt drogi (19.10)
 
 **Test** (`tools/test_qrm.py`, `probki/qrm`): stacja docelowa z kluczownika

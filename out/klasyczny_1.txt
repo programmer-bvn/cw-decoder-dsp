@@ -1,0 +1,23 @@
+  przykład qso1_cq_kluczownik17wpm_202610
+    klasyczny: ANCQCQCQDESQ2BVNSQ2BVNPSEK
+    nasz     : ANCQCQCQDESQ2BVNSQ2BVNPSEK
+    nadane   : CQCQCQDESQ2BVNSQ2BVNPSEK
+  przykład qso1_cq_syntetyk18wpm_7025kHz_
+    klasyczny: CQCQCQDES*2BVNSQ2BVNPSEK
+    nasz     : CQCQCQDESQ2BVNSQ2BVNPSEK
+    nadane   : CQCQCQDESQ2BVNSQ2BVNPSEK
+  przykład qso2_relacja_kluczownik17wpm_2
+    klasyczny: S**KSADES**BVS=5AHH~**I*S5ERUFCS5**VRRSTIS5**57**SB=6*NSDIISKAHSFSZVAHIUS***IH**5C*S6**B*B
+    nasz     : SP2MSADESQ2BVN=GADROM=TKSFERURCALL=URRSTIS579579QSB=MYNAMEISMARIUSZMARIUSZ=QTHBYDGOSZCZBYD
+    nadane   : SP2MSADESQ2BVN=GADROM=TKSFERURCALL=URRSTIS579579QSB=MYNAMEISMARIUSZMARIUSZ=QTHBYDGOSZCZBYD
+nagrania                 S/N   klasyczny   nasz (sieć zboczy + Viterbi)
+kluczownik            czyste     92.0%       99.6%   (1293 znaków)
+kluczownik + szum         +6     44.7%      100.0%   (432 znaków)
+kluczownik + szum         +3   -149.8%      100.0%   (432 znaków)
+kluczownik + szum         +0   -363.9%       97.9%   (432 znaków)
+kluczownik + szum         -3   -585.0%       86.6%   (432 znaków)
+syntetyk + szum          +20    100.0%      100.0%   (431 znaków)
+syntetyk + szum          +10    100.0%      100.0%   (431 znaków)
+syntetyk + szum           +6     90.3%      100.0%   (431 znaków)
+syntetyk + szum           +3     20.9%      100.0%   (431 znaków)
+syntetyk + szum           +0   -249.2%       99.3%   (431 znaków)
