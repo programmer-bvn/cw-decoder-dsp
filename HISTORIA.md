@@ -1475,6 +1475,11 @@ na kluczowniku gorszy początek („ANQ" zamiast „CQ"), wynik dopasowania na
 ramkę gorszy (-0,020 vs -0,007) — sztywny wzór gorzej pasuje do zboczy niż
 elastyczne odcinki; wybór po wyniku i tak brałby odcinki. Szybszy (2-3x).
 
+**Strojenie** (`tools/viterbi_strojenie.py`, przebiegi raz -> siatka na
+procesorze; `out/viterbi_strojenie.txt`): WAGA_EMISJI 0,15/0,3/0,6 x
+KARA_DLUGOSCI 2/4/8 — od 1313 do 1321/1541, płasko; obecne (0,3; 4)
+w czołówce. Wagi nie są wąskim gardłem — zostają.
+
 Ręka liczona łagodnie (słowo raz, powtórzeń wiele). `tools/odczyt.py`:
 plik -> tekst całą nową drogą (ton kluczowany, sieć zboczy, cepstrum +
 grzebień, Viterbi).
