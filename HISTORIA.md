@@ -1450,6 +1450,12 @@ i SP2KKB, kluczownik qso2 i qso5, szum banku 7025 i 3566 kHz FIL 500 Hz;
 | 0 dB | 0/114 | **109/114** | 28/28 | 81/86 |
 | -3 dB | 0/114 | **88/114** | 28/28 | 60/86 |
 
+**Viterbi po LITERACH** (litera = sztywny wzór 1/3/1 u, skala 0,9-1,1,
+tylko istniejące kody) — sprawdzony 19.10 i USUNIĘTY: tekst prawie ten sam,
+na kluczowniku gorszy początek („ANQ" zamiast „CQ"), wynik dopasowania na
+ramkę gorszy (-0,020 vs -0,007) — sztywny wzór gorzej pasuje do zboczy niż
+elastyczne odcinki; wybór po wyniku i tak brałby odcinki. Szybszy (2-3x).
+
 Ręka liczona łagodnie (słowo raz, powtórzeń wiele). `tools/odczyt.py`:
 plik -> tekst całą nową drogą (ton kluczowany, sieć zboczy, cepstrum +
 grzebień, Viterbi).
