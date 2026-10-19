@@ -209,13 +209,23 @@ KL_KONTRAST_DB = 10.0
 # druga stacja obok — 33% czasu na tonie.
 KL_REMIS_DB = 10.0
 KL_WYGLADZ_HZ = 5.0
+# Ton CW z radia (CI-V 0x14 0x09, 20.10): operator dostraja SWOJĄ stację tak,
+# żeby słyszeć ją na tym tonie. Wtedy środek filtra = ton z radia, a kluczowana
+# stacja w ±KL_RADIO_HZ od niego wygrywa bez względu na poziom (obca +12 dB
+# wypychała naszą z okna KL_REMIS_DB). Test QRM, nasza dokładnie na tonie:
+# pętla na celu 16/16 (bez radia 9/16); ton = środek filtra (nasza do 20 Hz
+# obok): 14/16. Bez tonu z radia droga bez zmian (bit w bit).
+KL_RADIO_HZ = 25.0
 
 
 def track_tone(audio: np.ndarray, sr: int = C.SR,
                           fmin: float = C.FMIN, fmax: float = C.FMAX,
-                          block_s: float = BLOCK_S, step_s: float = STEP_S
+                          block_s: float = BLOCK_S, step_s: float = STEP_S,
+                          ton_cw: float | None = None
                           ) -> tuple[np.ndarray, np.ndarray]:
     audio = np.asarray(audio, dtype=np.float64)
+    if ton_cw is not None and not np.isfinite(ton_cw):
+        ton_cw = None
     nb = max(64, int(round(block_s * sr)))
     ns = max(1, int(round(step_s * sr)))
     nfft = 1 << int(np.ceil(np.log2(nb * 4)))
@@ -248,6 +258,8 @@ def track_tone(audio: np.ndarray, sr: int = C.SR,
     # uciekał o 28 Hz (mediana); z 60. percentyla: 5,6 Hz (test_tonu: 18 -> 2,7).
     pas = fb[tlo >= np.percentile(tlo, 60) / 4.0]
     srodek = 0.5 * (pas.min() + pas.max()) if pas.size else C.TONE_CENTER
+    if ton_cw is not None:
+        srodek = float(ton_cw)
     ocena_t, ocena_f = [], []
     poprz = np.nan
     pol = KL_OKNO_S / 2.0
@@ -268,7 +280,8 @@ def track_tone(audio: np.ndarray, sr: int = C.SR,
         lm = np.flatnonzero((poz[1:-1] >= poz[:-2]) & (poz[1:-1] >= poz[2:]) & ok[1:-1]) + 1
         if not lm.size:
             lm = np.array([int(np.argmax(poz))])
-        lm = lm[poz[lm] >= poz[lm].max() - KL_REMIS_DB]
+        przy_radiu = lm[np.abs(fb[lm] - srodek) <= KL_RADIO_HZ] if ton_cw is not None else lm[:0]
+        lm = przy_radiu if przy_radiu.size else lm[poz[lm] >= poz[lm].max() - KL_REMIS_DB]
         kand = fb[lm]
         j = lm[np.argmin(np.abs(kand - srodek))]
         # bez przeskoku: poprzedni zostaje, jeśli jest wśród kandydatów

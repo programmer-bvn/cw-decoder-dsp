@@ -3,3 +3,4 @@
 nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN PSE K
 stacja:        qso1_cq_kluczownik17wpm_20261018_1409.wav, ton 757 Hz (środek filtra szumu 756 Hz), S/N 10 dB
 druga stacja:  qso2_relacja_kluczownik17wpm_20261018_1409.wav, ton 727 Hz (df 30 Hz), poziom +12 dB wzgl. docelowej
+ton CW:        755 Hz (symulacja: nasza stacja dostrojona na ton radia)

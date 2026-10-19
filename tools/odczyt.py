@@ -2,6 +2,9 @@
 
     python -m tools.odczyt nagranie.wav
     python -m tools.odczyt nagranie.wav --odcinki      # też podział na odcinki
+    python -m tools.odczyt nagranie.wav --ton-cw 600   # ton CW radia (środek filtra)
+    python -m tools.odczyt nagranie.wav --civ          # ton CW odczytany z IC-7300 teraz
+Bez opcji ton CW brany z pola „ton CW:" opisu nagrania (.txt), jeśli jest.
 
 Droga (każdy krok zmierzony, HISTORIA 17-19.10):
   1. tune.track_tone (ton kluczowany); przeciwsygnał — obce kluczowane
@@ -30,9 +33,9 @@ from dsp import config as C, frontend, grzebien, przeciwsygnal as PS, tune, vite
 MODEL_ZBOCZY = Path("runs/zbocza_3/best.keras")
 
 
-def przygotuj(a: np.ndarray, kasuj: bool = True) -> tuple[np.ndarray, float]:
+def przygotuj(a: np.ndarray, kasuj: bool = True, ton_cw: float | None = None) -> tuple[np.ndarray, float]:
     from tools import wav2net
-    t, f = tune.track_tone(a)
+    t, f = tune.track_tone(a, ton_cw=ton_cw)
     ton = float(np.nanmedian(f)) if np.isfinite(f).any() else float("nan")
     if kasuj:
         a, _ = PS.kasuj_obce(a, ton)
@@ -53,10 +56,13 @@ def jednostka_grzebienia(pz: np.ndarray) -> float:
     return float(np.median(us)) if us else float("nan")
 
 
-def odczytaj(sciezka: Path, model=None) -> dict:
+def odczytaj(sciezka: Path, model=None, ton_cw: float | None = None) -> dict:
     from tensorflow import keras
     model = model or keras.models.load_model(MODEL_ZBOCZY)
-    a, ton = przygotuj(frontend.load_audio(sciezka))
+    if ton_cw is None:
+        from tools.radio import civ
+        ton_cw = civ.ton_z_opisu(Path(sciezka).with_suffix(".txt"))
+    a, ton = przygotuj(frontend.load_audio(sciezka), ton_cw=ton_cw)
     pz = Z.przebieg_sieci(a, model)
     u_c, _ = V.jednostka_cepstrum(pz)
     u_g = jednostka_grzebienia(pz)
@@ -69,11 +75,18 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("pliki", type=Path, nargs="+")
     ap.add_argument("--odcinki", action="store_true")
+    ap.add_argument("--ton-cw", type=float, default=None, help="ton CW radia [Hz]")
+    ap.add_argument("--civ", action="store_true", help="ton CW odczytany z IC-7300 (CI-V, tylko odczyt)")
     a = ap.parse_args()
     from tensorflow import keras
     model = keras.models.load_model(MODEL_ZBOCZY)
+    ton_cw = a.ton_cw
+    if a.civ:
+        from tools.radio import civ
+        ton_cw = civ.stan()["ton_cw"]
+        print(f"ton CW z radia: {ton_cw} Hz")
     for p in a.pliki:
-        r = odczytaj(p, model)
+        r = odczytaj(p, model, ton_cw)
         print(f"{p.name}: ton {r['ton']:.0f} Hz, tempo {r['wpm']:.1f} WPM "
               f"(u: cepstrum {r['u_cepstrum'] * 1000:.0f} ms, grzebień {r['u_grzebien'] * 1000:.0f} ms, "
               f"wybrane {r['u'] * 1000:.0f} ms), wynik {r['wynik']:.3f}")

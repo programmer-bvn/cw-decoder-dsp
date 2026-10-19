@@ -303,19 +303,43 @@ def main(argv=None):
     ap.add_argument("--surowe", action="store_true",
                     help="zapisz też oryginał z urządzenia (pełna "
                          "częstotliwość, wszystkie kanały)")
+    ap.add_argument("--civ", action="store_true",
+                    help="przed nagraniem odczyt pasma i tonu CW z IC-7300 "
+                         "(CI-V, tylko odczyt) -> opis .txt obok nagrania")
     args = ap.parse_args(argv)
 
     if args.list:
         list_devices()
         return
 
+    # Ton CW z radia = środek filtra dla pętli tonu (tune.track_tone, 20.10);
+    # bez opisu nagranie z pasma tego nie przenosi.
+    stan = None
+    if args.civ:
+        from tools.radio import civ
+        stan = civ.stan()
+        print(f"CI-V: pasmo {stan['pasmo']}, ton CW {stan['ton_cw']} Hz")
+
     print("=" * 70)
     print("MIKROFON -> WAV")
     print("=" * 70)
     print(C.summary())
     print("-" * 70)
-    record(args.seconds, args.device, args.out, monitor_only=args.monitor,
-           surowe=args.surowe)
+    wyn = record(args.seconds, args.device, args.out, monitor_only=args.monitor,
+                 surowe=args.surowe)
+    if stan and wyn:
+        opis = Path(wyn).with_suffix(".txt")
+        if opis.exists():
+            print(f"opis {opis.name} już jest — nie nadpisuję (ton CW z radia: {stan['ton_cw']} Hz)")
+        else:
+            ton = f"{stan['ton_cw']:.0f} Hz (CI-V 0x14 0x09)" if stan["ton_cw"] else "nieodczytany"
+            opis.write_text(
+                "# NAGRANIE Z PASMA — tools/mic2wav.py --civ\n\n"
+                "nadane:        nieznane — odbiór z pasma\n"
+                f"pasmo:         {stan['pasmo']} (CI-V przed nagraniem)\n"
+                f"ton CW:        {ton}\n"
+                "tor:           USB audio IC-7300MK2\n", encoding="utf-8")
+            print(f"opis: {opis}")
 
 
 if __name__ == "__main__":

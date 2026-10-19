@@ -1527,7 +1527,48 @@ przypadków). Pewny środek da radio: ton CW (CW pitch) przez CI-V.
 filtra). Rozdzielanie już działa — to decyzja reguły, nie sygnału.
 Obca stacja z dryfem > 3 Hz w nagraniu nie przejdzie progu spójności
 (nie kasujemy — kierunek bezpieczny); śledzenie dryfu obcej — do zrobienia,
-gdy zobaczymy to na paśmie.
+gdy zobaczymy to na paśmie. **Wybór stacji rozwiązany 20.10 tonem CW z radia
+(niżej).**
+
+### Ton CW z radia (CI-V) wybiera naszą stację — QRM 104 -> 142 ze 145 (20.10)
+
+**Problem** (wpis wyżej): po przeciwsygnale rozdzielanie działało, ale pętla
+tonu w 7/16 przypadkach testu QRM wybierała OBCĄ stację — i kasowaliśmy
+naszą. Dwie przyczyny: (1) obca +12 dB wypycha naszą z okna `KL_REMIS_DB`;
+(2) środek filtra z szumu bywa zły — przy filtrze szerszym niż pasmo analizy
+400-1200 Hz wychodzi 800 Hz (próba z szerszym pasmem odrzucona, wpis wyżej).
+
+**Pomysł** (zgoda operatora 20.10): środek filtra wie radio. Operator dostraja
+swoją stację tak, żeby słyszeć ją na swoim tonie CW (CW pitch) — CI-V
+0x14 0x09, wartość BCD 0000-0255 = 300-900 Hz (krok 5 Hz). Tylko odczyt.
+
+**Pomiar reguły** (pętla na celu >= 90% czasu, 16 przypadków QRM):
+
+| wariant | ton = środek filtra (nasza do 20 Hz obok) | ton = nasza stacja |
+|---|---|---|
+| bez radia | 9/16 | 9/16 |
+| A: ton z radia tylko jako środek | 12/16 | 12/16 |
+| **B: + kluczowana stacja w ±25 Hz od tonu wygrywa bez względu na poziom** | 14/16 | **16/16** |
+
+**Cała droga** (z przeciwsygnałem, ton = nasza stacja w krokach 5 Hz, jak
+z CI-V): **142 ze 145** (bez radia 104; `out/viterbi_qrm_toncw.txt`).
+Brakujące 3 słowa: obca 30 Hz obok po równo i +12 dB, 60 Hz obok +12 dB.
+
+**Bez tonu z radia droga bit w bit jak przedtem** (`test_tonu` 92,2%,
+żaden opis poza `probki/qrm` nie ma pola „ton CW:").
+
+**Gdzie mieszka:**
+- `dsp/tune.track_tone(..., ton_cw=)`, `KL_RADIO_HZ = 25`;
+- `tools/radio/civ_odczyt.ps1` — dodane 14 09 (nadal tylko odczyt);
+  `tools/radio/civ.py` (`stan()`, `ton_z_opisu()`), parser sprawdzony na
+  odpowiedziach z tabeli radia (0000/0128/0255 -> 300/600/900 Hz);
+  **na żywym radiu jeszcze nie** (20.10 radio odłączone, brak COM5);
+- pole „ton CW:" w opisie nagrania: `nagraj_kluczownik.py` (zawsze),
+  `mic2wav.py --civ` (nagranie z pasma — opis z pasmem i tonem, istniejącego
+  nie nadpisuje); `odczyt.py` bierze ton z opisu, z `--ton-cw HZ` albo
+  `--civ` (odczyt teraz z radia); `tester_viterbi --bez-tonu-cw` — bez;
+- `probki/qrm/*.txt` i `tools/test_qrm.py` — pole „ton CW:" (symulacja
+  operatora dostrojonego na swoją stację).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 

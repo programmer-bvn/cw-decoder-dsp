@@ -9,6 +9,8 @@ INNE nagranie kluczownika (inny tekst), przesunięte o df od docelowej,
 poziom względem docelowej. Szum naturalny z banku, S/N docelowej 10 dB.
 Siatka: df 30 / 60 / 120 / 200 Hz x poziom -6 / 0 / +6 / +12 dB.
 Pomiar całą drogą (tester_viterbi): pętla tonu, sieć zboczy, Viterbi.
+Pole „ton CW:" (20.10) = ton stacji docelowej w krokach 5 Hz, jak z CI-V;
+`tester_viterbi --bez-tonu-cw` — pętla bez radia.
 """
 
 from __future__ import annotations
@@ -65,7 +67,9 @@ def generuj(seed: int) -> None:
                 "# TEST QRM — tools/test_qrm.py (19.10)\n\n"
                 f"nadane:        {nad}\n"
                 f"stacja:        {p_st.name}, ton {f_cel:.0f} Hz (środek filtra szumu {0.5 * (lo + hi):.0f} Hz), S/N 10 dB\n"
-                f"druga stacja:  {stacje[j][1].name}, ton {f_2:.0f} Hz (df {df:.0f} Hz), poziom {poz:+.0f} dB wzgl. docelowej\n",
+                f"druga stacja:  {stacje[j][1].name}, ton {f_2:.0f} Hz (df {df:.0f} Hz), poziom {poz:+.0f} dB wzgl. docelowej\n"
+                # jak zapisałby CI-V przy operatorze dostrojonym na swoją stację (krok radia 5 Hz)
+                f"ton CW:        {round(f_cel / 5) * 5:.0f} Hz (symulacja: nasza stacja dostrojona na ton radia)\n",
                 encoding="utf-8")
             n += 1
     print(f"zapisano {n} przypadków w {KAT}")

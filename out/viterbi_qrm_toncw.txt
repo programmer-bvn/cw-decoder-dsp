@@ -1,0 +1,33 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792448715.448662     518 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+W0000 00:00:1792448729.473828     518 gpu_device.cc:2365] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+I0000 00:00:1792448732.770954     574 service.cc:153] XLA service 0x7b9eac03bfe0 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1792448732.771528     574 service.cc:161]   StreamExecutor [0]: Host, Default Version (Driver: 0.0.0; Runtime: 0.0.0; Toolkit: 0.0.0; DNN: 0.0.0)
+I0000 00:00:1792448732.816031     574 dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+I0000 00:00:1792448733.437527     574 device_compiler.h:208] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+model zboczy: runs/zbocza_3/best.keras  + przeciwsygnał
+nagranie                                                     tabela  viterbi   u wybrane
+probki/qrm/qrm_df030_poz+00_01.wav                           4/15     4/15      70 ms
+probki/qrm/qrm_df030_poz+06_02.wav                          11/17    12/17      70 ms
+      tabela : *1ABC/PDESQ2BVN=TNXFERNICEQSO,HANS=QSLVIABUROT
+      viterbi: DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO T
+probki/qrm/qrm_df030_poz+12_03.wav                           2/7      6/7       70 ms
+      tabela : *QCQ*LESQ2BVNS**V*P~
+      viterbi: *Q CQ CQ DE SQ2BVN SQ2BVNEPSE KE
+probki/qrm/qrm_df030_poz-06_00.wav                           5/15     5/15      70 ms
+probki/qrm/qrm_df060_poz+00_05.wav                          12/17    12/17      70 ms
+probki/qrm/qrm_df060_poz+06_06.wav                          12/17    12/17      70 ms
+probki/qrm/qrm_df060_poz+12_07.wav                           6/7      6/7       70 ms
+probki/qrm/qrm_df060_poz-06_04.wav                          11/27    11/27      70 ms
+probki/qrm/qrm_df120_poz+00_09.wav                           7/7      7/7       70 ms
+probki/qrm/qrm_df120_poz+06_10.wav                          11/27    11/27      70 ms
+probki/qrm/qrm_df120_poz+12_11.wav                          11/27    11/27      70 ms
+probki/qrm/qrm_df120_poz-06_08.wav                           7/7      7/7       70 ms
+probki/qrm/qrm_df200_poz+00_13.wav                          12/17    12/17      70 ms
+probki/qrm/qrm_df200_poz+06_14.wav                           7/7      7/7       70 ms
+probki/qrm/qrm_df200_poz+12_15.wav                           5/15     5/15      70 ms
+probki/qrm/qrm_df200_poz-06_12.wav                          14/28    14/28      70 ms
+  RAZEM probki/qrm: tabela 137/257, viterbi 142/257
+RAZEM: tabela 137/257, viterbi 142/257

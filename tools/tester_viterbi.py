@@ -48,6 +48,12 @@ def main() -> None:
     if not kasuj:
         argv.remove("--bez-kasowania")
     from dsp import przeciwsygnal as PS
+    # ton CW radia z opisu nagrania (pole „ton CW:", CI-V; 20.10) — środek
+    # filtra pętli tonu; --bez-tonu-cw: pętla sama szuka środka (jak przed 20.10)
+    z_tonem = "--bez-tonu-cw" not in argv
+    if not z_tonem:
+        argv.remove("--bez-tonu-cw")
+    from tools.radio import civ
     katalogi = argv or KATALOGI
     n8, k4 = 8 * C.SR, 4 * C.SR
     suma = Counter()
@@ -59,7 +65,7 @@ def main() -> None:
             if not chce:
                 continue
             a = frontend.load_audio(p)
-            t, f = tune.track_tone(a)
+            t, f = tune.track_tone(a, ton_cw=civ.ton_z_opisu(p.with_suffix(".txt")) if z_tonem else None)
             if kasuj and np.isfinite(f).any():
                 a, _ = PS.kasuj_obce(a, float(np.nanmedian(f)))
             a = tune.retune(a, t, f)

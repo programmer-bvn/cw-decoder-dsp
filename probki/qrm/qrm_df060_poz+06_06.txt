@@ -3,3 +3,4 @@
 nadane:        DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO OK? = 73 ES GL = SQ2BVN/2 QRT ~ E E
 stacja:        qso4_koniec_kluczownik17wpm_20261018_1413.wav, ton 736 Hz (środek filtra szumu 756 Hz), S/N 10 dB
 druga stacja:  qso2_relacja_kluczownik17wpm_20261018_1409.wav, ton 676 Hz (df 60 Hz), poziom +6 dB wzgl. docelowej
+ton CW:        735 Hz (symulacja: nasza stacja dostrojona na ton radia)

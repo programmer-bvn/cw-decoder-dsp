@@ -39,23 +39,6 @@ def ps(*arg: str) -> tuple[int, str]:
     return r.returncode, tekst
 
 
-def civ_pasmo() -> str:
-    """Częstotliwość i tryb z CI-V (tylko odczyt: civ_odczyt.ps1, polecenia 03/04)."""
-    r = subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-                        str(KORZEN / "tools" / "radio" / "civ_odczyt.ps1"), "-Porty", "COM5",
-                        "-Bauds", "115200"], capture_output=True, cwd=KORZEN)
-    t = r.stdout.decode("utf-8", "replace")
-    m = re.search(r"03 ((?:[0-9A-F]{2} ){5})FD", t)
-    if not m:
-        return "nieodczytane"
-    hz, mn = 0, 1
-    for b in m.group(1).split():
-        v = int(b, 16); hz += (v & 15) * mn + (v >> 4) * mn * 10; mn *= 100
-    tr = re.search(r"tryb: .*04 ([0-9A-F]{2}) ([0-9A-F]{2}) FD", t)
-    tryby = {"03": "CW", "07": "CW-R"}
-    return (f"{hz / 1e6:.6f} MHz".replace(".", ",") + (f", {tryby.get(tr.group(1), tr.group(1))}, FIL{int(tr.group(2), 16)}" if tr else ""))
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("tekst", type=Path)
@@ -69,8 +52,11 @@ def main() -> None:
     m = re.search(r"tempo kluczownika: ([0-9]+[,.][0-9])", wyj)
     wpm = float(m.group(1).replace(",", ".")) if m else 20.0
     radio = re.search(r"radio: (.*)", wyj).group(1).strip()
-    pasmo = civ_pasmo()
-    print("pasmo:", pasmo)
+    from tools.radio import civ
+    st = civ.stan()
+    pasmo = st["pasmo"]
+    ton_cw = f"{st['ton_cw']:.0f} Hz (CI-V 0x14 0x09)" if st["ton_cw"] else "nieodczytany"
+    print("pasmo:", pasmo, "| ton CW:", ton_cw)
 
     tresc = a.tekst.read_text(encoding="utf-8").strip()
     trwa = morse.synth_cw(tresc, wpm=wpm, rng=np.random.default_rng(0)).size / C.SR
@@ -130,6 +116,7 @@ def main() -> None:
         "klucz:         kluczownik — rytm maszynowy\n"
         "tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania\n"
         f"pasmo:         {pasmo} (CI-V przed nagraniem)\n"
+        f"ton CW:        {ton_cw}\n"
         f"radio:         {radio}; karta: urządzenie {a.device}\n"
         f"czas:          {stempel}\n"
         f"szczyt:        {szczyt:.3f}\n"

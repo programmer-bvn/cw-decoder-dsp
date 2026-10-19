@@ -3,3 +3,4 @@
 nadane:        SP2MSA DE SQ2BVN = GA DR OM = TKS FER UR CALL = UR RST IS 579 579 QSB = MY NAME IS MARIUSZ MARIUSZ = QTH BYDGOSZCZ BYDGOSZCZ = HW? + SP2MSA DE SQ2BVN (
 stacja:        qso2_relacja_kluczownik17wpm_20261018_1409.wav, ton 765 Hz (środek filtra szumu 756 Hz), S/N 10 dB
 druga stacja:  qso4_koniec_kluczownik17wpm_20261018_1413.wav, ton 965 Hz (df 200 Hz), poziom -6 dB wzgl. docelowej
+ton CW:        765 Hz (symulacja: nasza stacja dostrojona na ton radia)
