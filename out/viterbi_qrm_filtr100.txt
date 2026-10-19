@@ -1,0 +1,19 @@
+nagranie                                                     tabela  viterbi   u wybrane
+probki/qrm/qrm_df030_poz+00_01.wav                           0/15     0/15      74 ms
+probki/qrm/qrm_df030_poz+06_02.wav                           0/17     0/17      88 ms
+probki/qrm/qrm_df030_poz+12_03.wav                           0/7      0/7       75 ms
+probki/qrm/qrm_df030_poz-06_00.wav                           0/15     0/15      38 ms
+probki/qrm/qrm_df060_poz+00_05.wav                           0/17     0/17     nan ms
+probki/qrm/qrm_df060_poz+06_06.wav                           0/17     0/17     nan ms
+probki/qrm/qrm_df060_poz+12_07.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df060_poz-06_04.wav                           0/27     0/27     nan ms
+probki/qrm/qrm_df120_poz+00_09.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df120_poz+06_10.wav                           0/27     0/27     nan ms
+probki/qrm/qrm_df120_poz+12_11.wav                           0/27     0/27     nan ms
+probki/qrm/qrm_df120_poz-06_08.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df200_poz+00_13.wav                           0/17     0/17     nan ms
+probki/qrm/qrm_df200_poz+06_14.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df200_poz+12_15.wav                           0/15     0/15      75 ms
+probki/qrm/qrm_df200_poz-06_12.wav                           0/28     0/28     nan ms
+  RAZEM probki/qrm: tabela 0/257, viterbi 0/257
+RAZEM: tabela 0/257, viterbi 0/257

@@ -1,0 +1,5 @@
+# TEST QRM — tools/test_qrm.py (19.10)
+
+nadane:        DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO OK? = 73 ES GL = SQ2BVN/2 QRT ~ E E
+stacja:        qso4_koniec_kluczownik17wpm_20261018_1413.wav, ton 762 Hz (środek filtra szumu 756 Hz), S/N 10 dB
+druga stacja:  qso5_cyfry_kluczownik17wpm_20261018_1415.wav, ton 962 Hz (df 200 Hz), poziom +0 dB wzgl. docelowej

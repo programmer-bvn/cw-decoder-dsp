@@ -243,7 +243,10 @@ def track_tone(audio: np.ndarray, sr: int = C.SR,
     tlo = np.percentile(S, 5, axis=0)
     kk = max(1, int(round(30.0 / (f[1] - f[0]))))
     tlo = np.convolve(tlo, np.ones(2 * kk + 1) / (2 * kk + 1), mode="same")
-    pas = fb[tlo >= tlo.max() / 4.0]
+    # Odniesienie: „płaskowyż" szumu (60. percentyl wzdłuż pasma), nie szczyt —
+    # stacje nadające bez przerwy (test QRM 19.10) podnosiły szczyt i środek
+    # uciekał o 28 Hz (mediana); z 60. percentyla: 5,6 Hz (test_tonu: 18 -> 2,7).
+    pas = fb[tlo >= np.percentile(tlo, 60) / 4.0]
     srodek = 0.5 * (pas.min() + pas.max()) if pas.size else C.TONE_CENTER
     ocena_t, ocena_f = [], []
     poprz = np.nan

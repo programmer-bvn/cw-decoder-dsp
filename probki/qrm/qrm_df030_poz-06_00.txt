@@ -1,0 +1,5 @@
+# TEST QRM — tools/test_qrm.py (19.10)
+
+nadane:        VVV VVV = TEST 1234567890 0987654321 = ABCDEFGHIJKLMNOPQRSTUVWXYZ = 5NN 599 579 339 = 14.025 7.028 3.565 = ? / , . + ( ~ = END
+stacja:        qso5_cyfry_kluczownik17wpm_20261018_1415.wav, ton 764 Hz (środek filtra szumu 752 Hz), S/N 10 dB
+druga stacja:  qso1_cq_kluczownik17wpm_20261018_1409.wav, ton 734 Hz (df 30 Hz), poziom -6 dB wzgl. docelowej

@@ -1,0 +1,33 @@
+nagranie                                                     tabela  viterbi   u wybrane
+probki/qrm/qrm_df030_poz+00_01.wav                           0/15     0/15      70 ms
+probki/qrm/qrm_df030_poz+06_02.wav                           5/17     6/17      70 ms
+      tabela : DBQSO,HANS=QSLVIABUROT
+      viterbi: D*T*IZE S*=SBQ2*S *I* QSO, HANS = QSL VIA BURO T
+probki/qrm/qrm_df030_poz+12_03.wav                           0/7      0/7       70 ms
+probki/qrm/qrm_df030_poz-06_00.wav                           0/15     1/15      70 ms
+      tabela : ***D*987654321=ABCDEFG
+      viterbi: C* * NSD*?*HQ*B*PSE0987654321 = ABCDEFGE
+probki/qrm/qrm_df060_poz+00_05.wav                           0/17     0/17      70 ms
+probki/qrm/qrm_df060_poz+06_06.wav                           0/17     3/17      70 ms
+      tabela : *1A***BVK*T**N*Q***+*ABU*U
+      viterbi: DL1ABC/*2BVK= T**NICE Q**HANS = *L *A BU*U
+probki/qrm/qrm_df060_poz+12_07.wav                           0/7      3/7       70 ms
+      tabela : *N*2BVN*E*
+      viterbi: CQ*Q * DED**N SQ2BVN *E*
+probki/qrm/qrm_df060_poz-06_04.wav                           0/27     0/27      70 ms
+probki/qrm/qrm_df120_poz+00_09.wav                           3/7      7/7       70 ms
+      tabela : CQCQCQ
+      viterbi: CQ CQ CQ DE SQ2BVN SQ2BVN PSE K
+probki/qrm/qrm_df120_poz+06_10.wav                           1/27     1/27      70 ms
+probki/qrm/qrm_df120_poz+12_11.wav                           4/27     4/27      70 ms
+probki/qrm/qrm_df120_poz-06_08.wav                           7/7      7/7       70 ms
+probki/qrm/qrm_df200_poz+00_13.wav                           4/17    12/17      70 ms
+      tabela : DL1ABC/=TNXVIABUROT
+      viterbi: DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO T
+probki/qrm/qrm_df200_poz+06_14.wav                           0/7      7/7       70 ms
+      tabela : 
+      viterbi: CQ CQ CQ DE SQ2BVN SQ2BVN PSE K
+probki/qrm/qrm_df200_poz+12_15.wav                           0/15     0/15      70 ms
+probki/qrm/qrm_df200_poz-06_12.wav                          14/28    14/28      70 ms
+  RAZEM probki/qrm: tabela 38/257, viterbi 65/257
+RAZEM: tabela 38/257, viterbi 65/257

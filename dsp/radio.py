@@ -249,7 +249,7 @@ def okno_widoczne(n: int, znormalizowany: bool = False) -> tuple[int, int]:
 def add_qrm(audio: np.ndarray, rng: np.random.Generator,
             amp: float, sr: int = C.SR,
             alphabet: str = C.ALPHABET, realism: bool = True,
-            tempo_szeroki: bool = False) -> np.ndarray:
+            tempo_szeroki: bool = False, ton: float | None = None) -> np.ndarray:
     """Druga stacja CW: inny ton, inne tempo, inny tekst, inna faza.
 
     Ton jest losowany W CAŁYM pasmie analizy, także blisko tonu stacji
@@ -260,7 +260,8 @@ def add_qrm(audio: np.ndarray, rng: np.random.Generator,
     if amp <= 0.0 or audio.size == 0:
         return audio
 
-    tone = float(rng.uniform(C.FMIN + 30.0, C.FMAX - 30.0))
+    # ton podany (zakresy sieci zboczy, QRM „blisko") — bez losowania
+    tone = float(ton) if ton is not None else float(rng.uniform(C.FMIN + 30.0, C.FMAX - 30.0))
     # Tempo, nadajnik i zanik z TYCH SAMYCH rozkładów co stacja docelowa
     # (losuj_nadajnik — dlaczego). Do 14.10: 15-35 WPM, ręka, bez chirpu.
     # Przy normalizacji tempa obca stacja ma tempo z tego samego szerokiego
@@ -559,14 +560,29 @@ def receive(text: str, rng: np.random.Generator,
     # p.cz., przez który przeszedł szum (filtr_jak_szum).
     zak = np.zeros(n_samples, dtype=np.float32)
     qrm_amp = 0.0
-    if realism and rng.random() < C.QRM_PROB:
-        # Druga stacja w tej samej mierze S/N co nasza. Do 12.10 amplituda
-        # w starych jednostkach dawała jej zawsze 16-33 dB — tłumik
-        # ściszał wtedy całość i nasza stacja znikała (ocena operatora).
-        qrm_amp = sn.amp_dla_sn(float(rng.uniform(*C.SN_DB)), szum,
-                                C.TONE_CENTER, sr=sr)
+    # zakresy["QRM"] (19.10, sieć zboczy): częściej, bliżej i silniej niż
+    # w głównym generatorze. Test QRM (tools/test_qrm): stacja 6 dB słabsza
+    # 60 Hz obok zabierała wszystkie słowa (0/27) — w treningu druga stacja
+    # była 30-120 Hz obok rzadko i rzadko silniejsza od naszej.
+    qrm_par = zak_.get("QRM")
+    if realism and rng.random() < (qrm_par["prob"] if qrm_par else C.QRM_PROB):
+        ton_q = None
+        if qrm_par and text:
+            poz = float(rng.uniform(*qrm_par["poziom_db"]))
+            qrm_amp = amp * 10.0 ** (poz / 20.0)
+            if rng.random() < qrm_par["blisko"]:
+                df = float(rng.uniform(*qrm_par["df_hz"])) * float(rng.choice([-1.0, 1.0]))
+                ton_q = float(np.clip(meta["tone"] + df, C.FMIN + 30.0, C.FMAX - 30.0))
+            meta["qrm_db"] = poz
+            meta["qrm_ton"] = ton_q
+        else:
+            # Druga stacja w tej samej mierze S/N co nasza. Do 12.10 amplituda
+            # w starych jednostkach dawała jej zawsze 16-33 dB — tłumik
+            # ściszał wtedy całość i nasza stacja znikała (ocena operatora).
+            qrm_amp = sn.amp_dla_sn(float(rng.uniform(*C.SN_DB)), szum,
+                                    C.TONE_CENTER, sr=sr)
         zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr, realism=realism,
-                      tempo_szeroki=tempo_staly)
+                      tempo_szeroki=tempo_staly, ton=ton_q)
     meta["qrm"] = qrm_amp
 
     n_crashes = 0

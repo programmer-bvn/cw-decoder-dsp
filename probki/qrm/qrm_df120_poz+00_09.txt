@@ -1,0 +1,5 @@
+# TEST QRM — tools/test_qrm.py (19.10)
+
+nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN PSE K
+stacja:        qso1_cq_kluczownik17wpm_20261018_1409.wav, ton 764 Hz (środek filtra szumu 756 Hz), S/N 10 dB
+druga stacja:  qso5_cyfry_kluczownik17wpm_20261018_1415.wav, ton 644 Hz (df 120 Hz), poziom +0 dB wzgl. docelowej

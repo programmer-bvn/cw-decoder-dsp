@@ -43,7 +43,11 @@ ZNAKOW_W_KLIPIE = 4                # więcej zboczy na klip niż 3
 ZAKRESY_ZBOCZY = {"SN_DB": (-3.0, 45.0), "TLO_DB": (-32.0, 7.0),
                   "KEY_RAMP_MS": (2.0, 8.0),
                   "POGLOS": {"prob": 0.4, "L_db": (-35.0, -18.0),
-                             "tau_ms": (20.0, 80.0), "pre_ms": (0.0, 15.0)}}
+                             "tau_ms": (20.0, 80.0), "pre_ms": (0.0, 15.0)},
+                  # QRM (19.10, zboczy_4): test QRM — obca stacja 60 Hz obok,
+                  # nawet 6 dB słabsza, zabierała wszystkie słowa (65/257).
+                  "QRM": {"prob": 0.6, "blisko": 0.5, "df_hz": (30.0, 200.0),
+                          "poziom_db": (-10.0, 12.0)}}
 
 
 _FB = None
@@ -176,7 +180,8 @@ def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2
         st = list(range(0, n, krok))
         gdzie.append((len(okna), len(st), n))
         okna.extend(x[s:s + RAMKI_ZBOCZA] for s in st)
-    logit = model.predict(np.stack(okna)[..., None], verbose=0, batch_size=256)
+    # wsad 64: przy 256 przydzielacz karty zgłaszał brak pamięci i się cofał (19.10)
+    logit = model.predict(np.stack(okna)[..., None], verbose=0, batch_size=64)
     p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
     return [p[i0:i0 + k].reshape(-1)[:n] for i0, k, n in gdzie]
 

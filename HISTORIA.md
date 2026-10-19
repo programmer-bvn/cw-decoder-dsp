@@ -1385,6 +1385,27 @@ wersja bez przecinka i kropki; operator: „mogą się pojawiać w tekstach" —
 noc przerwana w generowaniu (przed pierwszą częścią), dodane: 45 klas.
 Najdłuższe znaki „0" i „," (19 jedn.), okno bez zmian. Noc `czesci_znaki`.
 
+### Druga stacja obok (QRM) — najsłabszy punkt drogi (19.10)
+
+**Test** (`tools/test_qrm.py`, `probki/qrm`): stacja docelowa z kluczownika
+(bez anteny, tekst znany) na środku filtra szumu, druga stacja = inne
+nagranie kluczownika (to samo tempo 17 WPM!) 30/60/120/200 Hz obok,
+-6/0/+6/+12 dB względem docelowej, S/N docelowej 10 dB. Cała droga
+(`tester_viterbi`): **65/257 słów** (tabela 38). Nawet -6 dB 60 Hz obok: 0/27.
+**Dwie przyczyny** (`out/viterbi_qrm_1.txt`):
+1. pętla tonu na obcej stacji w 9/16 — środek filtra liczony względem
+   SZCZYTU 5. percentyla, a stacje nadające bez przerwy go podnosiły: błąd
+   środka mediana 27,6 Hz. Odniesienie = 60. percentyl wzdłuż pasma
+   („płaskowyż" szumu): 5,6 Hz; test_tonu 90,3 -> **92,2%**, druga stacja
+   73 -> 77%; QRM: pętla na celu 9/16. Okno kandydatów 15 dB zamiast 10:
+   QRM 12/16, ale test_tonu 80% (słabe przypadkowe blisko środka) — odrzucone.
+2. sieć zboczy miesza obie stacje, nawet gdy pętla jest na celu (60 Hz,
+   -6 dB, pętla 100%: 0/27). **Wąski filtr przed siecią** (±100 / ±60 Hz,
+   `tester_viterbi --filtr`): 0/257 i 6/257 — sieć nie widziała takich
+   obrazów; obejście DSP odrzucone. **Do treningu:** `ZAKRESY_ZBOCZY["QRM"]`
+   (60% klipów, połowa 30-200 Hz obok, -10...+12 dB względem naszej;
+   `radio.receive` + `add_qrm(ton=)`; domyślna droga bit w bit) -> zboczy_4.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

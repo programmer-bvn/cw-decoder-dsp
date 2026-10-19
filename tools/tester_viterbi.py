@@ -21,15 +21,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C, frontend, tune, viterbi as V, zbocza as Z
 
-KATALOGI = ["probki", "probki/kluczownik", "probki/reka", "probki/zaszumione"]
+KATALOGI = ["probki", "probki/kluczownik", "probki/reka", "probki/zaszumione",
+            "probki/zaszumione_real", "probki/qrm"]
 
 
 def main() -> None:
     from tensorflow import keras
     from tools import nagrania, wav2net
     from tools import tester_zbocza as T
-    mz = keras.models.load_model("runs/zbocza_3/best.keras")
-    katalogi = sys.argv[1:] or KATALOGI
+    argv0 = sys.argv[1:]
+    model = "runs/zbocza_3/best.keras"
+    if "--model" in argv0:
+        i = argv0.index("--model"); model = argv0[i + 1]; del sys.argv[1 + i:1 + i + 2]
+    mz = keras.models.load_model(model)
+    print(f"model zboczy: {model}")
+    # --filtr HZ: po przestrojeniu filtr ±HZ wokół tonu, zanim sieć zboczy
+    # (19.10, test QRM: obca stacja 60 Hz obok mieszała się w przebieg)
+    argv = sys.argv[1:]
+    filtr = None
+    if "--filtr" in argv:
+        i = argv.index("--filtr"); filtr = float(argv[i + 1]); del argv[i:i + 2]
+    katalogi = argv or KATALOGI
     n8, k4 = 8 * C.SR, 4 * C.SR
     suma = Counter()
     print(f"{'nagranie':58s} {'tabela':>8s} {'viterbi':>8s}   u wybrane")
@@ -41,6 +53,8 @@ def main() -> None:
                 continue
             a = frontend.load_audio(p)
             t, f = tune.track_tone(a); a = tune.retune(a, t, f)
+            if filtr:
+                a = tune.bandpass(a, C.TONE_CENTER, filtr)
             g = wav2net.auto_gain_db(a); a = np.clip(a * 10 ** (g / 20), -1, 1).astype(np.float32)
             pz = Z.przebieg_sieci(a, mz)
             starty = list(range(0, max(1, a.size - n8 + 1), k4))

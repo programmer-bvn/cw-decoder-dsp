@@ -1,0 +1,31 @@
+nagranie                                                     tabela  viterbi   u wybrane
+probki/qrm/qrm_df030_poz+00_01.wav                           0/15     0/15     154 ms
+probki/qrm/qrm_df030_poz+06_02.wav                           0/17     1/17      90 ms
+      tabela : TEET
+      viterbi: T E TE TEE E EE ED E EE E II E E I I E *AAITEEH P(AETI EU
+probki/qrm/qrm_df030_poz+12_03.wav                           0/7      0/7       78 ms
+probki/qrm/qrm_df030_poz-06_00.wav                           0/15     0/15      78 ms
+probki/qrm/qrm_df060_poz+00_05.wav                           0/17     1/17      69 ms
+      tabela : SELEIEEEM
+      viterbi: S E E E E S E E E EK
+probki/qrm/qrm_df060_poz+06_06.wav                           0/17     0/17      42 ms
+probki/qrm/qrm_df060_poz+12_07.wav                           0/7      1/7       94 ms
+      tabela : 
+      viterbi: TI E I TS E TDET E ESEI I E E EN T E
+probki/qrm/qrm_df060_poz-06_04.wav                           0/27     1/27      64 ms
+      tabela : EEEEGIEEE
+      viterbi: D E EE T E E E E E NI E TA I ES
+probki/qrm/qrm_df120_poz+00_09.wav                           0/7      0/7      170 ms
+probki/qrm/qrm_df120_poz+06_10.wav                           0/27     1/27      72 ms
+      tabela : ETENEIN
+      viterbi: D EEEEEE ED IE E I EI EI E E E I EE E E EI E ET
+probki/qrm/qrm_df120_poz+12_11.wav                           0/27     0/27     127 ms
+probki/qrm/qrm_df120_poz-06_08.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df200_poz+00_13.wav                           0/17     1/17      71 ms
+      tabela : EXE
+      viterbi: B S E E TI EB E E ISTI ETA E I A T I IE TIES NN IETE T S I EEN
+probki/qrm/qrm_df200_poz+06_14.wav                           0/7      0/7      nan ms
+probki/qrm/qrm_df200_poz+12_15.wav                           0/15     0/15     121 ms
+probki/qrm/qrm_df200_poz-06_12.wav                           0/28     0/28      80 ms
+  RAZEM probki/qrm: tabela 0/257, viterbi 6/257
+RAZEM: tabela 0/257, viterbi 6/257
