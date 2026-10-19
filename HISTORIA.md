@@ -1424,6 +1424,14 @@ zostawiony do następnych prób. Test QRM ma najtrudniejszy przypadek (obie
 stacje: ten sam kluczownik, to samo tempo). Hipoteza (bez pomiaru): samych
 danych za mało — potrzebna drobniejsza skala częstotliwości wokół stacji
 (pasma mel ~48 Hz przy 750 Hz) albo jawny kanał „to jest nasza stacja".
+**Diagnoza (zboczy_3, pętla na celu w 9/16 przypadkach)** — słowa tam, gdzie
+pętla jest DOBRZE: 30 Hz +6 dB 6/17; 60 Hz +6 dB 3/17; **60 Hz -6 dB 0/27**;
+120 Hz 0 / +6 / -6 dB 7/7, 11/27, 7/7; 200 Hz 0 / +6 / -6 dB 12/17, 7/7,
+14/28. Nawet słabsza i odległa obca stacja zabiera słowa — głównym
+ograniczeniem jest SIEĆ ZBOCZY (miesza obce elementy w przebieg), nie pętla.
+Następny krok (do omówienia z operatorem): porównać P sieci z obcą stacją
+i bez niej na tym samym nagraniu (gdzie wchodzą fałszywe elementy), potem
+drobna skala częstotliwości wokół stacji / kanał „nasza stacja" w wejściu.
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
