@@ -34,13 +34,20 @@ def main() -> None:
     if "--model" in argv0:
         i = argv0.index("--model"); model = argv0[i + 1]; del sys.argv[1 + i:1 + i + 2]
     mz = keras.models.load_model(model)
-    print(f"model zboczy: {model}")
+    print(f"model zboczy: {model}" + ("" if "--bez-kasowania" in sys.argv else "  + przeciwsygnał"))
     # --filtr HZ: po przestrojeniu filtr ±HZ wokół tonu, zanim sieć zboczy
     # (19.10, test QRM: obca stacja 60 Hz obok mieszała się w przebieg)
     argv = sys.argv[1:]
     filtr = None
     if "--filtr" in argv:
         i = argv.index("--filtr"); filtr = float(argv[i + 1]); del argv[i:i + 2]
+    # przeciwsygnał — obce kluczowane stacje odjęte przed przestrojeniem, jak
+    # w tools.odczyt (dsp/przeciwsygnal, 19.10: 1321 -> 1350/1541);
+    # --bez-kasowania: droga sprzed 19.10 (odniesienie out/viterbi_3_zb3.txt)
+    kasuj = "--bez-kasowania" not in argv
+    if not kasuj:
+        argv.remove("--bez-kasowania")
+    from dsp import przeciwsygnal as PS
     katalogi = argv or KATALOGI
     n8, k4 = 8 * C.SR, 4 * C.SR
     suma = Counter()
@@ -52,7 +59,10 @@ def main() -> None:
             if not chce:
                 continue
             a = frontend.load_audio(p)
-            t, f = tune.track_tone(a); a = tune.retune(a, t, f)
+            t, f = tune.track_tone(a)
+            if kasuj and np.isfinite(f).any():
+                a, _ = PS.kasuj_obce(a, float(np.nanmedian(f)))
+            a = tune.retune(a, t, f)
             if filtr:
                 a = tune.bandpass(a, C.TONE_CENTER, filtr)
             g = wav2net.auto_gain_db(a); a = np.clip(a * 10 ** (g / 20), -1, 1).astype(np.float32)

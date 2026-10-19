@@ -1457,6 +1457,78 @@ Następny krok (do omówienia z operatorem): porównać P sieci z obcą stacją
 i bez niej na tym samym nagraniu (gdzie wchodzą fałszywe elementy), potem
 drobna skala częstotliwości wokół stacji / kanał „nasza stacja" w wejściu.
 
+### Przeciwsygnał: obca stacja odtworzona i odjęta — QRM 75 -> 104 (19.10)
+
+**Pomysł operatora** („generowanie przeciwsygnału"), obok maskowania ze
+śledzeniem i notcha. Operator: najpierw przeciwsygnał, notch jako porównanie.
+
+**Najpierw sufit.** Zestaw QRM odtworzony tym samym ziarnem ze SKŁADOWYMI
+osobno (nasza + szum, obca). Bez obcej stacji: **145/257**, nie 257 —
+`test_qrm` ucina naszą stację do 40 s, a „nadane:" ma cały tekst. 75/257
+to więc 75 ze 145.
+
+**Druga obserwacja: sieć zboczy myli się od obcej stacji wszędzie w swoim
+wejściu**, nie tylko tuż obok: przy 120 i 200 Hz w paśmie ±50 Hz naszej
+stacji SIR 15-45 dB, a słowa giną (120 Hz +12 dB: 4/27 przy suficie 11).
+Obcą trzeba usunąć z całego pasma, łącznie z wstęgami jej zboczy.
+
+**Porównanie** (częstotliwości z opisu nagrania, cała droga;
+`out/viterbi_qrm_przeciwsygnal.txt`, przypadek po przypadku):
+
+| sposób | słowa (sufit 145) |
+|---|---|
+| nic | 75 |
+| notch ±10 / ±20 / ±30 Hz na obcej | 115 / 131 / 138 |
+| przeciwsygnał, kształt z maski kluczowania | 111 |
+| przeciwsygnał, rzut ±40 Hz na fazę obcej | 138 |
+| **przeciwsygnał, rzut ±80 Hz, pasmo naszej wycięte z estymaty** | **142** |
+| + wyuczony wzorzec zbocza obcej (kliknięcia) | bez zysku (SIR), odrzucone |
+
+Notch ±30 Hz i przeciwsygnał różnią się tam, gdzie najtrudniej — obca
+blisko i mocna: 30 Hz +6 / +12 dB: 10 i 4 vs 12 i 6; 60 Hz +12 dB: 5 vs 6.
+Szerszy notch zjada naszą stację, przeciwsygnał odejmuje TYLKO obcą (jej
+amplituda i faza uśredniane 0,4 s w chwilach wciśnięcia; nasza, odległa
+o >= 25 Hz, wiruje w tym układzie i uśrednia się do zera).
+
+**Wersja automatyczna** (obce z widma kontrastu kluczowania, nasza z pętli
+tonu): 104. Straty TYLKO w 7/16 przypadkach, w których pętla wybrała obcą
+stację (wtedy kasujemy naszą); w pozostałych 9 — tyle co z opisu.
+
+**Pierwsza regresja** (bez progów): 1336/1541, QRM +29, ale reszta −14
+słów — kasowała „stacje", których nie ma: stałe garby banku szumów (521,
+607, 689 Hz) i szum pasma 20 m; w nagraniach ręcznych parę 420/1100 Hz
+wokół 760 (nasz produkt). Dwa progi (`out/viterbi_kasuj_v1.txt` ->
+`out/viterbi_kasuj.txt`):
+- **spójność nośnej** (|Σz·e^{-j2πδt}| / Σ|z| w chwilach wciśnięcia,
+  najlepsze δ w ±3 Hz) >= 0,5: prawdziwe obce w teście QRM 0,58-0,96,
+  fałszywe 0,05-0,37;
+- **korelacja obwiedni z naszą** <= 0,5: ręka 420/1100 Hz +0,68,
+  prawdziwe obce -0,02...+0,33.
+
+**Wynik: 1350/1541 (było 1321)** — QRM 75 -> 104, a poza QRM ŻADNE
+nagranie nie zmieniło liczby słów (porównanie plik po pliku z
+`out/viterbi_3_zb3.txt`). `radio1` (dwie stacje 55 Hz, mikrofon,
+przesterowane, treść nieznana): stacja 845 Hz po odjęciu 789 Hz daje
+pierwsze strzępy treści („UR 5NN", „RZAQSO"), bez — sam szum liter.
+
+**Gdzie mieszka:** `dsp/przeciwsygnal.py` (`kasuj_obce`), wołane
+w `tools/odczyt.przygotuj` między pętlą tonu a przestrojeniem;
+`tester_viterbi` domyślnie z nim, `--bez-kasowania` — droga sprzed.
+
+**Sprawdzone przy okazji i odrzucone: środek filtra z szerszego pasma**
+(150-2500 Hz zamiast 400-1200; w QRM środek 800 zamiast 826-834 przy
+filtrze szerszym niż pasmo analizy). QRM: pętla na celu 9 -> 11/16, ale
+test_tonu 92,2 -> 91,0% — przy szerokich filtrach środek jest słabo
+określony (zbocze szumu przesuwa go o 25-30 Hz; błąd > 20 Hz: 7 -> 33%
+przypadków). Pewny środek da radio: ton CW (CW pitch) przez CI-V.
+
+**Co zostaje:** wybór, KTÓRA stacja jest nasza (7/16 przypadków: obca
++12 dB wypycha naszą z okna `KL_REMIS_DB`, albo obie po równo od środka
+filtra). Rozdzielanie już działa — to decyzja reguły, nie sygnału.
+Obca stacja z dryfem > 3 Hz w nagraniu nie przejdzie progu spójności
+(nie kasujemy — kierunek bezpieczny); śledzenie dryfu obcej — do zrobienia,
+gdy zobaczymy to na paśmie.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
@@ -2061,32 +2133,14 @@ na szum, zmianę tempa i zmianę tonu — czyli dokładnie na to, czemu służy
 nasz model kanału w `dsp/radio.py`. Do wzięcia jest struktura wyjścia,
 nie cały pomysł.
 
-### Brak notcha — układ nie ma narzędzia, po które sięga operator
+### Brak notcha — ZAMKNIĘTE 19.10 przeciwsygnałem
 
-**Luka.** QRM jest w modelu kanału (`QRM_PROB = 0.35`, amplituda do 0,35,
-czyli druga stacja bywa mocniejsza od naszej), więc sieć jest UCZONA to
-znosić. Ale w całym łańcuchu DSP nie ma ani jednego notcha — sprawdzone,
-słowo nie występuje w kodzie. Operator przy dwóch stacjach obok siebie
-sięga po notch; nasz układ nie ma czym.
-
-**Gdzie to by mieszkało.** W `dsp/tune.py`, obok przestrajania, bo tam
-już liczone są widma bloków i tam jest znany ton chciany. Algorytm
-oczywisty: po zaczepieniu na `f0` znaleźć pozostałe wąskie prążki
-w paśmie o wystarczającym SNR i wytłumić je pasmowo-zaporowo
-(`scipy.signal.iirnotch`; scipy jest już zależnością, `tune.retune`
-używa `hilbert`).
-
-**Trudność jest realna i warto ją nazwać przed pisaniem kodu.** Notch ma
-skończoną szerokość, a kluczowanie CW rozmywa nośną: przy 20 WPM kropka
-trwa 60 ms, więc wstęgi sięgają rzędu ±25 Hz. Przy odstępie 55 Hz notch
-musi być węższy niż jakieś 30 Hz, żeby nie zjadać wstęg sygnału
-chcianego. To jest do zmierzenia, nie do zgadnięcia — i mamy na czym:
-`radio1` jako przypadek prawdziwy oraz `radio.add_qrm` jako źródło
-przypadków syntetycznych o znanym odstępie.
-
-**Czego to NIE zastąpi.** Notch usuwa nośną zakłócającą, ale nie pomoże,
-gdy obie stacje są w tym samym miejscu widma albo gdy zakłócenie jest
-szerokopasmowe (QRN, trzaski). Tam zostaje sieć i model kanału.
+Luka była taka: przy dwóch stacjach obok siebie operator sięga po notch,
+układ nie miał czym. Zmierzone 19.10 („Przeciwsygnał: obca stacja odtworzona
+i odjęta"): notch ±10 / ±20 / ±30 Hz 115 / 131 / 138 ze 145, przeciwsygnał
+142; w drodze jest przeciwsygnał (`dsp/przeciwsygnal.py`). Przewidywanie
+stąd („notch musi być węższy niż ~30 Hz, żeby nie zjadać wstęg") potwierdzone:
+±30 Hz traci właśnie przy obcej 30 Hz obok.
 
 ### Model zapamiętuje zbiór
 

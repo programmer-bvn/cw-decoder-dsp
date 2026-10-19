@@ -1,0 +1,37 @@
+# Przeciwsygnał vs notch na zestawie QRM (19.10), cała droga (tester_viterbi, zboczy_3).
+# Eksperyment poza repozytorium (qrm_ic.py w katalogu roboczym sesji): składowe zestawu
+# odtworzone tym samym ziarnem co tools/test_qrm (zgodność z plikami do kwantyzacji 16 bit).
+# sufit = nasza stacja + szum, BEZ obcej (nagrania ucięte do 40 s, stąd 145, nie 257).
+# notchNN = notch ±NN Hz na obcej; ps_maska / ps_rzut = przeciwsygnał (kształt z maski / rzut ±40 Hz);
+# rz80 = rzut ±80 Hz z wyciętą naszą ±20 Hz (dsp/przeciwsygnal); notch*, ps_*, rz* — częstotliwości z opisu nagrania;
+# auto80 / auto_n20 = obce z widma, nasza z pętli tonu (przeciwsygnał / notch ±20), bez progu spójności.
+
+przypadek             sufit    nic notch10 notch20 notch30 ps_maska ps_rzut  rz40n   rz80  auto80 auto_n20
+qrm_df030_poz+00_01    5/15   0/15    4/15    5/15    5/15     2/15    4/15   4/15   4/15    2/15     2/15
+qrm_df030_poz+06_02   12/17   6/17    5/17    8/17   10/17     6/17   10/17  11/17  12/17   12/17     9/17
+qrm_df030_poz+12_03     7/7    0/7     0/7     2/7     4/7      0/7     5/7    3/7    6/7     2/7      2/7
+qrm_df030_poz-06_00    5/15   1/15    5/15    5/15    5/15     5/15    5/15   5/15   5/15    0/15     0/15
+qrm_df060_poz+00_05   12/17   0/17    8/17   12/17   12/17    12/17   12/17  12/17  12/17    3/17     4/17
+qrm_df060_poz+06_06   12/17   3/17    8/17   12/17   12/17     1/17   12/17  12/17  12/17   12/17    12/17
+qrm_df060_poz+12_07     7/7    3/7     0/7     2/7     5/7      0/7     5/7    5/7    6/7     0/7      0/7
+qrm_df060_poz-06_04   11/27   0/27   11/27   11/27   11/27    11/27   11/27  11/27  11/27   11/27    11/27
+qrm_df120_poz+00_09     7/7    7/7     7/7     7/7     7/7      7/7     7/7    7/7    7/7     7/7      7/7
+qrm_df120_poz+06_10   11/27  11/27   11/27   11/27   11/27    11/27   11/27  11/27  11/27   11/27    11/27
+qrm_df120_poz+12_11   11/27   4/27   11/27   11/27   11/27    11/27   11/27  11/27  11/27    4/27     4/27
+qrm_df120_poz-06_08     7/7    7/7     7/7     7/7     7/7      7/7     7/7    7/7    7/7     7/7      7/7
+qrm_df200_poz+00_13   12/17  12/17   12/17   12/17   12/17    12/17   12/17  12/17  12/17   12/17    12/17
+qrm_df200_poz+06_14     7/7    7/7     7/7     7/7     7/7      7/7     7/7    7/7    7/7     7/7      7/7
+qrm_df200_poz+12_15    5/15   0/15    5/15    5/15    5/15     5/15    5/15   5/15   5/15    0/15     0/15
+qrm_df200_poz-06_12   14/28  14/28   14/28   14/28   14/28    14/28   14/28  14/28  14/28   14/28    14/28
+
+wzorzec: 145/257
+nic: 75/257
+notch10: 115/257
+notch20: 131/257
+notch30: 138/257
+ps_maska: 111/257
+ps_rzut: 138/257
+rz40n: 137/257
+rz80: 142/257
+auto80: 104/257
+auto_n20: 102/257

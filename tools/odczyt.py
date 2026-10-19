@@ -4,12 +4,15 @@
     python -m tools.odczyt nagranie.wav --odcinki      # też podział na odcinki
 
 Droga (każdy krok zmierzony, HISTORIA 17-19.10):
-  1. tune.track_tone (ton kluczowany) + retune na 750 Hz
+  1. tune.track_tone (ton kluczowany); przeciwsygnał — obce kluczowane
+     stacje odtworzone i odjęte (dsp/przeciwsygnal); retune na 750 Hz
   2. sieć zboczy (runs/zbocza_3): P(klucz wciśnięty) co 5 ms
   3. jednostka: cepstrum przebiegu (u + 3u + 7u) i grzebień (mediana okien)
   4. viterbi.dekoduj_najlepiej: odcinki zgodne z gramatyką Morse'a, bez
      bramki; jednostkę wybiera wynik Viterbiego.
 Na nagraniach z treścią (19.10): 821/828 słów, tabela z bramką 685.
+Z przeciwsygnałem (19.10): wszystkie zestawy 1350/1541 (bez: 1321), QRM
+75 -> 104, poza QRM żadne nagranie bez zmian.
 """
 
 from __future__ import annotations
@@ -22,15 +25,17 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp import config as C, frontend, grzebien, tune, viterbi as V, zbocza as Z
+from dsp import config as C, frontend, grzebien, przeciwsygnal as PS, tune, viterbi as V, zbocza as Z
 
 MODEL_ZBOCZY = Path("runs/zbocza_3/best.keras")
 
 
-def przygotuj(a: np.ndarray) -> tuple[np.ndarray, float]:
+def przygotuj(a: np.ndarray, kasuj: bool = True) -> tuple[np.ndarray, float]:
     from tools import wav2net
     t, f = tune.track_tone(a)
     ton = float(np.nanmedian(f)) if np.isfinite(f).any() else float("nan")
+    if kasuj:
+        a, _ = PS.kasuj_obce(a, ton)
     a = tune.retune(a, t, f)
     g = wav2net.auto_gain_db(a)
     return np.clip(a * 10 ** (g / 20), -1, 1).astype(np.float32), ton
