@@ -1612,6 +1612,30 @@ nawet wśród kandydatów (widmo z całości), a węższe wycięcie psuje naszą
 siatka Viterbiego), nie w częstotliwości. Kandydaci z widma całego nagrania
 — stacja obecna krótko może przepaść (do sprawdzenia na kolejnych nagraniach).
 
+**Dwa kolejne nagrania tego samego tekstu (20/21.10, ton CW 760 Hz z radia):**
+
+| nagranie | S/N | obce w filtrze | nasz | klasyczny |
+|---|---|---|---|---|
+| 6 m spokój, 50,0096 MHz CW FIL3 (`_2339`) | ~36 dB | brak | **1** / 105 (wstawione „T" przed tekstem) | 10 |
+| 40 m, 7,015 MHz (`_2107`, wyżej) | ~26 dB | 684 Hz, 742 Hz | 21 | 463 |
+| **40 m tłok**, 7,0358 MHz CW-R FIL3 (`_2354`) | 12-38 dB | kłąb 680-740 Hz, 2-4 dB słabszy od naszej | **86** | 453 |
+
+Czyste pasmo — praktycznie bezbłędnie. **Tłok — klęska**: przeciwsygnał
+nic nie skasował (kandydat 703 Hz, ale w żadnym oknie spójność >= 0,5 —
+kilka stacji co kilka Hz, nie ma jednej nośnej do odtworzenia). Sieć zboczy
+P > 0,5 przez 70% czasu (spokojne 6 m: 49%) — zlewa stacje w jedną.
+Filtr programowy przed siecią (±100 / ±60 / ±40 Hz) jeszcze gorzej, także
+na spokojnych 6 m (1 -> 102 / 289 / 338 błędów) — sieć nie zna takich obrazów
+(jak 19.10, `tester_viterbi --filtr`).
+
+**Wniosek:** wąskim gardłem w tłoku jest SIEĆ ZBOCZY, nie DSP przed nią.
+Pasma mel ~48 Hz przy 750 Hz — stacje 20-60 Hz obok wpadają w te same pasma.
+Potrzebne (hipoteza, do treningu): drobna skala częstotliwości wokół naszej
+stacji / kanał „nasza stacja" w wejściu + w danych tłok (kilka stacji
+±20-200 Hz, poziom -6...+3 dB) i różne szerokości filtra odbiornika.
+Zboczy_4 (jedna obca stacja w danych, ta sama architektura) był gorszy —
+same dane bez zmiany wejścia nie wystarczyły.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

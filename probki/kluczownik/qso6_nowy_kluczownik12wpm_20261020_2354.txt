@@ -1,0 +1,13 @@
+# NAGRANIE KLUCZOWNIKA — tools/radio/nagraj_kluczownik.py
+
+nadane:        OK2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C = PWR 50W ANT GP = 73 ES GL OK2PVF DE SQ2BVN +
+nadajnik:      IC-7300MK2, kluczownik wewnętrzny, tekst przez CI-V 0x17 (qso6_nowy.txt)
+tempo zadane:  12.1 WPM (CI-V 0x14 0x0C)
+klucz:         kluczownik — rytm maszynowy
+tor:           podsłuch CW przez USB audio (AF Beep/Speech Output ON), break-in OFF, bez nadawania
+pasmo:         7,035806 MHz, CW-R, FIL3 (CI-V przed nagraniem)
+ton CW:        760 Hz (CI-V 0x14 0x09)
+radio:         COM5 115200 bod, adres 0xB6; karta: urządzenie 15
+czas:          20261020_2354
+szczyt:        0.978
+karta:         bez zgłoszeń (przepełnienia itp.)
