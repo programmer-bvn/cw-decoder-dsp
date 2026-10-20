@@ -469,7 +469,11 @@ def receive(text: str, rng: np.random.Generator,
 
     # --- stacja docelowa ---
     if text:
-        tone = C.TONE_CENTER + float(rng.uniform(-C.TONE_SPREAD, C.TONE_SPREAD))
+        # TON_SPREAD_HZ (20.10, zboczy_5): droga odczytu przestraja naszą stację
+        # na 750 Hz (tune.retune), więc sieć zboczy widzi ją przy 750 ± błąd
+        # pętli, nie ± TONE_SPREAD — i może się nauczyć „środek = nasza".
+        rozrzut = zak_.get("TON_SPREAD_HZ", C.TONE_SPREAD)
+        tone = C.TONE_CENTER + float(rng.uniform(-rozrzut, rozrzut))
         # tempo_staly: tempo podane z zewnątrz (normalizacja tempa, dsp/klip)
         # — bez rozrzutu WPM_JITTER, długość klipu jest już do niego dobrana.
         clip_wpm = float(wpm) if tempo_staly else wpm_klipu(rng, wpm)
@@ -584,6 +588,20 @@ def receive(text: str, rng: np.random.Generator,
         zak = add_qrm(zak, rng, amp=qrm_amp, sr=sr, realism=realism,
                       tempo_szeroki=tempo_staly, ton=ton_q)
     meta["qrm"] = qrm_amp
+    # zakresy["TLOK"] (20.10, zboczy_5): kilka stacji naraz blisko naszej.
+    # Pasmo 40 m, tłok (probki/kluczownik/qso6_..._2354): kłąb 680-740 Hz,
+    # 2-4 dB słabszy od naszej — 86 błędów / 105 znaków; spokojne 6 m: 1.
+    tlok = zak_.get("TLOK")
+    meta["tlok"] = 0
+    if realism and tlok and text and rng.random() < tlok["prob"]:
+        n_st = int(rng.integers(tlok["liczba"][0], tlok["liczba"][1] + 1))
+        for _ in range(n_st):
+            poz = float(rng.uniform(*tlok["poziom_db"]))
+            df = float(rng.uniform(*tlok["df_hz"])) * float(rng.choice([-1.0, 1.0]))
+            zak = add_qrm(zak, rng, amp=amp * 10.0 ** (poz / 20.0), sr=sr, realism=realism,
+                          tempo_szeroki=tempo_staly,
+                          ton=float(np.clip(meta["tone"] + df, C.FMIN + 30.0, C.FMAX - 30.0)))
+        meta["tlok"] = n_st
 
     n_crashes = 0
     if realism and rng.random() < C.QRN_PROB:
@@ -591,7 +609,7 @@ def receive(text: str, rng: np.random.Generator,
         zak = add_qrn(zak, rng, n_crashes=n_crashes,
                       amp=float(rng.uniform(*C.QRN_AMP)) * skala, sr=sr)
     meta["qrn"] = n_crashes
-    if prawdziwy and (qrm_amp > 0.0 or n_crashes > 0):
+    if prawdziwy and (qrm_amp > 0.0 or n_crashes > 0 or meta["tlok"] > 0):
         zak = filtr_jak_szum(zak, szum, sr=sr)
     audio = (audio + zak).astype(np.float32)
 

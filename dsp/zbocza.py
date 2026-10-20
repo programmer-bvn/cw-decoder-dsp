@@ -50,6 +50,27 @@ ZAKRESY_ZBOCZY = {"SN_DB": (-3.0, 45.0), "TLO_DB": (-32.0, 7.0),
                           "poziom_db": (-10.0, 12.0)}}
 
 
+# ZBOCZY_5 (20.10): drugie wejście — obraz DROBNY wokół naszej stacji.
+# Pasmo 40 m w tłoku: kłąb stacji 680-740 Hz (20-80 Hz obok) — pasma mel
+# ~48 Hz przy 750 Hz zlewały je z naszą (P > 0,5 przez 70% czasu, 86 błędów
+# na 105 znaków). Okno 128 ms: 7,8 Hz na prążek, 32 prążki = 625-867 Hz;
+# po tune.retune nasza stacja jest zawsze przy 750 Hz. Rozmyte w czasie —
+# zbocza daje dalej obraz mel (32 ms), częstotliwość ten.
+N_FFT_DROBNY = 1024
+DROBNY_PRAZKI = 32
+DROBNY_PIERWSZY = int(round((C.TONE_CENTER - 125.0) / (C.SR / N_FFT_DROBNY)))   # prążek 80 = 625 Hz
+# Ten sam ton — ten sam odcień w obu obrazach. Zmierzone 20.10 (ton 740-760 Hz,
+# amplituda 0,01-0,5): mel - drobny = -26,4...-26,5 dB (okno 4x dłuższe
+# i wagi filtrów mel). Szum biały: -20,7 dB — tło w drobnym 5,8 dB ciemniejsze,
+# bo prążek jest węższy: to jest właśnie zysk z tego obrazu.
+DROBNY_KOREKTA_DB = -26.4
+ZAKRESY_ZBOCZY_5 = {**{k: v for k, v in ZAKRESY_ZBOCZY.items() if k != "QRM"},
+                    "TON_SPREAD_HZ": 10.0,
+                    "QRM": {"prob": 0.35, "blisko": 0.6, "df_hz": (15.0, 200.0),
+                            "poziom_db": (-10.0, 6.0)},
+                    "TLOK": {"prob": 0.3, "liczba": (2, 4), "df_hz": (15.0, 200.0),
+                             "poziom_db": (-8.0, 4.0)}}
+
 _FB = None
 
 
@@ -66,6 +87,14 @@ def obraz_zboczy(audio: np.ndarray) -> np.ndarray:
                           HOP_ZBOCZA)
     db = melref.power_to_db((p @ _fb().T).astype(np.float64))
     return frontend.normalize_db(db).astype(np.float32)
+
+
+def obraz_drobny(audio: np.ndarray) -> np.ndarray:
+    """audio -> [ramki co 5 ms, DROBNY_PRAZKI] w [0,1]: 625-867 Hz co 7,8 Hz.
+    Te same ramki co obraz_zboczy (ten sam krok, ramka wyśrodkowana)."""
+    p = melref.stft_power(np.asarray(audio, dtype=np.float32), N_FFT_DROBNY, HOP_ZBOCZA)
+    p = p[:, DROBNY_PIERWSZY:DROBNY_PIERWSZY + DROBNY_PRAZKI]
+    return frontend.normalize_db(melref.power_to_db(p) + DROBNY_KOREKTA_DB).astype(np.float32)
 
 
 def klucz_ramek(klucz: np.ndarray, n_ramek: int) -> np.ndarray:
@@ -110,6 +139,30 @@ def klip_zboczy(rng: np.random.Generator, realism: bool = True):
         kl = kl[:, 0]
     meta["wpm"] = wpm
     return obraz, kl, meta
+
+
+def klip_zboczy_5(rng: np.random.Generator, realism: bool = True):
+    """Jak klip_zboczy, z zakresami ZAKRESY_ZBOCZY_5 i obrazem drobnym:
+    (obraz [512, N_MELS], drobny [512, DROBNY_PRAZKI], klucz [512], opis)."""
+    if rng.random() > C.SILENCE_FRACTION:
+        tekst = "".join(rng.choice(list(C.ALPHABET[1:]), ZNAKOW_W_KLIPIE))
+    else:
+        tekst = ""
+    wpm = float(rng.uniform(*C.TEMPO_ZAKRES))
+    audio, meta = radio.receive(tekst, rng, n_samples=C.CLIP_SAMPLES,
+                                wpm=wpm, realism=realism, tempo_staly=True,
+                                z_kluczem=bool(tekst), zakresy=ZAKRESY_ZBOCZY_5)
+    obraz, s0 = wytnij(obraz_zboczy(audio))
+    drobny, _ = wytnij(obraz_drobny(audio))
+    k = meta.get("klucz")
+    if k is None:
+        kl = np.zeros(RAMKI_ZBOCZA, dtype=np.float32)
+    else:
+        kl_all = klucz_ramek(k, 1 + audio.size // HOP_ZBOCZA)
+        kl, _ = wytnij(kl_all[:, None])
+        kl = kl[:, 0]
+    meta["wpm"] = wpm
+    return obraz, drobny, kl, meta
 
 
 # --------------------------------------------------------------------------
@@ -160,16 +213,13 @@ def przebieg_sieci(audio: np.ndarray, model, krok: int = RAMKI_ZBOCZA // 2
                    ) -> np.ndarray:
     """P(klucz) co 5 ms na całym nagraniu: okna 512 ramek na zakładkę
     (krok 256), z każdego brana środkowa połowa — brzegi okna sieć widzi
-    tylko z jednej strony."""
-    return przebieg_z_obrazow([obraz_zboczy(audio)], model, krok)[0]
+    tylko z jednej strony. Sieć z dwoma wejściami (zboczy_5) dostaje też
+    obraz drobny."""
+    drobne = [obraz_drobny(audio)] if len(model.inputs) == 2 else None
+    return przebieg_z_obrazow([obraz_zboczy(audio)], model, krok, drobne)[0]
 
 
-def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2
-                       ) -> list:
-    """Jak przebieg_sieci, ale dla wielu obrazów naraz — jedno wywołanie
-    sieci na wszystkie okna (zbiór drugiego etapu: setki tysięcy klipów;
-    pojedyncze wywołania kosztowałyby ~30 ms narzutu każde)."""
-    import tensorflow as tf
+def _okna(obrazy: list, krok: int):
     pad = (RAMKI_ZBOCZA - krok) // 2
     okna, gdzie = [], []
     for obraz in obrazy:
@@ -180,8 +230,20 @@ def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2
         st = list(range(0, n, krok))
         gdzie.append((len(okna), len(st), n))
         okna.extend(x[s:s + RAMKI_ZBOCZA] for s in st)
+    return np.stack(okna)[..., None], gdzie
+
+
+def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2,
+                       drobne: list | None = None) -> list:
+    """Jak przebieg_sieci, ale dla wielu obrazów naraz — jedno wywołanie
+    sieci na wszystkie okna (zbiór drugiego etapu: setki tysięcy klipów;
+    pojedyncze wywołania kosztowałyby ~30 ms narzutu każde)."""
+    import tensorflow as tf
+    pad = (RAMKI_ZBOCZA - krok) // 2
+    okna, gdzie = _okna(obrazy, krok)
+    wejscie = [okna, _okna(drobne, krok)[0]] if drobne is not None else okna
     # wsad 64: przy 256 przydzielacz karty zgłaszał brak pamięci i się cofał (19.10)
-    logit = model.predict(np.stack(okna)[..., None], verbose=0, batch_size=64)
+    logit = model.predict(wejscie, verbose=0, batch_size=64)
     p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
     return [p[i0:i0 + k].reshape(-1)[:n] for i0, k, n in gdzie]
 

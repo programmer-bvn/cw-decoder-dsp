@@ -3,6 +3,8 @@
     python -m tools.zbocza_trening generuj  out/zbocza/czesc_0.npz 100000 --seed 1
     python -m tools.zbocza_trening trenuj   out/zbocza runs/zbocza_1 --epoki 20
     python -m tools.zbocza_trening ocen     runs/zbocza_1/best.keras
+    python -m tools.zbocza_trening generuj  out/zbocza/z5/czesc_0.npz 100000 --seed 1 --wersja 5
+    (zboczy_5, 20.10: drugie wejście — obraz drobny 7,8 Hz wokół 750 Hz, tłok)
 
 Pierwszy etap dwuetapowego dekodera (dsp/zbocza.py): widmo co 5 ms ->
 P(klucz wciśnięty) co 5 ms. Etykieta to PRAWDZIWY przebieg klucza z generatora
@@ -46,31 +48,36 @@ PRZEDZIALY_SN = ((-3, 3), (3, 10), (10, 20), (20, 31), (31, 46))
 # generowanie
 # --------------------------------------------------------------------------
 def _kawalek(arg):
-    i, n, seed = arg
+    i, n, seed, wersja = arg
     rng = np.random.default_rng([seed, i])
     X = np.zeros((n, Z.RAMKI_ZBOCZA, C.N_MELS), np.uint8)
+    X2 = np.zeros((n, Z.RAMKI_ZBOCZA, Z.DROBNY_PRAZKI), np.uint8) if wersja == 5 else None
     K = np.zeros((n, Z.RAMKI_ZBOCZA), np.uint8)
     M = {k: np.full(n, np.nan, np.float32) for k in POLA}
     for j in range(n):
-        img, kl, m = Z.klip_zboczy(rng)
+        if wersja == 5:
+            img, drob, kl, m = Z.klip_zboczy_5(rng)
+            X2[j] = np.round(np.clip(drob, 0, 1) * 255)
+        else:
+            img, kl, m = Z.klip_zboczy(rng)
         X[j] = np.round(np.clip(img, 0, 1) * 255)
         K[j] = np.round(np.clip(kl, 0, 1) * 255)
         for k in POLA:
             if m.get(k) is not None and m.get("text", "") != "":
                 M[k][j] = m[k]
-    return X, K, M
+    return X, X2, K, M
 
 
-def generuj(wyj: Path, n: int, seed: int, procesy: int | None) -> None:
+def generuj(wyj: Path, n: int, seed: int, procesy: int | None, wersja: int = 3) -> None:
     import concurrent.futures as cf
     procesy = procesy or max(1, (os.cpu_count() or 4) - 1)
     per = 250
-    kaw = [(i, min(per, n - i * per), seed) for i in range((n + per - 1) // per)]
-    Xs, Ks, Ms = [], [], []
+    kaw = [(i, min(per, n - i * per), seed, wersja) for i in range((n + per - 1) // per)]
+    Xs, X2s, Ks, Ms = [], [], [], []
     t0 = time.time()
     with cf.ProcessPoolExecutor(max_workers=procesy) as ex:
-        for X, K, M in ex.map(_kawalek, kaw):
-            Xs.append(X); Ks.append(K); Ms.append(M)
+        for X, X2, K, M in ex.map(_kawalek, kaw):
+            Xs.append(X); X2s.append(X2); Ks.append(K); Ms.append(M)
             g = sum(len(x) for x in Xs)
             el = time.time() - t0
             print(f"\r  {g}/{n}  {el:.0f}s  pozostało ~{el / g * (n - g):.0f}s ",
@@ -79,9 +86,10 @@ def generuj(wyj: Path, n: int, seed: int, procesy: int | None) -> None:
     wyj.parent.mkdir(parents=True, exist_ok=True)
     tymczasowy = wyj.with_name(wyj.name + ".part")
     with open(tymczasowy, "wb") as f:
-        np.savez(f, X=np.concatenate(Xs), K=np.concatenate(Ks),
+        dodatkowe = {"X2": np.concatenate(X2s)} if wersja == 5 else {}
+        np.savez(f, X=np.concatenate(Xs), K=np.concatenate(Ks), **dodatkowe,
                  **{k: np.concatenate([m[k] for m in Ms]) for k in POLA},
-                 meta=f"n={n};seed={seed};hop={Z.HOP_ZBOCZA};nfft={Z.N_FFT_ZBOCZA}")
+                 meta=f"n={n};seed={seed};hop={Z.HOP_ZBOCZA};nfft={Z.N_FFT_ZBOCZA};wersja={wersja}")
         f.flush()
         os.fsync(f.fileno())
     os.replace(tymczasowy, wyj)
@@ -94,8 +102,9 @@ def wczytaj(sciezka: Path):
         raise SystemExit(f"brak części zbioru zboczy w {sciezka}")
     d = [np.load(p) for p in pliki]
     X = np.concatenate([x["X"] for x in d]); K = np.concatenate([x["K"] for x in d])
+    X2 = np.concatenate([x["X2"] for x in d]) if "X2" in d[0].files else None
     M = {k: np.concatenate([x[k] for x in d]) for k in POLA}
-    return X, K, M
+    return X, X2, K, M
 
 
 # --------------------------------------------------------------------------
@@ -124,10 +133,45 @@ def model_zboczy():
     return keras.Model(wej, wyj, name="siec_zboczy")
 
 
+def model_zboczy_5():
+    """Dwa wejścia (20.10): mel [512, 32] jak zboczy_3 i obraz drobny
+    [512, 32] (625-867 Hz co 7,8 Hz, nasza stacja na prążku 16). Każde
+    zwijane po częstotliwości osobno do 1, kanały łączone (Concatenate —
+    DPU je wykonuje), potem te same sploty po czasie co zboczy_3."""
+    from tensorflow import keras
+    L = keras.layers
+    wej = keras.Input((Z.RAMKI_ZBOCZA, C.N_MELS, 1), name="widmo_5ms")
+    wej2 = keras.Input((Z.RAMKI_ZBOCZA, Z.DROBNY_PRAZKI, 1), name="drobny_5ms")
+
+    def galaz(x, filtry):
+        for f in filtry:
+            x = L.Conv2D(f, (5, 3), padding="same", use_bias=False)(x)
+            x = L.BatchNormalization()(x)
+            x = L.ReLU()(x)
+            x = L.MaxPooling2D((1, 2))(x)
+        return x
+
+    a = galaz(wej, (32, 48, 64, 96, 128))          # 32 -> 1 pasmo
+    b = galaz(wej2, (32, 48, 64, 64, 64))          # 32 -> 1 prążek
+    x = L.Concatenate(axis=-1)([a, b])
+    x = L.Conv2D(128, (1, 1), use_bias=False)(x)
+    x = L.BatchNormalization()(x)
+    x = L.ReLU()(x)
+    for d in (1, 2, 4, 8, 16, 32):
+        y = L.Conv2D(128, (5, 1), dilation_rate=(d, 1), padding="same",
+                     use_bias=False)(x)
+        y = L.BatchNormalization()(y)
+        y = L.ReLU()(y)
+        x = L.Add()([x, y])
+    x = L.Conv2D(1, (1, 1), name="logit")(x)
+    wyj = L.Reshape((Z.RAMKI_ZBOCZA,))(x)
+    return keras.Model([wej, wej2], wyj, name="siec_zboczy_5")
+
+
 def trenuj(zbior: Path, katalog: Path, epoki: int, batch: int) -> None:
     import tensorflow as tf
     from tensorflow import keras
-    X, K, M = wczytaj(zbior)
+    X, X2, K, M = wczytaj(zbior)
     n = len(X)
     rng = np.random.default_rng(0)
     idx = rng.permutation(n)
@@ -138,16 +182,18 @@ def trenuj(zbior: Path, katalog: Path, epoki: int, batch: int) -> None:
     def ds(ii, mieszaj):
         # CPU: inaczej from_tensor_slices ładuje zbiór do pamięci KARTY
         with tf.device("/cpu:0"):
-            d = tf.data.Dataset.from_tensor_slices((X[ii], K[ii]))
+            d = tf.data.Dataset.from_tensor_slices(
+                ((X[ii], X2[ii]) if X2 is not None else X[ii], K[ii]))
         if mieszaj:
             d = d.shuffle(20000, reshuffle_each_iteration=True)
+        obraz = lambda x: tf.cast(x, tf.float32)[..., None] / 255.0
         d = d.batch(batch).map(
-            lambda x, k: (tf.cast(x, tf.float32)[..., None] / 255.0,
+            lambda x, k: ((obraz(x[0]), obraz(x[1])) if X2 is not None else obraz(x),
                           tf.cast(k, tf.float32) / 255.0),
             num_parallel_calls=tf.data.AUTOTUNE)
         return d.prefetch(tf.data.AUTOTUNE)
 
-    m = model_zboczy()
+    m = model_zboczy_5() if X2 is not None else model_zboczy()
     m.compile(optimizer=keras.optimizers.Adam(1e-3),
               loss=keras.losses.BinaryCrossentropy(from_logits=True))
     print(f"sieć zboczy: {m.count_params()} parametrów")
@@ -192,13 +238,18 @@ def ocen(sciezka_modelu: Path, n_na_przedzial: int, seed: int) -> None:
     print(f"model {sciezka_modelu}, {n_na_przedzial} klipów na przedział S/N "
           f"(błąd zbocza: |mediana| i 90%, przesunięcie narast./opad. ze znakiem)")
     for lo, hi in PRZEDZIALY_SN:
-        imgs, kls, ms = [], [], []
+        imgs, drobs, kls, ms = [], [], [], []
+        dwa = len(m.inputs) == 2
         while len(imgs) < n_na_przedzial:
-            img, kl, mm = Z.klip_zboczy(rng)
+            if dwa:
+                img, drob, kl, mm = Z.klip_zboczy_5(rng)
+            else:
+                (img, kl, mm), drob = Z.klip_zboczy(rng), None
             if mm.get("text") and lo <= mm["snr_db"] < hi:
-                imgs.append(img); kls.append(kl); ms.append(mm)
-        p = tf.sigmoid(m.predict(np.array(imgs)[..., None], verbose=0,
-                                 batch_size=64)).numpy()
+                imgs.append(img); drobs.append(drob); kls.append(kl); ms.append(mm)
+        wej = ([np.array(imgs)[..., None], np.array(drobs)[..., None]] if dwa
+               else np.array(imgs)[..., None])
+        p = tf.sigmoid(m.predict(wej, verbose=0, batch_size=64)).numpy()
         for nazwa, wyj in (("klasyczna", [klasyczna(i, mm["tone"]) for i, mm in zip(imgs, ms)]),
                            ("sieć", list(p))):
             b, pom, fal, pr, nar, opa = [], 0, 0, 0, [], []
@@ -223,6 +274,7 @@ def main() -> None:
     g.add_argument("wyj", type=Path); g.add_argument("n", type=int)
     g.add_argument("--seed", type=int, default=1)
     g.add_argument("--procesy", type=int, default=None)
+    g.add_argument("--wersja", type=int, default=3, choices=[3, 5])
     t = sub.add_parser("trenuj")
     t.add_argument("zbior", type=Path); t.add_argument("katalog", type=Path)
     t.add_argument("--epoki", type=int, default=20)
@@ -233,7 +285,7 @@ def main() -> None:
     o.add_argument("--seed", type=int, default=7)
     a = ap.parse_args()
     if a.cmd == "generuj":
-        generuj(a.wyj, a.n, a.seed, a.procesy)
+        generuj(a.wyj, a.n, a.seed, a.procesy, a.wersja)
     elif a.cmd == "trenuj":
         trenuj(a.zbior, a.katalog, a.epoki, a.batch)
     else:
