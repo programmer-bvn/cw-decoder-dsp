@@ -38,7 +38,7 @@ def przygotuj(a: np.ndarray, kasuj: bool = True, ton_cw: float | None = None) ->
     t, f = tune.track_tone(a, ton_cw=ton_cw)
     ton = float(np.nanmedian(f)) if np.isfinite(f).any() else float("nan")
     if kasuj:
-        a, _ = PS.kasuj_obce(a, ton)
+        a, _ = PS.kasuj_obce(a, ton, tor=(t, f))
     a = tune.retune(a, t, f)
     g = wav2net.auto_gain_db(a)
     return np.clip(a * 10 ** (g / 20), -1, 1).astype(np.float32), ton

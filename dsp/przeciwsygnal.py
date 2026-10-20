@@ -40,9 +40,21 @@ KORELACJA_MAX = 0.5
 # w ±3 Hz. Pierwsza wersja bez tego (regresja 19.10): QRM 75 -> 104, ale
 # reszta -14 słów — kasowała stałe garby banku szumów (521, 607, 689 Hz:
 # spójność 0,05-0,11) i szum pasma 20 m (do 0,37). Prawdziwe obce w teście
-# QRM: 0,58-0,96. Stacja dryfująca o > 3 Hz w nagraniu nie przejdzie
-# (bezpieczny kierunek: nie kasujemy).
+# QRM: 0,58-0,96.
 SPOJNOSC_MIN = 0.5
+# Spójność i odejmowanie w OKNACH (zakładka 50%, okno Hanna), nie z całości.
+# Pasmo 40 m 20.10 (qso6, kluczownik na tle pasma): stacja 684 Hz, 76 Hz
+# od naszej, 6-10 dB słabsza — spójność z 147 s 0,18 (dryf, przerwy), w oknach
+# 10 s 0,14-0,86. Z całości odrzucona: 32 błędy / 105 znaków; wymuszone
+# odjęcie całości 28; w oknach 10 s z progiem w oknie 20.
+OKNO_KASOWANIA_S = 10.0
+# W krótkim oknie szum łatwiej przechodzi próg spójności (pierwsza wersja
+# okien: F5OHS, „Nagrywanie (6)", 1/1 -> 0/1 — skasowane szczyty szumu
+# 470-1004 Hz). Drugi próg w oknie: poziom obcej (P90 obwiedni ±25 Hz)
+# względem naszej. Zmierzone 20.10 na oknach ze spójnością >= 0,5:
+# prawdziwe obce (QRM, 40 m 684 Hz) -6,5...+12 dB; szum mediana -22 dB,
+# P90 -15,8; od -12 dB w górę tylko produkty obcej +12 dB w QRM.
+POZIOM_MIN_DB = -12.0
 
 
 def _lp(z: np.ndarray, b_hz: float, sr: int, taps: int = 801) -> np.ndarray:
@@ -149,8 +161,57 @@ def _spojnosc(an: np.ndarray, f: float, sr: int) -> float:
                for d in np.arange(-3.0, 3.001, 0.05))
 
 
-def kasuj_obce(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> tuple[np.ndarray, list]:
-    """Odejmuje kolejno wszystkie obce kluczowane stacje (od najgłośniejszej)."""
+def _poziom_db(an: np.ndarray, f: float, sr: int) -> float:
+    z = an * np.exp(-2j * np.pi * f * np.arange(an.size) / sr)
+    return 20 * np.log10(np.percentile(np.abs(_lp(z, 25.0, sr)), 90) + 1e-12)
+
+
+def odejmij_oknami(x: np.ndarray, f: float, f_nasza: float, sr: int = C.SR,
+                   tor: tuple[np.ndarray, np.ndarray] | None = None) -> tuple[np.ndarray, int]:
+    """`odejmij` w oknach OKNO_KASOWANIA_S tam, gdzie obca przechodzi progi w oknie.
+
+    Nasza w oknie = mediana toru pętli tonu (`tor` = times, freqs z
+    tune.track_tone), nie mediana z całości: F5OHS („Nagrywanie (6)") nadawał
+    na 712 Hz przez pierwsze 10 s, potem szum i pętla na 757 — mediana 757
+    i kasowaliśmy NASZĄ stację (1/1 -> 0/1). Okno, w którym kandydat leży
+    bliżej niż ODSTEP_HZ od toru, zostaje nietknięte.
+    Zwraca (sygnał, liczba okien z kasowaniem). Nagranie krótsze od okna — jedno okno.
+    """
+    from scipy.signal import hilbert
+    n = min(int(OKNO_KASOWANIA_S * sr), x.size)
+    krok = max(1, n // 2)
+    starty = list(range(0, max(1, x.size - n + 1), krok))
+    if starty[-1] + n < x.size:
+        starty.append(x.size - n)
+    w = np.hanning(n) if len(starty) > 1 else np.ones(n)
+    est = np.zeros_like(x)
+    wag = np.zeros_like(x)
+    uzyte = 0
+    for s in starty:
+        seg = x[s:s + n]
+        wag[s:s + n] += w
+        fn = f_nasza
+        if tor is not None:
+            w_t = (tor[0] >= s / sr) & (tor[0] < (s + n) / sr) & np.isfinite(tor[1])
+            if w_t.any():
+                fn = float(np.median(tor[1][w_t]))
+        if abs(f - fn) < ODSTEP_HZ:
+            continue
+        an = hilbert(seg)
+        if _poziom_db(an, f, sr) - _poziom_db(an, fn, sr) >= POZIOM_MIN_DB \
+                and _spojnosc(an, f, sr) >= SPOJNOSC_MIN:
+            est[s:s + n] += (seg - odejmij(seg, f, fn, sr)) * w
+            uzyte += 1
+    return x - est / np.maximum(wag, 1e-9), uzyte
+
+
+def kasuj_obce(x: np.ndarray, f_nasza: float, sr: int = C.SR,
+               tor: tuple[np.ndarray, np.ndarray] | None = None) -> tuple[np.ndarray, list]:
+    """Odejmuje kolejno obce kluczowane stacje (od najgłośniejszej): [(Hz, dB, okien)].
+
+    `tor` (times, freqs z tune.track_tone): nasza stacja okno po oknie — patrz
+    odejmij_oknami. Bez toru: f_nasza w każdym oknie.
+    """
     from scipy.signal import hilbert
     if not np.isfinite(f_nasza):
         return np.asarray(x), []
@@ -160,8 +221,10 @@ def kasuj_obce(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> tuple[np.ndarra
         an = hilbert(y)
         e0 = _obwiednia(an, f_nasza, sr)
         obce = [(fo, g) for fo, g in obce
-                if np.corrcoef(e0, _obwiednia(an, fo, sr))[0, 1] <= KORELACJA_MAX
-                and _spojnosc(an, fo, sr) >= SPOJNOSC_MIN]
-    for fo, _ in obce:
-        y = odejmij(y, fo, f_nasza, sr)
-    return y.astype(np.float32), obce
+                if np.corrcoef(e0, _obwiednia(an, fo, sr))[0, 1] <= KORELACJA_MAX]
+    wyn = []
+    for fo, g in obce:
+        y, uzyte = odejmij_oknami(y, fo, f_nasza, sr, tor)
+        if uzyte:
+            wyn.append((fo, g, uzyte))
+    return y.astype(np.float32), wyn

@@ -1570,6 +1570,48 @@ Brakujące 3 słowa: obca 30 Hz obok po równo i +12 dB, 60 Hz obok +12 dB.
 - `probki/qrm/*.txt` i `tools/test_qrm.py` — pole „ton CW:" (symulacja
   operatora dostrojonego na swoją stację).
 
+### Pierwsza próba na paśmie: przeciwsygnał w oknach 10 s (20.10)
+
+**Nagranie** `probki/kluczownik/qso6_nowy_kluczownik12wpm_20261020_2107`:
+kluczownik IC-7300MK2 (podsłuch, break-in wyłączony, nic w eterze) na tle
+prawdziwego 40 m, 7,015 MHz CW-R FIL3, nowy tekst (`probki/teksty/qso6_nowy.txt`),
+12 WPM. **Ton CW z żywego radia: 0195 -> 760 Hz** — odczyt CI-V potwierdzony.
+Nasza stacja S/N ~26 dB, ale na paśmie dwie prawdziwe obce:
+684 Hz (76 Hz obok, 6-10 dB słabsza, prawie całe nagranie) i 742 Hz
+(18 Hz obok, -5 dB, pierwsze ~15 s).
+
+**Pierwszy odczyt: 32 błędy / 105 znaków** (klasyczny komparator: 463).
+Przeciwsygnał nic nie zrobił — 684 Hz miała spójność nośnej z CAŁEGO
+nagrania 0,18 (dryf, przerwy), w oknach 10 s 0,14-0,86. Przewidziane w
+poprzednim wpisie („stacja dryfująca nie przejdzie"), teraz zmierzone.
+
+**Co pomogło — spójność i odejmowanie w OKNACH 10 s** (zakładka 50%, okno
+Hanna; `odejmij_oknami`): **21 błędów**. Wymuszone odjęcie z całości: 28.
+Po drodze dwa błędy, oba złapane regresją:
+1. w krótkim oknie szum łatwiej przechodzi spójność 0,5 — skasowane szczyty
+   470-1004 Hz w „Nagrywanie (6)". Drugi próg w oknie: **poziom obcej względem
+   naszej >= -12 dB** (zmierzone na oknach ze spójnością >= 0,5: prawdziwe
+   obce -6,5...+12 dB; szum mediana -22, P90 -15,8);
+2. „nasza" = mediana pętli z całości, a F5OHS w „Nagrywanie (6)" nadawał na
+   712 Hz przez 10 s, potem szum i pętla na 757 — skasowaliśmy NASZĄ stację
+   (1/1 -> 0/1). Teraz nasza = **tor pętli w oknie** (`kasuj_obce(..., tor=)`).
+
+Uwaga o własnym narzędziu: porównanie plik po pliku przez `awk '{print $1, $3}'`
+gubiło nazwy ze spacją („Nagrywanie (6).wav") — brało złą kolumnę. Wcześniejsze
+„bez zmian" sprawdzone ponownie sumami zestawów (56 = 56), zgadzało się; teraz
+kolumna liczona od końca wiersza (`$(NF-2)`).
+
+**Regresja** (`out/viterbi_kasuj_okna.txt`): **1409/1570** — poza nowym
+nagraniem (21/29 słów) żaden plik bez zmian względem `out/viterbi_kasuj_v2.txt`,
+QRM 142.
+
+**Odrzucone:** odstęp 15 / 12 Hz i wycięcie naszej ±10 / ±8 Hz (na stację
+742 Hz, 18 Hz obok): 26 i 28 błędów zamiast 22 — stacji obecnej 15 s nie ma
+nawet wśród kandydatów (widmo z całości), a węższe wycięcie psuje naszą.
+**Zostaje:** stacja < 25 Hz obok to rozdzielanie w CZASIE (tempo, rytm,
+siatka Viterbiego), nie w częstotliwości. Kandydaci z widma całego nagrania
+— stacja obecna krótko może przepaść (do sprawdzenia na kolejnych nagraniach).
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

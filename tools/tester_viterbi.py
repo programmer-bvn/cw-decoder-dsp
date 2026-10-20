@@ -67,7 +67,7 @@ def main() -> None:
             a = frontend.load_audio(p)
             t, f = tune.track_tone(a, ton_cw=civ.ton_z_opisu(p.with_suffix(".txt")) if z_tonem else None)
             if kasuj and np.isfinite(f).any():
-                a, _ = PS.kasuj_obce(a, float(np.nanmedian(f)))
+                a, _ = PS.kasuj_obce(a, float(np.nanmedian(f)), tor=(t, f))
             a = tune.retune(a, t, f)
             if filtr:
                 a = tune.bandpass(a, C.TONE_CENTER, filtr)
