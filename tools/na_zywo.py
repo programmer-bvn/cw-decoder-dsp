@@ -3,6 +3,11 @@
     python -m tools.na_zywo symuluj nagranie.wav [...]     # nagranie podawane kawałkami
     python -m tools.na_zywo karta --device 15 [--civ]      # karta dźwiękowa (IC-7300 USB)
 
+Z kartą graficzną (karta dźwiękowa i COM są w Windows, WSL2 ich nie widzi):
+    WSL:      python -m tools.na_zywo serwer               # dekoder, GPU, tekst
+    Windows:  python -m tools.na_zywo most --device 15 --civ
+    (oba naraz: start_na_zywo_gpu.bat; próba bez radia: most --wav nagranie.wav)
+
 Zasada: bufor ostatnich OKNO_S sekund; co KROK_S cała sprawdzona droga
 (tools.odczyt.przygotuj: pętla tonu, przeciwsygnał, przestrojenie; sieć
 zboczy; jednostka; Viterbi) liczona na buforze od nowa. Znak jest
@@ -178,30 +183,143 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1) -> None:
 
 def karta(device: int, z_civ: bool) -> None:
     """Na żywo z karty dźwiękowej (np. IC-7300 USB audio). Tylko odbiór."""
-    import queue
-    import sounddevice as sd
-    from scipy.signal import resample_poly
     from tensorflow import keras
     from tools.odczyt import MODEL_ZBOCZY
-    ton = None
-    if z_civ:
-        from tools.radio import civ
-        ton = civ.stan()["ton_cw"]
+    ton = _ton_z_radia() if z_civ else None
     print(f"ton CW: {ton} Hz; Ctrl+C kończy", flush=True)
     d = OdczytNaZywo(keras.models.load_model(MODEL_ZBOCZY), ton_cw=ton)
-    info = sd.query_devices(device, "input")
-    sr_dev = int(info["default_samplerate"])
+    try:
+        for x in _strumien_karty(device):
+            nowe = d.dodaj(x)
+            if nowe:
+                print(nowe, end="", flush=True)
+    except KeyboardInterrupt:
+        print(d.koniec())
+
+
+def _ton_z_radia() -> float | None:
+    from tools.radio import civ
+    return civ.stan()["ton_cw"]
+
+
+class _Decymator:
+    """Karta (np. 48 kHz) -> C.SR kawałek po kawałku, ze STANEM filtra.
+    Pierwsza wersja (21.10) przepróbkowywała każdy kawałek 0,1 s osobno
+    (resample_poly) — filtr startował od zera co 100 ms, na stykach
+    stuki. Tu FIR antyaliasingowy z pamięcią (lfilter zi) i co m-ta próbka
+    w ciągłej fazie."""
+
+    def __init__(self, sr_dev: int):
+        from scipy.signal import firwin
+        self.sr_dev = sr_dev
+        self.m = sr_dev // C.SR if sr_dev % C.SR == 0 else 0
+        if self.m:
+            self.b = firwin(255, 0.9 * (C.SR / 2) / (sr_dev / 2))
+            self.zi = np.zeros(self.b.size - 1)
+            self.g = 0                                   # próbek karty dotąd
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        from scipy.signal import lfilter, resample_poly
+        if not self.m:                                   # np. 44,1 kHz: bez ciągłości
+            return resample_poly(x, C.SR, self.sr_dev).astype(np.float32)
+        y, self.zi = lfilter(self.b, [1.0], x, zi=self.zi)
+        out = y[(-self.g) % self.m::self.m]
+        self.g += x.size
+        return out.astype(np.float32)
+
+
+def _strumien_karty(device: int):
+    """Kawałki po ~0,1 s w C.SR z karty dźwiękowej (tylko odbiór)."""
+    import queue
+    import sounddevice as sd
+    sr_dev = int(sd.query_devices(device, "input")["default_samplerate"])
+    if sr_dev % C.SR:
+        print(f"UWAGA: karta {sr_dev} Hz nie jest wielokrotnością {C.SR} Hz — "
+              "przepróbkowanie kawałkami, bez ciągłości filtra", flush=True)
+    dec = _Decymator(sr_dev)
     q: queue.Queue = queue.Queue()
     with sd.InputStream(device=device, channels=1, samplerate=sr_dev, blocksize=sr_dev // 10,
-                        callback=lambda x, *_: q.put(x[:, 0].copy()), latency="high"):
+                        callback=lambda x, *_: q.put(x[:, 0].astype(np.float64)), latency="high"):
+        while True:
+            yield dec(q.get())
+
+
+# --------------------------------------------------------------------------
+# Most Windows -> WSL (22.10): karta i CI-V są w Windows (WSL2 ich nie widzi),
+# karta graficzna — w WSL. Windows wysyła próbki przez localhost, WSL liczy.
+# Protokół: wiersz JSON {"ton_cw": Hz|null, "sr": 8000}, potem float32 LE.
+# --------------------------------------------------------------------------
+PORT = 7355
+
+
+def serwer(port: int) -> None:
+    """WSL: czeka na most z Windows, dekoduje (karta graficzna), wypisuje tekst."""
+    import json
+    import socket
+    from tensorflow import keras
+    from tools.odczyt import MODEL_ZBOCZY
+    model = keras.models.load_model(MODEL_ZBOCZY)
+    with socket.create_server(("0.0.0.0", port)) as s:
+        while True:
+            print(f"czekam na most z Windows (port {port})...", flush=True)
+            c, adr = s.accept()
+            with c:
+                f = c.makefile("rb")
+                naglowek = json.loads(f.readline().decode())
+                ton = naglowek.get("ton_cw")
+                print(f"połączono {adr[0]}; ton CW: {ton} Hz", flush=True)
+                d = OdczytNaZywo(model, ton_cw=ton)
+                reszta = b""
+                while True:
+                    b = c.recv(65536)
+                    if not b:
+                        break
+                    b = reszta + b
+                    n = len(b) // 4 * 4
+                    reszta = b[n:]
+                    nowe = d.dodaj(np.frombuffer(b[:n], "<f4"))
+                    if nowe:
+                        print(nowe, end="", flush=True)
+                print(d.koniec(), flush=True)
+                print("\n--- most rozłączony ---", flush=True)
+
+
+def _strumien_wav(sciezka: Path):
+    """Nagranie zamiast karty, w tempie rzeczywistym (próba mostu bez radia)."""
+    a = frontend.load_audio(sciezka)
+    n = C.SR // 10
+    for i in range(0, a.size, n):
+        time.sleep(0.1)
+        yield a[i:i + n]
+
+
+def most(device: int, z_civ: bool, host: str, port: int, wav: Path | None = None) -> None:
+    """Windows: karta + CI-V -> próbki do serwera w WSL. Tylko odbiór."""
+    import json
+    import socket
+    ton = _ton_z_radia() if z_civ else None
+    if wav and ton is None:
+        from tools.radio import civ
+        ton = civ.ton_z_opisu(Path(wav).with_suffix(".txt"))
+    print(f"ton CW: {ton} Hz; łączę z {host}:{port} (dekoder w WSL)...", flush=True)
+    t0 = time.time()
+    while True:
         try:
-            while True:
-                x = resample_poly(q.get(), C.SR, sr_dev).astype(np.float32)
-                nowe = d.dodaj(x)
-                if nowe:
-                    print(nowe, end="", flush=True)
+            c = socket.create_connection((host, port), timeout=5)
+            break
+        except OSError:
+            if time.time() - t0 > 120:
+                raise SystemExit("Serwer w WSL nie odpowiada od 2 min — czy okno dekodera wystartowało?")
+            time.sleep(2)
+    c.settimeout(None)
+    print("połączono; tekst w oknie dekodera. Ctrl+C kończy.", flush=True)
+    with c:
+        c.sendall((json.dumps({"ton_cw": ton, "sr": C.SR}) + "\n").encode())
+        try:
+            for x in (_strumien_wav(wav) if wav else _strumien_karty(device)):
+                c.sendall(np.asarray(x, "<f4").tobytes())
         except KeyboardInterrupt:
-            print(d.koniec())
+            pass
 
 
 def main() -> None:
@@ -210,11 +328,20 @@ def main() -> None:
     s = sub.add_parser("symuluj"); s.add_argument("pliki", type=Path, nargs="+")
     k = sub.add_parser("karta"); k.add_argument("--device", type=int, default=15)
     k.add_argument("--civ", action="store_true")
+    sv = sub.add_parser("serwer"); sv.add_argument("--port", type=int, default=PORT)
+    m = sub.add_parser("most"); m.add_argument("--device", type=int, default=15)
+    m.add_argument("--civ", action="store_true")
+    m.add_argument("--host", default="127.0.0.1"); m.add_argument("--port", type=int, default=PORT)
+    m.add_argument("--wav", type=Path, default=None, help="nagranie zamiast karty (próba bez radia)")
     a = ap.parse_args()
     if a.cmd == "symuluj":
         symuluj(a.pliki)
-    else:
+    elif a.cmd == "karta":
         karta(a.device, a.civ)
+    elif a.cmd == "serwer":
+        serwer(a.port)
+    else:
+        most(a.device, a.civ, a.host, a.port, a.wav)
 
 
 if __name__ == "__main__":
