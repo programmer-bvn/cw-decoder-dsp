@@ -1734,6 +1734,22 @@ zakłada PL 3,5u / PS 7u (`viterbi.ODCINKI`); ręka ma własne proporcje.
 Hipoteza do sprawdzenia na nagraniu ręki ze znanym tekstem: proporcje
 przerw nadawcy uczone w trakcie odbioru (jak jednostka).
 
+**Sprawdzone 22.10 — ODRZUCONE.** Nagranie `probki/reka/qso6_reka` (manipulator:
+kropka 1,0 u, kreska 3,0 u, rozrzut < 5% — elementy maszynowe; przerwy
+ręczne: międzyliterowa mediana 3,4 u, P10-P90 2,6-4,3; międzywyrazowa
+6,9 u, 5,4-8,8 — rozkłady zachodzą na siebie w 4,5-5,5 u). Drugi przebieg
+Viterbiego ze środkami PL/PS z pierwszego (B): +1 słowo (qso6_reka 11 -> 12),
+reszta bez zmian; z rozrzutem z nagrania (C): 2 pliki lepsze, 2 gorsze.
+Mediany tej ręki ≈ założenia Viterbiego (3,5 / 7) — błąd nie w środkach,
+tylko w rozrzucie: przerwy ~5 u z samego czasu nie da się rozstrzygnąć.
+**Nowa miara — całe słowa** (słowo nadane stoi w odczycie osobno; odczyt
+cięty jak pole „nadane:", interpunkcja nie skleja): kluczownik 362/369,
+syntetyk 470/470, **ręka 25/45** (qso6_reka 12/31 — przy „bez spacji" ~31).
+Pierwsza wersja tej miary ciągnęła interpunkcję („QSO," ≠ „QSO") — syntetyk
+wychodził 380/470, fałszywie. **Następny krok (propozycja):** przerwy
+niejednoznaczne (~4-6 u) rozstrzyga słownik krótkofalarski + wzór znaku
+wywoławczego („MYNAME" -> „MY NAME", „SP2 MSA" -> „SP2MSA").
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

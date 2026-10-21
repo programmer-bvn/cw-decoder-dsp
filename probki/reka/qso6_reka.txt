@@ -1,0 +1,12 @@
+# NAGRANIE Z PASMA — tools/mic2wav.py --civ
+# 21.10 operator, ręka (manipulator: elementy z kluczownika elektronicznego —
+# kropka 1,0 u, kreska 3,0 u, rozrzut < 5%; przerwy ręczne). Bez nadawania.
+
+nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN PSE K SP2MSA DE SQ2BVN = GA DR OM = TKS FER CALL = UR RST IS = MY NAME IS MARIUSZ MARIUSZ = QTH QTH IS NR BYDGOSZCZ BYDGOSZCZ NR
+uwagi:         treść z odczytu, potwierdzona przez operatora: QTH dwa razy; liczba
+               w RST nadana „z czapy" (nieznana — poza oceną); pierwsza próba
+               BYDGOSZCZ zepsuta (klucz się zaciął — poza oceną). Nagranie
+               urywa się po 180 s w „NR BY...".
+pasmo:         7,035806 MHz, CW-R, FIL3 (CI-V przed nagraniem)
+ton CW:        760 Hz (CI-V 0x14 0x09)
+tor:           USB audio IC-7300MK2
