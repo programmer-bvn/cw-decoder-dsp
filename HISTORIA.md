@@ -1636,6 +1636,48 @@ stacji / kanał „nasza stacja" w wejściu + w danych tłok (kilka stacji
 Zboczy_4 (jedna obca stacja w danych, ta sama architektura) był gorszy —
 same dane bez zmiany wejścia nie wystarczyły.
 
+### Zboczy_5: drugie wejście z drobną skalą częstotliwości — tłok 86 -> 20 (21.10)
+
+**Zmiana wejścia** (`dsp/zbocza.py`, commit 8eaa836): obok obrazu mel
+(32 pasma, okno 32 ms — zbocza) obraz DROBNY: okno 128 ms, 32 prążki co
+7,8 Hz, 625-867 Hz (po `tune.retune` nasza stacja zawsze przy 750 Hz).
+Poziom tonu zrównany z mel (-26,4 dB, zmierzone; tło w drobnym 5,8 dB
+ciemniejsze — węższy prążek). Model: dwie gałęzie splotów zwijane po
+częstotliwości osobno, Concatenate, te same sploty po czasie (1,06 mln
+parametrów; DPU-bezpieczne). **Dane** (`ZAKRESY_ZBOCZY_5`): nasza ±10 Hz
+od 750 (było ±80 — sieć może się nauczyć „środek = nasza"), pojedyncza obca
+35% (15-200 Hz, -10...+6 dB), **tłok** 30% (2-4 stacje 15-200 Hz,
+-8...+4 dB). 160 tys. klipów, 20 epok (`out/zbocza/bieg_5.log`).
+Stara droga generatora bit w bit (80 klipów vs HEAD).
+
+**Pasmo** (ten sam tekst, 105 znaków; ton CW z radia):
+
+| nagranie | zboczy_3 | **zboczy_5** |
+|---|---|---|
+| 6 m spokój | 1 | **0** |
+| 40 m, dwie obce obok | 22 | **8** |
+| 40 m tłok | 86 | **20** |
+
+**Wszystkie zestawy** (słowa; `out/viterbi_zb5.txt` vs `out/viterbi_kasuj_okna.txt`
+i `out/viterbi_zb3_kluczownik.txt` — kluczownik z dwoma nowymi nagraniami):
+pasmo + mikrofon 56 / 56, kluczownik 333 -> **364**/369, ręka 14 / 14,
+syntetyk + szum 469 -> **470**/470, kluczownik + szum 425 -> **442**/456,
+QRM 142 -> **145**/257 (= sufit 145). Razem +82 słowa.
+Plik po pliku (po kolejności wierszy — nazwy ucięte do 58 znaków się
+powtarzają, porównanie po nazwie dawało fałszywe „gorzej"): 12 lepszych,
+**1 gorszy o słowo**: kluczownik + szum przy S/N 0 dB, „SP2MSA" -> „MP2MSA",
+„QSB" -> „*B" — rozrzut na poziomie szumu; przyjęte.
+Syntetyk (`zbocza_trening ocen`): S/N -3..3 dB mediana błędu zbocza 2,2 ms
+(zboczy_4: 2,8), fałszywe 10,9% (28,9%).
+
+**Gdzie mieszka:** domyślny model `runs/zbocza_5` w `tools/odczyt.py`,
+`tools/tester_viterbi.py`, `tools/viterbi_strojenie.py`. `etap2_trening`
+zostaje przy zboczy_3 (drugi etap jest poza drogą). Wagi (`*.keras`) poza
+gitem, jak dotąd — na `W:`.
+
+**Co zostaje:** tłok 20 błędów — koniec nagrania (dalej do zbadania);
+stacja < 25 Hz obok; live mode.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

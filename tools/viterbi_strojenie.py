@@ -1,6 +1,6 @@
 """STROJENIE VITERBIEGO (19.10): przebiegi sieci zboczy raz, siatka ustawień na procesorze.
 
-    python -m tools.viterbi_strojenie licz  out/viterbi_p.npz [--model runs/zbocza_3/best.keras]
+    python -m tools.viterbi_strojenie licz  out/viterbi_p.npz [--model runs/zbocza_5/best.keras]
     python -m tools.viterbi_strojenie siatka out/viterbi_p.npz
 
 `licz`: dla każdego nagrania z treścią (katalogi jak tester_viterbi) P co 5 ms,
@@ -69,7 +69,7 @@ def siatka(plik: Path) -> None:
 
 if __name__ == "__main__":
     if sys.argv[1] == "licz":
-        model = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else "runs/zbocza_3/best.keras"
+        model = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else "runs/zbocza_5/best.keras"
         licz(Path(sys.argv[2]), model)
     else:
         siatka(Path(sys.argv[2]))

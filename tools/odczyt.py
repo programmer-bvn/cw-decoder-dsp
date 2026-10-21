@@ -9,7 +9,8 @@ Bez opcji ton CW brany z pola „ton CW:" opisu nagrania (.txt), jeśli jest.
 Droga (każdy krok zmierzony, HISTORIA 17-19.10):
   1. tune.track_tone (ton kluczowany); przeciwsygnał — obce kluczowane
      stacje odtworzone i odjęte (dsp/przeciwsygnal); retune na 750 Hz
-  2. sieć zboczy (runs/zbocza_3): P(klucz wciśnięty) co 5 ms
+  2. sieć zboczy (runs/zbocza_5, 21.10: mel + obraz drobny wokół 750 Hz):
+     P(klucz wciśnięty) co 5 ms
   3. jednostka: cepstrum przebiegu (u + 3u + 7u) i grzebień (mediana okien)
   4. viterbi.dekoduj_najlepiej: odcinki zgodne z gramatyką Morse'a, bez
      bramki; jednostkę wybiera wynik Viterbiego.
@@ -30,7 +31,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsp import config as C, frontend, grzebien, przeciwsygnal as PS, tune, viterbi as V, zbocza as Z
 
-MODEL_ZBOCZY = Path("runs/zbocza_3/best.keras")
+# zboczy_5 od 21.10 (zboczy_3: 1409/1570 słów, tłok 40 m 86 błędów / 105 znaków;
+# zboczy_5: 1491/1628, tłok 20 — HISTORIA)
+MODEL_ZBOCZY = Path("runs/zbocza_5/best.keras")
 
 
 def przygotuj(a: np.ndarray, kasuj: bool = True, ton_cw: float | None = None) -> tuple[np.ndarray, float]:

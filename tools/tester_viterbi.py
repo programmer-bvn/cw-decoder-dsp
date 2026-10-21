@@ -30,7 +30,7 @@ def main() -> None:
     from tools import nagrania, wav2net
     from tools import tester_zbocza as T
     argv0 = sys.argv[1:]
-    model = "runs/zbocza_3/best.keras"
+    model = "runs/zbocza_5/best.keras"            # od 21.10; zboczy_3: --model runs/zbocza_3/best.keras
     if "--model" in argv0:
         i = argv0.index("--model"); model = argv0[i + 1]; del sys.argv[1 + i:1 + i + 2]
     mz = keras.models.load_model(model)
