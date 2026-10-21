@@ -233,6 +233,31 @@ def _okna(obrazy: list, krok: int):
     return np.stack(okna)[..., None], gdzie
 
 
+_FUNKCJE: dict = {}
+
+
+def _logit(model, wejscie, wsad: int = 64) -> np.ndarray:
+    """Sieć na oknach, wsadami po `wsad`, przez JEDNĄ skompilowaną funkcję.
+
+    model.predict kompilował sieć od nowa dla każdego nowego rozmiaru
+    ostatniego, niepełnego wsadu — odczyt na żywo (21.10): bufor rośnie
+    do 20 s, liczba okien co krok inna, 15-27 s na krok przez pierwsze
+    kroki i na końcu nagrania. Tu wymiar wsadu jest dowolny (None).
+    Wsad 64: przy 256 przydzielacz karty zgłaszał brak pamięci (19.10).
+    """
+    import tensorflow as tf
+    f = _FUNKCJE.get(id(model))
+    if f is None:
+        spec = [tf.TensorSpec((None,) + tuple(i.shape[1:]), tf.float32) for i in model.inputs]
+        f = tf.function(lambda *x: model(list(x) if len(x) > 1 else x[0], training=False),
+                        input_signature=spec)
+        _FUNKCJE[id(model)] = f
+    wej = wejscie if isinstance(wejscie, list) else [wejscie]
+    n = wej[0].shape[0]
+    return np.concatenate([f(*[tf.constant(w[s:s + wsad], tf.float32) for w in wej]).numpy()
+                           for s in range(0, n, wsad)])
+
+
 def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2,
                        drobne: list | None = None) -> list:
     """Jak przebieg_sieci, ale dla wielu obrazów naraz — jedno wywołanie
@@ -242,8 +267,7 @@ def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2,
     pad = (RAMKI_ZBOCZA - krok) // 2
     okna, gdzie = _okna(obrazy, krok)
     wejscie = [okna, _okna(drobne, krok)[0]] if drobne is not None else okna
-    # wsad 64: przy 256 przydzielacz karty zgłaszał brak pamięci i się cofał (19.10)
-    logit = model.predict(wejscie, verbose=0, batch_size=64)
+    logit = _logit(model, wejscie)
     p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
     return [p[i0:i0 + k].reshape(-1)[:n] for i0, k, n in gdzie]
 

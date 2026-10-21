@@ -1678,6 +1678,51 @@ gitem, jak dotąd — na `W:`.
 **Co zostaje:** tłok 20 błędów — koniec nagrania (dalej do zbadania);
 stacja < 25 Hz obok; live mode.
 
+### Odczyt na żywo (21.10)
+
+**Zasada** (`tools/na_zywo.py`): bufor ostatnich 20 s, co 2,5 s cała
+sprawdzona droga na buforze od nowa (pętla tonu, przeciwsygnał, sieć zboczy,
+jednostka, Viterbi); znak zatwierdzany, gdy skończył się >= 4 s przed końcem
+bufora. Nic nie przepisane na wersję strumieniową — każdy krok był mierzony
+na całych nagraniach, a okno 20 s ma skalę pętli tonu (6 s), przeciwsygnału
+(10 s) i cepstrum (8 s). Sprawdzian: `symuluj` — nagranie podawane po 0,1 s.
+
+**Szybkość — pierwsza wersja 5-6,5 s na krok co 2 s.** Zmierzone po kolei:
+1. **grzebień 1,55 s** (cepstrum ~0) — na żywo cepstrum co 5 kroków, grzebień
+   co 15, między nimi poprzednia jednostka; Viterbi oddaje odcinki zwycięzcy
+   (bez trzeciego przebiegu) i liczy tylko ostatnie 12 s bufora;
+2. **przeciwsygnał ~1 s bez niczego do skasowania** — nie pętle po siatce
+   częstotliwości (zamienione na FFT: wynik co do bitu ten sam, zysk mały),
+   tylko `filtfilt` (splot 801 współczynników w czasie, 38 wywołań na bufor:
+   1,24 s). `_lp` przez FFT z tym samym dopełnieniem brzegów i stanem
+   początkowym: różnica <= 3e-15, bufor wyjściowy identyczny, 3x szybciej
+   (np. 40 m 14,0 -> 5,7 s na całe nagranie);
+3. **`model.predict` kompilował sieć od nowa** dla każdego nowego rozmiaru
+   ostatniego wsadu — kroki 15-27 s, dopóki bufor rósł, i na końcu nagrania.
+   `zbocza._logit`: jedna `tf.function` z dowolnym wsadem. Logity różnią się
+   od `predict` o <= 0,02 (zakres ~20; inne algorytmy splotu na karcie) —
+   pełny test słów **1491/1628, każdy ze 104 plików bez zmian**
+   (`out/viterbi_zb5_tf.txt` vs `out/viterbi_zb5.txt`).
+
+**Wynik** (`out/na_zywo_symulacja.txt`, krok 2,5 s; błędy / 105 znaków):
+
+| nagranie | na żywo | całość | liczenie / 147 s dźwięku |
+|---|---|---|---|
+| 6 m spokój | 0 | 0 | 79 s |
+| 40 m dwie obok | 16 | 8 | 105 s |
+| 40 m tłok | 22 | 20 | 91 s |
+
+QRM 60 Hz +6 dB: na żywo = całość. Opóźnienie znaku (koniec znaku ->
+zatwierdzenie) mediana ~5 s, maks. 6,5 s (raz 11 s w tłoku). Krok średnio
+1,3-1,9 s na 2,5 s — szybciej niż czas rzeczywisty (bez przeciwsygnału do
+roboty; z obcą do skasowania ~2,0 s — stąd krok 2,5, nie 2). Przy kroku 2 s
+40 m dwie obok miało na żywo 8 = całość: różnica to tylko początek
+(„UG I TEVT MMM MTM2PVF" zamiast „OK2PVF") — pierwsze sekundy z krótkim
+buforem przy stacji 18 Hz obok.
+
+**Karta dźwiękowa** (`na_zywo karta --device 15 --civ`): napisane, NA RADIU
+JESZCZE NIE SPRAWDZONE (radio schowane).
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
