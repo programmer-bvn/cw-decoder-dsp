@@ -1,0 +1,33 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792604416.730124     687 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+I0000 00:00:1792604419.410793     687 gpu_device.cc:2043] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 3622 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050, pci bus id: 0000:09:00.0, compute capability: 8.6
+I0000 00:00:1792604421.808755     741 cuda_dnn.cc:461] Loaded cuDNN version 92600
+W0000 00:00:1792604431.057457     742 bfc_allocator.cc:311] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.58GiB with freed_by_count=0. The caller indicates that this is not a failure, but this may mean that there could be performance gains if more memory were available.
+W0000 00:00:1792604433.365885     741 bfc_allocator.cc:311] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.83GiB with freed_by_count=0. The caller indicates that this is not a failure, but this may mean that there could be performance gains if more memory were available.
+W0000 00:00:1792604435.761105     741 bfc_allocator.cc:311] Allocator (GPU_0_bfc) ran out of memory trying to allocate 4.09GiB with freed_by_count=0. The caller indicates that this is not a failure, but this may mean that there could be performance gains if more memory were available.
+W0000 00:00:1792604438.467825     742 bfc_allocator.cc:311] Allocator (GPU_0_bfc) ran out of memory trying to allocate 4.34GiB with freed_by_count=0. The caller indicates that this is not a failure, but this may mean that there could be performance gains if more memory were available.
+
+qrm_df060_poz+06_06.wav  (40 s, ton CW 735.0)
+  na żywo : DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO
+  całość  : DL1ABC/P DE SQ2BVN = TNX FER NICE QSO, HANS = QSL VIA BURO
+  różnica na żywo / całość: 0 znaków; błędy wobec nadanego: na żywo 25, całość 25 / 71
+  opóźnienie znaku (koniec znaku -> zatwierdzenie): mediana 5.2 s, maks. 6.4 s; krok liczony średnio 1.92 s, maks. 3.87 s (krok co 2 s); całość 33 s na 40 s dźwięku
+
+qso6_nowy_kluczownik12wpm_20261020_2339.wav  (147 s, ton CW 760.0)
+  na żywo : OK2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C = PWR 50W ANT GP = 73 ES GL OK2PVF DE SQ2BVN +
+  całość  : OK2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C = PWR 50W ANT GP = 73 ES GL OK2PVF DE SQ2BVN +
+  różnica na żywo / całość: 0 znaków; błędy wobec nadanego: na żywo 0, całość 0 / 105
+  opóźnienie znaku (koniec znaku -> zatwierdzenie): mediana 5.1 s, maks. 6.5 s; krok liczony średnio 1.33 s, maks. 3.48 s (krok co 2 s); całość 79 s na 147 s dźwięku
+
+qso6_nowy_kluczownik12wpm_20261020_2107.wav  (147 s, ton CW 760.0)
+  na żywo : UG I TEVT MMM MTM2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C = PWR 50W ANT GP * 73 ES GL OK2PVF DE SQ2BVN + EE
+  całość  : TAEEKOK2PVF DE SQ2BVN = PM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C = PWR 50W ANT GP * 73 ES GL OK2PVF DE SQ2BVN + N
+  różnica na żywo / całość: 15 znaków; błędy wobec nadanego: na żywo 16, całość 8 / 105
+  opóźnienie znaku (koniec znaku -> zatwierdzenie): mediana 5.0 s, maks. 6.5 s; krok liczony średnio 1.78 s, maks. 4.11 s (krok co 2 s); całość 105 s na 147 s dźwięku
+
+qso6_nowy_kluczownik12wpm_20261020_2354.wav  (147 s, ton CW 760.0)
+  na żywo : EOK2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C **50W ANT GP* 73 *GL ***G*VN + EE
+  całość  : OK2PVF DE SQ2BVN = GM OM TNX CALL = UR RST 579 579 = QTH KRAKOW KRAKOW = OP JAN = WX CLOUDY 8C **50W ANT GP* 73 *GL ****VN + EI
+  różnica na żywo / całość: 3 znaków; błędy wobec nadanego: na żywo 22, całość 20 / 105
+  opóźnienie znaku (koniec znaku -> zatwierdzenie): mediana 5.1 s, maks. 11.2 s; krok liczony średnio 1.54 s, maks. 3.90 s (krok co 2 s); całość 91 s na 147 s dźwięku
