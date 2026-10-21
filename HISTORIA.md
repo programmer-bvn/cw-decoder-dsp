@@ -1725,6 +1725,14 @@ przez operatora na IC-7300 — nadawanie z RĘKI, odczyt na żywo, także
 z przerwami w nadawaniu.** Słowa operatora: „kamień milowy, nigdy wcześniej
 nie było wersji, co dekoduje z ręki". Bez nagrania i bez miary znakowej —
 następnym razem nagrać sesję (`mic2wav --civ`) z zapisanym tekstem.
+Z wydruku sesji (operator wkleił): uruchomione w Windows — TensorFlow BEZ
+karty, sam procesor — i nadążało. Litery w większości dobre („SP2MSA DE
+SQ2BVN", „QSB QSB", „HW??", „73"); błędy prawie wyłącznie w PRZERWACH:
+„SP2 MSA", „S Q2BVN", „TKSF ER", „55 N" (5NN) — przerwa międzyliterowa
+wzięta za międzywyrazową; „CQCQCQ", „DESQ2BVNPSEK" — odwrotnie. Viterbi
+zakłada PL 3,5u / PS 7u (`viterbi.ODCINKI`); ręka ma własne proporcje.
+Hipoteza do sprawdzenia na nagraniu ręki ze znanym tekstem: proporcje
+przerw nadawcy uczone w trakcie odbioru (jak jednostka).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
