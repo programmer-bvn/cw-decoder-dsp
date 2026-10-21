@@ -1720,8 +1720,11 @@ roboty; z obcą do skasowania ~2,0 s — stąd krok 2,5, nie 2). Przy kroku 2 s
 („UG I TEVT MMM MTM2PVF" zamiast „OK2PVF") — pierwsze sekundy z krótkim
 buforem przy stacji 18 Hz obok.
 
-**Karta dźwiękowa** (`na_zywo karta --device 15 --civ`): napisane, NA RADIU
-JESZCZE NIE SPRAWDZONE (radio schowane).
+**Karta dźwiękowa** (`na_zywo karta --device 15 --civ`): **21.10 sprawdzone
+przez operatora na IC-7300 — nadawanie z RĘKI, odczyt na żywo, także
+z przerwami w nadawaniu.** Słowa operatora: „kamień milowy, nigdy wcześniej
+nie było wersji, co dekoduje z ręki". Bez nagrania i bez miary znakowej —
+następnym razem nagrać sesję (`mic2wav --civ`) z zapisanym tekstem.
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
