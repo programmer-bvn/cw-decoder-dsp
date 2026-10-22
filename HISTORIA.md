@@ -1750,6 +1750,53 @@ wychodził 380/470, fałszywie. **Następny krok (propozycja):** przerwy
 niejednoznaczne (~4-6 u) rozstrzyga słownik krótkofalarski + wzór znaku
 wywoławczego („MYNAME" -> „MY NAME", „SP2 MSA" -> „SP2MSA").
 
+### Odczyt na żywo, wersja 2 — znak na ekranie po ~1-2 s (22.10, gałąź `na_zywo_szybciej`)
+
+**Objaw.** Operator, po sesjach z `start_na_zywo.bat`: „dekoduje, ale od
+nadania znaku do pojawienia się na ekranie 6-7 s — upierdliwe". Wersja 1
+zostaje odniesieniem: tag **`na_zywo_v1`** (jak Python przed przyspieszeniem
+3D na COBRĘ).
+
+**Przyczyna — zmierzona** (Windows, procesor, ta sama miara dla obu wersji:
+koniec znaku -> chwila pokazania = koniec dźwięku w kroku + czas liczenia):
+v1 = zwłoka zatwierdzenia ~5,1 s + liczenie kroku 1,4-2,3 s = **6,5-7,4 s**.
+Koszt kroku na buforze 20 s (40 m tłok, 8 obcych): pętla tonu 0,22 s,
+przeciwsygnał 1,12 s, sieć 0,23 s, **Viterbi 0,71 s** (pętla Pythona po
+ramkach x stanach).
+
+**Co zrobione:**
+1. **Viterbi w numba** (`viterbi._naprzod`): te same działania w tej samej
+   kolejności — 151 przebiegów ze 114 nagrań (`p_zb5`) **co do bitu ten sam
+   tekst, odcinki i wynik**; 512 s -> 13 s (z kompilacją).
+2. **Tekst wstępny**: znaki młodsze niż zwłoka zatwierdzenia pokazywane od
+   razu (szare, przerysowywane co krok — `na_zywo.Ekran`); zatwierdzanie bez
+   zmian. Litera bez >= 2 u ciszy za sobą nie jest pokazywana (`DOKONCZONA_U`)
+   — bez tego „T -> N -> K" w trakcie nadawania: zmian wstępnego 174 -> 75
+   na 105 znaków (6 m), opóźnienie +0,4 s.
+3. **Krok co >= 0,5 s, a gdy liczy się dłużej — zaraz po poprzednim**;
+   bufor 12 s zamiast 20 (Viterbi i tak liczył ostatnie 12 s); jednostka
+   z P sklejonego z kroków (20 s).
+4. **Jednostka w każdym kroku, póki przebieg < 8 s** — bez tego pierwsza
+   jednostka (z 2 s) trzymała się 12,5 s: „UG I TEVT MMM MTM TTMNM..." na
+   początku 40 m (30 błędów zamiast 9).
+5. **Rozgrzewka** przed odbiorem (`rozgrzej`): pierwszy krok w WSL trwał
+   14,4 s (TensorFlow + kompilacja numba).
+
+**Wynik** (symulacja, Windows procesor; błędy / znaków nadanych):
+
+| nagranie | błędy v1 | **błędy v2** | v1: znak na ekranie | **v2: wstępny (mediana / P90)** | v2: zatwierdzony |
+|---|---|---|---|---|---|
+| 6 m spokój | 0/105 | **0** | 5,1 + 1,8 s | **1,4 / 1,7 s** | 5,1 s |
+| 40 m dwie obok | 16/105 | **9** | 5,0 + 2,3 s | **1,8 / 3,4 s** | 5,5 s |
+| 40 m tłok | 22/105 | **22** | 5,1 + 2,1 s | **1,7 / 2,9 s** | 5,5 s |
+| ręka qso6_reka | 12/118 | **12** (tekst = całość) | 5,3 + 1,4 s | **1,0 / 1,4 s** | 4,9 s |
+
+Krok średnio 0,56-0,99 s, całość 134-166 s na 147-180 s dźwięku — procesor
+zajęty w ~90%; w WSL z kartą graficzną 0,47 s (sieć to mała część kroku,
+reszta to procesor). Most Windows -> WSL sprawdzony z nagraniem: tekst
+wstępny narasta litera po literze, czas rzeczywisty. **Nie sprawdzone na
+radiu** — następny krok: operator na IC-7300.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

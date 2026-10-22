@@ -26,6 +26,7 @@ ciszę, bo żaden podział na elementy nie wygrywa z nią budżetem.
 from __future__ import annotations
 
 import numpy as np
+from numba import njit
 
 from . import config as C
 from . import zbocza as Z
@@ -97,6 +98,50 @@ def dekoduj_najlepiej(p: np.ndarray, kandydaci: list[float]) -> tuple[str, float
     return naj
 
 
+@njit(cache=True)
+def _naprzod(cm, cg, znak, d, kara, granice, poprz, start):
+    """Przebieg w przód Viterbiego po odcinkach. 22.10 (szybszy odczyt na
+    żywo): w Pythonie/numpy 0,44 s na 12 s przebiegu (pętla po ramkach x
+    stanach), tu ~100x mniej — te same działania w tej samej kolejności,
+    remisy jak np.argmax (pierwszy). Odcinki stanu s: d[granice[s]:granice[s+1]]
+    rosnąco; poprz[s] — poprzednicy, -1 = koniec listy."""
+    T = cm.size - 1
+    S = znak.size
+    delta = np.full((T + 1, S), -np.inf)
+    skad_d = np.zeros((T + 1, S), np.int32)
+    skad_s = np.full((T + 1, S), -1, np.int8)
+    for t in range(1, T + 1):
+        for s in range(S):
+            naj, naj_d, naj_s = -np.inf, 0, -1
+            jest = False
+            for j in range(granice[s], granice[s + 1]):
+                dd = d[j]
+                if dd > t:
+                    break
+                a = t - dd
+                em = (cm[t] - cm[a]) if znak[s] else (cg[t] - cg[a])
+                bp, jp = -np.inf, -1
+                for q in range(S):
+                    p = poprz[s, q]
+                    if p < 0:
+                        break
+                    if jp < 0 or delta[a, p] > bp:
+                        bp, jp = delta[a, p], p
+                od_startu = False
+                if a == 0 and start[s] >= bp:
+                    bp = start[s]
+                    od_startu = True
+                w = bp + em + kara[j]
+                if not jest or w > naj:
+                    naj, naj_d, naj_s = w, dd, (-1 if od_startu else jp)
+                    jest = True
+            if jest:
+                delta[t, s] = naj
+                skad_d[t, s] = naj_d
+                skad_s[t, s] = naj_s
+    return delta, skad_d, skad_s
+
+
 def dekoduj(p: np.ndarray, u: float, z_wynikiem: bool = False):
     """P co 5 ms + jednostka -> (tekst ze spacjami, odcinki [(nazwa, od, do)])
     [, wynik na ramkę]."""
@@ -111,29 +156,15 @@ def dekoduj(p: np.ndarray, u: float, z_wynikiem: bool = False):
         kara = -KARA_DLUGOSCI * (np.log(d / (wz * uf))) ** 2 / (2 * sig ** 2)
         par.append((znak, d, kara))
     S = len(ODCINKI)
-    delta = np.full((T + 1, S), -np.inf)
-    skad_d = np.zeros((T + 1, S), np.int32)
-    skad_s = np.full((T + 1, S), -1, np.int8)
     idx = {n: i for i, n in enumerate(NAZWY)}
-    poprz = [[idx[x] for x in POPRZEDNICY[n]] for n in NAZWY]
+    poprz = np.full((S, S), -1, np.int64)
+    for s, n in enumerate(NAZWY):
+        poprz[s, :len(POPRZEDNICY[n])] = [idx[x] for x in POPRZEDNICY[n]]
     start = np.zeros(S); start[[idx["K1"], idx["K3"]]] = -2.0   # można zacząć od czegokolwiek
-    for t in range(1, T + 1):
-        for s, (znak, d, kara) in enumerate(par):
-            dd = d[d <= t]
-            if not dd.size:
-                continue
-            a = t - dd
-            em = (cm[t] - cm[a]) if znak else (cg[t] - cg[a])
-            kd = kara[:dd.size]
-            prev = delta[a][:, poprz[s]]                      # [len(dd), |poprz|]
-            jp = np.argmax(prev, axis=1)
-            best_prev = prev[np.arange(dd.size), jp]
-            best_prev = np.where(a == 0, np.maximum(best_prev, start[s]), best_prev)
-            wyn = best_prev + em + kd
-            j = int(np.argmax(wyn))
-            delta[t, s] = wyn[j]
-            skad_d[t, s] = dd[j]
-            skad_s[t, s] = -1 if (a[j] == 0 and best_prev[j] == start[s]) else poprz[s][jp[j]]
+    granice = np.r_[0, np.cumsum([d.size for _, d, _ in par])].astype(np.int64)
+    delta, skad_d, skad_s = _naprzod(
+        cm, cg, np.array([z for z, _, _ in par]), np.concatenate([d for _, d, _ in par]).astype(np.int64),
+        np.concatenate([k for _, _, k in par]), granice, poprz, start)
     # powrót
     s = int(np.argmax(delta[T])); t = T
     odc = []
