@@ -1888,7 +1888,38 @@ sygnał 30-47 dB nad podłogą, szum w przerwach maks. 12-17 dB — tam próg
 suwakiem do sytuacji; zmiany progu zapisywane w dzienniku sesji. Okienko
 (tkinter): tekst jasny/szary, wskaźnik tonu nad szumem z kreską progu,
 zamknięcie okna zamyka sesję porządnie. `start_na_zywo.bat` -> okno.
-**Nie sprawdzone na radiu.**
+Na radiu 23.10 (operator, zrzut okna, 14 min, blokada 5 dB): bez śmieci
+w przerwach, krok śr. 0,055 s; operator: „bardzo ładnie to działa”.
+
+### Słownik — spacje rozstrzygane słownikiem, znane słowa na zielono (24.10)
+
+**Objaw:** ręka — litery dobre, przerwy nie: „CQCQCQDESQ2BVN”, „MYNAME”,
+„TKSF ER”, „SP2 MSA”; całe słowa ręka 25/45 przy literach prawie bez błędu.
+Przerwy ~5 u z samego czasu nie do rozstrzygnięcia (rozkłady zachodzą,
+wpis wyżej). **Decyzja operatora:** słowa znane ZIELONE, spacje wokół nich
+poprawione, LITER NIE POPRAWIAĆ („nie będziemy wiedzieli, czy dekoder pracuje”).
+**`dsp/slownik.py`:** słownik ogólny (Q-kody, skróty, słowa QSO — z praktyki,
+NIE z tekstów nagrań testowych), osobisty (`dsp/slownik_osobisty.txt`: imię,
+QTH), wzór znaku wywoławczego i RST. Programowanie dynamiczne po literach:
+znane słowo zyskuje tyle, ile ma liter; spacja przestawiana tylko przy
+przerwie niejednoznacznej (rozdzielić >= 3,0 u, skleić <= 6,0 u), kara 0,3.
+**Bezpiecznik:** pierwsza wersja zrobiła z „MAR IUS” „M AR IUS” (AR w
+słowniku) — rozdzielić ciąg z odczytu wolno tylko między dwoma znanymi,
+obok znanego długiego (>= 4 litery: znak) albo obok „=”, „?”.
+**Wynik** (114 nagrań, całe słowa; `p_zb5`):
+
+| | bez | ze słownikiem |
+|---|---|---|
+| ręka | 25/45 | **38/45** |
+| pasmo + mikrofon | 45/62 | **51/62** |
+| kluczownik | 362/369 | 363/369 |
+| zaszumione syntetyk / prawdziwe | 470/470, 434/456 | bez zmian |
+| QRM | 141/257 | bez zmian |
+
+Bez bezpiecznika rozdzielanie od 3,0 u traciło 15-25 słów na kluczowniku
+i zaszumionych; sklejanie do 7 u: kluczownik -4. W okienku: tekst
+zatwierdzony przez słownik (końcówka 120 znaków przerysowywana co krok,
+starsze zamrażane), znane słowa zielone, „M+IUS” zostaje jak jest.
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 

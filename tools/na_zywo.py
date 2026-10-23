@@ -623,7 +623,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
     import traceback
     import tkinter as tk
 
-    TLO, JASNY, SZARY = "#101214", "#e8e8e8", "#6c7078"
+    TLO, JASNY, SZARY, ZIELONY = "#101214", "#e8e8e8", "#6c7078", "#5fd068"
     q: queue.Queue = queue.Queue()
     stop = threading.Event()
     nast = {"prog": float(PROG_BLOKADY_DB)}
@@ -657,7 +657,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                 if len(d.czasy) > n:
                     if s:
                         s.krok(d, nowe)
-                    q.put(("krok", nowe, d.wstepny, d.stan, d.nad_szumem_db))
+                    q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
+                           d.wstepny, d.stan, d.nad_szumem_db, d.u))
             gen.close()
         except Exception:
             q.put(("blad", traceback.format_exc()))
@@ -666,7 +667,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                 nowe = d.koniec()
                 if s:
                     s.zamknij(d)
-                q.put(("krok", nowe, "", d.stan, 0.0))
+                q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
+                       "", d.stan, 0.0, d.u))
 
     root = tk.Tk()
     root.title("Dekoder CW — na żywo")
@@ -694,7 +696,23 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                     insertbackground=TLO, padx=10, pady=8)
     tekst.pack(fill="both", expand=True)
     tekst.tag_configure("wst", foreground=SZARY)
-    zat = {"n": 0, "ost": ""}
+    tekst.tag_configure("zielone", foreground=ZIELONY)
+    # Tekst zatwierdzony przez słownik (dsp/slownik.py): spacje mogą się
+    # jeszcze przestawić, więc końcówkę (od `od`) rysujemy co krok od nowa;
+    # starsze niż OTWARTE znaków zamrażamy na spacji.
+    OTWARTE = 120
+    zat = {"znaki": [], "od": 0, "u": float("nan")}
+    tekst.mark_set("otwarte", "1.0")
+    tekst.mark_gravity("otwarte", "left")
+
+    def rysuj(znaki: list, u: float) -> None:
+        from dsp import slownik as SL
+        if np.isfinite(u) and u > 0:
+            slowa = SL.koloruj(znaki, u)
+        else:
+            slowa = [(w, False) for w in "".join(z[0] for z in znaki).split()]
+        for w, zn in slowa:
+            tekst.insert("end", w + " ", "zielone" if zn else ())
 
     def odswiez() -> None:
         try:
@@ -706,15 +724,22 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                     stan.config(text="BŁĄD — szczegóły w oknie", fg="#e05050")
                     tekst.insert("end", "\n" + m[1], "wst")
                 else:
-                    _, nowe, wst, st, nad = m
-                    tekst.delete(f"1.0+{zat['n']}c", "end")
-                    for z in nowe:
-                        if z == " " and zat["ost"] in ("", " "):
-                            continue
-                        tekst.insert("end", z)
-                        zat["n"] += 1
-                        zat["ost"] = z
-                    tekst.insert("end", wst.lstrip() if zat["ost"] in ("", " ") else wst, "wst")
+                    _, nowe, wst, st, nad, u = m
+                    zn = zat["znaki"]
+                    zn += nowe
+                    if np.isfinite(u):
+                        zat["u"] = u
+                    tekst.delete("otwarte", "end")
+                    if len(zn) - zat["od"] > OTWARTE:          # zamrożenie starszej części
+                        k = len(zn) - OTWARTE // 2
+                        while k < len(zn) and zn[k][0] != " ":
+                            k += 1
+                        rysuj(zn[zat["od"]:k], zat["u"])
+                        tekst.mark_set("otwarte", "end-1c")
+                        zat["od"] = k
+                    rysuj(zn[zat["od"]:], zat["u"])
+                    pusto = tekst.get("end-2c", "end-1c") in ("", " ", "\n")
+                    tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
                     tekst.see("end")
                     stan.config(text=st)
                     x = max(0.0, min(1.0, nad / ZAKRES)) * W_M

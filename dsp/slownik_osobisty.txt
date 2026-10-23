@@ -1,0 +1,6 @@
+# Słownik osobisty operatora (dsp/slownik.py) — własne dane, jak w każdym
+# programie do łączności: imię, QTH, znaki znajomych. Jedno lub kilka słów
+# w wierszu; po „#" komentarz. Znaki wywoławcze i raporty RST rozpoznaje
+# wzór, nie trzeba ich tu wpisywać.
+MARIUSZ MARIUS     # imię operatora SQ2BVN (nadaje bez Z)
+BYDGOSZCZ          # QTH
