@@ -98,14 +98,29 @@ def _slowa() -> set[str]:
 SLOWA = _slowa()
 
 
+# Dwuliterowe tylko najczęstsze: ze slangiem świeciły kawałki złych słów —
+# „T MA YNAMIS”, „MO O M” (okno na radiu 24.10). Rzadkie dwuliterowe
+# (MA, MO, EL, OB, ...) słownik pomija: ani zielone, ani nie przestawiają spacji.
+DWULITEROWE = set("""
+CQ DE UR OM GM GA GE GN ES HR FB TU GL VY WX TX RX OK OP IS MY NR HW DX YL
+SK KN BK CU DR GD 73 88 55 99 IN AT TO SO NW AB AS AR
+""".split())
+QSET = set(QKODY.split())
+# Kod Q wolno skleić przy dłuższej przerwie: „QS B”, „QR Z”, „QS L” (okno 24.10)
+SKLEJ_Q_U = 9.0
+
+
 def znane(w: str) -> bool:
     if len(w) == 1:
         return w in POJEDYNCZE
+    if len(w) == 2:
+        return w in DWULITEROWE
     return w in SLOWA or bool(ZNAK.match(w)) or bool(RST.match(w))
 
 
 def podziel(litery: list[str], spacja: list[bool], przerwa_u: list[float],
-            rozdziel_u: float = ROZDZIEL_U, sklej_u: float = SKLEJ_U) -> list[tuple[str, bool]]:
+            rozdziel_u: float = ROZDZIEL_U, sklej_u: float = SKLEJ_U,
+            sklej_q_u: float | None = None) -> list[tuple[str, bool]]:
     """litery[i]; spacja[k], przerwa_u[k] — granica PRZED literą k (k >= 1;
     [0] nieużywane), przerwa w jednostkach (nan = nieznana: nie ruszamy).
     -> [(słowo, czy znane)] po kolei; słowa nieznane to ciągi liter między
@@ -113,6 +128,8 @@ def podziel(litery: list[str], spacja: list[bool], przerwa_u: list[float],
     n = len(litery)
     if not n:
         return []
+    if sklej_q_u is None:
+        sklej_q_u = SKLEJ_Q_U
 
     def granica(k: int, chce_spacji: bool) -> float | None:
         """Koszt ustawienia granicy k; None = niedozwolone."""
@@ -165,16 +182,20 @@ def podziel(litery: list[str], spacja: list[bool], przerwa_u: list[float],
             if not LITERA.match(litery[i]):
                 continue
             wew = 0.0
+            tylko_q = False                   # w środku przerwa w (sklej_u, sklej_q_u]
             for j in range(i + 1, min(n, i + NAJDLUZSZE) + 1):
                 if not LITERA.match(litery[j - 1]):
                     break
                 if j - 1 > i:
                     k = granica(j - 1, False)
                     if k is None:
-                        break
+                        g = przerwa_u[j - 1]
+                        if not (spacja[j - 1] and g == g and g <= sklej_q_u and litery[i] == "Q"):
+                            break
+                        k, tylko_q = KARA_ZMIANY, True
                     wew += k
                 w = "".join(litery[i:j])
-                if not znane(w):
+                if not znane(w) or (tylko_q and w not in QSET):
                     continue
                 zc = 2 if len(w) >= DLUGIE else 1
                 k = przed(i, zp, zc)

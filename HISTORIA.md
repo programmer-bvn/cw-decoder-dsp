@@ -1934,6 +1934,18 @@ jak sygnał). Słownik uzupełniony slangiem krótkofalarskim (tabela
 z Wikipedii) i pełną listą kodów Q — oba wkleił operator; 459 słów,
 całe słowa bez zmian (1497: ręka 38/45, nigdzie strat).
 
+**Po pierwszym oknie na radiu (24.10)** — trzy poprawki, operator: „zrób
+wszystkie trzy”:
+1. Fałszywe zielone ze slangu: „T MA YNAMIS”, „MO O M” — dwuliterowe tylko
+   z listy najczęstszych (`DWULITEROWE`: DE UR OM GM ES HR FB TU 73 ...);
+   rzadkie (MA, MO, EL, OB...) pomijane. Wynik bez zmian (1497).
+2. „QS B”, „QR Z”, „QS L” — przerwa > 6 u. Kod Q (z listy operatora) wolno
+   skleić do 9 u (`SKLEJ_Q_U`); 8-14 u: +1 słowo (pasmo 52/62), nigdzie
+   strat. Sesja 004621: „QR Z” -> QRZ, „QS B QSL QSB QSL QS L” -> „QSB QSL
+   QSB QSL QSL”; dwa „QS B” z przerwą > 9 u zostają.
+3. Wodospad: skala barw (maksimum) opadała 1 dB/s — w ciszy szum świecił
+   jak sygnał; teraz 0,1 dB/s.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

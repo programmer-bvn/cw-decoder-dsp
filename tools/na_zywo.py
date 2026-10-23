@@ -667,6 +667,7 @@ W_WOD, H_WOD = 980, 90                     # px; kolumna = 20 ms -> 19,6 s wida�
 # zakres barw pod maksimum: przy 60 dB (jak Live-Specgram) szum na 40 m był
 # jasny jak sygnał; operator 24.10: 40 dB
 ZAKRES_WOD_DB = 40.0
+OPADANIE_DB_S = 0.1
 
 
 class _ObrazWodospadu:
@@ -687,8 +688,9 @@ class _ObrazWodospadu:
         ok = kol[kol > -119]
         if ok.size:
             m = float(ok.max())
-            # maksimum opada 1 dB/s
-            self.vmax = m if self.vmax is None else max(m, self.vmax - k * Wodospad.KROK / C.SR)
+            # maksimum opada OPADANIE_DB_S: przy 1 dB/s po kilkunastu s ciszy
+            # szum świecił jak sygnał (okno na radiu 24.10) — sam obraz, nie dekoder
+            self.vmax = m if self.vmax is None else max(m, self.vmax - OPADANIE_DB_S * k * Wodospad.KROK / C.SR)
         vmax = self.vmax if self.vmax is not None else 0.0
         v = np.clip((kol - (vmax - ZAKRES_WOD_DB)) / ZAKRES_WOD_DB, 0, 1)
         wiersze = np.round(np.linspace(kol.shape[1] - 1, 0, H_WOD)).astype(int)   # niskie na dole
