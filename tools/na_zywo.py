@@ -1,7 +1,8 @@
 """ODCZYT NA ŻYWO (21.10; strumieniowy v3 23.10): dźwięk kawałkami -> tekst.
 
     python -m tools.na_zywo symuluj nagranie.wav [...]     # nagranie w tempie rzeczywistym
-    python -m tools.na_zywo karta [--device NR|NAZWA] [--civ]   # karta (domyślnie „USB Audio”)
+    python -m tools.na_zywo okno  [--device NR|NAZWA] [--civ]   # okienko: tekst, suwak blokady szumów
+    python -m tools.na_zywo karta [--device NR|NAZWA] [--civ]   # to samo w konsoli (karta: „USB Audio”)
 
 Z kartą graficzną (karta dźwiękowa i COM są w Windows, WSL2 ich nie widzi):
     WSL:      python -m tools.na_zywo serwer               # dekoder, GPU, tekst
@@ -37,7 +38,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp import config as C, frontend, viterbi as V, zbocza as Z  # noqa: E402
+from dsp import blokada as B, config as C, frontend, viterbi as V, zbocza as Z  # noqa: E402
 from dsp.grzebien import _ODWROTNY, NIEZNANY  # noqa: E402
 
 KROK_S = 0.25
@@ -60,6 +61,10 @@ VITERBI_S = 12.0
 # Tekst wstępny: litera pokazywana, gdy za nią minęło DOKONCZONA_U jednostek
 # ciszy — bez tego „T -> N -> K" w trakcie nadawania (v2: zmian 174 -> 75 na 105 znaków).
 DOKONCZONA_U = 2.0
+# Blokada szumów (dsp/blokada.py): domyślny próg [dB nad podłogą]; w okienku suwak.
+PROG_BLOKADY_DB = 0.0
+# Szczyt w oknie analizy o tyle niżej niż ostatniej stacji = cisza, wzmocnienie stoi.
+SPADEK_CISZY_DB = 30.0
 
 
 def znaki_z_odcinkow(odc: list, t0: float) -> list[tuple[str, float, float]]:
@@ -119,7 +124,8 @@ def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray | No
     ost = ok & (t >= (x.size / sr - TON_S))
     f_n = float(np.median(f[ost])) if ost.any() else (float(np.median(f[ok])) if ok.any() else float("nan"))
     obce = PS.obce_w_oknie(x, f_n, sr)
-    return f_n, obce, wav2net.auto_gain_db(_przygotuj(x, n0, f_n, obce, 0.0, sr)), kand
+    szczyt = wav2net.measure_peak_db(_przygotuj(x, n0, f_n, obce, 0.0, sr))
+    return f_n, obce, (wav2net.TARGET_PEAK_DB - szczyt if ok.any() else None, szczyt), kand
 
 
 class OdczytNaZywo:
@@ -146,7 +152,11 @@ class OdczytNaZywo:
             from concurrent.futures import ProcessPoolExecutor
             self._watek = ProcessPoolExecutor(1, mp_context=mp.get_context("spawn"))
         self.hist = np.zeros(0, np.float32)    # P; hist[0] to ramka h0 (co V.DT od początku)
+        self.hist_poz = np.zeros(0, np.float32)  # poziom tonu naszej [dB], ta sama siatka (blokada)
         self.h0 = 0
+        self.szczyt_stacji: float | None = None   # szczyt obrazu ostatniej analizy ze stacją [dB]
+        self.prog_db = PROG_BLOKADY_DB         # blokada szumów: dB nad podłogą, 0 = wyłączona
+        self.nad_szumem_db = 0.0               # ton naszej nad podłogą w ostatnim kroku (wskaźnik)
         self.ost = -np.inf                 # początek ostatniego zatwierdzonego znaku
         self.u = float("nan")
         self.od_cepstrum = self.od_grzebienia = 0.0   # s dźwięku od ostatniego liczenia jednostki
@@ -198,7 +208,20 @@ class OdczytNaZywo:
 
     # ---------------------------------------------------------------- analiza
     def _odbierz(self, wynik: tuple) -> None:
-        self.analiza = wynik[:3]
+        f_n, obce, (wzm, szczyt) = wynik[:3]
+        # Cisza: wzmocnienie zostaje z ostatniej analizy ze stacją (jak ARW
+        # w radiu). Sesja 214326 (23.10): w 10 s ciszy wzmocnienie z samego
+        # szumu podnosiło szum do poziomu elementów — na żywo 621 znaków („E EI
+        # EE ESIE”), odczyt całości tego nagrania 83 znaki, czysto. Samo „brak
+        # kluczowanej stacji w oknie” nie wystarczyło (322 znaki): w prawie
+        # cyfrowej ciszy (-59 dB, stacja +38 dB) pętla tonu i tak coś łapie.
+        cisza = wzm is None or (self.szczyt_stacji is not None and szczyt < self.szczyt_stacji - SPADEK_CISZY_DB)
+        if cisza and self.analiza:
+            wzm = self.analiza[2]
+        else:
+            wzm = 0.0 if wzm is None else wzm
+            self.szczyt_stacji = szczyt
+        self.analiza = (f_n, obce, wzm)
         self.kand += wynik[3]
         self._przelicz = True
 
@@ -245,24 +268,29 @@ class OdczytNaZywo:
         logit = Z._logit(self.model, okna if self.dwa_wejscia else okna[0])[0]
         return (1.0 / (1.0 + np.exp(-logit)))[R - min(n, R):].astype(np.float32)
 
-    def _do_historii(self, p: np.ndarray, a0: int) -> None:
+    def _do_historii(self, p: np.ndarray, a0: int, poz: np.ndarray) -> None:
         """P okna od ramki a0. Starsze od środka okna zostają zamrożone."""
-        self._wpisz(p, a0, a0 + Z.RAMKI_ZBOCZA // 2)
+        self._wpisz(p, a0, a0 + Z.RAMKI_ZBOCZA // 2, poz)
 
-    def _wpisz(self, p: np.ndarray, a0: int, od: int) -> None:
-        """P od ramki a0; w historii zastępuje ramki od `od` (nie wcześniej niż a0)."""
+    def _wpisz(self, p: np.ndarray, a0: int, od: int, poz: np.ndarray) -> None:
+        """P (i poziom tonu do blokady, ta sama siatka) od ramki a0; w historii
+        zastępuje ramki od `od` (nie wcześniej niż a0)."""
+        p, poz = p.astype(np.float32), poz.astype(np.float32)
         if not self.hist.size:
-            self.hist, self.h0 = p.astype(np.float32), a0
+            self.hist, self.hist_poz, self.h0 = p, poz, a0
         else:
             koniec_h = self.h0 + self.hist.size
             if a0 > koniec_h:                              # luka (nie powinna się zdarzyć)
                 self.hist = np.concatenate([self.hist, np.zeros(a0 - koniec_h, np.float32)])
+                self.hist_poz = np.concatenate([self.hist_poz, np.full(a0 - koniec_h, -120, np.float32)])
                 koniec_h = a0
             w = max(a0, self.h0, min(od, koniec_h))
-            self.hist = np.concatenate([self.hist[:w - self.h0], p[w - a0:].astype(np.float32)])
+            self.hist = np.concatenate([self.hist[:w - self.h0], p[w - a0:]])
+            self.hist_poz = np.concatenate([self.hist_poz[:w - self.h0], poz[w - a0:]])
         nadmiar = self.hist.size - int(HISTORIA_S / V.DT)
         if nadmiar > 0:
             self.hist = self.hist[nadmiar:]
+            self.hist_poz = self.hist_poz[nadmiar:]
             self.h0 += nadmiar
 
     # ------------------------------------------------------------------ krok
@@ -286,19 +314,26 @@ class OdczytNaZywo:
                 self._przelicz = False
                 s0 = max(self.raw0, self.n - int(PRZELICZ_S * self.sr))
                 s0 = -(-s0 // hop) * hop
-                p = Z.przebieg_sieci(_przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr),
-                                     self.model)
+                y = _przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr)
+                p = Z.przebieg_sieci(y, self.model)
                 od = s0 // hop + (Z.RAMKI_ZBOCZA // 2 if s0 > self.raw0 else 0)
-                self._wpisz(p, s0 // hop, od)
+                # poziom bez wzmocnienia: wzmocnienie zmienia się co analiza, podłoga nie może skakać
+                self._wpisz(p, s0 // hop, od, B.poziom_tonu(y)[:p.size] - wzm)
             else:
-                p = self._siec(_przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr))
+                y = _przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr)
+                p = self._siec(y)
                 n_ramek = (self.n - s0) // hop + 1
-                self._do_historii(p, s0 // hop + n_ramek - p.size)
+                self._do_historii(p, s0 // hop + n_ramek - p.size, B.poziom_tonu(y)[-p.size:] - wzm)
             kand, self.kand = self.kand + [self.u], []
             if not any(np.isfinite(k) and k > 0 for k in kand):     # początek: jeszcze nic
                 kand = [V.jednostka_cepstrum(self.hist)[0], jednostka_grzebienia(self.hist)]
-            pv = self.hist[-int(VITERBI_S / V.DT):]
+            n_v = int(VITERBI_S / V.DT)
+            pv = self.hist[-n_v:]
             v0 = self.h0 + self.hist.size - pv.size
+            pod = B.podloga(self.hist_poz)
+            self.nad_szumem_db = float(np.max(self.hist_poz[-int(self.krok / V.DT):] - pod[-int(self.krok / V.DT):]))
+            if self.prog_db > 0:
+                pv = B.zastosuj(pv, B.otwarta(self.hist_poz[-n_v:], self.prog_db, pod[-n_v:]))
             kand = sorted({round(float(k), 4) for k in kand if np.isfinite(k) and k > 0})
             # jak V.dekoduj_najlepiej (wygrywa najlepszy wynik na ramkę), ale
             # odcinki zwycięzcy od razu — bez drugiego przebiegu Viterbiego
@@ -420,7 +455,7 @@ def opoznienia(d: OdczytNaZywo) -> tuple[list[float], list[float], int]:
 
 
 def symuluj(pliki: list[Path], kawalek_s: float = 0.1, krok_s: float = KROK_S,
-            rzeczywisty: bool = True) -> None:
+            rzeczywisty: bool = True, prog_db: float = PROG_BLOKADY_DB) -> None:
     """Nagranie podawane kawałkami. rzeczywisty: w tempie nagrania, a chwila
     pokazania z zegara — analiza idzie w osobnym wątku, bez tempa rzeczywistego
     jej wynik spóźniałby się o wielokrotność czasu dźwięku."""
@@ -435,6 +470,7 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1, krok_s: float = KROK_S,
         ton = civ.ton_z_opisu(p.with_suffix(".txt"))
         d = OdczytNaZywo(model, ton_cw=ton, krok_s=krok_s)
         d.pomiar = True
+        d.prog_db = prog_db
         n = int(kawalek_s * C.SR)
         t = time.perf_counter()
         if rzeczywisty:
@@ -451,7 +487,7 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1, krok_s: float = KROK_S,
         m = re.search(r"^nadane:\s*(.*)$", opis.read_text(encoding="utf-8"), re.M) if opis.exists() else None
         nad = m.group(1).replace(" ", "") if m and "nieznane" not in m.group(1) else None
         opozn, wst, zmiany = opoznienia(d)
-        print(f"\n{p.name}  ({a.size / C.SR:.0f} s, ton CW {ton}; krok >= {krok_s:g} s{', tempo nagrania' if rzeczywisty else ''})")
+        print(f"\n{p.name}  ({a.size / C.SR:.0f} s, ton CW {ton}; krok >= {krok_s:g} s, blokada {prog_db:g} dB{', tempo nagrania' if rzeczywisty else ''})")
         print(f"  na żywo : {zywo[:160]}")
         print(f"  całość  : {cal[:160]}")
         wiersz = f"  różnica na żywo / całość: {cer(zywo.replace(' ', ''), cal.replace(' ', ''))} znaków"
@@ -517,6 +553,10 @@ class Sesja:
     def krok(self, d: "OdczytNaZywo", nowe: str) -> None:
         self.log.write(f"{d.n / d.sr:.3f}\t{d.czasy[-1]:.3f}\t{nowe}\t{d.wstepny}\n")
 
+    def uwaga(self, d: "OdczytNaZywo", tekst: str) -> None:
+        if self.wav is not None:
+            self.log.write(f"# {d.n / d.sr:.3f}: {tekst}\n")
+
     def zamknij(self, d: "OdczytNaZywo") -> None:
         if self.wav is None:
             return
@@ -571,6 +611,133 @@ def karta(device: int | str, z_civ: bool, zapis: bool = True) -> None:
         if s:
             s.zamknij(d)
         print()
+
+
+def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
+    """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
+    i wstępny (szary), wskaźnik tonu nad szumem z kreską progu, suwak blokady
+    szumów. Dekoder liczy w osobnym wątku; zamknięcie okna zamyka sesję
+    porządnie (w konsoli krzyżyk ucinał dziennik)."""
+    import queue
+    import threading
+    import traceback
+    import tkinter as tk
+
+    TLO, JASNY, SZARY = "#101214", "#e8e8e8", "#6c7078"
+    q: queue.Queue = queue.Queue()
+    stop = threading.Event()
+    nast = {"prog": float(PROG_BLOKADY_DB)}
+
+    def praca() -> None:
+        s = d = None
+        try:
+            from tensorflow import keras
+            from tools.odczyt import MODEL_ZBOCZY
+            st = _stan_radia() if z_civ else {}
+            ton = st.get("ton_cw")
+            q.put(("info", f"ton CW z radia: {ton} Hz; ładuję sieć..."))
+            model = keras.models.load_model(MODEL_ZBOCZY)
+            rozgrzej(model)
+            d = OdczytNaZywo(model, ton_cw=ton)
+            s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows, okno)") if zapis else None
+            gen = _strumien_karty(device)
+            q.put(("info", f"ton CW z radia: {ton} Hz; nasłuch"))
+            prog = None
+            for x in gen:
+                if stop.is_set():
+                    break
+                if s:
+                    s.dzwiek(x)
+                if nast["prog"] != prog:
+                    prog = d.prog_db = nast["prog"]
+                    if s:
+                        s.uwaga(d, f"blokada szumów {prog:.0f} dB")
+                n = len(d.czasy)
+                nowe = d.dodaj(x)
+                if len(d.czasy) > n:
+                    if s:
+                        s.krok(d, nowe)
+                    q.put(("krok", nowe, d.wstepny, d.stan, d.nad_szumem_db))
+            gen.close()
+        except Exception:
+            q.put(("blad", traceback.format_exc()))
+        finally:
+            if d is not None:
+                nowe = d.koniec()
+                if s:
+                    s.zamknij(d)
+                q.put(("krok", nowe, "", d.stan, 0.0))
+
+    root = tk.Tk()
+    root.title("Dekoder CW — na żywo")
+    root.geometry("1000x480")
+    root.configure(bg=TLO)
+    gora = tk.Frame(root, bg=TLO)
+    gora.pack(fill="x", padx=10, pady=(8, 2))
+    stan = tk.Label(gora, text="start...", fg=SZARY, bg=TLO, font=("Consolas", 11), anchor="w")
+    stan.pack(side="left", fill="x", expand=True)
+    pas = tk.Frame(root, bg=TLO)
+    pas.pack(fill="x", padx=10, pady=2)
+    tk.Label(pas, text="ton nad szumem", fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="left")
+    W_M, ZAKRES = 320, 40.0
+    miernik = tk.Canvas(pas, width=W_M, height=16, bg="#22262b", highlightthickness=0)
+    miernik.pack(side="left", padx=6)
+    slupek = miernik.create_rectangle(0, 0, 0, 16, fill="#3fa34d", width=0)
+    kreska = miernik.create_line(0, 0, 0, 16, fill="#e05050", width=2)
+    suwak = tk.Scale(pas, from_=0, to=30, resolution=1, orient="horizontal", length=260,
+                     label="blokada szumów [dB nad szumem]; 0 = wyłączona", bg=TLO, fg=SZARY,
+                     troughcolor="#22262b", highlightthickness=0, font=("Segoe UI", 9),
+                     command=lambda v: nast.__setitem__("prog", float(v)))
+    suwak.set(PROG_BLOKADY_DB)
+    suwak.pack(side="left", padx=12)
+    tekst = tk.Text(root, bg=TLO, fg=JASNY, font=("Consolas", 18), wrap="word", bd=0,
+                    insertbackground=TLO, padx=10, pady=8)
+    tekst.pack(fill="both", expand=True)
+    tekst.tag_configure("wst", foreground=SZARY)
+    zat = {"n": 0, "ost": ""}
+
+    def odswiez() -> None:
+        try:
+            while True:
+                m = q.get_nowait()
+                if m[0] == "info":
+                    stan.config(text=m[1])
+                elif m[0] == "blad":
+                    stan.config(text="BŁĄD — szczegóły w oknie", fg="#e05050")
+                    tekst.insert("end", "\n" + m[1], "wst")
+                else:
+                    _, nowe, wst, st, nad = m
+                    tekst.delete(f"1.0+{zat['n']}c", "end")
+                    for z in nowe:
+                        if z == " " and zat["ost"] in ("", " "):
+                            continue
+                        tekst.insert("end", z)
+                        zat["n"] += 1
+                        zat["ost"] = z
+                    tekst.insert("end", wst.lstrip() if zat["ost"] in ("", " ") else wst, "wst")
+                    tekst.see("end")
+                    stan.config(text=st)
+                    x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
+                    miernik.coords(slupek, 0, 0, x, 16)
+                    miernik.itemconfig(slupek, fill="#3fa34d" if nast["prog"] <= 0 or nad >= nast["prog"] else "#5a6068")
+                    k = nast["prog"] / ZAKRES * W_M
+                    miernik.coords(kreska, k, 0, k, 16)
+        except queue.Empty:
+            pass
+        root.after(50, odswiez)
+
+    def zamknij() -> None:
+        stop.set()
+        stan.config(text="zamykam sesję...")
+        root.update()
+        w.join(timeout=5)
+        root.destroy()
+
+    w = threading.Thread(target=praca, daemon=True)
+    w.start()
+    root.protocol("WM_DELETE_WINDOW", zamknij)
+    root.after(50, odswiez)
+    root.mainloop()
 
 
 def _stan_radia() -> dict:
@@ -737,10 +904,13 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("symuluj"); s.add_argument("pliki", type=Path, nargs="+")
     s.add_argument("--krok", type=float, default=KROK_S)
+    s.add_argument("--blokada", type=float, default=PROG_BLOKADY_DB, help="próg blokady szumów [dB], 0 = wył.")
     s.add_argument("--szybko", action="store_true", help="bez tempa nagrania (chwile pokazania zaniżone)")
     k = sub.add_parser("karta"); k.add_argument("--device", default=KARTA, help="numer albo kawałek nazwy")
     k.add_argument("--civ", action="store_true")
     k.add_argument("--bez-zapisu", action="store_true", help="bez nagrania sesji do probki/sesje")
+    o = sub.add_parser("okno"); o.add_argument("--device", default=KARTA, help="numer albo kawałek nazwy")
+    o.add_argument("--civ", action="store_true"); o.add_argument("--bez-zapisu", action="store_true")
     sv = sub.add_parser("serwer"); sv.add_argument("--port", type=int, default=PORT)
     sv.add_argument("--bez-zapisu", action="store_true")
     m = sub.add_parser("most"); m.add_argument("--device", default=KARTA, help="numer albo kawałek nazwy")
@@ -749,9 +919,11 @@ def main() -> None:
     m.add_argument("--wav", type=Path, default=None, help="nagranie zamiast karty (próba bez radia)")
     a = ap.parse_args()
     if a.cmd == "symuluj":
-        symuluj(a.pliki, krok_s=a.krok, rzeczywisty=not a.szybko)
+        symuluj(a.pliki, krok_s=a.krok, rzeczywisty=not a.szybko, prog_db=a.blokada)
     elif a.cmd == "karta":
         karta(a.device, a.civ, zapis=not a.bez_zapisu)
+    elif a.cmd == "okno":
+        okno(a.device, a.civ, zapis=not a.bez_zapisu)
     elif a.cmd == "serwer":
         serwer(a.port, zapis=not a.bez_zapisu)
     else:

@@ -1861,6 +1861,35 @@ radia nieco więcej; symulacja tej sesji z pliku: 0,4 s). Krok w 8 sesjach
 przenumerował kartę USB (15 -> 18 -> 20) i skrypt nie otwierał karty —
 karta wybierana teraz po nazwie („USB Audio”, WASAPI).
 
+### Szum w ciszy czytany jako „E EI EE” — wzmocnienie trzymane w ciszy, blokada szumów (23.10)
+
+**Objaw** (operator: „jak jest cisza przez dłuższy czas, nabiera artefaktów”;
+pomysł: suwak minimalnego poziomu). Sesja 214326: na żywo 621 znaków,
+w przerwach ciągi „E EI EE I ESIE IUE EETE”.
+**Przyczyna — zmierzona:** odczyt CAŁOŚCI tego samego nagrania daje 83 znaki
+i czysty tekst — to wada trybu na żywo. Analiza co 2 s liczy wzmocnienie
+z okna 10 s; w ciszy okno ma sam szum i wzmocnienie podnosi go do poziomu
+elementów. W tej sesji w przerwach prawie cyfrowa cisza (-59 dB, stacja +38).
+**Co pomogło:** wzmocnienie STOI, gdy w oknie analizy nie ma kluczowanej
+stacji albo szczyt obrazu jest > 30 dB (`SPADEK_CISZY_DB`) niżej niż przy
+ostatniej stacji (ARW w radiu). Samo „brak kluczowanej stacji” dało 322
+znaki — w cyfrowej ciszy pętla tonu i tak coś łapie. Z oboma: różnica na
+żywo / całość 242 -> **17 znaków** (zostaje tylko pierwsza przerwa, zanim
+jest odniesienie). Nagrania testowe 1/10/25/12 błędów (przed: 1/10/23/12;
+40 m tłok skacze 23-25 między przebiegami od początku v3).
+
+**Blokada szumów** (`dsp/blokada.py`, suwak w okienku `na_zywo okno`):
+poziom tonu naszej (±8 Hz, ramki 128 ms) nad podłogą (P20 z 10 s); gdzie
+przez 0,6 s w obie strony nic nie wystaje ponad próg — P = cisza. Odczyt
+całości ~120 nagrań: próg do 10 dB bez zmian (2252 -> 2258 błędów / 3833),
+12 dB 2495, 15 dB 2845 — zjada słabe (zaszumione -3 dB). W sesjach z radia
+sygnał 30-47 dB nad podłogą, szum w przerwach maks. 12-17 dB — tam próg
+~20 dB oddziela czysto. **Domyślnie wyłączona (0 dB)**, operator ustawia
+suwakiem do sytuacji; zmiany progu zapisywane w dzienniku sesji. Okienko
+(tkinter): tekst jasny/szary, wskaźnik tonu nad szumem z kreską progu,
+zamknięcie okna zamyka sesję porządnie. `start_na_zywo.bat` -> okno.
+**Nie sprawdzone na radiu.**
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
