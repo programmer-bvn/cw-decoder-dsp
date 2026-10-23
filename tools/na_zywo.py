@@ -1,6 +1,6 @@
-"""ODCZYT NA ŻYWO (21.10): dźwięk kawałkami -> tekst z opóźnieniem kilku sekund.
+"""ODCZYT NA ŻYWO (21.10; strumieniowy v3 23.10): dźwięk kawałkami -> tekst.
 
-    python -m tools.na_zywo symuluj nagranie.wav [...]     # nagranie podawane kawałkami
+    python -m tools.na_zywo symuluj nagranie.wav [...]     # nagranie w tempie rzeczywistym
     python -m tools.na_zywo karta --device 15 [--civ]      # karta dźwiękowa (IC-7300 USB)
 
 Z kartą graficzną (karta dźwiękowa i COM są w Windows, WSL2 ich nie widzi):
@@ -8,17 +8,21 @@ Z kartą graficzną (karta dźwiękowa i COM są w Windows, WSL2 ich nie widzi):
     Windows:  python -m tools.na_zywo most --device 15 --civ
     (oba naraz: start_na_zywo_gpu.bat; próba bez radia: most --wav nagranie.wav)
 
-Zasada: bufor ostatnich OKNO_S sekund; co KROK_S (albo zaraz po
-poprzednim kroku, gdy liczy się dłużej) cała sprawdzona droga
-(tools.odczyt.przygotuj: pętla tonu, przeciwsygnał, przestrojenie; sieć
-zboczy; jednostka; Viterbi) liczona na buforze od nowa. Znak jest
-ZATWIERDZANY, gdy skończył się co najmniej OPOZNIENIE_S przed końcem
-bufora — ma wtedy kontekst po obu stronach, a później nie zmienia się.
-Znaki młodsze to TEKST WSTĘPNY: na ekranie szary, przerysowywany co krok
-(22.10, wersja 2: znak na ekranie ~1-2 s po nadaniu zamiast 6-7 s).
-Nie przepisujemy żadnego kroku na wersję strumieniową: każdy był mierzony
-na całych nagraniach (HISTORIA), a okno 20 s ma tę samą skalę co pętla tonu
-(6 s), przeciwsygnał (10 s) i cepstrum (8 s).
+Wersje (tagi): na_zywo_v1 — bufor 20 s liczony od nowa co 2,5 s, znak po
+6-7 s; na_zywo_v2 — bufor 12 s co >= 0,5 s, tekst wstępny po 1-2 s
+(operator 23.10: „szybciej, ale jeszcze nie wicher"). v1 i v2 liczyły każdą
+próbkę ~8-24 razy; v3 liczy ją raz-dwa:
+
+- ANALIZA co ANALIZA_CO_S na ostatnich ANALIZA_S (w tle, osobny wątek):
+  pętla tonu -> ton naszej; obce do skasowania (te same progi co
+  przeciwsygnał w odczycie całości); wzmocnienie;
+- co KROK_S tylko KONCOWKA_S: odejmowanie obcych, przestrojenie, obraz,
+  JEDNO okno sieci (2,56 s) kończące się teraz. Ramka P zamarza, gdy
+  wyjdzie za środek okna — ma wtedy po 1,28 s kontekstu z obu stron, jak
+  w odczycie całości (środkowa połowa okien);
+- Viterbi (numba, ~10 ms) na ostatnich VITERBI_S przebiegu P. Znak jest
+  ZATWIERDZANY, gdy skończył się co najmniej OPOZNIENIE_S przed końcem;
+  młodsze to TEKST WSTĘPNY (szary, przerysowywany co krok).
 """
 
 from __future__ import annotations
@@ -36,26 +40,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dsp import config as C, frontend, viterbi as V, zbocza as Z  # noqa: E402
 from dsp.grzebien import _ODWROTNY, NIEZNANY  # noqa: E402
 
-OKNO_S = 12.0
-# Krok NAJMNIEJ co KROK_S; gdy liczenie trwa dłużej — zaraz po poprzednim
-# (dźwięk czeka w kolejce karty). Wersja 1 (tag na_zywo_v1): bufor 20 s,
-# krok co 2,5 s, tekst dopiero po zatwierdzeniu — 6-7 s za kluczem (operator 22.10).
-KROK_S = 0.5
+KROK_S = 0.25
 OPOZNIENIE_S = 4.0
-# Koszt kroku (22.10, Windows CPU, 40 m tłok, 8 obcych): bufor 20 s —
-# pętla tonu 0,22 s, przeciwsygnał 1,12 s, sieć 0,23 s, Viterbi 0,71 s;
-# bufor 12 s — 0,13 / 0,58 / 0,14 s, Viterbi w numba ~0,01 s.
+ANALIZA_S = 10.0           # skala przeciwsygnału (okna 10 s) i pętli tonu (6 s)
+ANALIZA_CO_S = 2.0
+KONCOWKA_S = 4.0           # okno sieci 2,56 s + kontekst odejmowania/przestrojenia
+SUROWE_S = 12.0
+# Po nowej analizie przeliczane od nowa ostatnie PRZELICZ_S: zatwierdzanie
+# 4 s + 1,28 s kontekstu sieci z lewej + zapas.
+PRZELICZ_S = 7.0
+# Ton naszej = mediana pętli z ostatnich TON_S analizy (dryf, zmiana stacji).
+TON_S = 3.0
 # Cepstrum co JEDNOSTKA_CO_S dźwięku, grzebień (1,5 s) co GRZEBIEN_CO_S; między
 # nimi poprzednia jednostka — tempo stacji zmienia się wolniej niż co 10 s.
 JEDNOSTKA_CO_S = 12.5
 GRZEBIEN_CO_S = 37.5
-# Jednostka z przebiegu sklejonego z kolejnych kroków (ostatnie HISTORIA_S):
-# cepstrum ma okna 8 s co 4 s — na samym buforze 12 s byłyby tylko dwa.
-HISTORIA_S = 20.0
-# Viterbi na ostatnich VITERBI_S z bufora: zatwierdzane znaki leżą 4-6 s
-# przed końcem, kontekst po obu stronach zostaje.
+HISTORIA_S = 20.0          # przebieg P trzymany do jednostki (cepstrum: okna 8 s)
 VITERBI_S = 12.0
-# Tekst wstępny: litera pokazywana, gdy za nią minęło DOKONCZONA_U jednostek ciszy.
+# Tekst wstępny: litera pokazywana, gdy za nią minęło DOKONCZONA_U jednostek
+# ciszy — bez tego „T -> N -> K" w trakcie nadawania (v2: zmian 174 -> 75 na 105 znaków).
 DOKONCZONA_U = 2.0
 
 
@@ -80,25 +83,81 @@ def znaki_z_odcinkow(odc: list, t0: float) -> list[tuple[str, float, float]]:
     return out
 
 
+def _przygotuj(x: np.ndarray, n0: int, f_n: float, obce: list[float],
+               wzm_db: float, sr: int) -> np.ndarray:
+    """Jak tools.odczyt.przygotuj, ale z decyzjami z analizy: odejmowanie
+    obcych, przestrojenie naszej na TONE_CENTER (faza od próbki n0 — kawałki
+    się sklejają), wzmocnienie."""
+    from dsp import przeciwsygnal as PS, tune
+    y = np.asarray(x, np.float64)
+    if np.isfinite(f_n):
+        for fo in obce:
+            y = PS.odejmij(y, fo, f_n, sr)
+    przes = C.TONE_CENTER - f_n if np.isfinite(f_n) else 0.0
+    X = np.fft.fft(y)
+    fr = np.fft.fftfreq(y.size, 1.0 / sr)
+    an = np.fft.ifft(X * np.where(fr >= tune.RETUNE_FMIN_HZ, 2.0, 0.0))
+    y = np.real(an * np.exp(2j * np.pi * przes * (n0 + np.arange(y.size)) / sr))
+    return np.clip(y * 10 ** (wzm_db / 20), -1, 1).astype(np.float32)
+
+
+def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray | None,
+             grzebien: bool, sr: int) -> tuple[float, list[float], float, list[float]]:
+    """-> (ton naszej, obce [Hz], wzmocnienie dB, kandydatki jednostki).
+    Jednostka też tu: grzebień to 1,5 s — w kroku dawał co 37,5 s krok
+    2,3 s zamiast 0,06 s (v3, 23.10)."""
+    from dsp import przeciwsygnal as PS, tune
+    from tools import wav2net
+    from tools.odczyt import jednostka_grzebienia
+    kand = []
+    if hist is not None and hist.size:
+        kand.append(V.jednostka_cepstrum(hist)[0])
+        if grzebien:
+            kand.append(jednostka_grzebienia(hist))
+    t, f = tune.track_tone(x, ton_cw=ton_cw)
+    ok = np.isfinite(f)
+    ost = ok & (t >= (x.size / sr - TON_S))
+    f_n = float(np.median(f[ost])) if ost.any() else (float(np.median(f[ok])) if ok.any() else float("nan"))
+    obce = PS.obce_w_oknie(x, f_n, sr)
+    return f_n, obce, wav2net.auto_gain_db(_przygotuj(x, n0, f_n, obce, 0.0, sr)), kand
+
+
 class OdczytNaZywo:
-    def __init__(self, model, ton_cw: float | None = None, okno_s: float = OKNO_S,
-                 krok_s: float = KROK_S, opoznienie_s: float = OPOZNIENIE_S, sr: int = C.SR):
+    def __init__(self, model, ton_cw: float | None = None, krok_s: float = KROK_S,
+                 opoznienie_s: float = OPOZNIENIE_S, sr: int = C.SR, watek: bool = True):
         self.model, self.ton_cw, self.sr = model, ton_cw, sr
-        self.okno, self.krok, self.opozn = okno_s, krok_s, opoznienie_s
-        self.buf = np.zeros(0, np.float32)
-        self.t0 = 0.0                      # czas bezwzględny buf[0]
+        self.krok, self.opozn = krok_s, opoznienie_s
+        self.dwa_wejscia = len(model.inputs) == 2
+        self.raw = np.zeros(0, np.float32)
+        self.raw0 = 0                      # numer próbki raw[0] od początku
+        self.n = 0                         # próbek dotąd
         self.od_kroku = 0                  # próbek od ostatniego kroku
+        self.analiza: tuple | None = None  # (ton naszej, obce [Hz], wzmocnienie dB)
+        self.ost_analiza = -np.inf         # próbka, przy której ruszyła ostatnia analiza
+        self._przyszla = None
+        self._przelicz = False             # przyszła nowa analiza: przelicz niezatwierdzone
+        self._watek = None
+        if watek:
+            # PROCES, nie wątek: grzebień i pętle przeciwsygnału to w dużej
+            # części Python — wątek trzymał blokadę interpretera i krok w tym
+            # czasie trwał 0,6-1,8 s zamiast 0,05 s (v3, 23.10)
+            # „spawn" także w WSL: fork kopiowałby proces z działającym TensorFlow
+            import multiprocessing as mp
+            from concurrent.futures import ProcessPoolExecutor
+            self._watek = ProcessPoolExecutor(1, mp_context=mp.get_context("spawn"))
+        self.hist = np.zeros(0, np.float32)    # P; hist[0] to ramka h0 (co V.DT od początku)
+        self.h0 = 0
         self.ost = -np.inf                 # początek ostatniego zatwierdzonego znaku
         self.u = float("nan")
         self.od_cepstrum = self.od_grzebienia = 0.0   # s dźwięku od ostatniego liczenia jednostki
-        self.hist = np.zeros(0, np.float32)            # P sklejone z kroków; hist[0] w chwili hist_t0
-        self.hist_t0 = 0.0
+        self.kand: list[float] = []        # jednostki z wątku analizy, do sprawdzenia Viterbim
         self.czasy: list[float] = []       # czas liczenia kroków [s]
-        self.zatwierdzone: list[tuple[str, float, float, float]] = []   # znak, od, do, chwila zatwierdzenia
+        self.zatwierdzone: list[tuple[str, float, float, float]] = []   # znak, od, do, chwila pokazania
         # tekst wstępny: jeszcze niezatwierdzone znaki z ostatniego kroku; może się zmienić
         self.wstepne: list[tuple[str, float, float]] = []
-        self.pomiar = False                           # symulacja: zapamiętuj wstępne z każdego kroku
+        self.pomiar = False                # symulacja: zapamiętuj wstępne z każdego kroku
         self.kroki: list[tuple[float, list]] = []     # (chwila pokazania, wstępne)
+        self.zegar = None                  # symulacja w tempie rzeczywistym: chwila = zegar()
 
     @property
     def wstepny(self) -> str:
@@ -107,8 +166,10 @@ class OdczytNaZywo:
     def dodaj(self, x: np.ndarray) -> str:
         """Kawałek dźwięku (SR) -> nowo zatwierdzony tekst (może być pusty);
         tekst wstępny w self.wstepny."""
-        self.buf = np.concatenate([self.buf, np.asarray(x, np.float32)])
-        self.od_kroku += len(x)
+        x = np.asarray(x, np.float32)
+        self.raw = np.concatenate([self.raw, x])
+        self.n += x.size
+        self.od_kroku += x.size
         # gdy krok liczy się dłużej niż KROK_S, przez ten czas przyszło tyle dźwięku
         if self.od_kroku < max(self.krok, self.czasy[-1] if self.czasy else 0.0) * self.sr:
             return ""
@@ -116,46 +177,117 @@ class OdczytNaZywo:
 
     def koniec(self) -> str:
         """Koniec dźwięku: zatwierdź resztę."""
-        return self._krok(koniec=True) if self.buf.size else ""
+        if self._przyszla is not None:
+            self._odbierz(self._przyszla.result())
+            self._przyszla = None
+        if self._watek is not None:
+            self._watek.shutdown(wait=False)
+            self._watek = None
+        return self._krok(koniec=True) if self.raw.size else ""
 
-    def _do_historii(self, pz: np.ndarray) -> None:
-        o = int(round((self.t0 - self.hist_t0) / V.DT))
-        if o < 0 or o > self.hist.size:
-            self.hist, self.hist_t0 = pz, self.t0
+    # ---------------------------------------------------------------- analiza
+    def _odbierz(self, wynik: tuple) -> None:
+        self.analiza = wynik[:3]
+        self.kand += wynik[3]
+        self._przelicz = True
+
+    def _analizuj(self) -> None:
+        if self._przyszla is not None and self._przyszla.done():
+            self._odbierz(self._przyszla.result())
+            self._przyszla = None
+        if self._przyszla is not None or self.raw.size < 2 * self.sr \
+                or self.n - self.ost_analiza < ANALIZA_CO_S * self.sr:
+            return
+        x = self.raw[-int(ANALIZA_S * self.sr):].copy()
+        n0 = self.raw0 + self.raw.size - x.size
+        dzwiek = (self.n - self.ost_analiza) / self.sr if np.isfinite(self.ost_analiza) else 0.0
+        self.ost_analiza = self.n
+        self.od_cepstrum += dzwiek
+        self.od_grzebienia += dzwiek
+        # póki przebieg krótszy niż okno cepstrum (8 s) — jednostka przy każdej
+        # analizie: z pierwszych 2 s wychodziła za krótka i trzymała się 12,5 s
+        # („MMM MTM" na początku 40 m, v2 22.10)
+        grzebien = self.hist.size * V.DT < 8.0 or self.od_grzebienia >= GRZEBIEN_CO_S
+        hist = None
+        if grzebien or self.od_cepstrum >= JEDNOSTKA_CO_S:
+            hist = self.hist.copy()
+            self.od_cepstrum = 0.0
+            if grzebien:
+                self.od_grzebienia = 0.0
+        arg = (x, n0, self.ton_cw, hist, grzebien, self.sr)
+        if self._watek is None or self.analiza is None:      # pierwsza: od razu
+            self._odbierz(_analiza(*arg))
         else:
-            self.hist = np.concatenate([self.hist[:o], pz])
+            self._przyszla = self._watek.submit(_analiza, *arg)
+
+    # ------------------------------------------------------------------ sieć
+    def _siec(self, y: np.ndarray) -> np.ndarray:
+        """Jedno okno sieci kończące się na końcu y -> P jego ramek (<= 512)."""
+        R = Z.RAMKI_ZBOCZA
+        obrazy = [Z.obraz_zboczy(y)] + ([Z.obraz_drobny(y)] if self.dwa_wejscia else [])
+        n = obrazy[0].shape[0]
+        okna = []
+        for o in obrazy:
+            if n < R:
+                o = np.concatenate([np.zeros((R - n, o.shape[1]), np.float32), o])
+            okna.append(o[-R:][None, ..., None])
+        logit = Z._logit(self.model, okna if self.dwa_wejscia else okna[0])[0]
+        return (1.0 / (1.0 + np.exp(-logit)))[R - min(n, R):].astype(np.float32)
+
+    def _do_historii(self, p: np.ndarray, a0: int) -> None:
+        """P okna od ramki a0. Starsze od środka okna zostają zamrożone."""
+        self._wpisz(p, a0, a0 + Z.RAMKI_ZBOCZA // 2)
+
+    def _wpisz(self, p: np.ndarray, a0: int, od: int) -> None:
+        """P od ramki a0; w historii zastępuje ramki od `od` (nie wcześniej niż a0)."""
+        if not self.hist.size:
+            self.hist, self.h0 = p.astype(np.float32), a0
+        else:
+            koniec_h = self.h0 + self.hist.size
+            if a0 > koniec_h:                              # luka (nie powinna się zdarzyć)
+                self.hist = np.concatenate([self.hist, np.zeros(a0 - koniec_h, np.float32)])
+                koniec_h = a0
+            w = max(a0, self.h0, min(od, koniec_h))
+            self.hist = np.concatenate([self.hist[:w - self.h0], p[w - a0:].astype(np.float32)])
         nadmiar = self.hist.size - int(HISTORIA_S / V.DT)
         if nadmiar > 0:
             self.hist = self.hist[nadmiar:]
-            self.hist_t0 += nadmiar * V.DT
+            self.h0 += nadmiar
 
+    # ------------------------------------------------------------------ krok
     def _krok(self, koniec: bool) -> str:
-        from tools.odczyt import jednostka_grzebienia, przygotuj
+        from tools.odczyt import jednostka_grzebienia
         t_start = time.perf_counter()
-        koniec_buf = self.t0 + self.buf.size / self.sr
-        dzwiek = self.od_kroku / self.sr
+        hop = Z.HOP_ZBOCZA
+        koniec_buf = self.n / self.sr
         self.od_kroku = 0
         nowe = ""
-        if self.buf.size >= int(2.0 * self.sr):
-            a, _ = przygotuj(self.buf, ton_cw=self.ton_cw)
-            pz = Z.przebieg_sieci(a, self.model)
-            self._do_historii(pz)
-            self.od_cepstrum += dzwiek
-            self.od_grzebienia += dzwiek
-            # póki przebieg krótszy niż okno cepstrum (8 s) — jednostka w każdym
-            # kroku: z pierwszych 2 s wychodziła za krótka i trzymała się 12,5 s
-            # („MMM MTM” na początku 40 m, symulacja 22.10)
-            if (not np.isfinite(self.u) or self.hist.size * V.DT < 8.0
-                    or self.od_grzebienia >= GRZEBIEN_CO_S):
-                kand = [V.jednostka_cepstrum(self.hist)[0], jednostka_grzebienia(self.hist), self.u]
-                self.od_cepstrum = self.od_grzebienia = 0.0
-            elif self.od_cepstrum >= JEDNOSTKA_CO_S:
-                kand = [V.jednostka_cepstrum(self.hist)[0], self.u]
-                self.od_cepstrum = 0.0
+        self._analizuj()
+        if self.analiza is not None:
+            f_n, obce, wzm = self.analiza
+            s0 = max(self.raw0, self.n - int(KONCOWKA_S * self.sr))
+            s0 = -(-s0 // hop) * hop                       # ramki na wspólnej siatce
+            if self._przelicz:
+                # nowa analiza (ton, obce, wzmocnienie) -> od nowa cały jeszcze
+                # niezatwierdzony odcinek. Bez tego ramki zamarzały z decyzjami
+                # sprzed 2 s: na początku nagrania wzmocnienie z samego szumu
+                # (+12,6 dB zamiast -4,8 na 6 m) i szum czytany jako „E I" (23.10)
+                self._przelicz = False
+                s0 = max(self.raw0, self.n - int(PRZELICZ_S * self.sr))
+                s0 = -(-s0 // hop) * hop
+                p = Z.przebieg_sieci(_przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr),
+                                     self.model)
+                od = s0 // hop + (Z.RAMKI_ZBOCZA // 2 if s0 > self.raw0 else 0)
+                self._wpisz(p, s0 // hop, od)
             else:
-                kand = [self.u]
-            v0 = max(0, pz.size - int(VITERBI_S / V.DT))
-            pv = pz[v0:]
+                p = self._siec(_przygotuj(self.raw[s0 - self.raw0:], s0, f_n, obce, wzm, self.sr))
+                n_ramek = (self.n - s0) // hop + 1
+                self._do_historii(p, s0 // hop + n_ramek - p.size)
+            kand, self.kand = self.kand + [self.u], []
+            if not any(np.isfinite(k) and k > 0 for k in kand):     # początek: jeszcze nic
+                kand = [V.jednostka_cepstrum(self.hist)[0], jednostka_grzebienia(self.hist)]
+            pv = self.hist[-int(VITERBI_S / V.DT):]
+            v0 = self.h0 + self.hist.size - pv.size
             kand = sorted({round(float(k), 4) for k in kand if np.isfinite(k) and k > 0})
             # jak V.dekoduj_najlepiej (wygrywa najlepszy wynik na ramkę), ale
             # odcinki zwycięzcy od razu — bez drugiego przebiegu Viterbiego
@@ -169,7 +301,7 @@ class OdczytNaZywo:
                 self.u = u
                 granica = koniec_buf if koniec else koniec_buf - self.opozn
                 self.wstepne = []
-                for z, a0, b0 in znaki_z_odcinkow(odc, self.t0 + v0 * V.DT):
+                for z, a0, b0 in znaki_z_odcinkow(odc, v0 * V.DT):
                     # nowy znak: zaczyna się po ostatnim zatwierdzonym (z zapasem
                     # pół jednostki na drgania położenia między krokami)
                     if a0 <= self.ost + 0.5 * u:
@@ -178,26 +310,25 @@ class OdczytNaZywo:
                                      or (self.wstepne or self.zatwierdzone)[-1][0] == " "):
                         continue
                     if b0 <= granica and not self.wstepne:
-                        self.zatwierdzone.append((z, a0, b0, koniec_buf))
+                        self.zatwierdzone.append((z, a0, b0, 0.0))
                         self.ost = a0
                         nowe += z
                     else:
                         self.wstepne.append((z, a0, b0))
                 # litera bez przerwy międzyliterowej (>= 2 u) za sobą może być
                 # niedokończona (T -> N -> K): nie pokazujemy jej jeszcze
-                while self.wstepne and self.wstepne[-1][0] != " " and \
+                while not koniec and self.wstepne and self.wstepne[-1][0] != " " and \
                         self.wstepne[-1][2] > koniec_buf - DOKONCZONA_U * u:
                     self.wstepne.pop()
-        # bufor: ostatnie OKNO_S, przycięty o całe ramki — siatka P zostaje ta sama
-        hop = Z.HOP_ZBOCZA
-        nadmiar = (self.buf.size - int(self.okno * self.sr)) // hop * hop
+        # surowy dźwięk: ostatnie SUROWE_S, przycięty o całe ramki
+        nadmiar = (self.raw.size - int(SUROWE_S * self.sr)) // hop * hop
         if nadmiar > 0:
-            self.buf = self.buf[nadmiar:]
-            self.t0 += nadmiar / self.sr
+            self.raw = self.raw[nadmiar:]
+            self.raw0 += nadmiar
         self.czasy.append(time.perf_counter() - t_start)
-        chwila = koniec_buf + self.czasy[-1]
-        self.zatwierdzone[len(self.zatwierdzone) - len(nowe):] = [
-            z[:3] + (chwila,) for z in self.zatwierdzone[len(self.zatwierdzone) - len(nowe):]]
+        chwila = self.zegar() if self.zegar else koniec_buf + self.czasy[-1]
+        if nowe:
+            self.zatwierdzone[-len(nowe):] = [z[:3] + (chwila,) for z in self.zatwierdzone[-len(nowe):]]
         if self.pomiar:
             self.kroki.append((chwila, list(self.wstepne)))
         return nowe
@@ -207,12 +338,13 @@ class OdczytNaZywo:
 
 
 def rozgrzej(model) -> None:
-    """Jeden krok na szumie przed odbiorem: pierwszy krok w WSL trwał 14,4 s
+    """Kilka kroków na szumie przed odbiorem: pierwszy krok w WSL trwał 14,4 s
     (22.10 — TensorFlow buduje funkcję sieci, numba kompiluje Viterbiego),
     tekst z początku nadania przychodził z tym opóźnieniem."""
-    d = OdczytNaZywo(model)
-    d.buf = (0.01 * np.random.default_rng(0).standard_normal(3 * d.sr)).astype(np.float32)
-    d._krok(koniec=False)
+    d = OdczytNaZywo(model, watek=False)
+    x = (0.01 * np.random.default_rng(0).standard_normal(3 * d.sr)).astype(np.float32)
+    for i in range(0, x.size, d.sr // 10):
+        d.dodaj(x[i:i + d.sr // 10])
 
 
 class Ekran:
@@ -272,8 +404,11 @@ def opoznienia(d: OdczytNaZywo) -> tuple[list[float], list[float], int]:
     return zat, wst, zmiany
 
 
-def symuluj(pliki: list[Path], kawalek_s: float = 0.1, okno_s: float = OKNO_S,
-            krok_s: float = KROK_S) -> None:
+def symuluj(pliki: list[Path], kawalek_s: float = 0.1, krok_s: float = KROK_S,
+            rzeczywisty: bool = True) -> None:
+    """Nagranie podawane kawałkami. rzeczywisty: w tempie nagrania, a chwila
+    pokazania z zegara — analiza idzie w osobnym wątku, bez tempa rzeczywistego
+    jej wynik spóźniałby się o wielokrotność czasu dźwięku."""
     from tensorflow import keras
     from tools.klasyczny import cer
     from tools.odczyt import MODEL_ZBOCZY, odczytaj
@@ -283,11 +418,15 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1, okno_s: float = OKNO_S,
     for p in pliki:
         a = frontend.load_audio(p)
         ton = civ.ton_z_opisu(p.with_suffix(".txt"))
-        d = OdczytNaZywo(model, ton_cw=ton, okno_s=okno_s, krok_s=krok_s)
+        d = OdczytNaZywo(model, ton_cw=ton, krok_s=krok_s)
         d.pomiar = True
         n = int(kawalek_s * C.SR)
         t = time.perf_counter()
+        if rzeczywisty:
+            d.zegar = lambda: time.perf_counter() - t
         for i in range(0, a.size, n):
+            if rzeczywisty:
+                time.sleep(max(0.0, t + (i + n) / C.SR - time.perf_counter()))
             d.dodaj(a[i:i + n])
         d.koniec()
         calosc = time.perf_counter() - t
@@ -297,7 +436,7 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1, okno_s: float = OKNO_S,
         m = re.search(r"^nadane:\s*(.*)$", opis.read_text(encoding="utf-8"), re.M) if opis.exists() else None
         nad = m.group(1).replace(" ", "") if m and "nieznane" not in m.group(1) else None
         opozn, wst, zmiany = opoznienia(d)
-        print(f"\n{p.name}  ({a.size / C.SR:.0f} s, ton CW {ton}; bufor {okno_s:g} s, krok >= {krok_s:g} s)")
+        print(f"\n{p.name}  ({a.size / C.SR:.0f} s, ton CW {ton}; krok >= {krok_s:g} s{', tempo nagrania' if rzeczywisty else ''})")
         print(f"  na żywo : {zywo[:160]}")
         print(f"  całość  : {cal[:160]}")
         wiersz = f"  różnica na żywo / całość: {cer(zywo.replace(' ', ''), cal.replace(' ', ''))} znaków"
@@ -465,7 +604,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("symuluj"); s.add_argument("pliki", type=Path, nargs="+")
-    s.add_argument("--okno", type=float, default=OKNO_S); s.add_argument("--krok", type=float, default=KROK_S)
+    s.add_argument("--krok", type=float, default=KROK_S)
+    s.add_argument("--szybko", action="store_true", help="bez tempa nagrania (chwile pokazania zaniżone)")
     k = sub.add_parser("karta"); k.add_argument("--device", type=int, default=15)
     k.add_argument("--civ", action="store_true")
     sv = sub.add_parser("serwer"); sv.add_argument("--port", type=int, default=PORT)
@@ -475,7 +615,7 @@ def main() -> None:
     m.add_argument("--wav", type=Path, default=None, help="nagranie zamiast karty (próba bez radia)")
     a = ap.parse_args()
     if a.cmd == "symuluj":
-        symuluj(a.pliki, okno_s=a.okno, krok_s=a.krok)
+        symuluj(a.pliki, krok_s=a.krok, rzeczywisty=not a.szybko)
     elif a.cmd == "karta":
         karta(a.device, a.civ)
     elif a.cmd == "serwer":

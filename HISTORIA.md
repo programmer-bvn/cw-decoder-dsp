@@ -1797,6 +1797,57 @@ reszta to procesor). Most Windows -> WSL sprawdzony z nagraniem: tekst
 wstępny narasta litera po literze, czas rzeczywisty. **Nie sprawdzone na
 radiu** — następny krok: operator na IC-7300.
 
+**Na radiu (23.10, operator):** „chyba szybciej, ale jeszcze nie wicher —
+do prowadzenia łączności trochę za wolno; animacja z podmieniającymi się
+literkami fajna". Pomysł operatora: przejście na .exe. **Nie da** — exe to
+ten sam interpreter w paczce, a czas idzie w numpy/scipy/TensorFlow
+(skompilowane C) — interpretacja kosztowała tylko w Viterbim (zrobione:
+numba). Prawdziwa strata: v2 liczyła każdą próbkę ~24 razy (bufor 12 s co 0,5 s).
+
+### Odczyt na żywo, wersja 3 — strumieniowo, znak po ~0,4 s (23.10, gałąź `na_zywo_strumien`)
+
+**Zasada** (`tools/na_zywo.py`; v2 = tag `na_zywo_v2`): każda próbka
+liczona raz-dwa, nie od nowa co krok.
+- **Analiza** co 2 s na ostatnich 10 s w **osobnym procesie**: pętla tonu
+  -> ton naszej (mediana z ostatnich 3 s); obce do skasowania
+  (`przeciwsygnal.obce_w_oknie` — te same progi co w odczycie całości);
+  wzmocnienie; kandydatki jednostki (cepstrum, grzebień).
+- **Krok co 0,25 s**: tylko ostatnie 4 s — odejmowanie obcych, przestrojenie
+  ze stałą fazą (kawałki się sklejają), obraz, JEDNO okno sieci kończące się
+  teraz. Ramka P zamarza, gdy wyjdzie za środek okna (1,28 s kontekstu
+  z obu stron — jak środkowa połowa okien w odczycie całości).
+- **Po każdej nowej analizie** niezatwierdzone 7 s przeliczane od nowa.
+- Viterbi (numba) na 12 s jak w v2.
+
+**Po drodze (zmierzone, symulacja w tempie nagrania):**
+1. Wątek zamiast procesu: grzebień i pętle przeciwsygnału to w dużej
+   części Python — wątek trzymał blokadę interpretera, krok 0,6-1,8 s
+   zamiast 0,05 s. Proces („spawn", też w WSL — fork z działającym
+   TensorFlow grozi zawieszeniem): najdłuższy krok 0,1-0,6 s.
+2. Ramki zamrożone z decyzjami sprzed 2 s: na początku nagrania analiza
+   z 2 s szumu dała wzmocnienie +12,6 dB zamiast -4,8 — szum czytany jako
+   „E I", „TFE E S E D". **Szybkie przyciszenie (jak ARW) sprawdzone
+   i USUNIĘTE** — nic nie dało. Przeliczanie niezatwierdzonego po analizie —
+   pomogło (40 m tłok 25 -> 23 błędy, P90 2,4 -> 0,5 s).
+
+**Wynik** (Windows procesor; błędy / znaków nadanych; opóźnienie = koniec
+znaku -> ekran, zegarem):
+
+| nagranie | błędy v2 | **błędy v3** | v2 wstępny (mediana / P90) | **v3 wstępny** | krok v3 śr. / maks. |
+|---|---|---|---|---|---|
+| 6 m spokój | 0/105 | 1 | 1,4 / 1,7 s | **0,4 / 0,5 s** | 0,05 / 0,60 s |
+| 40 m dwie obok | 9/105 | 10 | 1,8 / 3,4 s | **0,5 / 0,7 s** | 0,10 / 0,53 s |
+| 40 m tłok | 22/105 | 23 | 1,7 / 2,9 s | **0,4 / 0,5 s** | 0,05 / 0,37 s |
+| ręka qso6_reka | 12/118 | **12** (= całość) | 1,0 / 1,4 s | **0,4 / 0,5 s** | 0,05 / 0,12 s |
+
+Zatwierdzony: mediana 4,2 s (v2 ~5 s). Procesor: ~0,05 s na krok 0,25 s
+(v2: 0,6-1 s na 0,5 s). Różnica v3 - v2 to po jednym znaku na początku
+nagrania (pierwsza litera przy wzmocnieniu z samego szumu) — na żywo
+dekoder chodzi ciągle, start sesji to pierwsze sekundy. 0,4 s to blisko
+granicy: literę widać dopiero po 2 u ciszy (`DOKONCZONA_U`, przy 12 WPM
+0,2 s), reszta to krok 0,25 s. Most Windows -> WSL (GPU) sprawdzony
+z nagraniem 40 m tłok. **Nie sprawdzone na radiu.**
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

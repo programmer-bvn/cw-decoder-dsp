@@ -234,6 +234,29 @@ def odejmij_oknami(x: np.ndarray, f: float, f_nasza: float, sr: int = C.SR,
     return x - est / np.maximum(wag, 1e-9), uzyte
 
 
+def obce_w_oknie(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> list[float]:
+    """Które obce kasować w tym oknie (~OKNO_KASOWANIA_S): [Hz].
+
+    Odczyt strumieniowy (23.10): decyzja zapada w analizie co 2 s na
+    ostatnich 10 s, a samo `odejmij` idzie na krótkich kawałkach. Progi
+    te same co w kasuj_obce / odejmij_oknami (korelacja z naszą, poziom,
+    spójność), tyle że wszystkie liczone na oknie przed odejmowaniem."""
+    from scipy.signal import hilbert
+    if not np.isfinite(f_nasza):
+        return []
+    y = np.asarray(x, dtype=np.float64)
+    obce = obce_stacje(y, f_nasza, sr)
+    if not obce:
+        return []
+    an = hilbert(y)
+    e0 = _obwiednia(an, f_nasza, sr)
+    p0 = _poziom_db(an, f_nasza, sr)
+    return [fo for fo, _ in obce
+            if np.corrcoef(e0, _obwiednia(an, fo, sr))[0, 1] <= KORELACJA_MAX
+            and _poziom_db(an, fo, sr) - p0 >= POZIOM_MIN_DB
+            and _spojnosc(an, fo, sr) >= SPOJNOSC_MIN]
+
+
 def kasuj_obce(x: np.ndarray, f_nasza: float, sr: int = C.SR,
                tor: tuple[np.ndarray, np.ndarray] | None = None) -> tuple[np.ndarray, list]:
     """Odejmuje kolejno obce kluczowane stacje (od najgłośniejszej): [(Hz, dB, okien)].
