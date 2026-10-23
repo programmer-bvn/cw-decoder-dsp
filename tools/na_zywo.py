@@ -1,11 +1,11 @@
 """ODCZYT NA ŻYWO (21.10; strumieniowy v3 23.10): dźwięk kawałkami -> tekst.
 
     python -m tools.na_zywo symuluj nagranie.wav [...]     # nagranie w tempie rzeczywistym
-    python -m tools.na_zywo karta --device 15 [--civ]      # karta dźwiękowa (IC-7300 USB)
+    python -m tools.na_zywo karta [--device NR|NAZWA] [--civ]   # karta (domyślnie „USB Audio”)
 
 Z kartą graficzną (karta dźwiękowa i COM są w Windows, WSL2 ich nie widzi):
     WSL:      python -m tools.na_zywo serwer               # dekoder, GPU, tekst
-    Windows:  python -m tools.na_zywo most --device 15 --civ
+    Windows:  python -m tools.na_zywo most --civ
     (oba naraz: start_na_zywo_gpu.bat; próba bez radia: most --wav nagranie.wav)
 
 Wersje (tagi): na_zywo_v1 — bufor 20 s liczony od nowa co 2,5 s, znak po
@@ -538,7 +538,7 @@ def _petla(d: "OdczytNaZywo", e: Ekran, s: Sesja | None, x: np.ndarray) -> None:
             s.krok(d, nowe)
 
 
-def karta(device: int, z_civ: bool, zapis: bool = True) -> None:
+def karta(device: int | str, z_civ: bool, zapis: bool = True) -> None:
     """Na żywo z karty dźwiękowej (np. IC-7300 USB audio). Tylko odbiór."""
     from tensorflow import keras
     from tools.odczyt import MODEL_ZBOCZY
@@ -593,10 +593,33 @@ class _Decymator:
         return out.astype(np.float32)
 
 
-def _strumien_karty(device: int):
+KARTA = "USB Audio"
+
+
+def znajdz_karte(spec: str | int) -> int:
+    """Numer karty z numeru albo z kawałka nazwy (preferowany WASAPI).
+
+    23.10: po przepięciu USB Windows przenumerował karty — „15" zniknęło,
+    IC-7300 wrócił jako „Mikrofon (2 — USB Audio Device)" pod 18 i skrypt
+    nie otwierał karty. Nazwa przeżywa przenumerowanie."""
+    import sounddevice as sd
+    if isinstance(spec, int) or str(spec).strip().isdigit():
+        return int(spec)
+    api = [a["name"] for a in sd.query_hostapis()]
+    kand = [(i, d) for i, d in enumerate(sd.query_devices())
+            if d["max_input_channels"] > 0 and str(spec).lower() in d["name"].lower()]
+    if not kand:
+        raise SystemExit(f"Nie ma karty wejściowej z „{spec}” w nazwie — lista: python -m tools.mic2wav --list")
+    kand.sort(key=lambda k: (api[k[1]["hostapi"]] != "Windows WASAPI", k[0]))
+    return kand[0][0]
+
+
+def _strumien_karty(device: int | str):
     """Kawałki po ~0,1 s w C.SR z karty dźwiękowej (tylko odbiór)."""
     import queue
     import sounddevice as sd
+    device = znajdz_karte(device)
+    print(f"karta [{device}] {sd.query_devices(device)['name']}", flush=True)
     sr_dev = int(sd.query_devices(device, "input")["default_samplerate"])
     if sr_dev % C.SR:
         print(f"UWAGA: karta {sr_dev} Hz nie jest wielokrotnością {C.SR} Hz — "
@@ -665,7 +688,7 @@ def _strumien_wav(sciezka: Path):
         yield a[i:i + n]
 
 
-def most(device: int, z_civ: bool, host: str, port: int, wav: Path | None = None) -> None:
+def most(device: int | str, z_civ: bool, host: str, port: int, wav: Path | None = None) -> None:
     """Windows: karta + CI-V -> próbki do serwera w WSL. Tylko odbiór."""
     import json
     import socket
@@ -704,12 +727,12 @@ def main() -> None:
     s = sub.add_parser("symuluj"); s.add_argument("pliki", type=Path, nargs="+")
     s.add_argument("--krok", type=float, default=KROK_S)
     s.add_argument("--szybko", action="store_true", help="bez tempa nagrania (chwile pokazania zaniżone)")
-    k = sub.add_parser("karta"); k.add_argument("--device", type=int, default=15)
+    k = sub.add_parser("karta"); k.add_argument("--device", default=KARTA, help="numer albo kawałek nazwy")
     k.add_argument("--civ", action="store_true")
     k.add_argument("--bez-zapisu", action="store_true", help="bez nagrania sesji do probki/sesje")
     sv = sub.add_parser("serwer"); sv.add_argument("--port", type=int, default=PORT)
     sv.add_argument("--bez-zapisu", action="store_true")
-    m = sub.add_parser("most"); m.add_argument("--device", type=int, default=15)
+    m = sub.add_parser("most"); m.add_argument("--device", default=KARTA, help="numer albo kawałek nazwy")
     m.add_argument("--civ", action="store_true")
     m.add_argument("--host", default="127.0.0.1"); m.add_argument("--port", type=int, default=PORT)
     m.add_argument("--wav", type=Path, default=None, help="nagranie zamiast karty (próba bez radia)")
