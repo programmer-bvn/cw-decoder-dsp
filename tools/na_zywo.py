@@ -158,10 +158,20 @@ class OdczytNaZywo:
         self.pomiar = False                # symulacja: zapamiętuj wstępne z każdego kroku
         self.kroki: list[tuple[float, list]] = []     # (chwila pokazania, wstępne)
         self.zegar = None                  # symulacja w tempie rzeczywistym: chwila = zegar()
+        self.poziom_db = -180.0            # wejście w ostatnim kroku [dBFS]
 
     @property
     def wstepny(self) -> str:
         return "".join(z[0] for z in self.wstepne)
+
+    @property
+    def stan(self) -> str:
+        """Do paska tytułu. 23.10 operator nagrał 43 s sesji bez jednego znaku —
+        z ekranu nie dało się poznać, czy w ogóle dochodził dźwięk."""
+        ton = f"ton {self.analiza[0]:.0f} Hz" if self.analiza and np.isfinite(self.analiza[0]) else "ton —"
+        wpm = f"{1.2 / self.u:.0f} WPM" if np.isfinite(self.u) and self.u > 0 else "tempo —"
+        return (f"CW: wejście {self.poziom_db:.0f} dBFS | {ton} | {wpm} | "
+                f"krok {self.czasy[-1] if self.czasy else 0:.2f} s")
 
     def dodaj(self, x: np.ndarray) -> str:
         """Kawałek dźwięku (SR) -> nowo zatwierdzony tekst (może być pusty);
@@ -325,6 +335,8 @@ class OdczytNaZywo:
         if nadmiar > 0:
             self.raw = self.raw[nadmiar:]
             self.raw0 += nadmiar
+        ost = self.raw[-int(self.krok * self.sr):]
+        self.poziom_db = 20 * np.log10(np.sqrt(np.mean(ost.astype(np.float64) ** 2)) + 1e-9) if ost.size else -180.0
         self.czasy.append(time.perf_counter() - t_start)
         chwila = self.zegar() if self.zegar else koniec_buf + self.czasy[-1]
         if nowe:
@@ -360,7 +372,9 @@ class Ekran:
         self.szer = max(20, shutil.get_terminal_size().columns - 1)
         self.linia = ""
 
-    def pokaz(self, nowe: str, wstepny: str) -> None:
+    def pokaz(self, nowe: str, wstepny: str, stan: str = "") -> None:
+        if stan:                           # pasek tytułu okna: czy dźwięk w ogóle dochodzi
+            sys.stdout.write("\x1b]0;" + stan + "\x07")
         for z in nowe:
             if z == " " and (not self.linia or self.linia.endswith(" ")):
                 continue
@@ -466,7 +480,7 @@ def karta(device: int, z_civ: bool) -> None:
             n_krokow = len(d.czasy)
             nowe = d.dodaj(x)
             if len(d.czasy) > n_krokow:
-                e.pokaz(nowe, d.wstepny)
+                e.pokaz(nowe, d.wstepny, d.stan)
     except KeyboardInterrupt:
         e.pokaz(d.koniec(), "")
         print()
@@ -557,7 +571,7 @@ def serwer(port: int) -> None:
                     n_krokow = len(d.czasy)
                     nowe = d.dodaj(np.frombuffer(b[:n], "<f4"))
                     if len(d.czasy) > n_krokow:
-                        e.pokaz(nowe, d.wstepny)
+                        e.pokaz(nowe, d.wstepny, d.stan)
                 e.pokaz(d.koniec(), "")
                 print("\n--- most rozłączony ---", flush=True)
 
