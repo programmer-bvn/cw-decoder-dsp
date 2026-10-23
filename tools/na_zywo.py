@@ -466,30 +466,105 @@ def symuluj(pliki: list[Path], kawalek_s: float = 0.1, krok_s: float = KROK_S,
               f"kroków {len(d.czasy)}; całość {calosc:.0f} s na {a.size / C.SR:.0f} s dźwięku", flush=True)
 
 
-def karta(device: int, z_civ: bool) -> None:
+SESJE = Path(__file__).resolve().parent.parent / "probki" / "sesje"
+
+
+class Sesja:
+    """Zapis sesji na żywo (23.10, prośba operatora): dźwięk z karty (WAV
+    8 kHz), opis jak z mic2wav --civ i dziennik kroków — co i kiedy dekoder
+    pokazał. Nagrywarka ekranu Windows nie zapisuje wejścia USB z radia,
+    a bez dźwięku nie da się zmierzyć opóźnienia ani użyć sesji jako próbki.
+    probki/sesje/sesja_RRRRMMDD_GGMMSS.{wav,txt,log}; WAV poza gitem (.gitignore)."""
+
+    ZRZUT_S = 5.0                     # nagłówek WAV dopisywany co tyle: zamknięte okno nie psuje pliku
+
+    def __init__(self, sr: int, ton: float | None, pasmo: str | None, zrodlo: str):
+        import soundfile as sf
+        SESJE.mkdir(parents=True, exist_ok=True)
+        stempel = time.strftime("%Y%m%d_%H%M%S")
+        self.sciezka = SESJE / f"sesja_{stempel}.wav"
+        self.sr = sr
+        self.wav = sf.SoundFile(self.sciezka, "w", sr, 1, "PCM_16")
+        self.od_zrzutu = 0
+        tonu = f"{ton:.0f} Hz (CI-V 0x14 0x09)" if ton else "nieodczytany"
+        self.sciezka.with_suffix(".txt").write_text(
+            "# SESJA NA ŻYWO — tools/na_zywo.py (dopisz, co było nadane)\n\n"
+            "nadane:        nieznane — sesja na żywo\n"
+            f"pasmo:         {pasmo or 'nieodczytane'} (CI-V przed sesją)\n"
+            f"ton CW:        {tonu}\n"
+            f"tor:           {zrodlo}\n"
+            f"dekoder:       {_wersja()}\n", encoding="utf-8")
+        self.log = open(self.sciezka.with_suffix(".log"), "w", encoding="utf-8", buffering=1)
+        self.log.write("# dźwięk [s]\tliczenie [s]\tzatwierdzone\twstępne\n")
+        print(f"sesja: {self.sciezka}", flush=True)
+
+    def dzwiek(self, x: np.ndarray) -> None:
+        self.wav.write(np.clip(np.asarray(x, np.float32), -1, 1))
+        self.od_zrzutu += len(x)
+        if self.od_zrzutu >= self.ZRZUT_S * self.sr:
+            self.wav.flush()
+            self.od_zrzutu = 0
+
+    def krok(self, d: "OdczytNaZywo", nowe: str) -> None:
+        self.log.write(f"{d.n / d.sr:.3f}\t{d.czasy[-1]:.3f}\t{nowe}\t{d.wstepny}\n")
+
+    def zamknij(self, d: "OdczytNaZywo") -> None:
+        self.log.write(f"# odczyt: {d.tekst()}\n")
+        self.log.close()
+        self.wav.close()
+        print(f"\nsesja zapisana: {self.sciezka} ({d.n / d.sr:.0f} s)", flush=True)
+
+
+def _wersja() -> str:
+    import subprocess
+    try:
+        r = subprocess.run(["git", "describe", "--always", "--dirty", "--tags"], capture_output=True,
+                           text=True, cwd=Path(__file__).resolve().parent.parent, timeout=5)
+        g = subprocess.run(["git", "branch", "--show-current"], capture_output=True, text=True,
+                           cwd=Path(__file__).resolve().parent.parent, timeout=5)
+        return f"{r.stdout.strip()} ({g.stdout.strip()})" if r.returncode == 0 else "nieznana"
+    except (OSError, subprocess.SubprocessError):
+        return "nieznana"
+
+
+def _petla(d: "OdczytNaZywo", e: Ekran, s: Sesja | None, x: np.ndarray) -> None:
+    if s:
+        s.dzwiek(x)
+    n_krokow = len(d.czasy)
+    nowe = d.dodaj(x)
+    if len(d.czasy) > n_krokow:
+        e.pokaz(nowe, d.wstepny, d.stan)
+        if s:
+            s.krok(d, nowe)
+
+
+def karta(device: int, z_civ: bool, zapis: bool = True) -> None:
     """Na żywo z karty dźwiękowej (np. IC-7300 USB audio). Tylko odbiór."""
     from tensorflow import keras
     from tools.odczyt import MODEL_ZBOCZY
-    ton = _ton_z_radia() if z_civ else None
+    st = _stan_radia() if z_civ else {}
+    ton = st.get("ton_cw")
     print(f"ton CW: {ton} Hz; Ctrl+C kończy", flush=True)
     model = keras.models.load_model(MODEL_ZBOCZY)
     rozgrzej(model)
     d = OdczytNaZywo(model, ton_cw=ton)
     e = Ekran()
+    s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows)") if zapis else None
     try:
         for x in _strumien_karty(device):
-            n_krokow = len(d.czasy)
-            nowe = d.dodaj(x)
-            if len(d.czasy) > n_krokow:
-                e.pokaz(nowe, d.wstepny, d.stan)
+            _petla(d, e, s, x)
     except KeyboardInterrupt:
+        pass
+    finally:
         e.pokaz(d.koniec(), "")
+        if s:
+            s.zamknij(d)
         print()
 
 
-def _ton_z_radia() -> float | None:
+def _stan_radia() -> dict:
     from tools.radio import civ
-    return civ.stan()["ton_cw"]
+    return civ.stan()
 
 
 class _Decymator:
@@ -542,8 +617,9 @@ def _strumien_karty(device: int):
 PORT = 7355
 
 
-def serwer(port: int) -> None:
-    """WSL: czeka na most z Windows, dekoduje (karta graficzna), wypisuje tekst."""
+def serwer(port: int, zapis: bool = True) -> None:
+    """WSL: czeka na most z Windows, dekoduje (karta graficzna), wypisuje tekst.
+    Sesję zapisuje tu (ten sam katalog projektu co Windows)."""
     import json
     import socket
     from tensorflow import keras
@@ -561,19 +637,22 @@ def serwer(port: int) -> None:
                 print(f"połączono {adr[0]}; ton CW: {ton} Hz", flush=True)
                 d = OdczytNaZywo(model, ton_cw=ton)
                 e = Ekran()
+                ss = Sesja(C.SR, ton, naglowek.get("pasmo"), naglowek.get("zrodlo", "most z Windows")) \
+                    if zapis and not naglowek.get("proba") else None
                 reszta = b""
-                while True:
-                    b = c.recv(65536)
-                    if not b:
-                        break
-                    b = reszta + b
-                    n = len(b) // 4 * 4
-                    reszta = b[n:]
-                    n_krokow = len(d.czasy)
-                    nowe = d.dodaj(np.frombuffer(b[:n], "<f4"))
-                    if len(d.czasy) > n_krokow:
-                        e.pokaz(nowe, d.wstepny, d.stan)
-                e.pokaz(d.koniec(), "")
+                try:
+                    while True:
+                        b = c.recv(65536)
+                        if not b:
+                            break
+                        b = reszta + b
+                        n = len(b) // 4 * 4
+                        reszta = b[n:]
+                        _petla(d, e, ss, np.frombuffer(b[:n], "<f4"))
+                finally:
+                    e.pokaz(d.koniec(), "")
+                    if ss:
+                        ss.zamknij(d)
                 print("\n--- most rozłączony ---", flush=True)
 
 
@@ -590,7 +669,8 @@ def most(device: int, z_civ: bool, host: str, port: int, wav: Path | None = None
     """Windows: karta + CI-V -> próbki do serwera w WSL. Tylko odbiór."""
     import json
     import socket
-    ton = _ton_z_radia() if z_civ else None
+    st = _stan_radia() if z_civ else {}
+    ton = st.get("ton_cw")
     if wav and ton is None:
         from tools.radio import civ
         ton = civ.ton_z_opisu(Path(wav).with_suffix(".txt"))
@@ -607,7 +687,10 @@ def most(device: int, z_civ: bool, host: str, port: int, wav: Path | None = None
     c.settimeout(None)
     print("połączono; tekst w oknie dekodera. Ctrl+C kończy.", flush=True)
     with c:
-        c.sendall((json.dumps({"ton_cw": ton, "sr": C.SR}) + "\n").encode())
+        # proba: odtwarzane nagranie — serwer go nie zapisuje drugi raz jako sesji
+        c.sendall((json.dumps({"ton_cw": ton, "sr": C.SR, "pasmo": st.get("pasmo"),
+                               "zrodlo": f"karta {device} (Windows, most do WSL)", "proba": bool(wav)})
+                   + "\n").encode())
         try:
             for x in (_strumien_wav(wav) if wav else _strumien_karty(device)):
                 c.sendall(np.asarray(x, "<f4").tobytes())
@@ -623,7 +706,9 @@ def main() -> None:
     s.add_argument("--szybko", action="store_true", help="bez tempa nagrania (chwile pokazania zaniżone)")
     k = sub.add_parser("karta"); k.add_argument("--device", type=int, default=15)
     k.add_argument("--civ", action="store_true")
+    k.add_argument("--bez-zapisu", action="store_true", help="bez nagrania sesji do probki/sesje")
     sv = sub.add_parser("serwer"); sv.add_argument("--port", type=int, default=PORT)
+    sv.add_argument("--bez-zapisu", action="store_true")
     m = sub.add_parser("most"); m.add_argument("--device", type=int, default=15)
     m.add_argument("--civ", action="store_true")
     m.add_argument("--host", default="127.0.0.1"); m.add_argument("--port", type=int, default=PORT)
@@ -632,9 +717,9 @@ def main() -> None:
     if a.cmd == "symuluj":
         symuluj(a.pliki, krok_s=a.krok, rzeczywisty=not a.szybko)
     elif a.cmd == "karta":
-        karta(a.device, a.civ)
+        karta(a.device, a.civ, zapis=not a.bez_zapisu)
     elif a.cmd == "serwer":
-        serwer(a.port)
+        serwer(a.port, zapis=not a.bez_zapisu)
     else:
         most(a.device, a.civ, a.host, a.port, a.wav)
 

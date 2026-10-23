@@ -1,6 +1,7 @@
 @echo off
 rem Odczyt CW na zywo z karta graficzna: dekoder w WSL (GPU), karta dzwiekowa
 rem IC-7300 i CI-V w Windows (WSL2 ich nie widzi). Most przez localhost:7355.
+rem Sesja (dzwiek, opis, dziennik) zapisywana przez dekoder do probki\sesje.
 rem Tekst pojawia sie w oknie "Dekoder CW (WSL)". Tylko odbior.
 rem Inna karta niz 15:   start_na_zywo_gpu.bat --device NR
 rem Lista kart:          python -m tools.mic2wav --list
