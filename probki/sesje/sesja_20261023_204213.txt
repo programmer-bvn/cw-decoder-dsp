@@ -1,0 +1,8 @@
+# SESJA NA ŻYWO — tools/na_zywo.py (dopisz, co było nadane)
+
+nadane:        CQ CQ CQ DE SQ2BVN SQ2BVN SQ2BVN PSE K CQ CQ CQ DE SQ2BVN SQ2BVN SQ2BVN PSE K
+               (operator 23.10: „CQ CQ CQ DE SQ2BVN x3 PSE K dwa razy”; ręka)
+pasmo:         7,035830 MHz, CW-R, FIL3 (CI-V przed sesją)
+ton CW:        760 Hz (CI-V 0x14 0x09)
+tor:           karta 15 (Windows)
+dekoder:       na_zywo_v2-4-g280a39c-dirty (na_zywo_strumien)
