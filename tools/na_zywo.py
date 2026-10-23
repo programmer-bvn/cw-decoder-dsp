@@ -168,9 +168,10 @@ class OdczytNaZywo:
     def stan(self) -> str:
         """Do paska tytułu. 23.10 operator nagrał 43 s sesji bez jednego znaku —
         z ekranu nie dało się poznać, czy w ogóle dochodził dźwięk."""
-        ton = f"ton {self.analiza[0]:.0f} Hz" if self.analiza and np.isfinite(self.analiza[0]) else "ton —"
-        wpm = f"{1.2 / self.u:.0f} WPM" if np.isfinite(self.u) and self.u > 0 else "tempo —"
-        return (f"CW: wejście {self.poziom_db:.0f} dBFS | {ton} | {wpm} | "
+        # krótko: karta w Windows Terminal ucina tytuł po ~25 znakach (23.10)
+        ton = f"{self.analiza[0]:.0f} Hz" if self.analiza and np.isfinite(self.analiza[0]) else "— Hz"
+        wpm = f"{1.2 / self.u:.0f} WPM" if np.isfinite(self.u) and self.u > 0 else "— WPM"
+        return (f"{self.poziom_db:.0f} dB {ton} {wpm} | "
                 f"krok {self.czasy[-1] if self.czasy else 0:.2f} s")
 
     def dodaj(self, x: np.ndarray) -> str:
