@@ -619,7 +619,7 @@ class Wodospad:
     """Kolumny widma co KROK próbek (20 ms) w paśmie [fmin, fmax] — dla dwóch
     sygnałów na TYCH SAMYCH chwilach (wejście i to, co idzie do sieci), żeby
     w okienku przesuwały się razem. Wygląd jak Live-Specgram operatora
-    (W:\\PyCharmMiscProject\\Live-Specgram-master3: jet, 60 dB pod maksimum)."""
+    (W:\\PyCharmMiscProject\\Live-Specgram-master3: jet); zakres 40 dB, nie 60."""
 
     N_FFT, KROK = 512, 160                 # 64 ms, 15,6 Hz; 20 ms
 
@@ -664,6 +664,9 @@ def _jet(v: np.ndarray) -> np.ndarray:
 PASMO_WEJ = (300.0, 1300.0)
 PASMO_SYG = (500.0, 1000.0)
 W_WOD, H_WOD = 980, 90                     # px; kolumna = 20 ms -> 19,6 s widać
+# zakres barw pod maksimum: przy 60 dB (jak Live-Specgram) szum na 40 m był
+# jasny jak sygnał; operator 24.10: 40 dB
+ZAKRES_WOD_DB = 40.0
 
 
 class _ObrazWodospadu:
@@ -684,10 +687,10 @@ class _ObrazWodospadu:
         ok = kol[kol > -119]
         if ok.size:
             m = float(ok.max())
-            # skala jak w Live-Specgram: 60 dB pod maksimum; maksimum opada 1 dB/s
+            # maksimum opada 1 dB/s
             self.vmax = m if self.vmax is None else max(m, self.vmax - k * Wodospad.KROK / C.SR)
         vmax = self.vmax if self.vmax is not None else 0.0
-        v = np.clip((kol - (vmax - 60)) / 60, 0, 1)
+        v = np.clip((kol - (vmax - ZAKRES_WOD_DB)) / ZAKRES_WOD_DB, 0, 1)
         wiersze = np.round(np.linspace(kol.shape[1] - 1, 0, H_WOD)).astype(int)   # niskie na dole
         nowe = _jet(v[:, wiersze].T)                                              # [H, k, 3]
         k = min(k, W_WOD)

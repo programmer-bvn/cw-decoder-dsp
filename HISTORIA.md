@@ -1929,6 +1929,10 @@ wejście z radia 300-1300 Hz i sygnał do sieci (obce skasowane, nasza na
 750 Hz) 500-1000 Hz. Wygląd jak Live-Specgram operatora
 (`W:\PyCharmMiscProject\Live-Specgram-master3`: jet, 60 dB pod maksimum).
 Obraz przez Tk PhotoImage z PPM (2,7 ms na obraz 980x90, bez Pillow).
+Zakres barw 40 dB zamiast 60 (operator 24.10: przy 60 szum na 40 m jasny
+jak sygnał). Słownik uzupełniony slangiem krótkofalarskim (tabela
+z Wikipedii) i pełną listą kodów Q — oba wkleił operator; 459 słów,
+całe słowa bez zmian (1497: ręka 38/45, nigdzie strat).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
