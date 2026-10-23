@@ -1846,7 +1846,20 @@ nagrania (pierwsza litera przy wzmocnieniu z samego szumu) — na żywo
 dekoder chodzi ciągle, start sesji to pierwsze sekundy. 0,4 s to blisko
 granicy: literę widać dopiero po 2 u ciszy (`DOKONCZONA_U`, przy 12 WPM
 0,2 s), reszta to krok 0,25 s. Most Windows -> WSL (GPU) sprawdzony
-z nagraniem 40 m tłok. **Nie sprawdzone na radiu.**
+z nagraniem 40 m tłok.
+
+**Na radiu (23.10 wieczór, IC-7300, ręka, Windows procesor).** Sesje
+nagrywa sam dekoder (`probki/sesje/`: WAV, opis z CI-V, dziennik kroków)
+— nagrywarka ekranu Windows nie zapisuje wejścia USB. Pomiar z nagrania
+ekranu Z DŹWIĘKIEM (operator włączył „Słuchaj tego urządzenia”), sesja
+215850, 59 s: litery na ekranie liczone klatka po klatce (30 kl./s), końce
+liter z obwiedni tonu; 45 pojawień, 44 końce liter, k-te do k-tego:
+**opóźnienie mediana 0,25 s, P10 0,09, P90 0,39 s** — względem dźwięku
+z głośników komputera (ścieżka „słuchaj” sama coś opóźnia, więc względem
+radia nieco więcej; symulacja tej sesji z pliku: 0,4 s). Krok w 8 sesjach
+(do 22 min): średnio 0,045-0,053 s. Po drodze: Windows dwa razy
+przenumerował kartę USB (15 -> 18 -> 20) i skrypt nie otwierał karty —
+karta wybierana teraz po nazwie („USB Audio”, WASAPI).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 

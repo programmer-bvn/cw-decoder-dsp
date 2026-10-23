@@ -479,7 +479,14 @@ class Sesja:
     ZRZUT_S = 5.0                     # nagłówek WAV dopisywany co tyle: zamknięte okno nie psuje pliku
 
     def __init__(self, sr: int, ton: float | None, pasmo: str | None, zrodlo: str):
+        # pliki dopiero przy pierwszym dźwięku: 23.10 trzy puste sesje (0 s)
+        # ze startów, w których karta się nie otworzyła
+        self.arg = (sr, ton, pasmo, zrodlo)
+        self.wav = None
+
+    def _otworz(self) -> None:
         import soundfile as sf
+        sr, ton, pasmo, zrodlo = self.arg
         SESJE.mkdir(parents=True, exist_ok=True)
         stempel = time.strftime("%Y%m%d_%H%M%S")
         self.sciezka = SESJE / f"sesja_{stempel}.wav"
@@ -499,6 +506,8 @@ class Sesja:
         print(f"sesja: {self.sciezka}", flush=True)
 
     def dzwiek(self, x: np.ndarray) -> None:
+        if self.wav is None:
+            self._otworz()
         self.wav.write(np.clip(np.asarray(x, np.float32), -1, 1))
         self.od_zrzutu += len(x)
         if self.od_zrzutu >= self.ZRZUT_S * self.sr:
@@ -509,6 +518,8 @@ class Sesja:
         self.log.write(f"{d.n / d.sr:.3f}\t{d.czasy[-1]:.3f}\t{nowe}\t{d.wstepny}\n")
 
     def zamknij(self, d: "OdczytNaZywo") -> None:
+        if self.wav is None:
+            return
         self.log.write(f"# odczyt: {d.tekst()}\n")
         self.log.close()
         self.wav.close()
