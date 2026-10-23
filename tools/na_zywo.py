@@ -169,6 +169,7 @@ class OdczytNaZywo:
         self.kroki: list[tuple[float, list]] = []     # (chwila pokazania, wstępne)
         self.zegar = None                  # symulacja w tempie rzeczywistym: chwila = zegar()
         self.poziom_db = -180.0            # wejście w ostatnim kroku [dBFS]
+        self.ost_y, self.ost_y0 = np.zeros(0, np.float32), 0   # ostatni sygnał do sieci, od próbki
 
     @property
     def wstepny(self) -> str:
@@ -324,6 +325,7 @@ class OdczytNaZywo:
                 p = self._siec(y)
                 n_ramek = (self.n - s0) // hop + 1
                 self._do_historii(p, s0 // hop + n_ramek - p.size, B.poziom_tonu(y)[-p.size:] - wzm)
+            self.ost_y, self.ost_y0 = y, s0           # do wodospadu „do sieci” (okno)
             kand, self.kand = self.kand + [self.u], []
             if not any(np.isfinite(k) and k > 0 for k in kand):     # początek: jeszcze nic
                 kand = [V.jednostka_cepstrum(self.hist)[0], jednostka_grzebienia(self.hist)]
@@ -613,6 +615,87 @@ def karta(device: int | str, z_civ: bool, zapis: bool = True) -> None:
         print()
 
 
+class Wodospad:
+    """Kolumny widma co KROK próbek (20 ms) w paśmie [fmin, fmax] — dla dwóch
+    sygnałów na TYCH SAMYCH chwilach (wejście i to, co idzie do sieci), żeby
+    w okienku przesuwały się razem. Wygląd jak Live-Specgram operatora
+    (W:\\PyCharmMiscProject\\Live-Specgram-master3: jet, 60 dB pod maksimum)."""
+
+    N_FFT, KROK = 512, 160                 # 64 ms, 15,6 Hz; 20 ms
+
+    def __init__(self, sr: int = C.SR):
+        self.sr = sr
+        self.nast = None                   # środek następnej kolumny [próbka]
+        self.okno = np.hanning(self.N_FFT)
+
+    def srodki(self, koniec: int, poczatek: int) -> np.ndarray:
+        """Środki nowych kolumn, które mają już pełne okno przed końcem."""
+        if self.nast is None:
+            self.nast = poczatek + self.N_FFT // 2
+        ost = koniec - self.N_FFT // 2
+        c = np.arange(self.nast, ost + 1, self.KROK)
+        if c.size:
+            self.nast = int(c[-1]) + self.KROK
+        return c
+
+    def widmo(self, x: np.ndarray, x0: int, srodki: np.ndarray, fmin: float, fmax: float) -> np.ndarray:
+        """[kolumny, prążki] dB; kolumna poza x -> -120."""
+        f = np.fft.rfftfreq(self.N_FFT, 1 / self.sr)
+        pas = (f >= fmin) & (f <= fmax)
+        out = np.full((srodki.size, int(pas.sum())), -120.0, np.float32)
+        h = self.N_FFT // 2
+        for i, c in enumerate(srodki):
+            a = c - h - x0
+            if a < 0 or a + self.N_FFT > x.size:
+                continue
+            s = np.abs(np.fft.rfft(x[a:a + self.N_FFT] * self.okno))[pas]
+            out[i] = 20 * np.log10(s + 1e-9)
+        return out
+
+
+def _jet(v: np.ndarray) -> np.ndarray:
+    """[0,1] -> RGB uint8, paleta „jet” (jak w Live-Specgram operatora)."""
+    r = np.clip(1.5 - np.abs(4 * v - 3), 0, 1)
+    g = np.clip(1.5 - np.abs(4 * v - 2), 0, 1)
+    b = np.clip(1.5 - np.abs(4 * v - 1), 0, 1)
+    return (np.stack([r, g, b], -1) * 255).astype(np.uint8)
+
+
+PASMO_WEJ = (300.0, 1300.0)
+PASMO_SYG = (500.0, 1000.0)
+W_WOD, H_WOD = 980, 90                     # px; kolumna = 20 ms -> 19,6 s widać
+
+
+class _ObrazWodospadu:
+    """Wodospad w Canvas: nowe kolumny z prawej, obraz przesuwa się w lewo."""
+
+    def __init__(self, cv):
+        self.cv = cv
+        self.rgb = np.zeros((H_WOD, W_WOD, 3), np.uint8)
+        self.vmax = None
+        self.img = None
+        self.id = cv.create_image(0, 0, anchor="nw")
+
+    def dodaj(self, kol: np.ndarray) -> None:
+        import tkinter as tk
+        k = kol.shape[0]
+        if not k:
+            return
+        ok = kol[kol > -119]
+        if ok.size:
+            m = float(ok.max())
+            # skala jak w Live-Specgram: 60 dB pod maksimum; maksimum opada 1 dB/s
+            self.vmax = m if self.vmax is None else max(m, self.vmax - k * Wodospad.KROK / C.SR)
+        vmax = self.vmax if self.vmax is not None else 0.0
+        v = np.clip((kol - (vmax - 60)) / 60, 0, 1)
+        wiersze = np.round(np.linspace(kol.shape[1] - 1, 0, H_WOD)).astype(int)   # niskie na dole
+        nowe = _jet(v[:, wiersze].T)                                              # [H, k, 3]
+        k = min(k, W_WOD)
+        self.rgb = np.concatenate([self.rgb[:, k:], nowe[:, -k:]], axis=1)
+        self.img = tk.PhotoImage(data=b"P6 %d %d 255 " % (W_WOD, H_WOD) + self.rgb.tobytes(), format="PPM")
+        self.cv.itemconfig(self.id, image=self.img)
+
+
 def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
     """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
     i wstępny (szary), wskaźnik tonu nad szumem z kreską progu, suwak blokady
@@ -641,6 +724,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
             d = OdczytNaZywo(model, ton_cw=ton)
             s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows, okno)") if zapis else None
             gen = _strumien_karty(device)
+            wod = Wodospad()
             q.put(("info", f"ton CW z radia: {ton} Hz; nasłuch"))
             prog = None
             for x in gen:
@@ -657,8 +741,10 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                 if len(d.czasy) > n:
                     if s:
                         s.krok(d, nowe)
+                    c = wod.srodki(d.n, d.raw0)
                     q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                           d.wstepny, d.stan, d.nad_szumem_db, d.u))
+                           d.wstepny, d.stan, d.nad_szumem_db, d.u,
+                           wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
             gen.close()
         except Exception:
             q.put(("blad", traceback.format_exc()))
@@ -668,11 +754,11 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                 if s:
                     s.zamknij(d)
                 q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                       "", d.stan, 0.0, d.u))
+                       "", d.stan, 0.0, d.u, None, None))
 
     root = tk.Tk()
     root.title("Dekoder CW — na żywo")
-    root.geometry("1000x480")
+    root.geometry("1000x640")
     root.configure(bg=TLO)
     gora = tk.Frame(root, bg=TLO)
     gora.pack(fill="x", padx=10, pady=(8, 2))
@@ -692,6 +778,13 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                      command=lambda v: nast.__setitem__("prog", float(v)))
     suwak.set(PROG_BLOKADY_DB)
     suwak.pack(side="left", padx=12)
+    obrazy = []
+    for opis in (f"wejście z radia {PASMO_WEJ[0]:.0f}-{PASMO_WEJ[1]:.0f} Hz",
+                 f"do sieci (obce skasowane, nasza na {C.TONE_CENTER:.0f} Hz) {PASMO_SYG[0]:.0f}-{PASMO_SYG[1]:.0f} Hz"):
+        tk.Label(root, text=opis, fg=SZARY, bg=TLO, font=("Segoe UI", 8), anchor="w").pack(fill="x", padx=10)
+        cv = tk.Canvas(root, width=W_WOD, height=H_WOD, bg="#000000", highlightthickness=0)
+        cv.pack(padx=10, pady=(0, 4), anchor="w")
+        obrazy.append(_ObrazWodospadu(cv))
     tekst = tk.Text(root, bg=TLO, fg=JASNY, font=("Consolas", 18), wrap="word", bd=0,
                     insertbackground=TLO, padx=10, pady=8)
     tekst.pack(fill="both", expand=True)
@@ -724,7 +817,10 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                     stan.config(text="BŁĄD — szczegóły w oknie", fg="#e05050")
                     tekst.insert("end", "\n" + m[1], "wst")
                 else:
-                    _, nowe, wst, st, nad, u = m
+                    _, nowe, wst, st, nad, u, w_wej, w_syg = m
+                    if w_wej is not None:
+                        obrazy[0].dodaj(w_wej)
+                        obrazy[1].dodaj(w_syg)
                     zn = zat["znaki"]
                     zn += nowe
                     if np.isfinite(u):

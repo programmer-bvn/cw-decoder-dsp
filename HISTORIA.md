@@ -1920,6 +1920,15 @@ Bez bezpiecznika rozdzielanie od 3,0 u traciło 15-25 słów na kluczowniku
 i zaszumionych; sklejanie do 7 u: kluczownik -4. W okienku: tekst
 zatwierdzony przez słownik (końcówka 120 znaków przerysowywana co krok,
 starsze zamrażane), znane słowa zielone, „M+IUS” zostaje jak jest.
+Rzadkie dwuliterowe (EL, OB, OT, GG, AA, AB, BN, NO) usunięte — „EL”
+zielone w śmieciach przed pierwszą stacją; wynik bez zmian (1497).
+
+**Wodospady w okienku** (prośba operatora 24.10): dwa, przesuwane razem
+od prawej do lewej, kolumna co 20 ms (FFT 512) na TYCH SAMYCH chwilach —
+wejście z radia 300-1300 Hz i sygnał do sieci (obce skasowane, nasza na
+750 Hz) 500-1000 Hz. Wygląd jak Live-Specgram operatora
+(`W:\PyCharmMiscProject\Live-Specgram-master3`: jet, 60 dB pod maksimum).
+Obraz przez Tk PhotoImage z PPM (2,7 ms na obraz 980x90, bez Pillow).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
