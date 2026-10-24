@@ -44,6 +44,7 @@ z dekodowaniem…”, wpisz co było nadane (jeśli wiesz) i krótki opis. Progr
 przygotuje raport (ostatnie 15 min nagrania + odczyt) i otworzy wiadomość
 e-mail. Jeśli plik nie dołączy się sam, przeciągnij go do wiadomości.
 Wymaga włączonego zapisu sesji (domyślnie włączony).
+Adres na raporty: programmer.bvn@gmail.com (temat: [CW-DECODER] RAPORT ...).
 
 PLIKI (Dokumenty\DekoderCW)
 - sesje — dźwięk i odczyt każdej sesji,

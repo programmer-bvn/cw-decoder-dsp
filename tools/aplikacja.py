@@ -23,12 +23,13 @@ import sys
 import time
 from pathlib import Path
 
-WERSJA_APLIKACJI = "0.9.1"
+WERSJA_APLIKACJI = "0.9.2"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
-# Adres skrzynki projektu na raporty — operator zakłada konto sam (24.10);
-# puste = raport tylko do pliku, bez otwierania poczty.
-KONTAKT_EMAIL = ""
+# Skrzynka projektu na raporty (konto założył operator 25.10; w Thunderbirdzie na
+# maszynie treningowej, reguła [CW-DECODER] -> folder, tools/zgloszenia.py).
+# Puste = raport tylko do pliku.
+KONTAKT_EMAIL = "programmer.bvn@gmail.com"
 KLUCZ_REJESTRU = r"Software\SQ2BVN\DekoderCW"
 KATALOG = Path(os.environ.get("USERPROFILE", Path.home())) / "Documents" / "DekoderCW"
 WAGI = "siec.npz"

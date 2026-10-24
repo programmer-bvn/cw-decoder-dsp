@@ -44,6 +44,7 @@ decoding problem…", enter what was sent (if known) and a short description.
 The program prepares a report (last 15 min of audio + decoded text) and
 opens an e-mail. If the file is not attached automatically, drag it into
 the message. Session recording must be on (it is by default).
+Reports go to: programmer.bvn@gmail.com (subject: [CW-DECODER] RAPORT ...).
 
 FILES (Documents\DekoderCW)
 - sesje — audio and text of each session,
