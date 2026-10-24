@@ -21,6 +21,11 @@ TEKSTY: dict[str, dict[str, str]] = {
     "wod_syg": {"pl": "do sieci (obce skasowane, nasza na {t} Hz) {a}-{b} Hz",
                 "en": "to the network (other stations removed, ours at {t} Hz) {a}-{b} Hz"},
     "zglos": {"pl": "Zgłoś problem z dekodowaniem…", "en": "Report a decoding problem…"},
+    "otworz": {"pl": "Otwórz nagranie…", "en": "Open recording…"},
+    "wroc": {"pl": "Wróć do radia", "en": "Back to radio"},
+    "tempo": {"pl": "tempo", "en": "speed"},
+    "nagrania": {"pl": "Nagrania", "en": "Recordings"},
+    "odtwarzam": {"pl": "odtwarzam nagranie: {p}", "en": "playing recording: {p}"},
     "nowa_wersja": {"pl": "Dostępna nowa wersja {w} — kliknij, aby pobrać",
                     "en": "New version {w} available — click to download"},
     # okno startowe

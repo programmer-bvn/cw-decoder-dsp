@@ -2027,6 +2027,14 @@ nieobowiązkowe, program dopisuje sam stan okna (ostatni pasek stanu, ton nad
 szumem, jednostka, próg blokady), z sesji (pasmo i ton z CI-V, tor, wersja,
 statystyka kroków, zmiany blokady) i komputer (system, procesor, rdzenie, RAM).
 Operator sprawdził zwykły mikrofon Windows (bez radia z USB) — działa.
+Poczta w przeglądarce (operator, Firefox: „mail się nie otwiera, powstaje
+tylko zip”): mailto nie przenosi załącznika, bez Outlooka/Thunderbirda nie ma
+MAPI — okienko wysyłki: adres i temat do skopiowania, „Pokaż plik raportu”
+(Eksplorator, plik do przeciągnięcia), „Otwórz program pocztowy” dla
+mających. **„Otwórz nagranie…”**: dekoder od nowa na pliku (WAV/FLAC) zamiast
+karty, tempo 1×/2×/4×/max, ton z opisu sesji, bez zapisu nowej sesji,
+„Zgłoś problem” dołącza to nagranie, „Wróć do radia”. Sprawdzone: przełączenie
+w trakcie (pierwszy dekoder zamknięty po 9 s), max: 52 s nagrania w ~25 s.
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 

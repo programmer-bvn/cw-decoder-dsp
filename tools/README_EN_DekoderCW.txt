@@ -33,6 +33,11 @@ WINDOW
   noise may produce single E/I/T. The slider blocks reading below the level;
   0 = off. Strong station: about 15-20 dB; weak station: keep it low.
 
+OPEN RECORDING
+"Open recording…" decodes a saved session (sesje\*.wav) instead of the radio —
+e.g. the same recording in a new version, to check whether your report helped.
+Speed 1× like live, 2×/4×/max faster. "Back to radio" switches back.
+
 REPORT A DECODING PROBLEM
 When the program misreads a station that sounds fine, click "Report a
 decoding problem…", enter what was sent (if known) and a short description.

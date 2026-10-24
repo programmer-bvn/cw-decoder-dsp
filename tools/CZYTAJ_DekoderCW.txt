@@ -33,6 +33,11 @@ OKNO
   pojedyncze E/I/T. Suwak blokuje odczyt poniżej progu; 0 = wyłączona.
   Przy silnej stacji ok. 15-20 dB, przy słabej trzymaj nisko.
 
+OTWÓRZ NAGRANIE
+„Otwórz nagranie…” czyta zapisaną sesję (sesje\*.wav) zamiast radia — np. to samo
+nagranie w nowej wersji programu, żeby sprawdzić, czy zgłoszenie pomogło.
+Tempo 1× jak na żywo, 2×/4×/max szybciej. „Wróć do radia” przełącza z powrotem.
+
 ZGŁOŚ PROBLEM Z DEKODOWANIEM
 Gdy program źle czyta stację, którą dobrze słychać — kliknij „Zgłoś problem
 z dekodowaniem…”, wpisz co było nadane (jeśli wiesz) i krótki opis. Program

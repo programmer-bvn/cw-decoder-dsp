@@ -747,7 +747,8 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
         d = OdczytNaZywo(model, ton_cw=ton)
         s = Sesja(C.SR, ton, st.get("pasmo"), cfg.get("zrodlo", f"karta {cfg['device']} (Windows, okno)"),
                   st.get("skad_ton", "CI-V 0x14 0x09")) if cfg["zapis"] else None
-        gen = _strumien_wav(Path(cfg["wav"])) if cfg.get("wav") else _strumien_karty(cfg["device"])
+        gen = (_strumien_wav(Path(cfg["wav"]), cfg.get("tempo", 1.0)) if cfg.get("wav")
+               else _strumien_karty(cfg["device"]))
         wod = Wodospad()
         q.put(("info", "nasluch", {"ton": ton}))
         p_ost = None
@@ -818,7 +819,6 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     TLO, JASNY, SZARY, ZIELONY = "#101214", "#e8e8e8", "#6c7078", "#5fd068"
     ctx = mp.get_context("spawn")
     q = ctx.Queue()
-    stop = ctx.Event()
     prog = ctx.Value("d", float(PROG_BLOKADY_DB if prog_start is None else prog_start))
     cfg = dict(device=device, z_civ=z_civ, zapis=zapis, model_npz=model_npz, civ_port=civ_port,
                civ_baud=civ_baud, ton_reczny=ton_reczny, wav=wav, dziennik=dziennik,
@@ -838,10 +838,18 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     stan = tk.Label(gora, text=T("start"), fg=SZARY, bg=TLO, font=("Consolas", 11), anchor="w")
     stan.pack(side="left", fill="x", expand=True)
     sesja = {"sciezka": None, "stan": {}}           # stan: do raportu (ostatni pasek stanu, ton nad szumem)
+    przycisk = dict(bg="#2a3038", fg=JASNY, activebackground="#3a4250", relief="flat", padx=10)
     if raport_fn is not None:
         tk.Button(gora, text=T("zglos"),
                   command=lambda: raport_fn(sesja["sciezka"], root, {**sesja["stan"], "prog_blokady_db": prog.value}),
-                  bg="#2a3038", fg=JASNY, activebackground="#3a4250", relief="flat", padx=10).pack(side="right")
+                  **przycisk).pack(side="right")
+    # „Otwórz nagranie” (operator 24.10): ta sama sesja w nowej wersji — czy
+    # zgłoszenie pomogło — bez czekania, aż sygnał wróci na pasmo
+    v_tempo = tk.StringVar(value="1×")
+    tk.OptionMenu(gora, v_tempo, "1×", "2×", "4×", "max").pack(side="right", padx=(0, 10))
+    tk.Label(gora, text=T("tempo"), fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="right")
+    przycisk_radio = tk.Button(gora, text=T("wroc"), command=lambda: przelacz(None), **przycisk)
+    tk.Button(gora, text=T("otworz"), command=lambda: otworz(), **przycisk).pack(side="right", padx=6)
     wersja_lbl = tk.Label(gora, text="", fg="#e0b050", bg=TLO, font=("Segoe UI", 9, "underline"), cursor="hand2")
     wersja_lbl.pack(side="right", padx=10)
     pas = tk.Frame(root, bg=TLO)
@@ -874,6 +882,10 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
 
     def animuj() -> None:
         n = len(kolejka_wod[0])
+        if n > 4 * ZAPAS_WOD:                         # odtwarzanie 4×/max: obraz nie nadąża — skok
+            for i in (0, 1):
+                del kolejka_wod[i][:n - ZAPAS_WOD]
+            n = ZAPAS_WOD
         if not anim["start"] and n >= ZAPAS_WOD:
             anim["start"] = True
         if anim["start"] and n:
@@ -963,15 +975,13 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             pass
         root.after(50, odswiez)
 
-    def zamknij() -> None:
-        stop.set()
-        stan.config(text=T("zamykam"))
-        if na_zamkniecie is not None:
-            try:
-                na_zamkniecie(root.geometry(), prog.value)
-            except Exception as e:                   # zapamiętanie nie może zablokować zamknięcia
-                print(f"zapamiętanie ustawień: {e!r}", flush=True)
-        root.update()
+    dek: dict = {"w": None, "stop": None}
+
+    def zatrzymaj() -> None:
+        w = dek["w"]
+        if w is None:
+            return
+        dek["stop"].set()
         # odbierać dalej: dekoder z pełną kolejką nie skończyłby (sesja niezamknięta)
         koniec = time.monotonic() + 8
         while w.is_alive() and time.monotonic() < koniec:
@@ -983,11 +993,62 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             w.join(timeout=0.1)
         if w.is_alive():
             w.terminate()
+        try:
+            while True:
+                q.get_nowait()
+        except queue.Empty:
+            pass
+        dek["w"] = None
+
+    def uruchom(nadpis: dict) -> None:
+        dek["stop"] = ctx.Event()
+        # nie daemon: dekoder sam ma proces analizy (ProcessPoolExecutor)
+        dek["w"] = ctx.Process(target=_praca_okna, args=(q, dek["stop"], prog, {**cfg, **nadpis}))
+        dek["w"].start()
+
+    def przelacz(plik: str | None) -> None:
+        """Nagranie (plik) albo z powrotem karta (None): dekoder od nowa, tekst od nowa."""
+        stan.config(text=T("zamykam"))
+        root.update()
+        zatrzymaj()
+        tekst.delete("1.0", "end")
+        tekst.mark_set("otwarte", "1.0")
+        zat.update(znaki=[], od=0)
+        for k in kolejka_wod:
+            k.clear()
+        anim.update(ulamek=0.0, start=False)
+        if plik is None:
+            sesja["sciezka"] = None
+            przycisk_radio.pack_forget()
+            uruchom({})
+            return
+        from tools.radio import civ
+        ton = civ.ton_z_opisu(Path(plik).with_suffix(".txt")) or cfg.get("ton_reczny")
+        sesja["sciezka"] = plik                      # „Zgłoś problem” dołącza to nagranie
+        przycisk_radio.pack(side="right", padx=6)
+        tempo = {"1×": 1.0, "2×": 2.0, "4×": 4.0, "max": 0.0}[v_tempo.get()]
+        uruchom({"wav": plik, "tempo": tempo, "zapis": False, "z_civ": False, "ton_reczny": ton})
+        stan.config(text=T("odtwarzam", p=Path(plik).name))
+
+    def otworz() -> None:
+        from tkinter import filedialog
+        plik = filedialog.askopenfilename(parent=root, title=T("otworz"), initialdir=str(SESJE),
+                                          filetypes=[(T("nagrania"), "*.wav *.flac"), ("*", "*.*")])
+        if plik:
+            przelacz(plik)
+
+    def zamknij() -> None:
+        stan.config(text=T("zamykam"))
+        if na_zamkniecie is not None:
+            try:
+                na_zamkniecie(root.geometry(), prog.value)
+            except Exception as e:                   # zapamiętanie nie może zablokować zamknięcia
+                print(f"zapamiętanie ustawień: {e!r}", flush=True)
+        root.update()
+        zatrzymaj()
         root.destroy()
 
-    # nie daemon: dekoder sam ma proces analizy (ProcessPoolExecutor)
-    w = ctx.Process(target=_praca_okna, args=(q, stop, prog, cfg))
-    w.start()
+    uruchom({})
     root.protocol("WM_DELETE_WINDOW", zamknij)
     root.after(50, odswiez)
     root.after(KLATKA_WOD_MS, animuj)
@@ -1128,12 +1189,14 @@ def serwer(port: int, zapis: bool = True) -> None:
                 print("\n--- most rozłączony ---", flush=True)
 
 
-def _strumien_wav(sciezka: Path):
-    """Nagranie zamiast karty, w tempie rzeczywistym (próba mostu bez radia)."""
+def _strumien_wav(sciezka: Path, tempo: float = 1.0):
+    """Nagranie zamiast karty: tempo 1 = rzeczywiste (próba mostu bez radia,
+    „Otwórz nagranie” w okienku), 2, 4 — szybciej, 0 — ile się da."""
     a = frontend.load_audio(sciezka)
     n = C.SR // 10
     for i in range(0, a.size, n):
-        time.sleep(0.1)
+        if tempo > 0:
+            time.sleep(0.1 / tempo)
         yield a[i:i + n]
 
 
