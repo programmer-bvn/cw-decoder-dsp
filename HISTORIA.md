@@ -1968,6 +1968,18 @@ exe rozpakowane poza projektem, PATH bez Pythona, nagranie zamiast karty
 (`--proba plik.wav sekund katalog`): odczyt, sesja zapisana, start ~20 s.
 **Nie sprawdzone:** na innym komputerze i z prawdziwą kartą w exe.
 
+**Exe na IC-7300 „nie działa” (operator, 24.10).** Okno bez konsoli — zero
+śladu; dopisany dziennik `Dokumenty\DekoderCW\dziennik.txt` (wyjście, błędy,
+podsumowanie sesji). Przyczyna: `PortAudioError: Unanticipated host error
+... GLE 0x490` przy otwarciu karty WASAPI. Zmierzone: ta sama karta otwiera
+się z głównego wątku, z wątku — nie, gdy PortAudio wystartował w innym
+wątku. Aplikacja: lista kart w oknie startowym (główny wątek), karta
+w wątku dekodera; `start_na_zywo.bat` miał wszystko w jednym wątku, dlatego
+działał. Co pomogło: `sd._terminate(); sd._initialize()` w wątku, który
+otwiera kartę (`_strumien_karty`). Po drodze: PowerShell (CI-V) po pełnej
+ścieżce, nieudany CI-V nie zatrzymuje odbioru. Exe na karcie IC-7300 z CI-V:
+58 s, krok śr. 0,12 s, odczyt „... SP2BVN PSEK ... 73 DE SQ2BVN SQ2BVN”.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
