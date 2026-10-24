@@ -735,7 +735,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
         if st.get("ton_cw") is None and cfg.get("ton_reczny"):
             st = {**st, "ton_cw": cfg["ton_reczny"], "skad_ton": "wpisany ręcznie"}
         ton = st.get("ton_cw")
-        q.put(("info", f"ton CW: {ton} Hz; ładuję sieć..."))
+        q.put(("info", "laduje", {"ton": ton}))
         if cfg.get("model_npz"):
             from dsp.siec_numpy import SiecNumpy
             model = SiecNumpy(Path(cfg["model_npz"]))
@@ -749,13 +749,17 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                   st.get("skad_ton", "CI-V 0x14 0x09")) if cfg["zapis"] else None
         gen = _strumien_wav(Path(cfg["wav"])) if cfg.get("wav") else _strumien_karty(cfg["device"])
         wod = Wodospad()
-        q.put(("info", f"ton CW: {ton} Hz; nasłuch"))
+        q.put(("info", "nasluch", {"ton": ton}))
         p_ost = None
+        sesja_wyslana = False
         for x in gen:
             if stop.is_set():
                 break
             if s:
                 s.dzwiek(x)
+                if not sesja_wyslana and s.wav is not None:   # okno: ścieżka do raportu
+                    q.put(("sesja", str(s.sciezka)))
+                    sesja_wyslana = True
             if prog.value != p_ost:
                 p_ost = d.prog_db = prog.value
                 if s:
@@ -794,13 +798,19 @@ def civ_stan(port: str | None, baud: int | None) -> dict:
 
 def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | None = None,
          civ_port: str | None = None, civ_baud: int | None = None, ton_reczny: float | None = None,
-         tytul: str = "Dekoder CW — na żywo", wav: str | None = None, dziennik: str | None = None) -> None:
+         tytul: str = "Dekoder CW — na żywo", wav: str | None = None, dziennik: str | None = None,
+         geometria: str | None = None, prog_start: float | None = None, na_zamkniecie=None,
+         raport_fn=None, sprawdz_wersje=None, ikona: str | None = None) -> None:
     """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
     i wstępny (szary), słowa ze słownika zielone, dwa wodospady, wskaźnik tonu
     nad szumem z kreską progu, suwak blokady szumów. Dekoder w osobnym procesie
     (_praca_okna); zamknięcie okna zamyka sesję porządnie.
     model_npz — sieć w numpy (aplikacja bez TensorFlow); civ_port/baud, ton_reczny —
-    radio innego operatora; wav — nagranie zamiast karty (próba)."""
+    radio innego operatora; wav — nagranie zamiast karty (próba).
+    Aplikacja (tools/aplikacja.py): geometria/prog_start/na_zamkniecie(geometria,
+    prog) — zapamiętanie w rejestrze; raport_fn(sesja, root) — przycisk „Zgłoś
+    problem”; sprawdz_wersje() -> (wersja, adres) | None — w tle przy starcie."""
+    from tools.teksty import T
     import multiprocessing as mp
     import queue
     import tkinter as tk
@@ -809,32 +819,43 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     ctx = mp.get_context("spawn")
     q = ctx.Queue()
     stop = ctx.Event()
-    prog = ctx.Value("d", float(PROG_BLOKADY_DB))
+    prog = ctx.Value("d", float(PROG_BLOKADY_DB if prog_start is None else prog_start))
     cfg = dict(device=device, z_civ=z_civ, zapis=zapis, model_npz=model_npz, civ_port=civ_port,
                civ_baud=civ_baud, ton_reczny=ton_reczny, wav=wav, dziennik=dziennik,
                sesje=str(SESJE), wersja=WERSJA)
 
     root = tk.Tk()
     root.title(tytul)
-    root.geometry("1000x640")
+    root.geometry(geometria or "1000x640")
+    if ikona:
+        try:
+            root.iconbitmap(ikona)
+        except tk.TclError:
+            pass
     root.configure(bg=TLO)
     gora = tk.Frame(root, bg=TLO)
     gora.pack(fill="x", padx=10, pady=(8, 2))
-    stan = tk.Label(gora, text="start...", fg=SZARY, bg=TLO, font=("Consolas", 11), anchor="w")
+    stan = tk.Label(gora, text=T("start"), fg=SZARY, bg=TLO, font=("Consolas", 11), anchor="w")
     stan.pack(side="left", fill="x", expand=True)
+    sesja = {"sciezka": None}
+    if raport_fn is not None:
+        tk.Button(gora, text=T("zglos"), command=lambda: raport_fn(sesja["sciezka"], root),
+                  bg="#2a3038", fg=JASNY, activebackground="#3a4250", relief="flat", padx=10).pack(side="right")
+    wersja_lbl = tk.Label(gora, text="", fg="#e0b050", bg=TLO, font=("Segoe UI", 9, "underline"), cursor="hand2")
+    wersja_lbl.pack(side="right", padx=10)
     pas = tk.Frame(root, bg=TLO)
     pas.pack(fill="x", padx=10, pady=2)
-    tk.Label(pas, text="ton nad szumem", fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="left")
+    tk.Label(pas, text=T("ton_nad_szumem"), fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="left")
     W_M, ZAKRES = 320, 40.0
     miernik = tk.Canvas(pas, width=W_M, height=16, bg="#22262b", highlightthickness=0)
     miernik.pack(side="left", padx=6)
     slupek = miernik.create_rectangle(0, 0, 0, 16, fill="#3fa34d", width=0)
     kreska = miernik.create_line(0, 0, 0, 16, fill="#e05050", width=2)
     suwak = tk.Scale(pas, from_=0, to=30, resolution=1, orient="horizontal", length=260,
-                     label="blokada szumów [dB nad szumem]; 0 = wyłączona", bg=TLO, fg=SZARY,
+                     label=T("blokada"), bg=TLO, fg=SZARY,
                      troughcolor="#22262b", highlightthickness=0, font=("Segoe UI", 9),
                      command=lambda v: setattr(prog, "value", float(v)))
-    suwak.set(PROG_BLOKADY_DB)
+    suwak.set(prog.value)
     suwak.pack(side="left", padx=12)
     obrazy = []
     # Płynny wodospad (operator 24.10): kolumny przychodzą skokami, raz na krok
@@ -864,8 +885,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     obrazy[i].dodaj(np.array(kolejka_wod[i][:k]))
                     del kolejka_wod[i][:k]
         root.after(KLATKA_WOD_MS, animuj)
-    for opis in (f"wejście z radia {PASMO_WEJ[0]:.0f}-{PASMO_WEJ[1]:.0f} Hz",
-                 f"do sieci (obce skasowane, nasza na {C.TONE_CENTER:.0f} Hz) {PASMO_SYG[0]:.0f}-{PASMO_SYG[1]:.0f} Hz"):
+    for opis in (T("wod_wej", a=f"{PASMO_WEJ[0]:.0f}", b=f"{PASMO_WEJ[1]:.0f}"),
+                 T("wod_syg", t=f"{C.TONE_CENTER:.0f}", a=f"{PASMO_SYG[0]:.0f}", b=f"{PASMO_SYG[1]:.0f}")):
         tk.Label(root, text=opis, fg=SZARY, bg=TLO, font=("Segoe UI", 8), anchor="w").pack(fill="x", padx=10)
         cv = tk.Canvas(root, width=W_WOD, height=H_WOD, bg="#000000", highlightthickness=0)
         cv.pack(padx=10, pady=(0, 4), anchor="w")
@@ -897,11 +918,16 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             while True:
                 m = q.get_nowait()
                 if m[0] == "koniec":
-                    stan.config(text="dekoder zakończył pracę")
+                    stan.config(text=T("koniec_pracy"))
+                elif m[0] == "sesja":
+                    sesja["sciezka"] = m[1]
+                elif m[0] == "wersja":
+                    wersja_lbl.config(text=T("nowa_wersja", w=m[1]))
+                    wersja_lbl.bind("<Button-1>", lambda e, a=m[2]: __import__("webbrowser").open(a))
                 elif m[0] == "info":
-                    stan.config(text=m[1])
+                    stan.config(text=T(m[1], **m[2]))
                 elif m[0] == "blad":
-                    stan.config(text="BŁĄD — szczegóły w oknie", fg="#e05050")
+                    stan.config(text=T("blad_okno"), fg="#e05050")
                     tekst.insert("end", "\n" + m[1], "wst")
                 else:
                     _, nowe, wst, st, nad, u, w_wej, w_syg = m
@@ -936,7 +962,12 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
 
     def zamknij() -> None:
         stop.set()
-        stan.config(text="zamykam sesję...")
+        stan.config(text=T("zamykam"))
+        if na_zamkniecie is not None:
+            try:
+                na_zamkniecie(root.geometry(), prog.value)
+            except Exception as e:                   # zapamiętanie nie może zablokować zamknięcia
+                print(f"zapamiętanie ustawień: {e!r}", flush=True)
         root.update()
         # odbierać dalej: dekoder z pełną kolejką nie skończyłby (sesja niezamknięta)
         koniec = time.monotonic() + 8
@@ -957,6 +988,17 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     root.protocol("WM_DELETE_WINDOW", zamknij)
     root.after(50, odswiez)
     root.after(KLATKA_WOD_MS, animuj)
+    if sprawdz_wersje is not None:
+        import threading
+
+        def w_tle() -> None:
+            try:
+                r = sprawdz_wersje()
+                if r:
+                    q.put(("wersja", *r))
+            except Exception as e:                   # brak sieci itp. — bez znaczenia dla odbioru
+                print(f"sprawdzanie wersji: {e!r}", flush=True)
+        threading.Thread(target=w_tle, daemon=True).start()
     root.mainloop()
 
 

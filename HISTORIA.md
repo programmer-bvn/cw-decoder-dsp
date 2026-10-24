@@ -1980,6 +1980,43 @@ otwiera kartę (`_strumien_karty`). Po drodze: PowerShell (CI-V) po pełnej
 ścieżce, nieudany CI-V nie zatrzymuje odbioru. Exe na karcie IC-7300 z CI-V:
 58 s, krok śr. 0,12 s, odczyt „... SP2BVN PSEK ... 73 DE SQ2BVN SQ2BVN”.
 
+**Wodospad przycinał się co ~2 s** (operator). Zmierzone: 28-31 przerw
+> 200 ms na 64 s, każda ~0,35 s — także po przeniesieniu dekodera do
+osobnego procesu (dobre samo w sobie: okno ma interpreter dla siebie). Prawdziwa
+przyczyna: po przeliczeniu (co 2 s) nowych kolumn nie ma ~0,6 s, a kolejka
+animacji miała zapas 0,3 s i pustoszała. Zapas 0,7 s + tempo z długości
+kolejki: 0 przerw > 100 ms, najdłuższa 63 ms. Obraz ~0,7 s za dźwiękiem.
+
+### Instalator dla ludzi bez Pythona i bez IC-7300 (24.10)
+
+Operator: program ma trafić do innych krótkofalowców (nie-informatyków);
+sygnały, których dekoder nie czyta, mają spływać same — „samograj”, bo
+u niego (linia 110 kV obok) nie da się nagrać wszystkich rodzajów sygnałów.
+- **Ustawienia w rejestrze** (`HKCU\Software\SQ2BVN\DekoderCW`, prośba
+  operatora): język, karta (po NAZWIE z API — numery się zmieniają), CI-V,
+  ton, zapis, sprawdzanie wersji, położenie okna, próg blokady, znak.
+- **Język PL/EN** (`tools/teksty.py`), domyślnie z języka Windows.
+- **„Zgłoś problem z dekodowaniem”**: ZIP w stałym układzie do przetworzenia
+  automatem — `raport.json` (format `cw-raport-1`: wersja, czas, język, znak,
+  nadane, opis, ustawienia), `nagranie.flac` (ostatnie 15 min sesji),
+  `sesja.txt/.log`, koniec dziennika; zapis w Dokumenty\DekoderCW\raporty.
+  Poczta: Simple MAPI (Outlook/Thunderbird dołącza plik sam), inaczej mailto
+  + Eksplorator z zaznaczonym plikiem. Adres skrzynki (`KONTAKT_EMAIL`)
+  pusty — skrzynkę projektu zakłada operator; obsługa automatem do ustalenia.
+- **Aktualizacje**: bez łatek (instalator 79 MB) — przy starcie (wyłączalne)
+  publiczne API GitHuba, napis „Dostępna nowa wersja” z linkiem; nowa wersja
+  instaluje się na starą, ustawienia i dane zostają.
+- **Logo** (`tools/instalator/logo.py`, numpy bez Pillow): „CW” kropkami
+  i kreskami nad kluczowanym tonem; PNG, ICO 16-256, obrazki kreatora.
+- **Inno Setup 7** (`tools/instalator/DekoderCW.iss`): bez administratora,
+  PL/EN, licencja GPL, menu Start (+ pulpit do wyboru), deinstalator.
+  `budowa_exe.bat`: wagi -> PyInstaller -> ZIP -> `DekoderCW_setup_<wersja>.exe`.
+**Sprawdzone:** raport z sesji (ZIP: json, FLAC 21 s = 100 kB, txt, log,
+dziennik); instalacja cicha, zainstalowany program odczytał nagranie
+(„OK2PVF DE SQ2BVN = GM OM TN”), deinstalacja bez śladów. **Nie sprawdzone:**
+wysyłka MAPI (brak adresu), instalacja na innym komputerze. Start programu
+~30 s (dwa procesy importują biblioteki).
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

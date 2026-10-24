@@ -1,13 +1,18 @@
-"""DEKODER CW — aplikacja do rozdania (24.10, operator: „exe dla SP2MSA").
+"""DEKODER CW — aplikacja do rozdania (24.10, operator: „exe dla SP2MSA”,
+potem instalator dla ludzi bez Pythona i bez IC-7300).
 
 To samo okienko co `tools.na_zywo okno`, ale:
 - bez TensorFlow: sieć zboczy w numpy (dsp/siec_numpy.py, wagi siec.npz),
-- okno startowe: karta dźwiękowa, opcjonalnie CI-V (Icom) i port COM albo
-  ton CW wpisany ręcznie — u innego operatora inne radio i inne numery,
-- sesje i słownik osobisty w Dokumentach\\DekoderCW, ustawienia w %APPDATA%.
+- okno startowe: język, karta dźwiękowa, CI-V (Icom) z portem albo ton CW
+  ręcznie — u innego operatora inne radio i inne numery,
+- ustawienia w rejestrze (HKCU\\Software\\SQ2BVN\\DekoderCW) razem z położeniem
+  okna i progiem blokady — raz ustawione wracają,
+- „Zgłoś problem z dekodowaniem”: raport w stałym układzie (raport.json, FLAC,
+  odczyt, dziennik) do przetworzenia automatem, mail przez program pocztowy,
+- przy starcie (wyłączalne) pytanie GitHuba o nowszą wersję.
 
-Budowa exe: budowa_exe.bat (PyInstaller, katalog dist\\DekoderCW).
-Tylko odbiór: CI-V wyłącznie odczytuje (częstotliwość, tryb, ton CW).
+Budowa: budowa_exe.bat (PyInstaller + Inno Setup). Tylko odbiór: CI-V
+wyłącznie odczytuje (częstotliwość, tryb, ton CW).
 """
 
 from __future__ import annotations
@@ -15,28 +20,93 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
+WERSJA_APLIKACJI = "0.9.0"
+NAZWA = "Dekoder CW SQ2BVN"
+REPO = "programmer-bvn/cw-decoder-dsp"
+# Adres skrzynki projektu na raporty — operator zakłada konto sam (24.10);
+# puste = raport tylko do pliku, bez otwierania poczty.
+KONTAKT_EMAIL = ""
+KLUCZ_REJESTRU = r"Software\SQ2BVN\DekoderCW"
 KATALOG = Path(os.environ.get("USERPROFILE", Path.home())) / "Documents" / "DekoderCW"
-USTAWIENIA = Path(os.environ.get("APPDATA", Path.home())) / "DekoderCW" / "ustawienia.json"
 WAGI = "siec.npz"
-WZOR_SLOWNIKA = """# Słownik osobisty — Dekoder CW. Twoje słowa, które mają świecić na zielono
-# i mieć poprawione spacje: imię, QTH, imiona i QTH znajomych. Jedno lub kilka
-# słów w wierszu, wielkimi lub małymi literami; po „#" komentarz.
-# Znaków wywoławczych i raportów RST nie trzeba wpisywać — rozpoznaje je wzór.
-# Zmiany działają od następnego uruchomienia.
+RAPORT_MIN = 15                              # tyle ostatnich minut sesji idzie do raportu
+WZOR_SLOWNIKA = """# Słownik osobisty — Dekoder CW / Personal dictionary — CW Decoder.
+# Twoje słowa (imię, QTH, znajomi), które mają świecić na zielono i mieć
+# poprawione spacje. Jedno lub kilka słów w wierszu; po „#" komentarz.
+# Your words (name, QTH, friends) to be shown in green with spaces fixed.
+# One or more words per line; „#" starts a comment. Callsigns and RST
+# reports are recognised automatically. Changes apply after restart.
 """
 
 
+# ------------------------------------------------------------------ zasoby
 def _zasob(nazwa: str) -> Path:
     """Plik dołączony do exe (PyInstaller: sys._MEIPASS) albo z repozytorium."""
     baza = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
-    for p in (baza / nazwa, baza / "runs" / "zbocza_5" / nazwa):
+    for p in (baza / nazwa, baza / "runs" / "zbocza_5" / nazwa, baza / "tools" / "instalator" / nazwa):
         if p.exists():
             return p
     raise FileNotFoundError(nazwa)
 
 
+def _ikona() -> str | None:
+    try:
+        return str(_zasob("dekoder_cw.ico"))
+    except FileNotFoundError:
+        return None
+
+
+def _wersja_pelna() -> str:
+    try:
+        return f"{WERSJA_APLIKACJI} ({_zasob('wersja.txt').read_text(encoding='utf-8').strip()})"
+    except FileNotFoundError:
+        return WERSJA_APLIKACJI
+
+
+# --------------------------------------------------------------- rejestr
+def ust_czytaj() -> dict:
+    """Ustawienia z rejestru (wartości JSON pod nazwami pól)."""
+    try:
+        import winreg
+        k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, KLUCZ_REJESTRU)
+    except OSError:
+        return {}
+    ust, i = {}, 0
+    while True:
+        try:
+            nazwa, wart, _ = winreg.EnumValue(k, i)
+        except OSError:
+            break
+        try:
+            ust[nazwa] = json.loads(wart)
+        except (TypeError, ValueError):
+            pass
+        i += 1
+    return ust
+
+
+def ust_zapisz(zmiany: dict) -> None:
+    try:
+        import winreg
+        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, KLUCZ_REJESTRU)
+        for nazwa, wart in zmiany.items():
+            winreg.SetValueEx(k, nazwa, 0, winreg.REG_SZ, json.dumps(wart, ensure_ascii=False))
+    except OSError as e:
+        print(f"rejestr: {e!r}", flush=True)
+
+
+def _jezyk_systemu() -> str:
+    try:
+        import ctypes
+        return "pl" if ctypes.windll.kernel32.GetUserDefaultUILanguage() & 0x3FF == 0x15 else "en"
+    except (AttributeError, OSError):
+        return "pl"
+
+
+# ---------------------------------------------------------- okno startowe
 def _porty_com() -> list[str]:
     try:
         import winreg
@@ -54,9 +124,11 @@ def _porty_com() -> list[str]:
 
 
 def _karty() -> list[tuple[int, str]]:
+    """[(numer, „nazwa — API”)] — zapamiętujemy nazwę z API, nie numer: Windows
+    przenumerowuje karty po przepięciu USB (23.10: 15 -> 18 -> 20)."""
     import sounddevice as sd
     api = [a["name"] for a in sd.query_hostapis()]
-    kar = [(i, f"[{i}] {d['name']} — {api[d['hostapi']]}") for i, d in enumerate(sd.query_devices())
+    kar = [(i, f"{d['name']} — {api[d['hostapi']]}") for i, d in enumerate(sd.query_devices())
            if d["max_input_channels"] > 0]
     # WASAPI najpierw: ta sama karta jest widoczna kilka razy (MME, DirectSound, WASAPI, WDM-KS)
     return sorted(kar, key=lambda k: ("WASAPI" not in k[1], k[0]))
@@ -65,40 +137,56 @@ def _karty() -> list[tuple[int, str]]:
 def okno_startowe() -> dict | None:
     import tkinter as tk
     from tkinter import ttk
-    try:
-        ust = json.loads(USTAWIENIA.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        ust = {}
+    from tools import teksty
+    from tools.teksty import T
+    ust = ust_czytaj()
+    teksty.JEZYK = ust.get("jezyk") or _jezyk_systemu()
     karty, porty = _karty(), _porty_com()
     wynik: dict = {}
     r = tk.Tk()
-    r.title("Dekoder CW — ustawienia")
+    r.title(f"{T('ust_tytul')} — {WERSJA_APLIKACJI}")
     r.resizable(False, False)
+    try:
+        r.iconbitmap(str(_zasob("dekoder_cw.ico")))
+    except (FileNotFoundError, tk.TclError):
+        pass
     f = ttk.Frame(r, padding=14)
     f.pack()
-    ttk.Label(f, text="Karta dźwiękowa (wejście z radia):").grid(row=0, column=0, sticky="w")
+    ttk.Label(f, text=T("ust_jezyk")).grid(row=0, column=0, sticky="w")
+    v_jez = tk.StringVar(value={"pl": "Polski", "en": "English"}[teksty.JEZYK])
+    cj = ttk.Combobox(f, textvariable=v_jez, values=["Polski", "English"], width=10, state="readonly")
+    cj.grid(row=0, column=1, sticky="w", padx=6, pady=(0, 8))
+
+    def zmiana_jezyka(_e=None) -> None:
+        ust_zapisz({"jezyk": "pl" if v_jez.get() == "Polski" else "en"})
+        wynik["od_nowa"] = True
+        r.destroy()
+    cj.bind("<<ComboboxSelected>>", zmiana_jezyka)
+
+    ttk.Label(f, text=T("ust_karta")).grid(row=1, column=0, columnspan=3, sticky="w")
     v_karta = tk.StringVar()
-    cb = ttk.Combobox(f, textvariable=v_karta, values=[k[1] for k in karty], width=70, state="readonly")
-    cb.grid(row=1, column=0, columnspan=3, sticky="we", pady=(2, 10))
+    ttk.Combobox(f, textvariable=v_karta, values=[k[1] for k in karty], width=70, state="readonly").grid(
+        row=2, column=0, columnspan=3, sticky="we", pady=(2, 10))
     zapamietana = next((k[1] for k in karty if k[1] == ust.get("karta")), None)
     domyslna = next((k[1] for k in karty if "USB Audio" in k[1] and "WASAPI" in k[1]), karty[0][1] if karty else "")
     v_karta.set(zapamietana or domyslna)
 
     v_civ = tk.BooleanVar(value=ust.get("civ", False))
-    ttk.Checkbutton(f, text="Ton CW z radia przez CI-V (Icom; tylko odczyt)", variable=v_civ).grid(
-        row=2, column=0, sticky="w")
+    ttk.Checkbutton(f, text=T("ust_civ"), variable=v_civ).grid(row=3, column=0, sticky="w")
     v_port = tk.StringVar(value=ust.get("port", porty[0] if porty else "COM1"))
-    ttk.Combobox(f, textvariable=v_port, values=porty, width=8).grid(row=2, column=1, sticky="w", padx=6)
+    ttk.Combobox(f, textvariable=v_port, values=porty, width=8).grid(row=3, column=1, sticky="w", padx=6)
     v_baud = tk.StringVar(value=str(ust.get("baud", 115200)))
-    ttk.Combobox(f, textvariable=v_baud, values=["115200", "19200", "9600"], width=8).grid(row=2, column=2, sticky="w")
-    ttk.Label(f, text="albo ton CW wpisany ręcznie [Hz] (puste = sam szuka):").grid(row=3, column=0, sticky="w", pady=(8, 0))
-    v_ton = tk.StringVar(value=str(ust.get("ton", "")))
-    ttk.Entry(f, textvariable=v_ton, width=8).grid(row=3, column=1, sticky="w", padx=6, pady=(8, 0))
+    ttk.Combobox(f, textvariable=v_baud, values=["115200", "19200", "9600"], width=8).grid(row=3, column=2, sticky="w")
+    ttk.Label(f, text=T("ust_ton")).grid(row=4, column=0, sticky="w", pady=(8, 0))
+    v_ton = tk.StringVar(value=str(ust.get("ton") or ""))
+    ttk.Entry(f, textvariable=v_ton, width=8).grid(row=4, column=1, sticky="w", padx=6, pady=(8, 0))
     v_zapis = tk.BooleanVar(value=ust.get("zapis", True))
-    ttk.Checkbutton(f, text=f"Zapisuj sesje (dźwięk + tekst) do {KATALOG / 'sesje'}", variable=v_zapis).grid(
-        row=4, column=0, columnspan=3, sticky="w", pady=(10, 0))
-    ttk.Label(f, text=f"Słownik osobisty: {KATALOG / 'slownik_osobisty.txt'}", foreground="#666").grid(
-        row=5, column=0, columnspan=3, sticky="w", pady=(4, 0))
+    ttk.Checkbutton(f, text=T("ust_zapis", k=KATALOG / "sesje"), variable=v_zapis).grid(
+        row=5, column=0, columnspan=3, sticky="w", pady=(10, 0))
+    v_akt = tk.BooleanVar(value=ust.get("aktualizacje", True))
+    ttk.Checkbutton(f, text=T("ust_aktualizacje"), variable=v_akt).grid(row=6, column=0, columnspan=3, sticky="w")
+    ttk.Label(f, text=T("ust_slownik", p=KATALOG / "slownik_osobisty.txt"), foreground="#666").grid(
+        row=7, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
     def start() -> None:
         k = next((k for k in karty if k[1] == v_karta.get()), None)
@@ -109,30 +197,169 @@ def okno_startowe() -> dict | None:
         except ValueError:
             ton = None
         wynik.update(karta=k[0], karta_nazwa=k[1], civ=v_civ.get(), port=v_port.get(),
-                     baud=int(v_baud.get() or 115200), ton=ton, zapis=v_zapis.get())
-        try:
-            USTAWIENIA.parent.mkdir(parents=True, exist_ok=True)
-            USTAWIENIA.write_text(json.dumps({**wynik, "karta": k[1], "ton": v_ton.get()}, ensure_ascii=False),
-                                  encoding="utf-8")
-        except OSError:
-            pass
+                     baud=int(v_baud.get() or 115200), ton=ton, zapis=v_zapis.get(), aktualizacje=v_akt.get())
+        ust_zapisz({"karta": k[1], "civ": wynik["civ"], "port": wynik["port"], "baud": wynik["baud"],
+                    "ton": ton, "zapis": wynik["zapis"], "aktualizacje": wynik["aktualizacje"]})
         r.destroy()
 
-    ttk.Button(f, text="Start", command=start).grid(row=6, column=2, sticky="e", pady=(14, 0))
+    ttk.Button(f, text=T("ust_start"), command=start).grid(row=8, column=2, sticky="e", pady=(14, 0))
     r.mainloop()
+    if wynik.get("od_nowa"):
+        return okno_startowe()
     return wynik or None
 
 
+# ------------------------------------------------------------- aktualizacje
+def sprawdz_wersje() -> tuple[str, str] | None:
+    """Najnowsze wydanie na GitHubie (publiczne API, bez logowania) -> (wersja, adres)
+    albo None, gdy nie nowsze."""
+    import urllib.request
+    zad = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases/latest",
+                                 headers={"Accept": "application/vnd.github+json", "User-Agent": NAZWA})
+    with urllib.request.urlopen(zad, timeout=10) as o:
+        d = json.load(o)
+    tag = str(d.get("tag_name", "")).lstrip("vV")
+
+    def liczby(w: str) -> tuple:
+        return tuple(int("".join(c for c in x if c.isdigit()) or 0) for x in w.split("."))
+    return (tag, d.get("html_url", f"https://github.com/{REPO}/releases")) \
+        if tag and liczby(tag) > liczby(WERSJA_APLIKACJI) else None
+
+
+# ------------------------------------------------------------------ raport
+def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: dict) -> Path:
+    """ZIP w stałym układzie (do przetworzenia automatem):
+    raport.json — wersja, czas, język, znak, nadane, opis, ustawienia, nazwy plików;
+    nagranie.flac — ostatnie RAPORT_MIN min sesji; sesja.txt/.log; dziennik.txt (koniec)."""
+    import zipfile
+    import soundfile as sf
+    from tools import teksty
+    stempel = time.strftime("%Y%m%d_%H%M%S")
+    znak_pliku = "".join(c for c in znak.upper() if c.isalnum() or c == "/").replace("/", "-") or "ANON"
+    katalog = KATALOG / "raporty"
+    katalog.mkdir(parents=True, exist_ok=True)
+    cel = katalog / f"raport_{stempel}_{znak_pliku}.zip"
+    x, sr = sf.read(str(sesja), dtype="int16")
+    x = x[-int(RAPORT_MIN * 60 * sr):]
+    flac = katalog / f"_nagranie_{stempel}.flac"
+    sf.write(str(flac), x, sr, format="FLAC")
+    meta = {"format": "cw-raport-1", "wersja": _wersja_pelna(), "czas": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "jezyk": teksty.JEZYK, "znak": znak.upper(), "nadane": nadane, "opis": opis,
+            "sesja": sesja.name, "nagranie_s": round(len(x) / sr, 1), "ustawienia": ustawienia}
+    with zipfile.ZipFile(cel, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("raport.json", json.dumps(meta, ensure_ascii=False, indent=1))
+        z.write(flac, "nagranie.flac")
+        for roz in (".txt", ".log"):
+            p = sesja.with_suffix(roz)
+            if p.exists():
+                z.write(p, "sesja" + roz)
+        dz = KATALOG / "dziennik.txt"
+        if dz.exists():
+            z.writestr("dziennik.txt", "".join(dz.read_text(encoding="utf-8", errors="replace").splitlines(True)[-400:]))
+    flac.unlink(missing_ok=True)
+    return cel
+
+
+def _mapi_wyslij(adres: str, temat: str, tresc: str, plik: Path) -> bool:
+    """Nowa wiadomość w domyślnym programie pocztowym z załącznikiem (Simple MAPI:
+    Outlook, Thunderbird...). False, gdy brak takiego programu (poczta w przeglądarce)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Odbiorca(ctypes.Structure):
+        _fields_ = [("ulReserved", wintypes.ULONG), ("ulRecipClass", wintypes.ULONG), ("lpszName", wintypes.LPWSTR),
+                    ("lpszAddress", wintypes.LPWSTR), ("ulEIDSize", wintypes.ULONG), ("lpEntryID", ctypes.c_void_p)]
+
+    class Plik(ctypes.Structure):
+        _fields_ = [("ulReserved", wintypes.ULONG), ("flFlags", wintypes.ULONG), ("nPosition", wintypes.ULONG),
+                    ("lpszPathName", wintypes.LPWSTR), ("lpszFileName", wintypes.LPWSTR), ("lpFileType", ctypes.c_void_p)]
+
+    class Wiadomosc(ctypes.Structure):
+        _fields_ = [("ulReserved", wintypes.ULONG), ("lpszSubject", wintypes.LPWSTR), ("lpszNoteText", wintypes.LPWSTR),
+                    ("lpszMessageType", wintypes.LPWSTR), ("lpszDateReceived", wintypes.LPWSTR),
+                    ("lpszConversationID", wintypes.LPWSTR), ("flFlags", wintypes.ULONG),
+                    ("lpOriginator", ctypes.c_void_p), ("nRecipCount", wintypes.ULONG),
+                    ("lpRecips", ctypes.POINTER(Odbiorca)), ("nFileCount", wintypes.ULONG),
+                    ("lpFiles", ctypes.POINTER(Plik))]
+    try:
+        mapi = ctypes.WinDLL("mapi32.dll")
+        f = mapi.MAPISendMailW
+    except (OSError, AttributeError):
+        return False
+    od = Odbiorca(0, 1, adres, "SMTP:" + adres, 0, None)          # MAPI_TO
+    pl = Plik(0, 0, 0xFFFFFFFF, str(plik), plik.name, None)
+    w = Wiadomosc(0, temat, tresc, None, None, None, 0, None, 1 if adres else 0,
+                  ctypes.pointer(od) if adres else None, 1, ctypes.pointer(pl))
+    f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(Wiadomosc), wintypes.ULONG, wintypes.ULONG]
+    wynik = f(None, None, ctypes.byref(w), 0x8 | 0x1, 0)            # MAPI_DIALOG | MAPI_LOGON_UI
+    print(f"MAPISendMailW: {wynik}", flush=True)
+    return wynik in (0, 1)                                         # 0 OK, 1 użytkownik anulował
+
+
+def okno_raportu(sesja: str | None, rodzic, ustawienia: dict) -> None:
+    import threading
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+    from tools.teksty import T
+    if not sesja:
+        messagebox.showinfo(T("rap_tytul"), T("rap_brak_sesji"), parent=rodzic)
+        return
+    ust = ust_czytaj()
+    d = tk.Toplevel(rodzic)
+    d.title(T("rap_tytul"))
+    d.transient(rodzic)
+    f = ttk.Frame(d, padding=12)
+    f.pack(fill="both", expand=True)
+    ttk.Label(f, text=T("rap_wstep", m=RAPORT_MIN), justify="left").pack(anchor="w")
+    ttk.Label(f, text=T("rap_znak")).pack(anchor="w", pady=(10, 0))
+    v_znak = tk.StringVar(value=ust.get("znak", ""))
+    ttk.Entry(f, textvariable=v_znak, width=20).pack(anchor="w")
+    ttk.Label(f, text=T("rap_nadane")).pack(anchor="w", pady=(8, 0))
+    v_nad = tk.StringVar()
+    ttk.Entry(f, textvariable=v_nad, width=80).pack(anchor="w", fill="x")
+    ttk.Label(f, text=T("rap_opis")).pack(anchor="w", pady=(8, 0))
+    opis = tk.Text(f, width=80, height=6)
+    opis.pack(fill="both", expand=True)
+
+    def utworz() -> None:
+        znak, nad, op = v_znak.get().strip(), v_nad.get().strip(), opis.get("1.0", "end").strip()
+        ust_zapisz({"znak": znak})
+        d.destroy()
+        try:
+            plik = _zbuduj_raport(Path(sesja), znak, nad, op, ustawienia)
+        except Exception as e:
+            print(f"raport: {e!r}", flush=True)
+            messagebox.showerror(T("rap_tytul"), repr(e), parent=rodzic)
+            return
+        print(f"raport: {plik}", flush=True)
+        temat = T("rap_temat", znak=znak.upper() or "-", wersja=WERSJA_APLIKACJI)
+        tresc = T("rap_tresc", plik=plik.name, opis=op)
+
+        def poczta() -> None:
+            if not KONTAKT_EMAIL or not _mapi_wyslij(KONTAKT_EMAIL, temat, tresc, plik):
+                import subprocess
+                import urllib.parse
+                import webbrowser
+                if KONTAKT_EMAIL:
+                    webbrowser.open(f"mailto:{KONTAKT_EMAIL}?subject={urllib.parse.quote(temat)}"
+                                    f"&body={urllib.parse.quote(tresc)}")
+                subprocess.Popen(["explorer", "/select,", str(plik)])
+        threading.Thread(target=poczta, daemon=True).start()
+        messagebox.showinfo(T("rap_tytul"), T("rap_gotowy", p=plik, e=KONTAKT_EMAIL or "—"), parent=rodzic)
+
+    ttk.Button(f, text=T("rap_utworz"), command=utworz).pack(anchor="e", pady=(10, 0))
+
+
+# -------------------------------------------------------------------- start
 def _dziennik() -> None:
     """exe bez konsoli: wyjście i błędy do Dokumenty\\DekoderCW\\dziennik.txt.
     24.10 operator: „uruchomiłem exe na IC-7300, nie działa” — i żadnego
     śladu, bo okno bez konsoli gubiło komunikaty. Awaria ma sama mówić."""
     import threading
-    import time
     import traceback
     KATALOG.mkdir(parents=True, exist_ok=True)
     f = open(KATALOG / "dziennik.txt", "a", encoding="utf-8", buffering=1)
-    f.write(f"\n===== start {time.strftime('%Y-%m-%d %H:%M:%S')} argv={sys.argv[1:]}\n")
+    f.write(f"\n===== start {time.strftime('%Y-%m-%d %H:%M:%S')} {_wersja_pelna()} argv={sys.argv[1:]}\n")
     sys.stdout = sys.stderr = f
 
     def hak(typ, wart, tb):
@@ -143,7 +370,7 @@ def _dziennik() -> None:
 
 def main() -> None:
     import multiprocessing as mp
-    mp.freeze_support()                      # exe: proces analizy (spawn) uruchamia ten sam plik
+    mp.freeze_support()                      # exe: procesy dekodera i analizy (spawn) uruchamiają ten plik
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     global KATALOG
     proba, sekundy = None, None
@@ -151,15 +378,20 @@ def main() -> None:
         i = sys.argv.index("--proba")
         proba, sekundy = Path(sys.argv[i + 1]), float(sys.argv[i + 2])
         KATALOG = Path(sys.argv[i + 3])
-    if getattr(sys, "frozen", False) or "--dziennik" in sys.argv:
+    dziennik = getattr(sys, "frozen", False) or "--dziennik" in sys.argv
+    if dziennik:
         _dziennik()
+    from tools import teksty
     if proba is not None:
-        u = dict(karta=0, karta_nazwa=f"PRÓBA {proba.name}", civ=False, port="", baud=0, ton=760.0, zapis=True)
+        teksty.JEZYK = ust_czytaj().get("jezyk") or _jezyk_systemu()
+        u = dict(karta=0, karta_nazwa=f"PRÓBA {proba.name}", civ=False, port="", baud=0, ton=760.0, zapis=True,
+                 aktualizacje=False)
     elif "--start" in sys.argv:            # test: ostatnie ustawienia bez okna startowego
-        ust = json.loads(USTAWIENIA.read_text(encoding="utf-8"))
+        ust = ust_czytaj()
+        teksty.JEZYK = ust.get("jezyk") or _jezyk_systemu()
         k = next(k for k in _karty() if k[1] == ust["karta"])
         u = dict(karta=k[0], karta_nazwa=k[1], civ=ust["civ"], port=ust["port"], baud=ust["baud"],
-                 ton=float(ust["ton"]) if ust.get("ton") else None, zapis=ust["zapis"])
+                 ton=ust.get("ton"), zapis=ust["zapis"], aktualizacje=False)
         if "--sekundy" in sys.argv:
             sekundy = float(sys.argv[sys.argv.index("--sekundy") + 1])
     else:
@@ -176,11 +408,7 @@ def main() -> None:
     SL.SLOWA = SL._slowa()
     from tools import na_zywo as NZ
     NZ.SESJE = KATALOG / "sesje"
-    try:
-        NZ.WERSJA = _zasob("wersja.txt").read_text(encoding="utf-8").strip()
-    except FileNotFoundError:
-        pass
-
+    NZ.WERSJA = _wersja_pelna()
     if sekundy is not None:
         import tkinter as tk
         stara = tk.Tk.mainloop
@@ -189,11 +417,17 @@ def main() -> None:
             self.after(int(sekundy * 1000), lambda: self.tk.call(self.protocol("WM_DELETE_WINDOW")))
             stara(self, n)
         tk.Tk.mainloop = mainloop
+    ust = ust_czytaj()
+    opis_ust = {k: u[k] for k in ("karta_nazwa", "civ", "port", "baud", "ton")}
     # dekoder liczy w osobnym procesie (NZ._praca_okna) — dostaje proste wartości
-    dziennik = str(KATALOG / "dziennik.txt") if (getattr(sys, "frozen", False) or "--dziennik" in sys.argv) else None
     NZ.okno(u["karta"], u["civ"], zapis=u["zapis"], model_npz=str(_zasob(WAGI)),
             civ_port=u["port"] or None, civ_baud=u["baud"] or None, ton_reczny=u["ton"],
-            tytul=f"Dekoder CW — {u['karta_nazwa']}", wav=str(proba) if proba else None, dziennik=dziennik)
+            tytul=f"{NAZWA} {WERSJA_APLIKACJI} — {u['karta_nazwa']}", wav=str(proba) if proba else None,
+            dziennik=str(KATALOG / "dziennik.txt") if dziennik else None,
+            geometria=ust.get("geometria"), prog_start=ust.get("prog"),
+            na_zamkniecie=lambda g, p: ust_zapisz({"geometria": g, "prog": p}),
+            raport_fn=lambda s, root: okno_raportu(s, root, opis_ust),
+            sprawdz_wersje=sprawdz_wersje if u.get("aktualizacje") else None, ikona=_ikona())
 
 
 if __name__ == "__main__":

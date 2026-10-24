@@ -188,3 +188,6 @@ build/
 dist/
 *.spec
 wersja.txt
+
+# logo aplikacji (tools/instalator/logo.py) — małe, zostaje w repozytorium
+!tools/instalator/*.png

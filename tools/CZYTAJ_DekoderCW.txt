@@ -1,37 +1,48 @@
-DEKODER CW — odczyt telegrafii na żywo (sieć neuronowa + Viterbi)
-Autor: SQ2BVN. Wersja próbna do testów — uwagi i nagrania sesji mile widziane.
+DEKODER CW SQ2BVN — odczyt telegrafii na żywo (sieć neuronowa + Viterbi)
+Wersja próbna do testów. Nagrania, których program nie odczytał, bardzo pomagają!
 
-URUCHOMIENIE
-1. Rozpakuj cały katalog DekoderCW w dowolne miejsce (np. na Pulpit).
-   Nie przenoś samego pliku .exe — potrzebuje katalogu _internal obok.
-2. Uruchom DekoderCW.exe. Windows może pokazać „System Windows ochronił
-   ten komputer” (program bez podpisu wydawcy) — kliknij „Więcej
-   informacji”, potem „Uruchom mimo to”.
-3. W oknie ustawień wybierz kartę dźwiękową, na którą przychodzi dźwięk
-   z radia (zwykle „USB Audio … WASAPI” przy radiu z USB). Ton CW:
-   - radio Icom z kablem CI-V/USB: zaznacz „Ton CW z radia przez CI-V”
-     i wybierz port COM (program TYLKO odczytuje częstotliwość, tryb i ton
-     CW — niczego nie przestawia i nie kluczuje),
-   - inne radio: wpisz ręcznie ton CW (CW pitch) w Hz, np. 600,
-   - puste pole: program sam szuka najmocniejszej kluczowanej stacji.
-4. Start. Pierwsze ok. 20 s program się ładuje („ładuję sieć…”).
+INSTALACJA
+Uruchom DekoderCW_setup_<wersja>.exe. Windows może pokazać „System Windows
+ochronił ten komputer” (program bez podpisu wydawcy) — kliknij „Więcej
+informacji”, potem „Uruchom mimo to”. Instalacja nie wymaga uprawnień
+administratora. Nowsza wersja instaluje się na starą — ustawienia i nagrania
+zostają.
+
+PIERWSZE URUCHOMIENIE
+W oknie ustawień wybierz język i kartę dźwiękową, na którą przychodzi dźwięk
+z radia (zwykle „USB Audio … WASAPI” przy radiu z USB, albo wejście liniowe
+karty komputera). Ton CW:
+- radio Icom z kablem CI-V/USB: zaznacz „Ton CW z radia przez CI-V” i wybierz
+  port COM (program TYLKO odczytuje częstotliwość, tryb i ton CW — niczego nie
+  przestawia i nie kluczuje),
+- inne radio: wpisz ręcznie ton CW (CW pitch) w Hz, np. 600,
+- puste pole: program sam szuka najmocniejszej kluczowanej stacji.
+Ustawienia, położenie okna i próg blokady program zapamiętuje.
+Pierwsze ok. 20 s po starcie program się ładuje.
 
 OKNO
-- Tekst jasny: odczyt zatwierdzony. Szary: odczyt wstępny (może się jeszcze
-  zmienić). Zielony: słowo ze słownika krótkofalarskiego, znak wywoławczy
-  albo raport RST — wokół nich poprawiane są spacje (litery NIGDY nie są
-  poprawiane: co widzisz, to zdekodował dekoder).
-- Wodospady: górny — dźwięk z radia; dolny — sygnał po oczyszczeniu
-  (obce stacje odjęte, Twoja stacja na 750 Hz), tak jak widzi go sieć.
+- Tekst jasny: odczyt zatwierdzony. Szary: odczyt wstępny (jeszcze może się
+  zmienić). Zielony: słowo ze słownika krótkofalarskiego, znak wywoławczy albo
+  raport RST — wokół nich poprawiane są spacje. Liter program NIGDY nie
+  poprawia: co widzisz, to zdekodował dekoder.
+- Wodospady: górny — dźwięk z radia; dolny — sygnał po oczyszczeniu (obce
+  stacje odjęte, odbierana stacja na 750 Hz), tak jak widzi go sieć.
 - „Ton nad szumem” i suwak blokady szumów: w przerwach szum potrafi dawać
-  pojedyncze E/I/T. Suwak (dB nad szumem) blokuje odczyt poniżej progu;
-  0 = wyłączona. Przy silnej stacji ok. 15-20 dB, przy słabej trzymaj nisko.
+  pojedyncze E/I/T. Suwak blokuje odczyt poniżej progu; 0 = wyłączona.
+  Przy silnej stacji ok. 15-20 dB, przy słabej trzymaj nisko.
+
+ZGŁOŚ PROBLEM Z DEKODOWANIEM
+Gdy program źle czyta stację, którą dobrze słychać — kliknij „Zgłoś problem
+z dekodowaniem…”, wpisz co było nadane (jeśli wiesz) i krótki opis. Program
+przygotuje raport (ostatnie 15 min nagrania + odczyt) i otworzy wiadomość
+e-mail. Jeśli plik nie dołączy się sam, przeciągnij go do wiadomości.
+Wymaga włączonego zapisu sesji (domyślnie włączony).
 
 PLIKI (Dokumenty\DekoderCW)
-- sesje\sesja_DATA.wav/.txt/.log — dźwięk i odczyt każdej sesji. Jeśli
-  chcesz pomóc w rozwoju: wpisz w .txt w polu „nadane:” co było nadane
-  i wyślij SQ2BVN trzy pliki sesji.
-- slownik_osobisty.txt — Twoje słowa (imię, QTH, znajomi), które mają
-  świecić na zielono.
+- sesje — dźwięk i odczyt każdej sesji,
+- raporty — przygotowane raporty,
+- slownik_osobisty.txt — Twoje słowa (imię, QTH, znajomi) na zielono,
+- dziennik.txt — przebieg pracy programu (przydaje się przy błędach).
 
 Program tylko ODBIERA. Zamknięcie okna kończy i zapisuje sesję.
+Kod źródłowy (GPL-3.0): https://github.com/programmer-bvn/cw-decoder-dsp
