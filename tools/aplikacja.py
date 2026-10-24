@@ -394,6 +394,10 @@ def okno_wysylki(rodzic, plik: Path, temat: str, tresc: str) -> None:
         side="left", padx=4)
     if KONTAKT_EMAIL:
         def program_pocztowy() -> None:
+            # jeden raport = jedna wiadomość: operator 25.10 klikał kilka razy i program
+            # pocztowy otwierał tyle samo okien z tą samą treścią
+            b_poczta.configure(state="disabled")
+
             def w_tle() -> None:
                 if not _mapi_wyslij(KONTAKT_EMAIL, temat, tresc, plik):
                     import urllib.parse
@@ -401,7 +405,8 @@ def okno_wysylki(rodzic, plik: Path, temat: str, tresc: str) -> None:
                     webbrowser.open(f"mailto:{KONTAKT_EMAIL}?subject={urllib.parse.quote(temat)}"
                                     f"&body={urllib.parse.quote(tresc)}")
             threading.Thread(target=w_tle, daemon=True).start()
-        ttk.Button(p, text=T("wys_program"), command=program_pocztowy).pack(side="left", padx=4)
+        b_poczta = ttk.Button(p, text=T("wys_program"), command=program_pocztowy)
+        b_poczta.pack(side="left", padx=4)
     ttk.Button(p, text=T("wys_zamknij"), command=d.destroy).pack(side="left", padx=4)
 
 

@@ -2051,6 +2051,12 @@ miary (ton nad szumem, dryf, tempo, rozrzut przerw, poziom, obce stacje
 WZGLĘDEM naszej), diagnoza, szkic odpowiedzi w języku zgłaszającego;
 zbiorczo PODSUMOWANIE.md (bez adresów), ODPOWIEDZI.html (mailto: klik ->
 okno wiadomości), przetworzone.json (drugi przebieg nic nie powtarza).
+**0.9.2 na komputerze operatora (25.10):** instalacja „gładko”, mikrofon Windows
+— wodospad i odczyt działają; raport utworzony, wysłany Thunderbirdem, doszedł
+do Gmaila z załącznikiem. Poprawki z tej próby: przycisk „Wyślij pocztą”
+(zamiast „Otwórz program pocztowy”) i tylko raz na raport — kilka kliknięć
+otwierało kilka takich samych wiadomości. Filtr najlepiej w Gmailu (etykieta
+CW-DECODER, „nigdy do spamu”), IMAP — w Thunderbirdzie etykieta = folder.
 **Pierwsza reguła QRM była zła:** „obce stacje blisko” przy nagraniach
 ręki i 6 m — to prążki własnego kluczowania, -24...-32 dB względem naszej;
 prawdziwa obca w 40 m tłok: -3 dB. Teraz liczy się obca >= -12 dB

@@ -55,10 +55,10 @@ TEKSTY: dict[str, dict[str, str]] = {
                        "en": "Session recording is off — enable it in the settings and record the problem again."},
     "wys_wstep": {"pl": "Raport gotowy. Utwórz nową wiadomość w swojej poczcie (także w przeglądarce: Gmail,\n"
                         "Onet, WP...), wklej adres i temat, a plik raportu przeciągnij do wiadomości.\n"
-                        "Masz program pocztowy (Outlook, Thunderbird)? Kliknij „Otwórz program pocztowy”.",
+                        "Masz program pocztowy (Outlook, Thunderbird)? Kliknij „Wyślij pocztą”.",
                   "en": "The report is ready. Create a new message in your e-mail (also web mail: Gmail...),\n"
                         "paste the address and subject and drag the report file into the message.\n"
-                        "Using a mail program (Outlook, Thunderbird)? Click \"Open mail program\"."},
+                        "Using a mail program (Outlook, Thunderbird)? Click \"Send by e-mail\"."},
     "wys_brak_adresu": {"pl": "Raport zapisany. Adres do wysyłania raportów nie jest jeszcze ustawiony w tej\n"
                               "wersji programu — zachowaj plik, adres podamy w następnej wersji.",
                         "en": "Report saved. The address for reports is not set in this version yet —\n"
@@ -68,7 +68,7 @@ TEKSTY: dict[str, dict[str, str]] = {
     "wys_plik": {"pl": "Plik:", "en": "File:"},
     "wys_kopiuj": {"pl": "Kopiuj", "en": "Copy"},
     "wys_pokaz": {"pl": "Pokaż plik raportu", "en": "Show report file"},
-    "wys_program": {"pl": "Otwórz program pocztowy", "en": "Open mail program"},
+    "wys_program": {"pl": "Wyślij pocztą", "en": "Send by e-mail"},
     "wys_zamknij": {"pl": "Zamknij", "en": "Close"},
     # temat zawsze ten sam, bez polskich znaków: znacznik projektu na filtr w Thunderbirdzie
     # (jedna skrzynka na kilka projektów, operator 25.10) i dla skryptu tools/zgloszenia.py
