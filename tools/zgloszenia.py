@@ -46,7 +46,10 @@ FOLDER_TB = "CW-DECODER"
 def _folder_thunderbirda() -> list[Path]:
     """Pliki mbox folderu CW-DECODER we wszystkich profilach Thunderbirda."""
     baza = Path(os.environ.get("APPDATA", "")) / "Thunderbird" / "Profiles"
-    return [p for p in baza.glob(f"*/*Mail/**/{FOLDER_TB}") if p.is_file()]
+    foldery = [p for p in baza.glob(f"*/*Mail/**/{FOLDER_TB}") if p.is_file()]
+    # bez folderu (konto POP3 jak u operatora 25.10: Mail\pop.gmail.com\Inbox) —
+    # skrzynki odbiorcze kont Gmail; raporty i tak wybiera temat [CW-DECODER]
+    return foldery or [p for p in baza.glob("*/*Mail/*gmail.com*/Inbox") if p.is_file()]
 
 
 def _tekst(h: str | None) -> str:
@@ -103,7 +106,16 @@ def analizuj(kat: Path, model) -> dict:
     klucz = p[:nad.size] > 0.5
     snr = float(np.percentile(nad[klucz], 50)) if klucz.sum() > 20 else float("nan")
     t, f = tune.track_tone(surowe, ton_cw=ton_cw)
-    dryf = float(np.nanpercentile(f, 95) - np.nanpercentile(f, 5)) if np.isfinite(f).sum() > 10 else float("nan")
+    # dryf tylko w KRESKACH: zgłoszenie 25.10 (mikrofon, operator mówił w przerwach) —
+    # z całego nagrania „ton pływa o 126 Hz” (pętla szła za głosem), przy wciśniętym
+    # kluczu 37 Hz (pojedyncze „E” z mowy też są „kluczem”); kreski z mowy prawie nie wychodzą
+    kreski = np.zeros(t.size, bool)
+    if np.isfinite(r["u"]):
+        for n, a0, b0 in V.dekoduj(p, r["u"])[1]:
+            if n == "K3":
+                kreski |= (t >= a0 * V.DT) & (t <= b0 * V.DT)
+    fk = f[kreski & np.isfinite(f)]
+    dryf = float(np.percentile(fk, 95) - np.percentile(fk, 5)) if fk.size > 10 else float("nan")
     obce, nasza_db = [], None
     if np.isfinite(ton):
         x = np.asarray(surowe, np.float64)
@@ -132,6 +144,10 @@ def analizuj(kat: Path, model) -> dict:
         "rozrzut_przerw_liter": round(zm["PL"], 2) if np.isfinite(zm["PL"]) else None,
         "czas_s": round(surowe.size / C.SR, 1),
     }
+    slowa = r["tekst"].split()
+    if slowa:
+        # pojedyncze E/T/I = szum albo mowa w przerwach czytane jako kropki
+        wynik["pojedyncze_et"] = round(sum(len(x) == 1 and x in "ETI" for x in slowa) / len(slowa), 2)
     nad_txt = meta.get("nadane", "").strip().upper()
     if nad_txt:
         wynik["bledy_znakow"] = cer(r["tekst"].replace(" ", ""), nad_txt.replace(" ", ""))
@@ -159,6 +175,9 @@ def diagnoza(w: dict) -> list[str]:
         d.append(f"tempo poza zakresem treningu: {w['wpm']} WPM")
     if w["rozrzut_przerw_liter"] is not None and w["rozrzut_przerw_liter"] > 0.3:
         d.append(f"nierówne przerwy (ręka?): rozrzut {w['rozrzut_przerw_liter']}")
+    if w.get("pojedyncze_et", 0) > 0.3:
+        d.append(f"w przerwach szum lub mowa czytane jako E/T ({w['pojedyncze_et']:.0%} słów) — "
+                 "pomoże suwak blokady szumów")
     if w["poziom_dbfs"] < -60:
         d.append(f"bardzo cichy dźwięk na wejściu: {w['poziom_dbfs']} dBFS")
     if w["poziom_dbfs"] > -3:
@@ -194,6 +213,8 @@ DIAG_EN = [("brak odczytu — sygnał nie znaleziony (za słaby, zły ton, inna 
            ("nierówne przerwy (ręka?): rozrzut", "uneven spacing (hand keying?): spread"),
            ("bardzo cichy dźwięk na wejściu", "very low input level"),
            ("przesterowanie wejścia", "input overload"),
+           ("w przerwach szum lub mowa czytane jako E/T", "noise or speech between transmissions read as E/T"),
+           ("słów", "of words"), ("pomoże suwak blokady szumów", "the noise squelch slider will help"),
            ("brak oczywistej przyczyny — do przejrzenia ręcznie", "no obvious cause — will be checked manually")]
 
 
@@ -242,27 +263,52 @@ def przetworz(zrodla: list[Path]) -> int:
                 w = {"meta": meta, "analiza": {"blad": repr(e), "diagnoza": [f"błąd analizy: {e!r}"],
                                                 "tekst": ""}}
             an = w["analiza"]
-            (kat / "analiza.json").write_text(json.dumps(w, ensure_ascii=False, indent=1), encoding="utf-8")
-            (kat / "analiza.md").write_text(
-                f"# {kat.name}\n\nwersja: {meta.get('wersja')}  \nznak: {meta.get('znak') or '-'}  \n"
-                f"nadane: {meta.get('nadane') or '-'}  \nuwagi: {meta.get('opis') or '-'}  \n"
-                f"pasmo: {meta.get('z_sesji', {}).get('pasmo', '-')}\n\n"
-                f"**odczyt bieżącą wersją:** {an.get('tekst', '')[:600]}\n\n"
-                f"**diagnoza:** {'; '.join(an['diagnoza'])}\n\n```\n"
-                + json.dumps({k: v for k, v in an.items() if k not in ('tekst', 'diagnoza')}, ensure_ascii=False, indent=1)
-                + "\n```\n", encoding="utf-8")
-            tresc = odpowiedz(meta, an)
-            (kat / "odpowiedz.txt").write_text(tresc, encoding="utf-8")
-            with open(KATALOG / "PODSUMOWANIE.md", "a", encoding="utf-8") as f:
-                f.write(f"- **{kat.name}** {meta.get('wersja', '?').split(' ')[0]}, {an.get('czas_s', '?')} s: "
-                        f"{'; '.join(an['diagnoza'])} — odczyt: `{an.get('tekst', '')[:120]}`\n")
-            _dopisz_odpowiedz(kat.name, nadawca, temat, tresc)
+            zapisz_analize(kat, w)
+            _dopisz_odpowiedz(kat.name, nadawca, temat, (kat / "odpowiedz.txt").read_text(encoding="utf-8"))
             nowe += 1
             print(f"{kat.name}: {'; '.join(an['diagnoza'])}")
         przetw[klucz] = time.strftime("%Y-%m-%d %H:%M:%S")
         plik_przetw.write_text(json.dumps(przetw, ensure_ascii=False, indent=1), encoding="utf-8")
+    podsumowanie()
     print(f"nowych zgłoszeń: {nowe}")
     return nowe
+
+
+def zapisz_analize(kat: Path, w: dict) -> None:
+    meta, an = w["meta"], w["analiza"]
+    (kat / "analiza.json").write_text(json.dumps(w, ensure_ascii=False, indent=1), encoding="utf-8")
+    (kat / "analiza.md").write_text(
+        f"# {kat.name}\n\nwersja: {meta.get('wersja')}  \nznak: {meta.get('znak') or '-'}  \n"
+        f"nadane: {meta.get('nadane') or '-'}  \nuwagi: {meta.get('opis') or '-'}  \n"
+        f"pasmo: {meta.get('z_sesji', {}).get('pasmo', '-')}\n\n"
+        f"**odczyt bieżącą wersją:** {an.get('tekst', '')[:600]}\n\n"
+        f"**diagnoza:** {'; '.join(an['diagnoza'])}\n\n```\n"
+        + json.dumps({k: v for k, v in an.items() if k not in ('tekst', 'diagnoza')}, ensure_ascii=False, indent=1)
+        + "\n```\n", encoding="utf-8")
+    (kat / "odpowiedz.txt").write_text(odpowiedz(meta, an), encoding="utf-8")
+
+
+def podsumowanie() -> None:
+    """PODSUMOWANIE.md od zera ze wszystkich analiza.json (bez adresów nadawców)."""
+    wiersze = []
+    for a in sorted(KATALOG.glob("*/analiza.json")):
+        w = json.loads(a.read_text(encoding="utf-8"))
+        meta, an = w["meta"], w["analiza"]
+        wiersze.append(f"- **{a.parent.name}** {str(meta.get('wersja', '?')).split(' ')[0]}, "
+                       f"{an.get('czas_s', '?')} s: {'; '.join(an['diagnoza'])} — odczyt: `{an.get('tekst', '')[:120]}`")
+    (KATALOG / "PODSUMOWANIE.md").write_text(
+        f"# Zgłoszenia — Dekoder CW ({len(wiersze)})\n\n" + "\n".join(wiersze) + "\n", encoding="utf-8")
+
+
+def ponow() -> None:
+    """Analiza od nowa wszystkich przyjętych zgłoszeń (po zmianie dekodera albo diagnozy).
+    ODPOWIEDZI.html zostaje (linki ze starą treścią) — szkice w odpowiedz.txt są nowe."""
+    model = _model()
+    for kat in sorted(p.parent for p in KATALOG.glob("*/raport.json")):
+        w = analizuj(kat, model)
+        zapisz_analize(kat, w)
+        print(f"{kat.name}: {'; '.join(w['analiza']['diagnoza'])}")
+    podsumowanie()
 
 
 def _dopisz_odpowiedz(nazwa: str, nadawca: str, temat: str, tresc: str) -> None:
@@ -288,10 +334,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("zrodla", type=Path, nargs="*", help="mbox Thunderbirda, katalog z ZIP-ami, ZIP")
     ap.add_argument("--katalog", type=Path, default=None, help="gdzie zapisywać (domyślnie zgloszenia/)")
+    ap.add_argument("--ponow", action="store_true", help="analiza od nowa wszystkich przyjętych zgłoszeń")
     a = ap.parse_args()
     global KATALOG
     if a.katalog:
         KATALOG = a.katalog
+    if a.ponow:
+        ponow()
+        return
     zrodla = a.zrodla or _folder_thunderbirda()
     if not zrodla:
         raise SystemExit(f"Brak folderu {FOLDER_TB} w profilu Thunderbirda — podaj ścieżkę do raportów.")

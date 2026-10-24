@@ -2057,6 +2057,14 @@ do Gmaila z załącznikiem. Poprawki z tej próby: przycisk „Wyślij pocztą�
 (zamiast „Otwórz program pocztowy”) i tylko raz na raport — kilka kliknięć
 otwierało kilka takich samych wiadomości. Filtr najlepiej w Gmailu (etykieta
 CW-DECODER, „nigdy do spamu”), IMAP — w Thunderbirdzie etykieta = folder.
+**Pierwsze prawdziwe zgłoszenie (25.10, operator, mikrofon, konto POP3):**
+skrypt przeczytał Mail\pop.gmail.com\Inbox (bez folderu — gdy go nie ma,
+skrzynki odbiorcze kont Gmail; raporty wybiera temat). Diagnoza pierwszej
+wersji: „ton pływa o 126 Hz” — fałsz: pętla tonu szła za mową operatora
+w przerwach. Dryf liczony w chwilach klucza: 37 Hz (pojedyncze „E” z mowy też
+są „kluczem”), tylko w kreskach: brak dryfu. Dodana reguła: udział pojedynczych
+E/T/I w odczycie > 30% -> „szum lub mowa w przerwach, pomoże blokada” (tu 59%).
+`--ponow`: analiza od nowa wszystkich zgłoszeń, PODSUMOWANIE.md od zera.
 **Pierwsza reguła QRM była zła:** „obce stacje blisko” przy nagraniach
 ręki i 6 m — to prążki własnego kluczowania, -24...-32 dB względem naszej;
 prawdziwa obca w 40 m tłok: -3 dB. Teraz liczy się obca >= -12 dB
