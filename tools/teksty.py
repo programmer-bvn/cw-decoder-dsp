@@ -48,10 +48,23 @@ TEKSTY: dict[str, dict[str, str]] = {
     "rap_utworz": {"pl": "Utwórz raport i wyślij", "en": "Create report and send"},
     "rap_brak_sesji": {"pl": "Zapis sesji jest wyłączony — włącz go w ustawieniach i nagraj problem jeszcze raz.",
                        "en": "Session recording is off — enable it in the settings and record the problem again."},
-    "rap_gotowy": {"pl": "Raport zapisany:\n{p}\n\nJeśli program pocztowy nie dołączył go sam, przeciągnij ten plik "
-                         "do wiadomości i wyślij na {e}.",
-                   "en": "Report saved:\n{p}\n\nIf your mail program did not attach it, drag this file into the "
-                         "message and send it to {e}."},
+    "wys_wstep": {"pl": "Raport gotowy. Utwórz nową wiadomość w swojej poczcie (także w przeglądarce: Gmail,\n"
+                        "Onet, WP...), wklej adres i temat, a plik raportu przeciągnij do wiadomości.\n"
+                        "Masz program pocztowy (Outlook, Thunderbird)? Kliknij „Otwórz program pocztowy”.",
+                  "en": "The report is ready. Create a new message in your e-mail (also web mail: Gmail...),\n"
+                        "paste the address and subject and drag the report file into the message.\n"
+                        "Using a mail program (Outlook, Thunderbird)? Click \"Open mail program\"."},
+    "wys_brak_adresu": {"pl": "Raport zapisany. Adres do wysyłania raportów nie jest jeszcze ustawiony w tej\n"
+                              "wersji programu — zachowaj plik, adres podamy w następnej wersji.",
+                        "en": "Report saved. The address for reports is not set in this version yet —\n"
+                              "keep the file, the address will come with the next version."},
+    "wys_adres": {"pl": "Adres:", "en": "Address:"},
+    "wys_temat": {"pl": "Temat:", "en": "Subject:"},
+    "wys_plik": {"pl": "Plik:", "en": "File:"},
+    "wys_kopiuj": {"pl": "Kopiuj", "en": "Copy"},
+    "wys_pokaz": {"pl": "Pokaż plik raportu", "en": "Show report file"},
+    "wys_program": {"pl": "Otwórz program pocztowy", "en": "Open mail program"},
+    "wys_zamknij": {"pl": "Zamknij", "en": "Close"},
     "rap_temat": {"pl": "[CW-RAPORT] {znak} {wersja}", "en": "[CW-REPORT] {znak} {wersja}"},
     "rap_tresc": {"pl": "Raport z Dekodera CW w załączniku ({plik}).\n\n{opis}\n",
                   "en": "CW Decoder report attached ({plik}).\n\n{opis}\n"},

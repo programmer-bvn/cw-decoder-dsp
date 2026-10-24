@@ -352,6 +352,58 @@ def _mapi_wyslij(adres: str, temat: str, tresc: str, plik: Path) -> bool:
     return wynik in (0, 1)                                         # 0 OK, 1 użytkownik anulował
 
 
+def okno_wysylki(rodzic, plik: Path, temat: str, tresc: str) -> None:
+    """Po utworzeniu raportu: adres i temat do skopiowania, plik do przeciągnięcia.
+    Operator 24.10 (Firefox, poczta w przeglądarce): „mail się nie otwiera, powstaje
+    tylko zip” — mailto nie przenosi załącznika, a bez programu pocztowego
+    (Outlook, Thunderbird — Simple MAPI) Windows nie ma czego otworzyć. Ta droga
+    działa z każdą pocztą: Gmail, Onet, WP w przeglądarce."""
+    import subprocess
+    import threading
+    import tkinter as tk
+    from tkinter import ttk
+    from tools.teksty import T
+    d = tk.Toplevel(rodzic)
+    d.title(T("rap_tytul"))
+    d.transient(rodzic)
+    f = ttk.Frame(d, padding=12)
+    f.pack(fill="both", expand=True)
+
+    def pole(etykieta: str, wartosc: str, wiersz: int) -> None:
+        ttk.Label(f, text=etykieta).grid(row=wiersz, column=0, sticky="w", pady=2)
+        e = ttk.Entry(f, width=60)
+        e.insert(0, wartosc)
+        e.configure(state="readonly")
+        e.grid(row=wiersz, column=1, sticky="we", padx=6)
+
+        def kopiuj() -> None:
+            d.clipboard_clear()
+            d.clipboard_append(wartosc)
+        ttk.Button(f, text=T("wys_kopiuj"), command=kopiuj).grid(row=wiersz, column=2)
+
+    ttk.Label(f, text=T("wys_wstep") if KONTAKT_EMAIL else T("wys_brak_adresu"), justify="left").grid(
+        row=0, column=0, columnspan=3, sticky="w", pady=(0, 8))
+    if KONTAKT_EMAIL:
+        pole(T("wys_adres"), KONTAKT_EMAIL, 1)
+        pole(T("wys_temat"), temat, 2)
+    pole(T("wys_plik"), str(plik), 3)
+    p = ttk.Frame(f)
+    p.grid(row=4, column=0, columnspan=3, sticky="e", pady=(10, 0))
+    ttk.Button(p, text=T("wys_pokaz"), command=lambda: subprocess.Popen(["explorer", "/select,", str(plik)])).pack(
+        side="left", padx=4)
+    if KONTAKT_EMAIL:
+        def program_pocztowy() -> None:
+            def w_tle() -> None:
+                if not _mapi_wyslij(KONTAKT_EMAIL, temat, tresc, plik):
+                    import urllib.parse
+                    import webbrowser
+                    webbrowser.open(f"mailto:{KONTAKT_EMAIL}?subject={urllib.parse.quote(temat)}"
+                                    f"&body={urllib.parse.quote(tresc)}")
+            threading.Thread(target=w_tle, daemon=True).start()
+        ttk.Button(p, text=T("wys_program"), command=program_pocztowy).pack(side="left", padx=4)
+    ttk.Button(p, text=T("wys_zamknij"), command=d.destroy).pack(side="left", padx=4)
+
+
 def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | None = None) -> None:
     import threading
     import tkinter as tk
@@ -391,17 +443,7 @@ def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | 
         temat = T("rap_temat", znak=znak.upper() or "-", wersja=WERSJA_APLIKACJI)
         tresc = T("rap_tresc", plik=plik.name, opis=op)
 
-        def poczta() -> None:
-            if not KONTAKT_EMAIL or not _mapi_wyslij(KONTAKT_EMAIL, temat, tresc, plik):
-                import subprocess
-                import urllib.parse
-                import webbrowser
-                if KONTAKT_EMAIL:
-                    webbrowser.open(f"mailto:{KONTAKT_EMAIL}?subject={urllib.parse.quote(temat)}"
-                                    f"&body={urllib.parse.quote(tresc)}")
-                subprocess.Popen(["explorer", "/select,", str(plik)])
-        threading.Thread(target=poczta, daemon=True).start()
-        messagebox.showinfo(T("rap_tytul"), T("rap_gotowy", p=plik, e=KONTAKT_EMAIL or "—"), parent=rodzic)
+        okno_wysylki(rodzic, plik, temat, tresc)
 
     ttk.Button(f, text=T("rap_utworz"), command=utworz).pack(anchor="e", pady=(10, 0))
 
