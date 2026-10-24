@@ -8,6 +8,7 @@ dostraja swoją stację tak, żeby słyszeć ją na tym tonie.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -27,7 +28,9 @@ def _bcd(bajty: list[int]) -> int:
 
 def stan(port: str = "COM5", baud: int = 115200) -> dict:
     """{'pasmo': opis albo 'nieodczytane', 'ton_cw': Hz albo None, 'surowe': wyjście skryptu}."""
-    r = subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+    # pełna ścieżka: PATH u innego operatora (albo w teście exe) może nie mieć PowerShella
+    ps = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+    r = subprocess.run([str(ps) if ps.exists() else "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
                         str(SKRYPT), "-Porty", port, "-Bauds", str(baud)], capture_output=True, cwd=KORZEN,
                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))   # aplikacja: bez czarnego okna
     t = r.stdout.decode("utf-8", "replace")

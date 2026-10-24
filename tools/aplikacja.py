@@ -188,7 +188,13 @@ def main() -> None:
     def stan() -> dict:
         if u["civ"]:
             from tools.radio import civ
-            st = civ.stan(u["port"], u["baud"])
+            try:
+                st = civ.stan(u["port"], u["baud"])
+            except Exception as e:                       # CI-V nie może zatrzymać odbioru
+                print(f"CI-V {u['port']}: {e!r} — dalej bez tonu z radia", flush=True)
+                st = {"ton_cw": None, "pasmo": f"CI-V nieodczytane ({e.__class__.__name__})"}
+            if st.get("ton_cw") is None:
+                print(f"CI-V {u['port']}: brak tonu — {st.get('surowe', '')[:200]!r}", flush=True)
             if st.get("ton_cw") or u["ton"] is None:
                 return st
             return {**st, "ton_cw": u["ton"], "skad_ton": "wpisany ręcznie, CI-V bez tonu"}
