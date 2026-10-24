@@ -297,7 +297,7 @@ def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: d
     x = x[-int(RAPORT_MIN * 60 * sr):]
     flac = katalog / f"_nagranie_{stempel}.flac"
     sf.write(str(flac), x, sr, format="FLAC")
-    meta = {"format": "cw-raport-1", "wersja": _wersja_pelna(), "czas": time.strftime("%Y-%m-%d %H:%M:%S"),
+    meta = {"format": "cw-raport-1", "projekt": "CW-DECODER", "wersja": _wersja_pelna(), "czas": time.strftime("%Y-%m-%d %H:%M:%S"),
             "jezyk": teksty.JEZYK, "znak": znak.upper(), "nadane": nadane, "opis": opis,
             "sesja": sesja.name, "sesja_s": round(sf.info(str(sesja)).duration, 1),
             "nagranie_s": round(len(x) / sr, 1), "ustawienia": ustawienia,

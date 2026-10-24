@@ -2036,6 +2036,27 @@ karty, tempo 1×/2×/4×/max, ton z opisu sesji, bez zapisu nowej sesji,
 „Zgłoś problem” dołącza to nagranie, „Wróć do radia”. Sprawdzone: przełączenie
 w trakcie (pierwszy dekoder zamknięty po 9 s), max: 52 s nagrania w ~25 s.
 
+### Obieg zgłoszeń — Thunderbird zamiast konektora (25.10)
+
+Operator: skrzynka Gmail projektu (zakłada sam, weryfikacja dwuetapowa)
+w Thunderbirdzie na maszynie treningowej — „i tak trzeba mieć na maszynie
+treningowej, żeby przeanalizować audio”; mniej tokenów, żadnych haseł poza
+Thunderbirdem. Jedna skrzynka na kilka projektów: temat `[CW-DECODER] RAPORT
+ZNAK wersja` (stały, bez polskich znaków; raport.json: `projekt`), reguła
+w Thunderbirdzie -> folder CW-DECODER.
+**`tools/zgloszenia.py`:** czyta mbox folderu z profilu Thunderbirda (albo
+katalog / ZIP), tylko tematy z `[CW-DECODER]`; każde nowe -> `zgloszenia/`
+(poza gitem: audio, adresy): rozpakowany raport, odczyt bieżącą wersją,
+miary (ton nad szumem, dryf, tempo, rozrzut przerw, poziom, obce stacje
+WZGLĘDEM naszej), diagnoza, szkic odpowiedzi w języku zgłaszającego;
+zbiorczo PODSUMOWANIE.md (bez adresów), ODPOWIEDZI.html (mailto: klik ->
+okno wiadomości), przetworzone.json (drugi przebieg nic nie powtarza).
+**Pierwsza reguła QRM była zła:** „obce stacje blisko” przy nagraniach
+ręki i 6 m — to prążki własnego kluczowania, -24...-32 dB względem naszej;
+prawdziwa obca w 40 m tłok: -3 dB. Teraz liczy się obca >= -12 dB
+(jak `przeciwsygnal.POZIOM_MIN_DB`). Sprawdzone na testowym mboxie (2 raporty
++ mail innego projektu) i raporcie z 40 m tłok: „703 Hz -3 dB, 871 Hz -11 dB”.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

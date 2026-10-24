@@ -70,7 +70,9 @@ TEKSTY: dict[str, dict[str, str]] = {
     "wys_pokaz": {"pl": "Pokaż plik raportu", "en": "Show report file"},
     "wys_program": {"pl": "Otwórz program pocztowy", "en": "Open mail program"},
     "wys_zamknij": {"pl": "Zamknij", "en": "Close"},
-    "rap_temat": {"pl": "[CW-RAPORT] {znak} {wersja}", "en": "[CW-REPORT] {znak} {wersja}"},
+    # temat zawsze ten sam, bez polskich znaków: znacznik projektu na filtr w Thunderbirdzie
+    # (jedna skrzynka na kilka projektów, operator 25.10) i dla skryptu tools/zgloszenia.py
+    "rap_temat": {"pl": "[CW-DECODER] RAPORT {znak} {wersja}", "en": "[CW-DECODER] RAPORT {znak} {wersja}"},
     "rap_tresc": {"pl": "Raport z Dekodera CW w załączniku ({plik}).\n\n{opis}\n",
                   "en": "CW Decoder report attached ({plik}).\n\n{opis}\n"},
 }
