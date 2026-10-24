@@ -25,6 +25,8 @@ ciszę, bo żaden podział na elementy nie wygrywa z nią budżetem.
 
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 from numba import njit
 
@@ -98,7 +100,9 @@ def dekoduj_najlepiej(p: np.ndarray, kandydaci: list[float]) -> tuple[str, float
     return naj
 
 
-@njit(cache=True)
+# w exe (PyInstaller) nie ma plików .py — pamięć podręczna numba nie ma gdzie
+# się zaczepić; kompilacja przy starcie (1-2 s, w rozgrzewce)
+@njit(cache=not getattr(sys, "frozen", False))
 def _naprzod(cm, cg, znak, d, kara, granice, poprz, start):
     """Przebieg w przód Viterbiego po odcinkach. 22.10 (szybszy odczyt na
     żywo): w Pythonie/numpy 0,44 s na 12 s przebiegu (pętla po ramkach x

@@ -1946,6 +1946,28 @@ wszystkie trzy”:
 3. Wodospad: skala barw (maksimum) opadała 1 dB/s — w ciszy szum świecił
    jak sygnał; teraz 0,1 dB/s.
 
+### Aplikacja (exe) dla innych operatorów — bez TensorFlow (24.10)
+
+Operator: „exe dla SP2MSA” — ma laptopa przy radiu, bez naszego środowiska.
+**Problem:** TensorFlow = 1,5 GB na dysku; exe z nim ogromne i wolne.
+**Rozwiązanie:** sieć zboczy_5 przepisana na numpy (`dsp/siec_numpy.py`):
+sploty z wliczoną normalizacją (wagi `runs/zbocza_5/siec.npz`, 4,2 MB),
+ReLU, max-pooling, dodawanie. Logity numpy - TensorFlow: maks. 1,3e-5
+przy zakresie 25; odczyt całości **identyczny na 12/12 nagraniach**
+(kluczownik, ręka, zaszumione -3 dB, QRM). Okno sieci 52 ms (TF szybszy:
+krok na żywo śr. 0,13 s zamiast 0,05 — nadąża, krok sam się wydłuża).
+**`tools/aplikacja.py`:** okno startowe (karta dźwiękowa — WASAPI najpierw;
+CI-V Icom z wyborem portu i prędkości albo ton CW ręcznie; zapis sesji),
+sesje i słownik osobisty w Dokumentach\DekoderCW, ustawienia w %APPDATA%.
+numba w exe bez pamięci podręcznej (brak plików .py) — kompilacja przy
+starcie. CI-V bez czarnego okna PowerShella (CREATE_NO_WINDOW).
+**`budowa_exe.bat`:** wagi z aktualnego modelu, PyInstaller (bez TF,
+Keras, matplotlib...), `dist\DekoderCW.zip` z instrukcją CZYTAJ.txt.
+Katalog 178 MB, ZIP 119 MB (llvmlite 64 MB, scipy 46 MB). **Sprawdzone:**
+exe rozpakowane poza projektem, PATH bez Pythona, nagranie zamiast karty
+(`--proba plik.wav sekund katalog`): odczyt, sesja zapisana, start ~20 s.
+**Nie sprawdzone:** na innym komputerze i z prawdziwą kartą w exe.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

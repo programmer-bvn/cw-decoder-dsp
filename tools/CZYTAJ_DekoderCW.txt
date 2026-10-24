@@ -1,0 +1,37 @@
+DEKODER CW — odczyt telegrafii na żywo (sieć neuronowa + Viterbi)
+Autor: SQ2BVN. Wersja próbna do testów — uwagi i nagrania sesji mile widziane.
+
+URUCHOMIENIE
+1. Rozpakuj cały katalog DekoderCW w dowolne miejsce (np. na Pulpit).
+   Nie przenoś samego pliku .exe — potrzebuje katalogu _internal obok.
+2. Uruchom DekoderCW.exe. Windows może pokazać „System Windows ochronił
+   ten komputer” (program bez podpisu wydawcy) — kliknij „Więcej
+   informacji”, potem „Uruchom mimo to”.
+3. W oknie ustawień wybierz kartę dźwiękową, na którą przychodzi dźwięk
+   z radia (zwykle „USB Audio … WASAPI” przy radiu z USB). Ton CW:
+   - radio Icom z kablem CI-V/USB: zaznacz „Ton CW z radia przez CI-V”
+     i wybierz port COM (program TYLKO odczytuje częstotliwość, tryb i ton
+     CW — niczego nie przestawia i nie kluczuje),
+   - inne radio: wpisz ręcznie ton CW (CW pitch) w Hz, np. 600,
+   - puste pole: program sam szuka najmocniejszej kluczowanej stacji.
+4. Start. Pierwsze ok. 20 s program się ładuje („ładuję sieć…”).
+
+OKNO
+- Tekst jasny: odczyt zatwierdzony. Szary: odczyt wstępny (może się jeszcze
+  zmienić). Zielony: słowo ze słownika krótkofalarskiego, znak wywoławczy
+  albo raport RST — wokół nich poprawiane są spacje (litery NIGDY nie są
+  poprawiane: co widzisz, to zdekodował dekoder).
+- Wodospady: górny — dźwięk z radia; dolny — sygnał po oczyszczeniu
+  (obce stacje odjęte, Twoja stacja na 750 Hz), tak jak widzi go sieć.
+- „Ton nad szumem” i suwak blokady szumów: w przerwach szum potrafi dawać
+  pojedyncze E/I/T. Suwak (dB nad szumem) blokuje odczyt poniżej progu;
+  0 = wyłączona. Przy silnej stacji ok. 15-20 dB, przy słabej trzymaj nisko.
+
+PLIKI (Dokumenty\DekoderCW)
+- sesje\sesja_DATA.wav/.txt/.log — dźwięk i odczyt każdej sesji. Jeśli
+  chcesz pomóc w rozwoju: wpisz w .txt w polu „nadane:” co było nadane
+  i wyślij SQ2BVN trzy pliki sesji.
+- slownik_osobisty.txt — Twoje słowa (imię, QTH, znajomi), które mają
+  świecić na zielono.
+
+Program tylko ODBIERA. Zamknięcie okna kończy i zapisuje sesję.

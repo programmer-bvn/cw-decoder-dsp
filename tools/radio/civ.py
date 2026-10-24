@@ -28,7 +28,8 @@ def _bcd(bajty: list[int]) -> int:
 def stan(port: str = "COM5", baud: int = 115200) -> dict:
     """{'pasmo': opis albo 'nieodczytane', 'ton_cw': Hz albo None, 'surowe': wyjście skryptu}."""
     r = subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-                        str(SKRYPT), "-Porty", port, "-Bauds", str(baud)], capture_output=True, cwd=KORZEN)
+                        str(SKRYPT), "-Porty", port, "-Bauds", str(baud)], capture_output=True, cwd=KORZEN,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))   # aplikacja: bez czarnego okna
     t = r.stdout.decode("utf-8", "replace")
     wyn = {"pasmo": "nieodczytane", "ton_cw": None, "surowe": t.strip()}
     m = re.search(r"03 ((?:[0-9A-F]{2} ){5})FD", t)

@@ -516,22 +516,23 @@ class Sesja:
 
     ZRZUT_S = 5.0                     # nagłówek WAV dopisywany co tyle: zamknięte okno nie psuje pliku
 
-    def __init__(self, sr: int, ton: float | None, pasmo: str | None, zrodlo: str):
+    def __init__(self, sr: int, ton: float | None, pasmo: str | None, zrodlo: str,
+                 skad_ton: str = "CI-V 0x14 0x09"):
         # pliki dopiero przy pierwszym dźwięku: 23.10 trzy puste sesje (0 s)
         # ze startów, w których karta się nie otworzyła
-        self.arg = (sr, ton, pasmo, zrodlo)
+        self.arg = (sr, ton, pasmo, zrodlo, skad_ton)
         self.wav = None
 
     def _otworz(self) -> None:
         import soundfile as sf
-        sr, ton, pasmo, zrodlo = self.arg
+        sr, ton, pasmo, zrodlo, skad_ton = self.arg
         SESJE.mkdir(parents=True, exist_ok=True)
         stempel = time.strftime("%Y%m%d_%H%M%S")
         self.sciezka = SESJE / f"sesja_{stempel}.wav"
         self.sr = sr
         self.wav = sf.SoundFile(self.sciezka, "w", sr, 1, "PCM_16")
         self.od_zrzutu = 0
-        tonu = f"{ton:.0f} Hz (CI-V 0x14 0x09)" if ton else "nieodczytany"
+        tonu = f"{ton:.0f} Hz ({skad_ton})" if ton else "nieodczytany"
         self.sciezka.with_suffix(".txt").write_text(
             "# SESJA NA ŻYWO — tools/na_zywo.py (dopisz, co było nadane)\n\n"
             "nadane:        nieznane — sesja na żywo\n"
@@ -568,7 +569,12 @@ class Sesja:
         print(f"\nsesja zapisana: {self.sciezka} ({d.n / d.sr:.0f} s)", flush=True)
 
 
+WERSJA: str | None = None                  # aplikacja (exe): wpisana przy budowie, bez gita
+
+
 def _wersja() -> str:
+    if WERSJA:
+        return WERSJA
     import subprocess
     try:
         r = subprocess.run(["git", "describe", "--always", "--dirty", "--tags"], capture_output=True,
@@ -701,11 +707,14 @@ class _ObrazWodospadu:
         self.cv.itemconfig(self.id, image=self.img)
 
 
-def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
+def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan_fn=None,
+         tytul: str = "Dekoder CW — na żywo") -> None:
     """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
     i wstępny (szary), wskaźnik tonu nad szumem z kreską progu, suwak blokady
     szumów. Dekoder liczy w osobnym wątku; zamknięcie okna zamyka sesję
-    porządnie (w konsoli krzyżyk ucinał dziennik)."""
+    porządnie (w konsoli krzyżyk ucinał dziennik).
+    model_fn, stan_fn — aplikacja bez TensorFlow (tools/aplikacja.py): skąd
+    sieć i stan radia (domyślnie Keras z runs/ i CI-V z IC-7300)."""
     import queue
     import threading
     import traceback
@@ -719,15 +728,19 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
     def praca() -> None:
         s = d = None
         try:
-            from tensorflow import keras
-            from tools.odczyt import MODEL_ZBOCZY
-            st = _stan_radia() if z_civ else {}
+            st = (stan_fn or _stan_radia)() if z_civ else {}
             ton = st.get("ton_cw")
             q.put(("info", f"ton CW z radia: {ton} Hz; ładuję sieć..."))
-            model = keras.models.load_model(MODEL_ZBOCZY)
+            if model_fn is None:
+                from tensorflow import keras
+                from tools.odczyt import MODEL_ZBOCZY
+                model = keras.models.load_model(MODEL_ZBOCZY)
+            else:
+                model = model_fn()
             rozgrzej(model)
             d = OdczytNaZywo(model, ton_cw=ton)
-            s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows, okno)") if zapis else None
+            s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows, okno)",
+                      st.get("skad_ton", "CI-V 0x14 0x09")) if zapis else None
             gen = _strumien_karty(device)
             wod = Wodospad()
             q.put(("info", f"ton CW z radia: {ton} Hz; nasłuch"))
@@ -762,7 +775,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True) -> None:
                        "", d.stan, 0.0, d.u, None, None))
 
     root = tk.Tk()
-    root.title("Dekoder CW — na żywo")
+    root.title(tytul)
     root.geometry("1000x640")
     root.configure(bg=TLO)
     gora = tk.Frame(root, bg=TLO)

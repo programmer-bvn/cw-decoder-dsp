@@ -182,3 +182,9 @@ CW_inspector/
 # (czesto to jedyne kopie), ale nie naleza do repozytorium. (Do 08.10
 # odkladal je tu srodowisko/porzadki.sh -- usuniety razem z pendrakiem.)
 stare/
+
+# --- aplikacja (budowa_exe.bat): PyInstaller, odtwarzalne jednym klikiem ---
+build/
+dist/
+*.spec
+wersja.txt

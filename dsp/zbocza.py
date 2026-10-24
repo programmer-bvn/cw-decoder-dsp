@@ -245,6 +245,9 @@ def _logit(model, wejscie, wsad: int = 64) -> np.ndarray:
     kroki i na końcu nagrania. Tu wymiar wsadu jest dowolny (None).
     Wsad 64: przy 256 przydzielacz karty zgłaszał brak pamięci (19.10).
     """
+    if hasattr(model, "przod"):              # dsp.siec_numpy.SiecNumpy — bez TensorFlow
+        wej = wejscie if isinstance(wejscie, list) else [wejscie]
+        return np.concatenate([model.przod([w[s:s + wsad] for w in wej]) for s in range(0, wej[0].shape[0], wsad)])
     import tensorflow as tf
     f = _FUNKCJE.get(id(model))
     if f is None:
@@ -263,12 +266,15 @@ def przebieg_z_obrazow(obrazy: list, model, krok: int = RAMKI_ZBOCZA // 2,
     """Jak przebieg_sieci, ale dla wielu obrazów naraz — jedno wywołanie
     sieci na wszystkie okna (zbiór drugiego etapu: setki tysięcy klipów;
     pojedyncze wywołania kosztowałyby ~30 ms narzutu każde)."""
-    import tensorflow as tf
     pad = (RAMKI_ZBOCZA - krok) // 2
     okna, gdzie = _okna(obrazy, krok)
     wejscie = [okna, _okna(drobne, krok)[0]] if drobne is not None else okna
     logit = _logit(model, wejscie)
-    p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
+    if hasattr(model, "przod"):              # bez TensorFlow (aplikacja)
+        p = (1.0 / (1.0 + np.exp(-logit)))[:, pad:pad + krok].astype(np.float32)
+    else:
+        import tensorflow as tf
+        p = tf.sigmoid(logit).numpy()[:, pad:pad + krok]
     return [p[i0:i0 + k].reshape(-1)[:n] for i0, k, n in gdzie]
 
 
