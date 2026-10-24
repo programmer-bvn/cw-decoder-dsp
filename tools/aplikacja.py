@@ -181,27 +181,6 @@ def main() -> None:
     except FileNotFoundError:
         pass
 
-    def model():
-        from dsp.siec_numpy import SiecNumpy
-        return SiecNumpy(_zasob(WAGI))
-
-    def stan() -> dict:
-        if u["civ"]:
-            from tools.radio import civ
-            try:
-                st = civ.stan(u["port"], u["baud"])
-            except Exception as e:                       # CI-V nie może zatrzymać odbioru
-                print(f"CI-V {u['port']}: {e!r} — dalej bez tonu z radia", flush=True)
-                st = {"ton_cw": None, "pasmo": f"CI-V nieodczytane ({e.__class__.__name__})"}
-            if st.get("ton_cw") is None:
-                print(f"CI-V {u['port']}: brak tonu — {st.get('surowe', '')[:200]!r}", flush=True)
-            if st.get("ton_cw") or u["ton"] is None:
-                return st
-            return {**st, "ton_cw": u["ton"], "skad_ton": "wpisany ręcznie, CI-V bez tonu"}
-        return {"ton_cw": u["ton"], "pasmo": None, "skad_ton": "wpisany ręcznie"}
-
-    if proba is not None:
-        NZ._strumien_karty = lambda device: NZ._strumien_wav(proba)
     if sekundy is not None:
         import tkinter as tk
         stara = tk.Tk.mainloop
@@ -210,8 +189,11 @@ def main() -> None:
             self.after(int(sekundy * 1000), lambda: self.tk.call(self.protocol("WM_DELETE_WINDOW")))
             stara(self, n)
         tk.Tk.mainloop = mainloop
-    NZ.okno(u["karta"], True, zapis=u["zapis"], model_fn=model, stan_fn=stan,
-            tytul=f"Dekoder CW — {u['karta_nazwa']}")
+    # dekoder liczy w osobnym procesie (NZ._praca_okna) — dostaje proste wartości
+    dziennik = str(KATALOG / "dziennik.txt") if (getattr(sys, "frozen", False) or "--dziennik" in sys.argv) else None
+    NZ.okno(u["karta"], u["civ"], zapis=u["zapis"], model_npz=str(_zasob(WAGI)),
+            civ_port=u["port"] or None, civ_baud=u["baud"] or None, ton_reczny=u["ton"],
+            tytul=f"Dekoder CW — {u['karta_nazwa']}", wav=str(proba) if proba else None, dziennik=dziennik)
 
 
 if __name__ == "__main__":

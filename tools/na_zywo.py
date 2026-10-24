@@ -674,7 +674,7 @@ W_WOD, H_WOD = 980, 90                     # px; kolumna = 20 ms -> 19,6 s wida�
 # jasny jak sygnał; operator 24.10: 40 dB
 ZAKRES_WOD_DB = 40.0
 KLATKA_WOD_MS = 40                         # animacja wodospadu: 25 klatek/s
-ZAPAS_WOD = 15                             # kolumn w kolejce, ponad tyle — dosuwanie szybsze
+ZAPAS_WOD = 35                             # kolumn w kolejce (0,7 s) przy tempie zwykłym
 OPADANIE_DB_S = 0.1
 
 
@@ -709,77 +709,110 @@ class _ObrazWodospadu:
         self.cv.itemconfig(self.id, image=self.img)
 
 
-def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan_fn=None,
-         tytul: str = "Dekoder CW — na żywo") -> None:
-    """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
-    i wstępny (szary), wskaźnik tonu nad szumem z kreską progu, suwak blokady
-    szumów. Dekoder liczy w osobnym wątku; zamknięcie okna zamyka sesję
-    porządnie (w konsoli krzyżyk ucinał dziennik).
-    model_fn, stan_fn — aplikacja bez TensorFlow (tools/aplikacja.py): skąd
-    sieć i stan radia (domyślnie Keras z runs/ i CI-V z IC-7300)."""
-    import queue
-    import threading
+def _praca_okna(q, stop, prog, cfg: dict) -> None:
+    """Dekoder okienka w OSOBNYM PROCESIE (24.10): w wątku dzielił z oknem
+    jeden interpreter — przeliczenie po analizie (co 2 s, ~0,35 s numpy)
+    trzymało blokadę interpretera i wodospad stawał (zmierzone: 28 przerw
+    > 200 ms na 64 s, każda ~0,35 s). Wszystko tu musi być do przesłania
+    (cfg: słownik prostych wartości), bo proces startuje od zera (spawn)."""
     import traceback
+    global SESJE, WERSJA
+    if cfg.get("dziennik"):                   # aplikacja bez konsoli
+        f = open(cfg["dziennik"], "a", encoding="utf-8", buffering=1)
+        sys.stdout = sys.stderr = f
+    if cfg.get("sesje"):
+        SESJE = Path(cfg["sesje"])
+    WERSJA = cfg.get("wersja") or WERSJA
+    s = d = None
+    try:
+        st: dict = {}
+        if cfg["z_civ"]:
+            try:
+                st = civ_stan(cfg.get("civ_port"), cfg.get("civ_baud"))
+            except Exception as e:            # CI-V nie może zatrzymać odbioru
+                print(f"CI-V: {e!r} — dalej bez tonu z radia", flush=True)
+                st = {"ton_cw": None, "pasmo": f"CI-V nieodczytane ({e.__class__.__name__})"}
+        if st.get("ton_cw") is None and cfg.get("ton_reczny"):
+            st = {**st, "ton_cw": cfg["ton_reczny"], "skad_ton": "wpisany ręcznie"}
+        ton = st.get("ton_cw")
+        q.put(("info", f"ton CW: {ton} Hz; ładuję sieć..."))
+        if cfg.get("model_npz"):
+            from dsp.siec_numpy import SiecNumpy
+            model = SiecNumpy(Path(cfg["model_npz"]))
+        else:
+            from tensorflow import keras
+            from tools.odczyt import MODEL_ZBOCZY
+            model = keras.models.load_model(MODEL_ZBOCZY)
+        rozgrzej(model)
+        d = OdczytNaZywo(model, ton_cw=ton)
+        s = Sesja(C.SR, ton, st.get("pasmo"), cfg.get("zrodlo", f"karta {cfg['device']} (Windows, okno)"),
+                  st.get("skad_ton", "CI-V 0x14 0x09")) if cfg["zapis"] else None
+        gen = _strumien_wav(Path(cfg["wav"])) if cfg.get("wav") else _strumien_karty(cfg["device"])
+        wod = Wodospad()
+        q.put(("info", f"ton CW: {ton} Hz; nasłuch"))
+        p_ost = None
+        for x in gen:
+            if stop.is_set():
+                break
+            if s:
+                s.dzwiek(x)
+            if prog.value != p_ost:
+                p_ost = d.prog_db = prog.value
+                if s:
+                    s.uwaga(d, f"blokada szumów {p_ost:.0f} dB")
+            n = len(d.czasy)
+            nowe = d.dodaj(x)
+            if len(d.czasy) > n:
+                if s:
+                    s.krok(d, nowe)
+                c = wod.srodki(d.n, d.raw0)
+                q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
+                       d.wstepny, d.stan, d.nad_szumem_db, d.u,
+                       wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
+        gen.close()
+    except Exception:
+        print(traceback.format_exc(), flush=True)        # aplikacja: do dziennika
+        q.put(("blad", traceback.format_exc()))
+    finally:
+        if d is not None:
+            nowe = d.koniec()
+            if s:
+                s.zamknij(d)
+            if d.czasy:                                  # aplikacja: podsumowanie do dziennika
+                print(f"koniec: {d.n / d.sr:.0f} s dźwięku, kroków {len(d.czasy)}, krok śr. "
+                      f"{np.mean(d.czasy):.3f} s, maks. {np.max(d.czasy):.2f} s; odczyt: {d.tekst()[:300]}",
+                      flush=True)
+            q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
+                   "", d.stan, 0.0, d.u, None, None))
+        q.put(("koniec",))
+
+
+def civ_stan(port: str | None, baud: int | None) -> dict:
+    from tools.radio import civ
+    return civ.stan(port or "COM5", baud or 115200)
+
+
+def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | None = None,
+         civ_port: str | None = None, civ_baud: int | None = None, ton_reczny: float | None = None,
+         tytul: str = "Dekoder CW — na żywo", wav: str | None = None, dziennik: str | None = None) -> None:
+    """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
+    i wstępny (szary), słowa ze słownika zielone, dwa wodospady, wskaźnik tonu
+    nad szumem z kreską progu, suwak blokady szumów. Dekoder w osobnym procesie
+    (_praca_okna); zamknięcie okna zamyka sesję porządnie.
+    model_npz — sieć w numpy (aplikacja bez TensorFlow); civ_port/baud, ton_reczny —
+    radio innego operatora; wav — nagranie zamiast karty (próba)."""
+    import multiprocessing as mp
+    import queue
     import tkinter as tk
 
     TLO, JASNY, SZARY, ZIELONY = "#101214", "#e8e8e8", "#6c7078", "#5fd068"
-    q: queue.Queue = queue.Queue()
-    stop = threading.Event()
-    nast = {"prog": float(PROG_BLOKADY_DB)}
-
-    def praca() -> None:
-        s = d = None
-        try:
-            st = (stan_fn or _stan_radia)() if z_civ else {}
-            ton = st.get("ton_cw")
-            q.put(("info", f"ton CW z radia: {ton} Hz; ładuję sieć..."))
-            if model_fn is None:
-                from tensorflow import keras
-                from tools.odczyt import MODEL_ZBOCZY
-                model = keras.models.load_model(MODEL_ZBOCZY)
-            else:
-                model = model_fn()
-            rozgrzej(model)
-            d = OdczytNaZywo(model, ton_cw=ton)
-            s = Sesja(C.SR, ton, st.get("pasmo"), f"karta {device} (Windows, okno)",
-                      st.get("skad_ton", "CI-V 0x14 0x09")) if zapis else None
-            gen = _strumien_karty(device)
-            wod = Wodospad()
-            q.put(("info", f"ton CW z radia: {ton} Hz; nasłuch"))
-            prog = None
-            for x in gen:
-                if stop.is_set():
-                    break
-                if s:
-                    s.dzwiek(x)
-                if nast["prog"] != prog:
-                    prog = d.prog_db = nast["prog"]
-                    if s:
-                        s.uwaga(d, f"blokada szumów {prog:.0f} dB")
-                n = len(d.czasy)
-                nowe = d.dodaj(x)
-                if len(d.czasy) > n:
-                    if s:
-                        s.krok(d, nowe)
-                    c = wod.srodki(d.n, d.raw0)
-                    q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                           d.wstepny, d.stan, d.nad_szumem_db, d.u,
-                           wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
-            gen.close()
-        except Exception:
-            print(traceback.format_exc(), flush=True)        # aplikacja: do dziennika
-            q.put(("blad", traceback.format_exc()))
-        finally:
-            if d is not None:
-                nowe = d.koniec()
-                if s:
-                    s.zamknij(d)
-                if d.czasy:                                  # aplikacja: podsumowanie do dziennika
-                    print(f"koniec: {d.n / d.sr:.0f} s dźwięku, kroków {len(d.czasy)}, krok śr. "
-                          f"{np.mean(d.czasy):.3f} s, maks. {np.max(d.czasy):.2f} s; odczyt: {d.tekst()[:300]}",
-                          flush=True)
-                q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                       "", d.stan, 0.0, d.u, None, None))
+    ctx = mp.get_context("spawn")
+    q = ctx.Queue()
+    stop = ctx.Event()
+    prog = ctx.Value("d", float(PROG_BLOKADY_DB))
+    cfg = dict(device=device, z_civ=z_civ, zapis=zapis, model_npz=model_npz, civ_port=civ_port,
+               civ_baud=civ_baud, ton_reczny=ton_reczny, wav=wav, dziennik=dziennik,
+               sesje=str(SESJE), wersja=WERSJA)
 
     root = tk.Tk()
     root.title(tytul)
@@ -800,7 +833,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
     suwak = tk.Scale(pas, from_=0, to=30, resolution=1, orient="horizontal", length=260,
                      label="blokada szumów [dB nad szumem]; 0 = wyłączona", bg=TLO, fg=SZARY,
                      troughcolor="#22262b", highlightthickness=0, font=("Segoe UI", 9),
-                     command=lambda v: nast.__setitem__("prog", float(v)))
+                     command=lambda v: setattr(prog, "value", float(v)))
     suwak.set(PROG_BLOKADY_DB)
     suwak.pack(side="left", padx=12)
     obrazy = []
@@ -810,14 +843,26 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
     # rośnie (krok się wydłużył), dosuwa szybciej. Obraz ~1 krok za dźwiękiem.
     kolejka_wod: list[list] = [[], []]
 
+    # Tempo z zapasu w kolejce: przy ZAPAS_WOD kolumnach — tyle, ile przybywa
+    # dźwięku (2 kolumny / 40 ms); mniej w kolejce — wolniej, więcej — szybciej.
+    # Pierwsza wersja (stałe tempo, zapas 15 kolumn = 0,3 s): po przeliczeniu
+    # (co 2 s nowych kolumn nie ma ~0,6 s) kolejka pustoszała i obraz stawał —
+    # 31 przerw > 200 ms na 64 s, także z dekoderem w osobnym procesie.
+    anim = {"ulamek": 0.0, "start": False}
+
     def animuj() -> None:
         n = len(kolejka_wod[0])
-        if n:
+        if not anim["start"] and n >= ZAPAS_WOD:
+            anim["start"] = True
+        if anim["start"] and n:
             na_klatke = KLATKA_WOD_MS / 1000 / (Wodospad.KROK / C.SR)          # 2 kolumny / 40 ms
-            k = min(n, max(1, int(round(na_klatke * (1 + max(0, n - ZAPAS_WOD) / ZAPAS_WOD)))))
-            for i in (0, 1):
-                obrazy[i].dodaj(np.array(kolejka_wod[i][:k]))
-                del kolejka_wod[i][:k]
+            anim["ulamek"] += na_klatke * min(3.0, max(0.25, n / ZAPAS_WOD))
+            k = min(n, int(anim["ulamek"]))
+            anim["ulamek"] -= k
+            if k:
+                for i in (0, 1):
+                    obrazy[i].dodaj(np.array(kolejka_wod[i][:k]))
+                    del kolejka_wod[i][:k]
         root.after(KLATKA_WOD_MS, animuj)
     for opis in (f"wejście z radia {PASMO_WEJ[0]:.0f}-{PASMO_WEJ[1]:.0f} Hz",
                  f"do sieci (obce skasowane, nasza na {C.TONE_CENTER:.0f} Hz) {PASMO_SYG[0]:.0f}-{PASMO_SYG[1]:.0f} Hz"):
@@ -851,7 +896,9 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
         try:
             while True:
                 m = q.get_nowait()
-                if m[0] == "info":
+                if m[0] == "koniec":
+                    stan.config(text="dekoder zakończył pracę")
+                elif m[0] == "info":
                     stan.config(text=m[1])
                 elif m[0] == "blad":
                     stan.config(text="BŁĄD — szczegóły w oknie", fg="#e05050")
@@ -880,8 +927,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
                     stan.config(text=st)
                     x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
                     miernik.coords(slupek, 0, 0, x, 16)
-                    miernik.itemconfig(slupek, fill="#3fa34d" if nast["prog"] <= 0 or nad >= nast["prog"] else "#5a6068")
-                    k = nast["prog"] / ZAKRES * W_M
+                    miernik.itemconfig(slupek, fill="#3fa34d" if prog.value <= 0 or nad >= prog.value else "#5a6068")
+                    k = prog.value / ZAKRES * W_M
                     miernik.coords(kreska, k, 0, k, 16)
         except queue.Empty:
             pass
@@ -891,10 +938,21 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
         stop.set()
         stan.config(text="zamykam sesję...")
         root.update()
-        w.join(timeout=5)
+        # odbierać dalej: dekoder z pełną kolejką nie skończyłby (sesja niezamknięta)
+        koniec = time.monotonic() + 8
+        while w.is_alive() and time.monotonic() < koniec:
+            try:
+                while True:
+                    q.get_nowait()
+            except queue.Empty:
+                pass
+            w.join(timeout=0.1)
+        if w.is_alive():
+            w.terminate()
         root.destroy()
 
-    w = threading.Thread(target=praca, daemon=True)
+    # nie daemon: dekoder sam ma proces analizy (ProcessPoolExecutor)
+    w = ctx.Process(target=_praca_okna, args=(q, stop, prog, cfg))
     w.start()
     root.protocol("WM_DELETE_WINDOW", zamknij)
     root.after(50, odswiez)
