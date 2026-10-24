@@ -123,19 +123,48 @@ def okno_startowe() -> dict | None:
     return wynik or None
 
 
+def _dziennik() -> None:
+    """exe bez konsoli: wyjście i błędy do Dokumenty\\DekoderCW\\dziennik.txt.
+    24.10 operator: „uruchomiłem exe na IC-7300, nie działa” — i żadnego
+    śladu, bo okno bez konsoli gubiło komunikaty. Awaria ma sama mówić."""
+    import threading
+    import time
+    import traceback
+    KATALOG.mkdir(parents=True, exist_ok=True)
+    f = open(KATALOG / "dziennik.txt", "a", encoding="utf-8", buffering=1)
+    f.write(f"\n===== start {time.strftime('%Y-%m-%d %H:%M:%S')} argv={sys.argv[1:]}\n")
+    sys.stdout = sys.stderr = f
+
+    def hak(typ, wart, tb):
+        f.write("BŁĄD:\n" + "".join(traceback.format_exception(typ, wart, tb)))
+    sys.excepthook = hak
+    threading.excepthook = lambda a: hak(a.exc_type, a.exc_value, a.exc_traceback)
+
+
 def main() -> None:
     import multiprocessing as mp
     mp.freeze_support()                      # exe: proces analizy (spawn) uruchamia ten sam plik
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     global KATALOG
-    proba = None
+    proba, sekundy = None, None
     if "--proba" in sys.argv:              # test exe: nagranie zamiast karty, bez okna startowego
         i = sys.argv.index("--proba")
         proba, sekundy = Path(sys.argv[i + 1]), float(sys.argv[i + 2])
         KATALOG = Path(sys.argv[i + 3])
+    if getattr(sys, "frozen", False) or "--dziennik" in sys.argv:
+        _dziennik()
+    if proba is not None:
         u = dict(karta=0, karta_nazwa=f"PRÓBA {proba.name}", civ=False, port="", baud=0, ton=760.0, zapis=True)
+    elif "--start" in sys.argv:            # test: ostatnie ustawienia bez okna startowego
+        ust = json.loads(USTAWIENIA.read_text(encoding="utf-8"))
+        k = next(k for k in _karty() if k[1] == ust["karta"])
+        u = dict(karta=k[0], karta_nazwa=k[1], civ=ust["civ"], port=ust["port"], baud=ust["baud"],
+                 ton=float(ust["ton"]) if ust.get("ton") else None, zapis=ust["zapis"])
+        if "--sekundy" in sys.argv:
+            sekundy = float(sys.argv[sys.argv.index("--sekundy") + 1])
     else:
         u = okno_startowe()
+    print(f"ustawienia: {u}", flush=True)
     if not u:
         return
     KATALOG.mkdir(parents=True, exist_ok=True)
@@ -166,8 +195,9 @@ def main() -> None:
         return {"ton_cw": u["ton"], "pasmo": None, "skad_ton": "wpisany ręcznie"}
 
     if proba is not None:
-        import tkinter as tk
         NZ._strumien_karty = lambda device: NZ._strumien_wav(proba)
+    if sekundy is not None:
+        import tkinter as tk
         stara = tk.Tk.mainloop
 
         def mainloop(self, n=0):

@@ -765,12 +765,17 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
                            wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
             gen.close()
         except Exception:
+            print(traceback.format_exc(), flush=True)        # aplikacja: do dziennika
             q.put(("blad", traceback.format_exc()))
         finally:
             if d is not None:
                 nowe = d.koniec()
                 if s:
                     s.zamknij(d)
+                if d.czasy:                                  # aplikacja: podsumowanie do dziennika
+                    print(f"koniec: {d.n / d.sr:.0f} s dźwięku, kroków {len(d.czasy)}, krok śr. "
+                          f"{np.mean(d.czasy):.3f} s, maks. {np.max(d.czasy):.2f} s; odczyt: {d.tekst()[:300]}",
+                          flush=True)
                 q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
                        "", d.stan, 0.0, d.u, None, None))
 
@@ -935,6 +940,12 @@ def _strumien_karty(device: int | str):
     """Kawałki po ~0,1 s w C.SR z karty dźwiękowej (tylko odbiór)."""
     import queue
     import sounddevice as sd
+    # PortAudio od nowa W TYM wątku: uruchomione w innym (aplikacja: lista kart
+    # w oknie startowym, karta w wątku dekodera) nie otwiera WASAPI —
+    # „Unanticipated host error ... GLE 0x490” (exe na IC-7300, 24.10).
+    # Przy okazji świeża lista kart po przepięciu USB.
+    sd._terminate()
+    sd._initialize()
     device = znajdz_karte(device)
     print(f"karta [{device}] {sd.query_devices(device)['name']}", flush=True)
     sr_dev = int(sd.query_devices(device, "input")["default_samplerate"])
