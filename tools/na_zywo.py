@@ -808,7 +808,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     model_npz — sieć w numpy (aplikacja bez TensorFlow); civ_port/baud, ton_reczny —
     radio innego operatora; wav — nagranie zamiast karty (próba).
     Aplikacja (tools/aplikacja.py): geometria/prog_start/na_zamkniecie(geometria,
-    prog) — zapamiętanie w rejestrze; raport_fn(sesja, root) — przycisk „Zgłoś
+    prog) — zapamiętanie w rejestrze; raport_fn(sesja, root, stan_okna) — przycisk „Zgłoś
     problem”; sprawdz_wersje() -> (wersja, adres) | None — w tle przy starcie."""
     from tools.teksty import T
     import multiprocessing as mp
@@ -837,9 +837,10 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     gora.pack(fill="x", padx=10, pady=(8, 2))
     stan = tk.Label(gora, text=T("start"), fg=SZARY, bg=TLO, font=("Consolas", 11), anchor="w")
     stan.pack(side="left", fill="x", expand=True)
-    sesja = {"sciezka": None}
+    sesja = {"sciezka": None, "stan": {}}           # stan: do raportu (ostatni pasek stanu, ton nad szumem)
     if raport_fn is not None:
-        tk.Button(gora, text=T("zglos"), command=lambda: raport_fn(sesja["sciezka"], root),
+        tk.Button(gora, text=T("zglos"),
+                  command=lambda: raport_fn(sesja["sciezka"], root, {**sesja["stan"], "prog_blokady_db": prog.value}),
                   bg="#2a3038", fg=JASNY, activebackground="#3a4250", relief="flat", padx=10).pack(side="right")
     wersja_lbl = tk.Label(gora, text="", fg="#e0b050", bg=TLO, font=("Segoe UI", 9, "underline"), cursor="hand2")
     wersja_lbl.pack(side="right", padx=10)
@@ -951,6 +952,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
                     tekst.see("end")
                     stan.config(text=st)
+                    sesja["stan"] = {"stan_dekodera": st, "ton_nad_szumem_db": round(float(nad), 1),
+                                     "jednostka_s": round(float(u), 4) if np.isfinite(u) else None}
                     x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
                     miernik.coords(slupek, 0, 0, x, 16)
                     miernik.itemconfig(slupek, fill="#3fa34d" if prog.value <= 0 or nad >= prog.value else "#5a6068")

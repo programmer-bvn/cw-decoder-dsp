@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-WERSJA_APLIKACJI = "0.9.0"
+WERSJA_APLIKACJI = "0.9.1"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
 # Adres skrzynki projektu na raporty — operator zakłada konto sam (24.10);
@@ -227,7 +227,61 @@ def sprawdz_wersje() -> tuple[str, str] | None:
 
 
 # ------------------------------------------------------------------ raport
-def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: dict) -> Path:
+def _srodowisko() -> dict:
+    """Komputer — bez pytania użytkownika (operator 24.10: „niech nie wpisuje,
+    my powinniśmy zarejestrować, w jakim stanie był program”)."""
+    import platform
+    d = {"system": platform.platform(), "procesor": platform.processor(), "rdzenie": os.cpu_count(),
+         "python": platform.python_version(), "exe": bool(getattr(sys, "frozen", False))}
+    try:
+        import ctypes
+
+        class Pamiec(ctypes.Structure):
+            _fields_ = ([("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong)]
+                        + [(n, ctypes.c_ulonglong) for n in ("tot", "av", "pf", "apf", "vt", "av2", "ext")])
+        m = Pamiec()
+        m.dwLength = ctypes.sizeof(m)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m)):
+            d["ram_gb"] = round(m.tot / 2 ** 30, 1)
+    except (AttributeError, OSError):
+        pass
+    return d
+
+
+def _z_sesji(sesja: Path) -> dict:
+    """Pola z opisu sesji (pasmo, ton CW z CI-V, tor) i statystyka kroków z dziennika sesji."""
+    import re
+    import numpy as np
+    out: dict = {}
+    t = sesja.with_suffix(".txt")
+    if t.exists():
+        for w in t.read_text(encoding="utf-8", errors="replace").splitlines():
+            m = re.match(r"^(pasmo|ton CW|tor|dekoder):\s*(.*)$", w)
+            if m:
+                out[m.group(1).replace(" ", "_")] = m.group(2).strip()
+    lg = sesja.with_suffix(".log")
+    if lg.exists():
+        cz, prog = [], []
+        for w in lg.read_text(encoding="utf-8", errors="replace").splitlines():
+            if w.startswith("#"):
+                if "blokada" in w:
+                    prog.append(w[2:].strip())
+                continue
+            p = w.split("\t")
+            if len(p) > 1:
+                try:
+                    cz.append(float(p[1]))
+                except ValueError:
+                    pass
+        if cz:
+            out["kroki"] = {"liczba": len(cz), "srednio_s": round(float(np.mean(cz)), 3),
+                            "maks_s": round(float(np.max(cz)), 2)}
+        out["zmiany_blokady"] = prog[-10:]
+    return out
+
+
+def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: dict,
+                   stan_okna: dict | None = None) -> Path:
     """ZIP w stałym układzie (do przetworzenia automatem):
     raport.json — wersja, czas, język, znak, nadane, opis, ustawienia, nazwy plików;
     nagranie.flac — ostatnie RAPORT_MIN min sesji; sesja.txt/.log; dziennik.txt (koniec)."""
@@ -245,7 +299,9 @@ def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: d
     sf.write(str(flac), x, sr, format="FLAC")
     meta = {"format": "cw-raport-1", "wersja": _wersja_pelna(), "czas": time.strftime("%Y-%m-%d %H:%M:%S"),
             "jezyk": teksty.JEZYK, "znak": znak.upper(), "nadane": nadane, "opis": opis,
-            "sesja": sesja.name, "nagranie_s": round(len(x) / sr, 1), "ustawienia": ustawienia}
+            "sesja": sesja.name, "sesja_s": round(sf.info(str(sesja)).duration, 1),
+            "nagranie_s": round(len(x) / sr, 1), "ustawienia": ustawienia,
+            "stan_okna": stan_okna or {}, "z_sesji": _z_sesji(sesja), "srodowisko": _srodowisko()}
     with zipfile.ZipFile(cel, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("raport.json", json.dumps(meta, ensure_ascii=False, indent=1))
         z.write(flac, "nagranie.flac")
@@ -296,7 +352,7 @@ def _mapi_wyslij(adres: str, temat: str, tresc: str, plik: Path) -> bool:
     return wynik in (0, 1)                                         # 0 OK, 1 użytkownik anulował
 
 
-def okno_raportu(sesja: str | None, rodzic, ustawienia: dict) -> None:
+def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | None = None) -> None:
     import threading
     import tkinter as tk
     from tkinter import messagebox, ttk
@@ -326,7 +382,7 @@ def okno_raportu(sesja: str | None, rodzic, ustawienia: dict) -> None:
         ust_zapisz({"znak": znak})
         d.destroy()
         try:
-            plik = _zbuduj_raport(Path(sesja), znak, nad, op, ustawienia)
+            plik = _zbuduj_raport(Path(sesja), znak, nad, op, ustawienia, stan_okna)
         except Exception as e:
             print(f"raport: {e!r}", flush=True)
             messagebox.showerror(T("rap_tytul"), repr(e), parent=rodzic)
@@ -418,7 +474,7 @@ def main() -> None:
             stara(self, n)
         tk.Tk.mainloop = mainloop
     ust = ust_czytaj()
-    opis_ust = {k: u[k] for k in ("karta_nazwa", "civ", "port", "baud", "ton")}
+    opis_ust = {k: u[k] for k in ("karta_nazwa", "civ", "port", "baud", "ton", "zapis")}
     # dekoder liczy w osobnym procesie (NZ._praca_okna) — dostaje proste wartości
     NZ.okno(u["karta"], u["civ"], zapis=u["zapis"], model_npz=str(_zasob(WAGI)),
             civ_port=u["port"] or None, civ_baud=u["baud"] or None, ton_reczny=u["ton"],
@@ -426,7 +482,7 @@ def main() -> None:
             dziennik=str(KATALOG / "dziennik.txt") if dziennik else None,
             geometria=ust.get("geometria"), prog_start=ust.get("prog"),
             na_zamkniecie=lambda g, p: ust_zapisz({"geometria": g, "prog": p}),
-            raport_fn=lambda s, root: okno_raportu(s, root, opis_ust),
+            raport_fn=lambda s, root, st: okno_raportu(s, root, opis_ust, st),
             sprawdz_wersje=sprawdz_wersje if u.get("aktualizacje") else None, ikona=_ikona())
 
 

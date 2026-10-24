@@ -2017,6 +2017,17 @@ dziennik); instalacja cicha, zainstalowany program odczytał nagranie
 wysyłka MAPI (brak adresu), instalacja na innym komputerze. Start programu
 ~30 s (dwa procesy importują biblioteki).
 
+**0.9.1 (24.10, operator):** wersje OBOK SIEBIE — „żeby gościu mógł porównać
+nową wersję ze starą i stwierdzić, czy jego zgłoszenie zostało uwzględnione”:
+AppId, katalog (`DekoderCW\<wersja>`), skróty i wpis w „Dodaj/usuń programy”
+z numerem wersji; ustawienia i dane wspólne. Sprawdzone: 0.9.0 i 0.9.1
+zainstalowane naraz (dwa wpisy), 0.9.1 czyta, obie odinstalowane bez śladu.
+Raport bez męczenia użytkownika („niech nie wpisuje częstotliwości”): pola
+nieobowiązkowe, program dopisuje sam stan okna (ostatni pasek stanu, ton nad
+szumem, jednostka, próg blokady), z sesji (pasmo i ton z CI-V, tor, wersja,
+statystyka kroków, zmiany blokady) i komputer (system, procesor, rdzenie, RAM).
+Operator sprawdził zwykły mikrofon Windows (bez radia z USB) — działa.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

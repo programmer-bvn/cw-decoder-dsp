@@ -4,8 +4,11 @@ Trial version. Recordings the program could not read help a lot!
 INSTALLATION
 Run DekoderCW_setup_<version>.exe. Windows may say "Windows protected your
 PC" (the program is not signed) — click "More info", then "Run anyway".
-No administrator rights needed. A newer version installs over the old one —
-settings and recordings are kept.
+No administrator rights needed. Each version installs NEXT TO the previous
+ones (separate shortcut with the version number) so you can compare how the
+old and the new one read the same signal. Settings and recordings are shared.
+Remove old versions in "Add or remove programs". A plain microphone next to
+the radio speaker works too.
 
 FIRST START
 In the settings window choose the language and the sound card that carries

@@ -5,8 +5,10 @@ INSTALACJA
 Uruchom DekoderCW_setup_<wersja>.exe. Windows może pokazać „System Windows
 ochronił ten komputer” (program bez podpisu wydawcy) — kliknij „Więcej
 informacji”, potem „Uruchom mimo to”. Instalacja nie wymaga uprawnień
-administratora. Nowsza wersja instaluje się na starą — ustawienia i nagrania
-zostają.
+administratora. Każda wersja instaluje się OBOK poprzednich (osobny skrót z
+numerem wersji) — można porównać, jak stara i nowa czytają to samo.
+Ustawienia i nagrania są wspólne. Starą wersję usuwa się w „Dodaj lub usuń
+programy”. Działa też ze zwykłym mikrofonem przy głośniku radia.
 
 PIERWSZE URUCHOMIENIE
 W oknie ustawień wybierz język i kartę dźwiękową, na którą przychodzi dźwięk

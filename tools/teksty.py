@@ -38,14 +38,14 @@ TEKSTY: dict[str, dict[str, str]] = {
     "ust_start": {"pl": "Start", "en": "Start"},
     # raport
     "rap_tytul": {"pl": "Zgłoś problem z dekodowaniem", "en": "Report a decoding problem"},
-    "rap_wstep": {"pl": "Do raportu trafi nagranie bieżącej sesji (ostatnie {m} min, FLAC), odczyt i dziennik.\n"
-                        "Opisz krótko, co było słychać i co dekoder pokazał źle.",
-                  "en": "The report contains the current session recording (last {m} min, FLAC), the decoded text\n"
-                        "and the log. Briefly describe what you heard and what the decoder got wrong."},
+    "rap_wstep": {"pl": "Wystarczy kliknąć przycisk na dole — nagranie (ostatnie {m} min), odczyt, wersję programu,\n"
+                        "ustawienia i stan radia program dopisze sam. Pola poniżej są NIEOBOWIĄZKOWE.",
+                  "en": "Just click the button below — the recording (last {m} min), decoded text, program version,\n"
+                        "settings and radio state are added automatically. The fields below are OPTIONAL."},
     "rap_znak": {"pl": "Twój znak (opcjonalnie):", "en": "Your callsign (optional):"},
     "rap_nadane": {"pl": "Co było nadane (jeśli wiesz):", "en": "What was sent (if known):"},
-    "rap_opis": {"pl": "Opis problemu:", "en": "Problem description:"},
-    "rap_utworz": {"pl": "Utwórz raport i otwórz e-mail", "en": "Create report and open e-mail"},
+    "rap_opis": {"pl": "Uwagi (np. co było źle):", "en": "Remarks (e.g. what went wrong):"},
+    "rap_utworz": {"pl": "Utwórz raport i wyślij", "en": "Create report and send"},
     "rap_brak_sesji": {"pl": "Zapis sesji jest wyłączony — włącz go w ustawieniach i nagraj problem jeszcze raz.",
                        "en": "Session recording is off — enable it in the settings and record the problem again."},
     "rap_gotowy": {"pl": "Raport zapisany:\n{p}\n\nJeśli program pocztowy nie dołączył go sam, przeciągnij ten plik "

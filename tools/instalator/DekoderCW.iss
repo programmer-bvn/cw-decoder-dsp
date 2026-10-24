@@ -3,8 +3,10 @@
 ; Wejście: dist\DekoderCW (PyInstaller). Wyjście: dist\DekoderCW_setup_<wersja>.exe.
 ; Instalacja bez uprawnień administratora (domyślnie dla bieżącego użytkownika):
 ; operator 24.10 — ma się instalować u ludzi nie-informatyków bez pytań o zgodę.
-; Nowa wersja instaluje się na starą (ten sam AppId); ustawienia (rejestr HKCU)
-; i dane (Dokumenty\DekoderCW: sesje, raporty, słownik osobisty) zostają.
+; Wersje OBOK SIEBIE (operator 24.10: „żeby gościu mógł porównać nową wersję ze
+; starą i stwierdzić, czy jego zgłoszenie zostało uwzględnione”): AppId, katalog,
+; skróty i pozycja w „Dodaj/usuń programy” z numerem wersji. Ustawienia (rejestr
+; HKCU) i dane (Dokumenty\DekoderCW: sesje, raporty, słownik) są wspólne.
 
 #ifndef Wersja
   #define Wersja "0.0.0"
@@ -13,7 +15,7 @@
 #define Exe "DekoderCW.exe"
 
 [Setup]
-AppId={{DA52DC2A-77EF-4A5B-A173-91ECCD3A787A}
+AppId={{DA52DC2A-77EF-4A5B-A173-91ECCD3A787A}_{#Wersja}
 AppName={#Nazwa}
 AppVersion={#Wersja}
 AppVerName={#Nazwa} {#Wersja}
@@ -21,8 +23,10 @@ AppPublisher=SQ2BVN
 AppPublisherURL=https://github.com/programmer-bvn/cw-decoder-dsp
 AppSupportURL=https://github.com/programmer-bvn/cw-decoder-dsp/issues
 AppUpdatesURL=https://github.com/programmer-bvn/cw-decoder-dsp/releases
-DefaultDirName={autopf}\DekoderCW
-DefaultGroupName={#Nazwa}
+DefaultDirName={autopf}\DekoderCW\{#Wersja}
+UsePreviousAppDir=no
+UninstallDisplayName={#Nazwa} {#Wersja}
+DefaultGroupName={#Nazwa} {#Wersja}
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 LicenseFile=..\..\LICENSE
@@ -53,10 +57,10 @@ Source: "..\CZYTAJ_DekoderCW.txt"; DestDir: "{app}"; DestName: "CZYTAJ.txt"; Fla
 Source: "..\README_EN_DekoderCW.txt"; DestDir: "{app}"; DestName: "README_EN.txt"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#Nazwa}"; Filename: "{app}\{#Exe}"
+Name: "{group}\{#Nazwa} {#Wersja}"; Filename: "{app}\{#Exe}"
 Name: "{group}\{cm:ProgramOnTheWeb,{#Nazwa}}"; Filename: "https://github.com/programmer-bvn/cw-decoder-dsp"
-Name: "{group}\{cm:UninstallProgram,{#Nazwa}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#Nazwa}"; Filename: "{app}\{#Exe}"; Tasks: pulpit
+Name: "{group}\{cm:UninstallProgram,{#Nazwa} {#Wersja}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#Nazwa} {#Wersja}"; Filename: "{app}\{#Exe}"; Tasks: pulpit
 
 [Run]
 Filename: "{app}\{#Exe}"; Description: "{cm:LaunchProgram,{#Nazwa}}"; Flags: nowait postinstall skipifsilent
