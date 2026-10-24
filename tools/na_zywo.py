@@ -673,6 +673,8 @@ W_WOD, H_WOD = 980, 90                     # px; kolumna = 20 ms -> 19,6 s wida�
 # zakres barw pod maksimum: przy 60 dB (jak Live-Specgram) szum na 40 m był
 # jasny jak sygnał; operator 24.10: 40 dB
 ZAKRES_WOD_DB = 40.0
+KLATKA_WOD_MS = 40                         # animacja wodospadu: 25 klatek/s
+ZAPAS_WOD = 15                             # kolumn w kolejce, ponad tyle — dosuwanie szybsze
 OPADANIE_DB_S = 0.1
 
 
@@ -802,6 +804,21 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
     suwak.set(PROG_BLOKADY_DB)
     suwak.pack(side="left", padx=12)
     obrazy = []
+    # Płynny wodospad (operator 24.10): kolumny przychodzą skokami, raz na krok
+    # dekodera (0,25 s i więcej, po ~12 naraz) — do kolejki, a animacja co
+    # KLATKA_WOD_MS dosuwa tyle, ile dźwięku w tym czasie przybywa; gdy kolejka
+    # rośnie (krok się wydłużył), dosuwa szybciej. Obraz ~1 krok za dźwiękiem.
+    kolejka_wod: list[list] = [[], []]
+
+    def animuj() -> None:
+        n = len(kolejka_wod[0])
+        if n:
+            na_klatke = KLATKA_WOD_MS / 1000 / (Wodospad.KROK / C.SR)          # 2 kolumny / 40 ms
+            k = min(n, max(1, int(round(na_klatke * (1 + max(0, n - ZAPAS_WOD) / ZAPAS_WOD)))))
+            for i in (0, 1):
+                obrazy[i].dodaj(np.array(kolejka_wod[i][:k]))
+                del kolejka_wod[i][:k]
+        root.after(KLATKA_WOD_MS, animuj)
     for opis in (f"wejście z radia {PASMO_WEJ[0]:.0f}-{PASMO_WEJ[1]:.0f} Hz",
                  f"do sieci (obce skasowane, nasza na {C.TONE_CENTER:.0f} Hz) {PASMO_SYG[0]:.0f}-{PASMO_SYG[1]:.0f} Hz"):
         tk.Label(root, text=opis, fg=SZARY, bg=TLO, font=("Segoe UI", 8), anchor="w").pack(fill="x", padx=10)
@@ -842,8 +859,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
                 else:
                     _, nowe, wst, st, nad, u, w_wej, w_syg = m
                     if w_wej is not None:
-                        obrazy[0].dodaj(w_wej)
-                        obrazy[1].dodaj(w_syg)
+                        kolejka_wod[0].extend(w_wej)
+                        kolejka_wod[1].extend(w_syg)
                     zn = zat["znaki"]
                     zn += nowe
                     if np.isfinite(u):
@@ -881,6 +898,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_fn=None, stan
     w.start()
     root.protocol("WM_DELETE_WINDOW", zamknij)
     root.after(50, odswiez)
+    root.after(KLATKA_WOD_MS, animuj)
     root.mainloop()
 
 
