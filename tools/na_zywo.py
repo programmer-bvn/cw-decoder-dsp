@@ -720,6 +720,11 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
     if cfg.get("dziennik"):                   # aplikacja bez konsoli
         f = open(cfg["dziennik"], "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = f
+    t0 = cfg.get("t0") or time.time()
+
+    def czas(opis: str) -> None:                  # dziennik: skąd długi start (25.10: 20-30 s)
+        print(f"start {time.time() - t0:5.1f} s: {opis}", flush=True)
+    czas("proces dekodera")
     if cfg.get("sesje"):
         SESJE = Path(cfg["sesje"])
     WERSJA = cfg.get("wersja") or WERSJA
@@ -743,7 +748,9 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
             from tensorflow import keras
             from tools.odczyt import MODEL_ZBOCZY
             model = keras.models.load_model(MODEL_ZBOCZY)
+        czas("sieć wczytana")
         rozgrzej(model)
+        czas("rozgrzewka")
         d = OdczytNaZywo(model, ton_cw=ton)
         s = Sesja(C.SR, ton, st.get("pasmo"), cfg.get("zrodlo", f"karta {cfg['device']} (Windows, okno)"),
                   st.get("skad_ton", "CI-V 0x14 0x09")) if cfg["zapis"] else None
@@ -751,6 +758,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                else _strumien_karty(cfg["device"]))
         wod = Wodospad()
         q.put(("info", "nasluch", {"ton": ton}))
+        czas("karta otwarta, nasłuch")
         p_ost = None
         sesja_wyslana = False
         for x in gen:
@@ -768,6 +776,8 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
             n = len(d.czasy)
             nowe = d.dodaj(x)
             if len(d.czasy) > n:
+                if n == 0:
+                    czas("pierwszy krok dekodera")
                 if s:
                     s.krok(d, nowe)
                 c = wod.srodki(d.n, d.raw0)
@@ -822,7 +832,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     prog = ctx.Value("d", float(PROG_BLOKADY_DB if prog_start is None else prog_start))
     cfg = dict(device=device, z_civ=z_civ, zapis=zapis, model_npz=model_npz, civ_port=civ_port,
                civ_baud=civ_baud, ton_reczny=ton_reczny, wav=wav, dziennik=dziennik,
-               sesje=str(SESJE), wersja=WERSJA)
+               sesje=str(SESJE), wersja=WERSJA, t0=time.time())
 
     root = tk.Tk()
     root.title(tytul)
@@ -1194,9 +1204,13 @@ def _strumien_wav(sciezka: Path, tempo: float = 1.0):
     „Otwórz nagranie” w okienku), 2, 4 — szybciej, 0 — ile się da."""
     a = frontend.load_audio(sciezka)
     n = C.SR // 10
+    t0 = time.perf_counter()
     for i in range(0, a.size, n):
         if tempo > 0:
-            time.sleep(0.1 / tempo)
+            # równać do zegara, nie spać 0,1 s po każdym kawałku: liczenie kroku
+            # doliczało się do snu i nagranie szło ~0,7x (25.10: 31 s dźwięku w 43 s —
+            # wyglądało na 30-sekundowy start programu)
+            time.sleep(max(0.0, t0 + (i + n) / C.SR / tempo - time.perf_counter()))
         yield a[i:i + n]
 
 

@@ -9,7 +9,8 @@ JEZYK = "pl"
 TEKSTY: dict[str, dict[str, str]] = {
     # okienko na żywo
     "start": {"pl": "start...", "en": "starting..."},
-    "laduje": {"pl": "ton CW: {ton} Hz; ładuję sieć...", "en": "CW pitch: {ton} Hz; loading network..."},
+    "laduje": {"pl": "ton CW: {ton} Hz; ładuję... (pierwsze uruchomienie po włączeniu komputera: do kilkunastu s)",
+               "en": "CW pitch: {ton} Hz; loading... (first start after switching the computer on: up to ~15 s)"},
     "nasluch": {"pl": "ton CW: {ton} Hz; nasłuch", "en": "CW pitch: {ton} Hz; listening"},
     "koniec_pracy": {"pl": "dekoder zakończył pracę", "en": "decoder stopped"},
     "blad_okno": {"pl": "BŁĄD — szczegóły w oknie", "en": "ERROR — details in the window"},

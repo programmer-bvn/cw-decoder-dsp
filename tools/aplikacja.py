@@ -23,6 +23,8 @@ import sys
 import time
 from pathlib import Path
 
+T_START = time.time()                        # dziennik: czas startu (25.10: 20-30 s)
+
 WERSJA_APLIKACJI = "0.9.2"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
@@ -523,6 +525,8 @@ def main() -> None:
         tk.Tk.mainloop = mainloop
     ust = ust_czytaj()
     opis_ust = {k: u[k] for k in ("karta_nazwa", "civ", "port", "baud", "ton", "zapis")}
+    print(f"start {time.time() - T_START:5.1f} s od uruchomienia: przed oknem (z oknem startowym i biblioteki okna)",
+          flush=True)
     # dekoder liczy w osobnym procesie (NZ._praca_okna) — dostaje proste wartości
     NZ.okno(u["karta"], u["civ"], zapis=u["zapis"], model_npz=str(_zasob(WAGI)),
             civ_port=u["port"] or None, civ_baud=u["baud"] or None, ton_reczny=u["ton"],

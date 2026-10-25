@@ -2014,8 +2014,8 @@ u niego (linia 110 kV obok) nie da się nagrać wszystkich rodzajów sygnałów.
 **Sprawdzone:** raport z sesji (ZIP: json, FLAC 21 s = 100 kB, txt, log,
 dziennik); instalacja cicha, zainstalowany program odczytał nagranie
 („OK2PVF DE SQ2BVN = GM OM TN”), deinstalacja bez śladów. **Nie sprawdzone:**
-wysyłka MAPI (brak adresu), instalacja na innym komputerze. Start programu
-~30 s (dwa procesy importują biblioteki).
+wysyłka MAPI (brak adresu), instalacja na innym komputerze. ~~Start programu
+~30 s~~ — błąd pomiaru, wpis niżej (25.10).
 
 **0.9.1 (24.10, operator):** wersje OBOK SIEBIE — „żeby gościu mógł porównać
 nową wersję ze starą i stwierdzić, czy jego zgłoszenie zostało uwzględnione”:
@@ -2065,6 +2065,16 @@ w przerwach. Dryf liczony w chwilach klucza: 37 Hz (pojedyncze „E” z mowy te
 są „kluczem”), tylko w kreskach: brak dryfu. Dodana reguła: udział pojedynczych
 E/T/I w odczycie > 30% -> „szum lub mowa w przerwach, pomoże blokada” (tu 59%).
 `--ponow`: analiza od nowa wszystkich zgłoszeń, PODSUMOWANIE.md od zera.
+
+**Start programu — zmierzony (25.10).** Szacowane „~30 s” było błędem
+trybu próbnego: odtwarzanie nagrania spało 0,1 s PO każdym kawałku, czas
+liczenia doliczał się do snu i nagranie szło ~0,7x (31 s dźwięku w 43 s okna
+— wyglądało na długi start). Ten sam błąd miało „Otwórz nagranie” 1x; teraz
+równanie do zegara (42 s w 45 s). Znaczniki czasu w dzienniku (exe):
+na zimno (pierwsze uruchomienie po zbudowaniu / włączeniu komputera) okno
+2,2 s, pierwszy odczyt +7,8 s (rozgrzewka 6,4 s: biblioteki z dysku,
+kompilacja numba); na ciepło okno 0,2 s, pierwszy odczyt +2,0 s. Do skracania
+nie było czego — komunikat przy ładowaniu mówi, że na zimno do kilkunastu s.
 **Pierwsza reguła QRM była zła:** „obce stacje blisko” przy nagraniach
 ręki i 6 m — to prążki własnego kluczowania, -24...-32 dB względem naszej;
 prawdziwa obca w 40 m tłok: -3 dB. Teraz liczy się obca >= -12 dB
