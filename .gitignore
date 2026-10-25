@@ -191,3 +191,6 @@ wersja.txt
 
 # logo aplikacji (tools/instalator/logo.py) — małe, zostaje w repozytorium
 !tools/instalator/*.png
+
+# instrukcja z obrazkami (docs/instrukcja/instrukcja_pl.html -> PDF w budowa_exe.bat)
+!docs/instrukcja/*.png

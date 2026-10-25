@@ -55,9 +55,11 @@ Name: "pulpit"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:Ad
 Source: "..\..\dist\DekoderCW\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\CZYTAJ_DekoderCW.txt"; DestDir: "{app}"; DestName: "CZYTAJ.txt"; Flags: ignoreversion
 Source: "..\README_EN_DekoderCW.txt"; DestDir: "{app}"; DestName: "README_EN.txt"; Flags: ignoreversion
+Source: "..\..\docs\instrukcja\Dekoder_CW_instrukcja.pdf"; DestDir: "{app}"; DestName: "Instrukcja.pdf"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#Nazwa} {#Wersja}"; Filename: "{app}\{#Exe}"
+Name: "{group}\Instrukcja {#Wersja}"; Filename: "{app}\Instrukcja.pdf"
 Name: "{group}\{cm:ProgramOnTheWeb,{#Nazwa}}"; Filename: "https://github.com/programmer-bvn/cw-decoder-dsp"
 Name: "{group}\{cm:UninstallProgram,{#Nazwa} {#Wersja}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#Nazwa} {#Wersja}"; Filename: "{app}\{#Exe}"; Tasks: pulpit

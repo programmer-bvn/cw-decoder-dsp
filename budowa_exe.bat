@@ -21,6 +21,10 @@ python -m PyInstaller --noconfirm --clean --name DekoderCW --windowed --onedir -
   --exclude-module torch --exclude-module IPython --exclude-module pandas --exclude-module h5py ^
   tools\aplikacja.py || goto blad
 copy /y tools\CZYTAJ_DekoderCW.txt dist\DekoderCW\CZYTAJ.txt >nul || goto blad
+rem instrukcja z obrazkami (docs\instrukcja): HTML -> PDF przez Edge
+set EDGE=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+if exist "%EDGE%" "%EDGE%" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf="%~dp0docs\instrukcja\Dekoder_CW_instrukcja.pdf" "file:///%~dp0docs/instrukcja/instrukcja_pl.html" 2>nul
+copy /y docs\instrukcja\Dekoder_CW_instrukcja.pdf dist\DekoderCW\Instrukcja.pdf >nul || goto blad
 copy /y tools\README_EN_DekoderCW.txt dist\DekoderCW\README_EN.txt >nul || goto blad
 powershell -NoProfile -Command "Compress-Archive -Force -Path dist\DekoderCW -DestinationPath dist\DekoderCW.zip" || goto blad
 if not exist "%ISCC%" (

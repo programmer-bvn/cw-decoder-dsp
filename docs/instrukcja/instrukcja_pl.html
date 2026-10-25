@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dekoder CW SQ2BVN — instrukcja</title>
+<!-- Instrukcja dla laików (operator 25.10: „zrób instrukcję z obrazkami dla laików”).
+     PDF: budowa_exe.bat (Edge --headless --print-to-pdf) -> docs/instrukcja/Dekoder_CW_instrukcja.pdf.
+     Zrzuty okien: z programu (nagranie zamiast karty), GitHub — przeglądarka. -->
+<style>
+  @page { size: A4; margin: 14mm 15mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 11.5pt; color: #1b1f24; line-height: 1.45; }
+  h1 { font-size: 22pt; margin: 0 0 2mm; color: #0c2540; }
+  h2 { font-size: 15pt; color: #0c2540; border-bottom: 2px solid #ffb200; padding-bottom: 1mm; margin: 7mm 0 3mm; }
+  .naglowek { display: flex; align-items: center; gap: 6mm; margin-bottom: 4mm; }
+  .naglowek img { width: 26mm; }
+  .podtytul { color: #4a5563; }
+  .krok { display: flex; gap: 4mm; margin: 3mm 0; }
+  .nr { flex: none; width: 9mm; height: 9mm; border-radius: 50%; background: #ffb200; color: #0c2540;
+        font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 12pt; }
+  .tresc { flex: 1; }
+  img.zrzut { width: 100%; border: 1px solid #c9ced6; border-radius: 2mm; margin: 2mm 0; }
+  img.maly { width: 58%; }
+  img.sredni { width: 78%; }
+  .uwaga { background: #fff6dc; border-left: 4px solid #ffb200; padding: 2mm 4mm; margin: 3mm 0; }
+  .ok { background: #e8f6ea; border-left: 4px solid #3fa34d; padding: 2mm 4mm; margin: 3mm 0; }
+  b.przycisk { background: #eef1f5; border: 1px solid #b9c0ca; border-radius: 1.5mm; padding: 0 1.5mm; font-weight: 600; }
+  .strona { page-break-before: always; }
+  img, table, .krok, .uwaga { break-inside: avoid; }
+  h2 { break-after: avoid; }
+  ul { margin: 1mm 0 1mm 5mm; padding-left: 3mm; }
+  li { margin: 0.8mm 0; }
+  .stopka { color: #6b7480; font-size: 9pt; margin-top: 6mm; }
+  table { border-collapse: collapse; width: 100%; font-size: 10.5pt; }
+  td { border-bottom: 1px solid #dde1e6; padding: 1.5mm 2mm; vertical-align: top; }
+  td:first-child { width: 38%; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="naglowek">
+  <img src="logo.png" alt="">
+  <div>
+    <h1>Dekoder CW SQ2BVN</h1>
+    <div class="podtytul">Program, który czyta telegrafię (CW) z radia na ekranie komputera.<br>
+    Instrukcja krok po kroku — instalacja, ustawienia, zgłaszanie problemów.</div>
+  </div>
+</div>
+
+<div class="ok"><b>Czego potrzebujesz:</b> komputer z Windows 10 lub 11, radio z wyjściem dźwięku do komputera
+(kabel USB albo gniazdo słuchawkowe → wejście liniowe), a jeśli nie masz kabla — wystarczy zwykły
+mikrofon przy głośniku radia. Program <b>tylko odbiera</b>: niczego w radiu nie przestawia i nie nadaje.</div>
+
+<h2>1. Pobranie programu</h2>
+<div class="krok"><div class="nr">1</div><div class="tresc">
+  Otwórz w przeglądarce adres:<br>
+  <b>https://github.com/programmer-bvn/cw-decoder-dsp/releases/latest</b><br>
+  Przewiń stronę w dół do napisu <b>Assets</b> i kliknij plik <b class="przycisk">DekoderCW_setup_….exe</b>
+  (ok. 80 MB). Plików „Source code” nie trzeba.
+  <img class="zrzut" src="github.jpg" alt="Strona pobierania">
+</div></div>
+<div class="krok"><div class="nr">2</div><div class="tresc">
+  Przeglądarka może zapytać, czy zachować plik — wybierz <b class="przycisk">Zachowaj</b>.
+</div></div>
+
+<h2>2. Instalacja</h2>
+<div class="krok"><div class="nr">3</div><div class="tresc">
+  Otwórz pobrany plik (w przeglądarce: <i>Pobrane</i>, albo folder <i>Pobrane</i> na dysku).
+  <div class="uwaga">Windows może pokazać niebieskie okno <b>„System Windows ochronił ten komputer”</b>.
+  To normalne dla programów od pojedynczych autorów (bez płatnego podpisu). Kliknij
+  <b class="przycisk">Więcej informacji</b>, a potem <b class="przycisk">Uruchom mimo to</b>.</div>
+</div></div>
+<div class="krok"><div class="nr">4</div><div class="tresc">
+  Instalator zapyta, dla kogo zainstalować — najprościej <b class="przycisk">Zainstaluj tylko dla mnie</b>
+  (nie trzeba hasła administratora). Potem: wybierz język, zaznacz <b>„Akceptuję warunki umowy”</b>
+  i klikaj <b class="przycisk">Dalej</b>, na końcu <b class="przycisk">Zainstaluj</b> i
+  <b class="przycisk">Zakończ</b>. Zostaw zaznaczone „Uruchom”, a program wystartuje od razu.
+</div></div>
+<div class="krok"><div class="nr">5</div><div class="tresc">
+  Program znajdziesz potem w menu Start: <b>Dekoder CW SQ2BVN</b> (z numerem wersji).
+  Nowe wersje instalują się <b>obok</b> starych — można porównać, która czyta lepiej.
+</div></div>
+
+<h2>3. Pierwsze uruchomienie — ustawienia</h2>
+<img class="zrzut sredni" src="ustawienia_pl.png" alt="Okno ustawień">
+<table>
+  <tr><td>Język / Language</td><td>Polski albo English.</td></tr>
+  <tr><td>Karta dźwiękowa</td><td>Wybierz wejście, na które idzie dźwięk z radia. Radio z kablem USB: zwykle
+      „<b>USB Audio</b> … WASAPI”. Mikrofon: „Mikrofon …”. Nie wiesz która? Wybierz, kliknij Start
+      i patrz na górny wodospad (punkt 4) — przy dobrej karcie widać na nim sygnał z radia. Jeśli pusto,
+      zamknij program i wybierz inną.</td></tr>
+  <tr><td>Ton CW z radia przez CI-V</td><td>Tylko radia Icom z kablem CI-V/USB: zaznacz i wybierz port COM.
+      Inne radia: zostaw puste.</td></tr>
+  <tr><td>Ton CW wpisany ręcznie</td><td>Wysokość tonu CW ustawiona w radiu („CW pitch”), np. 600.
+      Nie wiesz — zostaw puste, program sam znajdzie stację.</td></tr>
+  <tr><td>Zapisuj sesje</td><td>Zostaw zaznaczone — dzięki temu można zgłosić problem z nagraniem.</td></tr>
+</table>
+<p>Kliknij <b class="przycisk">Start</b>. Program zapamięta ustawienia — następnym razem wystarczy Start.</p>
+<div class="uwaga">Pierwsze uruchomienie po włączeniu komputera trwa do kilkunastu sekund (napis „ładuję…”).
+Kolejne — 2-3 sekundy.</div>
+
+<h2 class="strona">4. Okno programu</h2>
+<img class="zrzut" src="okno_pl.png" alt="Okno programu">
+<table>
+  <tr><td>Górny pasek</td><td>Poziom dźwięku, ton stacji, tempo (WPM). Przyciski: <b>Otwórz nagranie…</b>,
+      <b>Zgłoś problem z dekodowaniem…</b></td></tr>
+  <tr><td>„ton nad szumem”</td><td>Zielony pasek: jak mocno stacja wystaje ponad szum.</td></tr>
+  <tr><td>Suwak „blokada szumów”</td><td>Gdy w przerwach pojawiają się same E, I, T (szum czytany jako
+      kropki) — przesuń w prawo (przy silnej stacji 15-20). Przy słabej stacji trzymaj nisko (0 = wyłączona).</td></tr>
+  <tr><td>Górny wodospad</td><td>Dźwięk z radia — kreski i kropki to nadawanie.</td></tr>
+  <tr><td>Dolny wodospad</td><td>To samo po oczyszczeniu: inne stacje usunięte, odbierana stacja na środku.</td></tr>
+  <tr><td>Tekst</td><td><b>Jasny</b> — odczyt pewny. <b style="color:#6c7078">Szary</b> — odczyt wstępny, może się
+      jeszcze zmienić. <b style="color:#3fa34d">Zielony</b> — znane słowo, znak wywoławczy albo raport RST.</td></tr>
+</table>
+
+<h2>5. Zgłoś problem z dekodowaniem — to bardzo pomaga!</h2>
+<p>Gdy program źle czyta stację, którą dobrze słychać, kliknij <b class="przycisk">Zgłoś problem z dekodowaniem…</b>.
+Nic nie trzeba wpisywać — pola są nieobowiązkowe. Można dopisać swój znak i co było nadane.</p>
+<img class="zrzut maly" src="zglos_pl.png" alt="Zgłoszenie">
+<p>Kliknij <b class="przycisk">Utwórz raport i wyślij</b>. Pojawi się okno wysyłki:</p>
+<img class="zrzut maly" src="wysylka_pl.png" alt="Wysyłka">
+<ul>
+  <li><b>Masz program pocztowy</b> (Outlook, Thunderbird): kliknij <b class="przycisk">Wyślij pocztą</b> —
+      wiadomość z załącznikiem otworzy się sama, kliknij w niej „Wyślij”.</li>
+  <li><b>Pocztę masz w przeglądarce</b> (Gmail, Onet, WP…): utwórz nową wiadomość, przyciskami
+      <b class="przycisk">Kopiuj</b> przenieś adres i temat, kliknij <b class="przycisk">Pokaż plik raportu</b>
+      i przeciągnij pokazany plik do wiadomości. Wyślij.</li>
+</ul>
+<p>Adres: <b>programmer.bvn@gmail.com</b>. Każde zgłoszenie jest analizowane — dostaniesz odpowiedź,
+co było przyczyną.</p>
+
+<h2>6. Gdy coś nie działa</h2>
+<table>
+  <tr><td>Nie pojawiają się żadne litery</td><td>Inna karta dźwiękowa (punkt 3) albo za cicho — podgłośnij radio
+      lub wyjście audio. Na górnym wodospadzie musi być widać sygnał.</td></tr>
+  <tr><td>Dużo pojedynczych E, I, T</td><td>Szum albo rozmowa w pokoju (mikrofon) czytane jako kropki —
+      przesuń suwak blokady szumów w prawo.</td></tr>
+  <tr><td>Zła stacja</td><td>Dostrój radio tak, żeby odbierana stacja była jedyna albo najmocniejsza;
+      wpisz ton CW w ustawieniach.</td></tr>
+  <tr><td>Program się nie uruchamia</td><td>Przyślij plik <b>Dokumenty\DekoderCW\dziennik.txt</b> na
+      programmer.bvn@gmail.com.</td></tr>
+</table>
+
+<p class="stopka">Pliki programu: Dokumenty\DekoderCW — <i>sesje</i> (nagrania), <i>raporty</i>,
+<i>slownik_osobisty.txt</i> (Twoje słowa na zielono: imię, QTH, znajomi). Kod źródłowy (GPL-3.0):
+github.com/programmer-bvn/cw-decoder-dsp. 73, SQ2BVN.</p>
+</body>
+</html>

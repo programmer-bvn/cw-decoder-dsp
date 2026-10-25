@@ -25,7 +25,7 @@ from pathlib import Path
 
 T_START = time.time()                        # dziennik: czas startu (25.10: 20-30 s)
 
-WERSJA_APLIKACJI = "0.9.2"
+WERSJA_APLIKACJI = "0.9.3"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
 # Skrzynka projektu na raporty (konto założył operator 25.10; w Thunderbirdzie na
@@ -369,6 +369,8 @@ def okno_wysylki(rodzic, plik: Path, temat: str, tresc: str) -> None:
     d = tk.Toplevel(rodzic)
     d.title(T("rap_tytul"))
     d.transient(rodzic)
+    if _ikona():
+        d.iconbitmap(_ikona())
     f = ttk.Frame(d, padding=12)
     f.pack(fill="both", expand=True)
 
@@ -424,6 +426,8 @@ def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | 
     d = tk.Toplevel(rodzic)
     d.title(T("rap_tytul"))
     d.transient(rodzic)
+    if _ikona():
+        d.iconbitmap(_ikona())
     f = ttk.Frame(d, padding=12)
     f.pack(fill="both", expand=True)
     ttk.Label(f, text=T("rap_wstep", m=RAPORT_MIN), justify="left").pack(anchor="w")

@@ -16,8 +16,8 @@ TEKSTY: dict[str, dict[str, str]] = {
     "blad_okno": {"pl": "BŁĄD — szczegóły w oknie", "en": "ERROR — details in the window"},
     "zamykam": {"pl": "zamykam sesję...", "en": "closing session..."},
     "ton_nad_szumem": {"pl": "ton nad szumem", "en": "tone above noise"},
-    "blokada": {"pl": "blokada szumów [dB nad szumem]; 0 = wyłączona",
-                "en": "noise squelch [dB above noise]; 0 = off"},
+    # krótko: dłuższy podpis suwaka był ucięty („...0 = wyłączo”, zrzut do instrukcji 25.10)
+    "blokada": {"pl": "blokada szumów [dB], 0 = wył.", "en": "noise squelch [dB], 0 = off"},
     "wod_wej": {"pl": "wejście z radia {a}-{b} Hz", "en": "radio input {a}-{b} Hz"},
     "wod_syg": {"pl": "do sieci (obce skasowane, nasza na {t} Hz) {a}-{b} Hz",
                 "en": "to the network (other stations removed, ours at {t} Hz) {a}-{b} Hz"},
