@@ -860,6 +860,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     tk.Label(gora, text=T("tempo"), fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="right")
     przycisk_radio = tk.Button(gora, text=T("wroc"), command=lambda: przelacz(None), **przycisk)
     tk.Button(gora, text=T("otworz"), command=lambda: otworz(), **przycisk).pack(side="right", padx=6)
+    tk.Button(gora, text=T("wyczysc"), command=lambda: wyczysc(), **przycisk).pack(side="right")
     wersja_lbl = tk.Label(gora, text="", fg="#e0b050", bg=TLO, font=("Segoe UI", 9, "underline"), cursor="hand2")
     wersja_lbl.pack(side="right", padx=10)
     pas = tk.Frame(root, bg=TLO)
@@ -914,11 +915,57 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
         cv = tk.Canvas(root, width=W_WOD, height=H_WOD, bg="#000000", highlightthickness=0)
         cv.pack(padx=10, pady=(0, 4), anchor="w")
         obrazy.append(_ObrazWodospadu(cv))
-    tekst = tk.Text(root, bg=TLO, fg=JASNY, font=("Consolas", 18), wrap="word", bd=0,
-                    insertbackground=TLO, padx=10, pady=8)
-    tekst.pack(fill="both", expand=True)
+    # Okno tekstu (operator 25.10): nie było paska przewijania, nie dało się
+    # cofnąć do starszego tekstu (co krok skok na koniec), skopiować ani
+    # wyczyścić. Teraz: pasek, przewijanie za tekstem tylko gdy widok jest na
+    # dole i nic nie jest zaznaczone, tylko do odczytu (pisanie psułoby znacznik
+    # „otwarte”), Ctrl+C / Ctrl+A, menu pod prawym przyciskiem, „Wyczyść”.
+    ramka_tekstu = tk.Frame(root, bg=TLO)
+    ramka_tekstu.pack(fill="both", expand=True)
+    przewijak = tk.Scrollbar(ramka_tekstu, orient="vertical")
+    przewijak.pack(side="right", fill="y")
+    tekst = tk.Text(ramka_tekstu, bg=TLO, fg=JASNY, font=("Consolas", 18), wrap="word", bd=0,
+                    insertbackground=TLO, padx=10, pady=8, yscrollcommand=przewijak.set,
+                    selectbackground="#3a4a60", selectforeground=JASNY, inactiveselectbackground="#3a4a60")
+    tekst.pack(side="left", fill="both", expand=True)
+    przewijak.config(command=tekst.yview)
     tekst.tag_configure("wst", foreground=SZARY)
     tekst.tag_configure("zielone", foreground=ZIELONY)
+    tekst.tag_raise("sel")
+
+    def kopiuj(wszystko: bool = False) -> None:
+        if wszystko:
+            t = tekst.get("1.0", "end-1c")
+        elif tekst.tag_ranges("sel"):
+            t = tekst.get("sel.first", "sel.last")
+        else:
+            return
+        root.clipboard_clear()
+        root.clipboard_append(t.strip())
+
+    def klawisz(e) -> str | None:
+        ctrl = bool(e.state & 0x4)
+        k = e.keysym.lower()
+        if ctrl and k == "c":
+            kopiuj()
+            return "break"
+        if ctrl and k == "a":
+            tekst.tag_add("sel", "1.0", "end-1c")
+            return "break"
+        if e.keysym in ("Prior", "Next", "Up", "Down", "Home", "End", "Left", "Right"):
+            return None                              # przewijanie klawiaturą
+        return "break"
+
+    tekst.bind("<Key>", klawisz)
+    for zdarzenie in ("<<Paste>>", "<<Cut>>", "<<Clear>>", "<<PasteSelection>>"):
+        tekst.bind(zdarzenie, lambda e: "break")
+    tekst.bind("<Button-1>", lambda e: tekst.focus_set())
+    menu = tk.Menu(root, tearoff=0)
+    menu.add_command(label=T("kopiuj"), command=kopiuj)
+    menu.add_command(label=T("kopiuj_wszystko"), command=lambda: kopiuj(True))
+    menu.add_separator()
+    menu.add_command(label=T("wyczysc_okno"), command=lambda: wyczysc())
+    tekst.bind("<Button-3>", lambda e: menu.tk_popup(e.x_root, e.y_root))
     # Tekst zatwierdzony przez słownik (dsp/slownik.py): spacje mogą się
     # jeszcze przestawić, więc końcówkę (od `od`) rysujemy co krok od nowa;
     # starsze niż OTWARTE znaków zamrażamy na spacji.
@@ -961,6 +1008,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     zn += nowe
                     if np.isfinite(u):
                         zat["u"] = u
+                    na_dole = tekst.yview()[1] >= 0.999 and not tekst.tag_ranges("sel")
                     tekst.delete("otwarte", "end")
                     if len(zn) - zat["od"] > OTWARTE:          # zamrożenie starszej części
                         k = len(zn) - OTWARTE // 2
@@ -972,7 +1020,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     rysuj(zn[zat["od"]:], zat["u"])
                     pusto = tekst.get("end-2c", "end-1c") in ("", " ", "\n")
                     tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
-                    tekst.see("end")
+                    if na_dole:
+                        tekst.see("end")
                     stan.config(text=st)
                     sesja["stan"] = {"stan_dekodera": st, "ton_nad_szumem_db": round(float(nad), 1),
                                      "jednostka_s": round(float(u), 4) if np.isfinite(u) else None}
@@ -1016,14 +1065,19 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
         dek["w"] = ctx.Process(target=_praca_okna, args=(q, dek["stop"], prog, {**cfg, **nadpis}))
         dek["w"].start()
 
+    def wyczysc() -> None:
+        """Tylko ekran: zapis sesji i raport zostają pełne. Niezatwierdzona końcówka
+        wraca w następnym kroku dekodera."""
+        tekst.delete("1.0", "end")
+        tekst.mark_set("otwarte", "1.0")
+        zat.update(znaki=[], od=0)
+
     def przelacz(plik: str | None) -> None:
         """Nagranie (plik) albo z powrotem karta (None): dekoder od nowa, tekst od nowa."""
         stan.config(text=T("zamykam"))
         root.update()
         zatrzymaj()
-        tekst.delete("1.0", "end")
-        tekst.mark_set("otwarte", "1.0")
-        zat.update(znaki=[], od=0)
+        wyczysc()
         for k in kolejka_wod:
             k.clear()
         anim.update(ulamek=0.0, start=False)

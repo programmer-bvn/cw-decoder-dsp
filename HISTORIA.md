@@ -2095,6 +2095,25 @@ Przy pierwszej próbie „Uruchom” na ostatniej stronie nie odznaczyło się
 i program wystartował na mikrofonie — sesję skasowano, wersję testową
 (na bieżącego użytkownika) odinstalowano; 0.9.2 operatora nietknięta.
 
+### Okno tekstu: przewijanie, kopiowanie, „Wyczyść” (25.10)
+
+**Objaw (operator):** przy dużej ilości tekstu brak paska przewijania, nie
+da się wrócić do starszego odczytu, skopiować go ani wyczyścić okna.
+**Przyczyna:** `tk.Text` bez paska, a co krok dekodera (0,25 s) `see("end")`
+ściągało widok na koniec; pole przyjmowało też pisanie z klawiatury, które
+psułoby znacznik „otwarte” (końcówka rysowana co krok od nowa).
+**Teraz** (`tools/na_zywo.py`, `okno`): pasek z prawej; za tekstem idzie
+tylko, gdy widok jest na dole i nic nie jest zaznaczone; tylko do odczytu
+(klawisze poza Ctrl+C / Ctrl+A i strzałkami zablokowane, wklejanie też);
+menu pod prawym przyciskiem (Kopiuj, Kopiuj wszystko, Wyczyść okno);
+przycisk „Wyczyść” — tylko ekran, zapis sesji i raport bez zmian.
+**Sprawdzone** (próba w scratchpadzie, okno z nagraniem `sesja_20261023_204213`):
+przewinięty w górę widok po 6 s dekodowania nadal na górze (yview 0,0);
+na dole idzie za tekstem; Ctrl+A + Ctrl+C dało w schowku cały tekst; pisanie
+i wklejanie nie zmieniły treści; po „Wyczyść” 0 znaków, po 15 s nowy odczyt.
+Wchodzi do 0.9.3 (wydanie jeszcze nieopublikowane). Zrzut okna w instrukcji
+(`okno_pl.png`) sprzed zmiany — bez przycisku „Wyczyść”.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

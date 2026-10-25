@@ -27,6 +27,9 @@ OKNO
   zmienić). Zielony: słowo ze słownika krótkofalarskiego, znak wywoławczy albo
   raport RST — wokół nich poprawiane są spacje. Liter program NIGDY nie
   poprawia: co widzisz, to zdekodował dekoder.
+- Tekst można przewijać (pasek z prawej; przewinięty w górę zostaje na
+  miejscu), zaznaczyć i skopiować (Ctrl+C, Ctrl+A albo prawy przycisk myszy).
+  „Wyczyść” czyści tylko ekran — zapis sesji i raport zostają pełne.
 - Wodospady: górny — dźwięk z radia; dolny — sygnał po oczyszczeniu (obce
   stacje odjęte, odbierana stacja na 750 Hz), tak jak widzi go sieć.
 - „Ton nad szumem” i suwak blokady szumów: w przerwach szum potrafi dawać

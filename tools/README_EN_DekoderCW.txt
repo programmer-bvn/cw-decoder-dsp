@@ -27,6 +27,9 @@ WINDOW
   Green: a word from the ham radio dictionary, a callsign or an RST report —
   spaces around them are corrected. Letters are NEVER corrected: what you
   see is what the decoder decoded.
+- The text can be scrolled (bar on the right; scrolled up, it stays put),
+  selected and copied (Ctrl+C, Ctrl+A or the right mouse button).
+  "Clear" clears the screen only — the session recording and report stay complete.
 - Waterfalls: top — audio from the radio; bottom — cleaned signal (other
   stations removed, received station at 750 Hz), as the network sees it.
 - "Tone above noise" and the noise squelch slider: between transmissions
