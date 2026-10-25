@@ -25,6 +25,10 @@
   .ok { background: #e8f6ea; border-left: 4px solid #3fa34d; padding: 2mm 4mm; margin: 3mm 0; }
   b.przycisk { background: #eef1f5; border: 1px solid #b9c0ca; border-radius: 1.5mm; padding: 0 1.5mm; font-weight: 600; }
   .strona { page-break-before: always; }
+  .siatka { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 4mm; margin-top: 2mm; }
+  .siatka figure { margin: 0; break-inside: avoid; }
+  .siatka img { width: 100%; border: 1px solid #c9ced6; border-radius: 1.5mm; }
+  .siatka figcaption { font-size: 9.5pt; color: #333; margin-top: 1mm; }
   img, table, .krok, .uwaga { break-inside: avoid; }
   h2 { break-after: avoid; }
   ul { margin: 1mm 0 1mm 5mm; padding-left: 3mm; }
@@ -70,10 +74,18 @@ mikrofon przy głośniku radia. Program <b>tylko odbiera</b>: niczego w radiu ni
   <b class="przycisk">Więcej informacji</b>, a potem <b class="przycisk">Uruchom mimo to</b>.</div>
 </div></div>
 <div class="krok"><div class="nr">4</div><div class="tresc">
-  Instalator zapyta, dla kogo zainstalować — najprościej <b class="przycisk">Zainstaluj tylko dla mnie</b>
-  (nie trzeba hasła administratora). Potem: wybierz język, zaznacz <b>„Akceptuję warunki umowy”</b>
-  i klikaj <b class="przycisk">Dalej</b>, na końcu <b class="przycisk">Zainstaluj</b> i
-  <b class="przycisk">Zakończ</b>. Zostaw zaznaczone „Uruchom”, a program wystartuje od razu.
+  Przejdź przez kolejne okna instalatora:
+  <div class="siatka">
+    <figure><img src="inst_tryb.png" alt=""><figcaption>Kliknij <b>Zainstaluj dla bieżącego użytkownika</b>
+      (nie trzeba hasła administratora).</figcaption></figure>
+    <figure><img src="inst_jezyk.png" alt=""><figcaption>Język instalatora — <b class="przycisk">OK</b>.</figcaption></figure>
+    <figure><img src="inst_licencja.png" alt=""><figcaption>Zaznacz kółko <b>„Akceptuję warunki umowy”</b>
+      (wtedy uaktywni się przycisk Dalej) i kliknij <b class="przycisk">Dalej</b>.</figcaption></figure>
+    <figure><img src="inst_skroty.png" alt=""><figcaption>Skrót na pulpicie — zostaw zaznaczony,
+      <b class="przycisk">Dalej</b>, potem <b class="przycisk">Instaluj</b>.</figcaption></figure>
+    <figure><img src="inst_koniec.png" alt=""><figcaption>Gotowe. Zostaw zaznaczone „Uruchom” i kliknij
+      <b class="przycisk">Zakończ</b> — program wystartuje.</figcaption></figure>
+  </div>
 </div></div>
 <div class="krok"><div class="nr">5</div><div class="tresc">
   Program znajdziesz potem w menu Start: <b>Dekoder CW SQ2BVN</b> (z numerem wersji).
