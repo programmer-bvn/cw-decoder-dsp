@@ -2081,6 +2081,20 @@ prawdziwa obca w 40 m tłok: -3 dB. Teraz liczy się obca >= -12 dB
 (jak `przeciwsygnal.POZIOM_MIN_DB`). Sprawdzone na testowym mboxie (2 raporty
 + mail innego projektu) i raporcie z 40 m tłok: „703 Hz -3 dB, 871 Hz -11 dB”.
 
+### Instrukcja z obrazkami dla laików (25.10)
+
+Operator: „zrób instrukcję z obrazkami dla laików”. `docs/instrukcja/instrukcja_pl.html`
+(A4) → PDF przez Edge w `budowa_exe.bat`; w instalatorze jako `Instrukcja.pdf`,
+w menu Start „Instrukcja <wersja>”. 5 stron: pobranie z GitHuba, instalacja
+krok po kroku (5 zrzutów kreatora), ustawienia, okno, zgłoszenie problemu.
+**Zrzuty kreatora Inno — pułapka:** instalator uruchomiony z terminala
+Claude Code albo dotknięty przez UI Automation sam zamykał okna dialogowe.
+Działa: start przez `explorer.exe` + plik .bat, klikanie `BM_CLICK`
+(`PostMessage`), zrzut `PrintWindow` (bez wyciągania okna na wierzch).
+Przy pierwszej próbie „Uruchom” na ostatniej stronie nie odznaczyło się
+i program wystartował na mikrofonie — sesję skasowano, wersję testową
+(na bieżącego użytkownika) odinstalowano; 0.9.2 operatora nietknięta.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
