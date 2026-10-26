@@ -56,6 +56,7 @@ TON_S = 3.0
 # nimi poprzednia jednostka — tempo stacji zmienia się wolniej niż co 10 s.
 JEDNOSTKA_CO_S = 12.5
 GRZEBIEN_CO_S = 37.5
+BRAKI_PAMIECI = 40         # ~10 s kroków bez pamięci z rzędu -> dekoder się poddaje (błąd w oknie)
 HISTORIA_S = 20.0          # przebieg P trzymany do jednostki (cepstrum: okna 8 s)
 VITERBI_S = 12.0
 # Tekst wstępny: litera pokazywana, gdy za nią minęło DOKONCZONA_U jednostek
@@ -148,9 +149,7 @@ class OdczytNaZywo:
             # części Python — wątek trzymał blokadę interpretera i krok w tym
             # czasie trwał 0,6-1,8 s zamiast 0,05 s (v3, 23.10)
             # „spawn" także w WSL: fork kopiowałby proces z działającym TensorFlow
-            import multiprocessing as mp
-            from concurrent.futures import ProcessPoolExecutor
-            self._watek = ProcessPoolExecutor(1, mp_context=mp.get_context("spawn"))
+            self._watek = self._nowy_proces()
         self.hist = np.zeros(0, np.float32)    # P; hist[0] to ramka h0 (co V.DT od początku)
         self.hist_poz = np.zeros(0, np.float32)  # poziom tonu naszej [dB], ta sama siatka (blokada)
         self.h0 = 0
@@ -197,11 +196,36 @@ class OdczytNaZywo:
             return ""
         return self._krok(koniec=False)
 
+    @staticmethod
+    def _nowy_proces():
+        import multiprocessing as mp
+        from concurrent.futures import ProcessPoolExecutor
+        return ProcessPoolExecutor(1, mp_context=mp.get_context("spawn"))
+
+    def _wynik_analizy(self) -> None:
+        """Wynik z procesu analizy. Przyszłość zdejmowana PRZED .result():
+        błąd (SQ2MMX 26.10: brak pamięci w systemie, 7,7 GB RAM) wypada raz,
+        a nie w każdym następnym kroku. Proces analizy zabity przez system
+        (BrokenProcessPool) — nowy, następna analiza idzie normalnie."""
+        from concurrent.futures.process import BrokenProcessPool
+        f, self._przyszla = self._przyszla, None
+        try:
+            self._odbierz(f.result())
+        except BrokenProcessPool:
+            self._odnow_proces()
+            raise
+
+    def _odnow_proces(self) -> None:
+        self._watek.shutdown(wait=False)
+        self._watek = self._nowy_proces()
+
     def koniec(self) -> str:
         """Koniec dźwięku: zatwierdź resztę."""
         if self._przyszla is not None:
-            self._odbierz(self._przyszla.result())
-            self._przyszla = None
+            try:
+                self._wynik_analizy()
+            except Exception as e:             # reszta tekstu ważniejsza niż ostatnia analiza
+                print(f"koniec: analiza nieudana ({e!r}) — zostaje poprzednia", flush=True)
         if self._watek is not None:
             self._watek.shutdown(wait=False)
             self._watek = None
@@ -228,8 +252,7 @@ class OdczytNaZywo:
 
     def _analizuj(self) -> None:
         if self._przyszla is not None and self._przyszla.done():
-            self._odbierz(self._przyszla.result())
-            self._przyszla = None
+            self._wynik_analizy()
         if self._przyszla is not None or self.raw.size < 2 * self.sr \
                 or self.n - self.ost_analiza < ANALIZA_CO_S * self.sr:
             return
@@ -253,7 +276,12 @@ class OdczytNaZywo:
         if self._watek is None or self.analiza is None:      # pierwsza: od razu
             self._odbierz(_analiza(*arg))
         else:
-            self._przyszla = self._watek.submit(_analiza, *arg)
+            from concurrent.futures.process import BrokenProcessPool
+            try:
+                self._przyszla = self._watek.submit(_analiza, *arg)
+            except BrokenProcessPool:        # proces zabity między analizami (próba 26.10)
+                self._odnow_proces()
+                self._przyszla = self._watek.submit(_analiza, *arg)
 
     # ------------------------------------------------------------------ sieć
     def _siec(self, y: np.ndarray) -> np.ndarray:
@@ -716,6 +744,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
     > 200 ms na 64 s, każda ~0,35 s). Wszystko tu musi być do przesłania
     (cfg: słownik prostych wartości), bo proces startuje od zera (spawn)."""
     import traceback
+    from concurrent.futures.process import BrokenProcessPool
     global SESJE, WERSJA
     if cfg.get("dziennik"):                   # aplikacja bez konsoli
         f = open(cfg["dziennik"], "a", encoding="utf-8", buffering=1)
@@ -761,6 +790,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
         czas("karta otwarta, nasłuch")
         p_ost = None
         sesja_wyslana = False
+        braki = 0                                 # kroki z rzędu bez pamięci
         for x in gen:
             if stop.is_set():
                 break
@@ -774,23 +804,40 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                 if s:
                     s.uwaga(d, f"blokada szumów {p_ost:.0f} dB")
             n = len(d.czasy)
-            nowe = d.dodaj(x)
-            if len(d.czasy) > n:
-                if n == 0:
-                    czas("pierwszy krok dekodera")
-                if s:
-                    s.krok(d, nowe)
-                c = wod.srodki(d.n, d.raw0)
-                q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                       d.wstepny, d.stan, d.nad_szumem_db, d.u,
-                       wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
+            try:
+                nowe = d.dodaj(x)
+                if len(d.czasy) > n:
+                    if n == 0:
+                        czas("pierwszy krok dekodera")
+                    if s:
+                        s.krok(d, nowe)
+                    c = wod.srodki(d.n, d.raw0)
+                    q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
+                           d.wstepny, d.stan, d.nad_szumem_db, d.u,
+                           wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
+                    braki = 0                     # tylko po kroku: kawałki bez kroku nie liczą się
+            except (MemoryError, BrokenProcessPool) as e:
+                # SQ2MMX 26.10 (laptop 7,7 GB): „Unable to allocate 2.00 MiB” —
+                # brakło pamięci całemu systemowi (dekoder sam bierze ~0,5 GB,
+                # zmierzone na jego nagraniu). Proces dekodera padał, odbiór stał
+                # do restartu programu. Teraz krok przepada, odbiór idzie dalej.
+                braki += 1
+                print(f"{time.strftime('%H:%M:%S')} krok pominięty ({braki} z rzędu): {e!r}", flush=True)
+                if braki >= BRAKI_PAMIECI:
+                    raise
         gen.close()
     except Exception:
         print(traceback.format_exc(), flush=True)        # aplikacja: do dziennika
         q.put(("blad", traceback.format_exc()))
     finally:
         if d is not None:
-            nowe = d.koniec()
+            try:
+                nowe = d.koniec()
+            except Exception:
+                # bez pamięci koniec też padał (próba 26.10) — wtedy sesja nie
+                # była zamykana, a okno nie dostawało „koniec”
+                print(traceback.format_exc(), flush=True)
+                nowe = ""
             if s:
                 s.zamknij(d)
             if d.czasy:                                  # aplikacja: podsumowanie do dziennika

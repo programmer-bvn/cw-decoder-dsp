@@ -2114,6 +2114,41 @@ i wklejanie nie zmieniły treści; po „Wyczyść” 0 znaków, po 15 s nowy od
 Wchodzi do 0.9.3 (wydanie jeszcze nieopublikowane). Zrzut okna w instrukcji
 (`okno_pl.png`) sprzed zmiany — bez przycisku „Wyczyść”.
 
+### Brak pamięci zatrzymywał odbiór (26.10, zgłoszenie SQ2MMX)
+
+Pierwsze zgłoszenie z zewnątrz — dziękujemy SQ2MMX (0.9.2, laptop Windows 11,
+7,7 GB RAM, karta USB 44,1 kHz).
+**Objaw:** dwie sesje padły zaraz po starcie, w dzienniku
+`_ArrayMemoryError: Unable to allocate 90.0 MiB` i w drugiej `… 2.00 MiB`
+(splot w `dsp/siec_numpy.py`); odbiór stał do ponownego uruchomienia
+programu. Trzecia sesja przeszła 20 min bez błędu.
+**Przyczyna:** brakło pamięci całemu systemowi — skoro nie dało się przydzielić
+nawet 2 MiB, to nie dekoder ją zjadł. Zmierzone na jego nagraniu (300 s,
+SiecNumpy jak w exe): szczyt 380 MiB dekoder, 510 MiB z procesem analizy;
+wsad sieci 4 zamiast 64 oszczędza tylko 60 MiB — nie zmieniane. Każdy wyjątek
+w kroku kończył proces dekodera. Do tego wynik z procesu analizy był zdejmowany
+dopiero PO `.result()`, więc błąd analizy wypadałby w każdym następnym kroku,
+a proces analizy zabity przez system (`BrokenProcessPool`) psuł wszystkie
+następne zlecenia.
+**Teraz** (`tools/na_zywo.py`): `MemoryError` / `BrokenProcessPool` w kroku —
+krok przepada (wpis „krok pominięty” w dzienniku), odbiór idzie dalej;
+dopiero `BRAKI_PAMIECI` = 40 kroków z rzędu (~10 s) kończy dekoder błędem
+w oknie. Proces analizy odnawiany, gdy padł w trakcie zlecenia i gdy padł
+między zleceniami. `koniec()` w `finally` złapany — bez tego przy braku
+pamięci sesja nie była zamykana, a okno nie dostawało „koniec”.
+**Sprawdzone** (próba w scratchpadzie, `_praca_okna` na 120 s nagrania
+SQ2MMX, sztuczny `MemoryError` w sieci): co 10. wywołanie — 38 kroków
+pominiętych, odbiór do końca, tekst jak bez błędów w częściach bez braków;
+proces analizy zabity w 25. s (3 biegi: dwa razy między zleceniami, raz
+w trakcie — jeden krok pominięty) — dalej normalnie; brak pamięci stały —
+po 40 krokach błąd do okna, sesja zamknięta, „koniec” wysłany.
+**Z tego samego nagrania, otwarte:** zlane litery w wywołaniu
+(„CQPOTADEF*SZF*SZPSE” — aktywator POTA, znak nieczytelny) i „E E T”
+w przerwach — to nie szum (jak podała automatyczna diagnoza
+`tools.zgloszenia`), tylko słabsze stacje ~10 dB nad szumem między
+nadawaniami aktywatora; blokada 6 dB nie pomaga i gubi część tekstu,
+10 dB obcina początek CQ.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
