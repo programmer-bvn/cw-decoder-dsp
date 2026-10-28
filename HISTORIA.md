@@ -2198,8 +2198,10 @@ tego znaku. `python -m tools.zgloszenia --odpisz [ZNAK]` otwiera w Thunderbirdzi
 okno nowej wiadomości (adres, „Re: temat”, treść) — operator czyta i klika
 „Wyślij”; nic nie wychodzi samo. Treść: szkic `odpowiedz.txt` (przy pierwszej
 odpowiedzi), wpisy z historii jeszcze temu znakowi niewysłane (jeden znak —
-jedna wiadomość, przy najnowszym zgłoszeniu), podpis „Odpowiedź przygotował
-Claude (AI) na zlecenie SQ2BVN”. Gdy po czasie przybędzie wpis, następne
+jedna wiadomość, przy najnowszym zgłoszeniu), podpis operatora. (Do 28.10
+był dopisek, że odpowiedź przygotowało AI; operator go zdjął — ludzie
+przestają przysyłać, gdy uznają, że rozmawiają z maszyną; narzędzie pomaga,
+odpowiada człowiek.) Gdy po czasie przybędzie wpis, następne
 `--odpisz` otwiera „dalszy ciąg” z samym nowym wpisem. Co poszło —
 `zgloszenia/wyslane.json` (zapisywane przy otwarciu okna; czy kliknięto
 „Wyślij”, skrypt nie widzi). `--pokaz`: tylko wypisuje treść.

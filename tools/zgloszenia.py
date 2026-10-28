@@ -234,12 +234,12 @@ ODPOWIEDZ = {
            "Please keep sending such reports — each one brings the decoder closer to reading everything "
            "you can hear on the band.\n"),
 }
-# podpis dokładany przy wysyłce (--odpisz), nie w szkicu (operator 27.10)
+# podpis dokładany przy wysyłce (--odpisz), nie w szkicu (operator 27.10).
+# Podpisuje operator (28.10): ludzie odchodzą, gdy uznają, że rozmawiają
+# z maszyną — narzędzie pomaga, odpowiada i wysyła człowiek.
 PODPIS = {
-    "pl": "Odpowiedź przygotował Claude (AI) na zlecenie SQ2BVN.\n"
-          "Dziękuję za zgłoszenie i do usłyszenia — 73!\nSQ2BVN — Dekoder CW\n",
-    "en": "This reply was prepared by Claude (AI) on behalf of SQ2BVN.\n"
-          "Thank you for the report — 73!\nSQ2BVN — CW Decoder\n",
+    "pl": "Dziękuję za zgłoszenie i do usłyszenia — 73!\nSQ2BVN — Dekoder CW\n",
+    "en": "Thank you for the report — 73!\nSQ2BVN — CW Decoder\n",
 }
 WSTEP_SEKCJI = {
     "pl": ("Zmiany w projekcie wykonane na podstawie Twojego zgłoszenia i przesłanego nagrania "
