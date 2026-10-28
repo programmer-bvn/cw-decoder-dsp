@@ -52,10 +52,6 @@ SUROWE_S = 12.0
 PRZELICZ_S = 7.0
 # Ton naszej = mediana pętli z ostatnich TON_S analizy (dryf, zmiana stacji).
 TON_S = 3.0
-# Cepstrum co JEDNOSTKA_CO_S dźwięku, grzebień (1,5 s) co GRZEBIEN_CO_S; między
-# nimi poprzednia jednostka — tempo stacji zmienia się wolniej niż co 10 s.
-JEDNOSTKA_CO_S = 12.5
-GRZEBIEN_CO_S = 37.5
 BRAKI_PAMIECI = 40         # ~10 s kroków bez pamięci z rzędu -> dekoder się poddaje (błąd w oknie)
 HISTORIA_S = 20.0          # przebieg P trzymany do jednostki (cepstrum: okna 8 s)
 VITERBI_S = 12.0
@@ -107,19 +103,18 @@ def _przygotuj(x: np.ndarray, n0: int, f_n: float, obce: list[float],
     return np.clip(y * 10 ** (wzm_db / 20), -1, 1).astype(np.float32)
 
 
-def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray | None,
-             grzebien: bool, sr: int) -> tuple[float, list[float], float, list[float]]:
+def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray,
+             sr: int) -> tuple[float, list[float], float, list[float]]:
     """-> (ton naszej, obce [Hz], wzmocnienie dB, kandydatki jednostki).
-    Jednostka też tu: grzebień to 1,5 s — w kroku dawał co 37,5 s krok
-    2,3 s zamiast 0,06 s (v3, 23.10)."""
+    Jednostka przy każdej analizie: grzebień od 28.10 liczy 0,04 s zamiast
+    1,5 s (wcześniej co 37,5 s dźwięku, a między liczeniami trzymała się
+    zła jednostka — F5LOL u SQ2MMX, wolny krok)."""
     from dsp import przeciwsygnal as PS, tune
     from tools import wav2net
     from tools.odczyt import jednostka_grzebienia
     kand = []
-    if hist is not None and hist.size:
-        kand.append(V.jednostka_cepstrum(hist)[0])
-        if grzebien:
-            kand.append(jednostka_grzebienia(hist))
+    if hist.size:
+        kand = [V.jednostka_cepstrum(hist)[0], jednostka_grzebienia(hist)]
     t, f = tune.track_tone(x, ton_cw=ton_cw)
     ok = np.isfinite(f)
     ost = ok & (t >= (x.size / sr - TON_S))
@@ -158,7 +153,6 @@ class OdczytNaZywo:
         self.nad_szumem_db = 0.0               # ton naszej nad podłogą w ostatnim kroku (wskaźnik)
         self.ost = -np.inf                 # początek ostatniego zatwierdzonego znaku
         self.u = float("nan")
-        self.od_cepstrum = self.od_grzebienia = 0.0   # s dźwięku od ostatniego liczenia jednostki
         self.kand: list[float] = []        # jednostki z wątku analizy, do sprawdzenia Viterbim
         self.czasy: list[float] = []       # czas liczenia kroków [s]
         self.zatwierdzone: list[tuple[str, float, float, float]] = []   # znak, od, do, chwila pokazania
@@ -258,21 +252,8 @@ class OdczytNaZywo:
             return
         x = self.raw[-int(ANALIZA_S * self.sr):].copy()
         n0 = self.raw0 + self.raw.size - x.size
-        dzwiek = (self.n - self.ost_analiza) / self.sr if np.isfinite(self.ost_analiza) else 0.0
         self.ost_analiza = self.n
-        self.od_cepstrum += dzwiek
-        self.od_grzebienia += dzwiek
-        # póki przebieg krótszy niż okno cepstrum (8 s) — jednostka przy każdej
-        # analizie: z pierwszych 2 s wychodziła za krótka i trzymała się 12,5 s
-        # („MMM MTM" na początku 40 m, v2 22.10)
-        grzebien = self.hist.size * V.DT < 8.0 or self.od_grzebienia >= GRZEBIEN_CO_S
-        hist = None
-        if grzebien or self.od_cepstrum >= JEDNOSTKA_CO_S:
-            hist = self.hist.copy()
-            self.od_cepstrum = 0.0
-            if grzebien:
-                self.od_grzebienia = 0.0
-        arg = (x, n0, self.ton_cw, hist, grzebien, self.sr)
+        arg = (x, n0, self.ton_cw, self.hist.copy(), self.sr)
         if self._watek is None or self.analiza is None:      # pierwsza: od razu
             self._odbierz(_analiza(*arg))
         else:

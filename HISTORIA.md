@@ -2252,9 +2252,17 @@ pętla); jednostki z wersji numpy i pętli identyczne na 105 nagraniach.
   głównie powtarzany niezidentyfikowany sygnał („S S S”), jedna jednostka na
   cały plik wybiera się pod niego (37 ms); w oknach z samą stacją stary
   i nowy grzebień dają to samo (78–80 ms).
-**Zostaje do decyzji:** grzebień kosztuje teraz tyle co nic — można go
-liczyć przy każdej analizie zamiast co 37,5 s (`GRZEBIEN_CO_S` w
-`tools/na_zywo.py`), co jeszcze skróci trzymanie się złej jednostki.
+**Jednostka przy każdej analizie** (decyzja operatora, ten sam dzień):
+grzebień kosztuje teraz tyle co nic, więc cepstrum i grzebień idą przy
+każdej analizie (co 2 s dźwięku); `JEDNOSTKA_CO_S` 12,5 s i `GRZEBIEN_CO_S`
+37,5 s usunięte z `tools/na_zywo.py`. Na żywo, błędy wobec nadanego (co
+37,5 s -> każda analiza): qso6 2107 12 -> **6**, qso6 2354 28 -> 27 /105,
+qrm_df060, OK1FPS, qso1, CQ ręką bez zmian; SN0FMT_c na żywo teraz z treścią
+„*T FMT TEST DE SN0FMT” (wcześniej jej brak; licznik błędów rośnie z długością
+odczytu, bo nadane to 15 znaków). Maks. krok w symulacji 0,36-1,34 s ->
+0,11-0,61 s (grzebień nie dławi już procesora w trakcie kroku). SQ2MMX, wolny
+krok 2,5×: oba CQ czyste — „CQ CQ DX DE F5LOL F5LOL K”, „CQ CQ CQ DE F5LOL
+F5LOL K”; krok średnio 0,456 -> 0,384 s.
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
