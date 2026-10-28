@@ -57,17 +57,32 @@ def _znaki_z_odcinkow(on_off: list[tuple[bool, float]], u: float):
     return znaki
 
 
+def _bledy(znaki, u: float, b: np.ndarray) -> tuple[np.ndarray, int]:
+    """Odporny błąd względem siatki (średnio na składnik) dla wag b naraz.
+
+    Składniki: położenie każdej krawędzi; długość znaku — 1 albo 3 u;
+    przerwa w znaku — 1 u. Bez długości (do 28.10) siatka 2/3 u pasowała
+    tak samo jak u, gdy wszystkie krawędzie leżą na wielokrotnościach 2u:
+    F5LOL ze zgłoszenia SQ2MMX, kropka 100 ms, przerwa 42 ms (waga 0,4 u)
+    -> grzebień 48 ms zamiast 71 ms, „kropka" 2 u, na żywo „*0* O*"."""
+    el = [(a, z, i > 0) for _, zn in znaki for i, (a, z) in enumerate(zn)]
+    if not el:
+        return np.full(np.size(b), np.inf), 0
+    a, z, w_znaku = (np.array(x) for x in zip(*el))
+    b = np.atleast_1d(np.asarray(b, np.float64))[:, None]
+    ra = (a + b / 2) / u                   # narastająca w k·u − b/2
+    rz = (z - b / 2) / u                   # opadająca w k·u + b/2
+    ka, kz = np.round(ra), np.round(rz)
+    e = (np.minimum((ra - ka) ** 2, KARA).sum(1) + np.minimum((rz - kz) ** 2, KARA).sum(1)
+         + KARA * (~np.isin(kz - ka, (1, 3))).sum(1)
+         + KARA * ((ka[:, 1:] - kz[:, :-1] != 1) & w_znaku[1:]).sum(1))
+    n = 3 * a.size + int(w_znaku.sum())
+    return e / n, n
+
+
 def _blad(znaki, u: float, b: float) -> tuple[float, int]:
-    """Odporny błąd położeń krawędzi względem siatki (średnio na krawędź)."""
-    e, n = 0.0, 0
-    for _, el in znaki:
-        for a, z in el:
-            ra = (a + b / 2) / u          # narastająca w k·u − b/2
-            rz = (z - b / 2) / u          # opadająca w k·u + b/2
-            for r in (ra, rz):
-                e += min((r - round(r)) ** 2, KARA)
-                n += 1
-    return (e / n if n else np.inf), n
+    e, n = _bledy(znaki, u, b)
+    return float(e[0]), n
 
 
 def odcinki_przebiegu(audio: np.ndarray, ton_hz: float = C.TONE_CENTER,
@@ -102,14 +117,13 @@ def dopasuj_grzebien(on_off: list[tuple[bool, float]],
         0.85 * u_start, 1.15 * u_start, 61)
     najl = (np.inf, None, None, 0)
     for u in siatka:
-        znaki = _znaki_z_odcinkow(on_off, u)
-        for bu in B_UDZIAL:
-            # Błąd WZGLĘDNY (w jednostkach u): drobniejsza siatka u/2 też
-            # trafia w każdą krawędź, ale ten sam rozrzut w sekundach to przy
-            # niej 2x więcej jednostek — przegrywa sama, bez kary.
-            e, n = _blad(znaki, u, bu * u)
-            if n >= 8 and e < najl[0]:
-                najl = (e, u, bu * u, n)
+        # Błąd WZGLĘDNY (w jednostkach u): drobniejsza siatka u/2 też
+        # trafia w każdą krawędź, ale ten sam rozrzut w sekundach to przy
+        # niej 2x więcej jednostek — przegrywa sama, bez kary.
+        e, n = _bledy(_znaki_z_odcinkow(on_off, u), u, B_UDZIAL * u)
+        i = int(np.argmin(e))
+        if n >= 8 and e[i] < najl[0]:
+            najl = (e[i], u, B_UDZIAL[i] * u, n)
     e, u, b, n = najl
     if u is None:
         return wynik

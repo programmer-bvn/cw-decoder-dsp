@@ -2214,6 +2214,48 @@ format tekstowy, nadawca — skrzynka projektu. Szkice `odpowiedz.txt` poprawion
 nie są już nadpisywane przez `--ponow` (27.10 oba szkice SQ2MMX trzeba było
 przepisać, bo automatyczna diagnoza się myliła).
 
+### Tempo przy „ważonym” kluczowaniu: grzebień sprawdza długości znaków (28.10, zgłoszenie SQ2MMX)
+
+**Wersja:** 0.9.4
+**Objaw.** Trzecie zgłoszenie SQ2MMX (0.9.2, 30 min sesji, ON4TOR/P,
+F5MQU, IT9IFI–OZ8CW). Silna, równo kluczowana stacja woła „CQ CQ DX DE F5LOL
+F5LOL K”, a dekoder na żywo pisze „*0* O* *0* O*”. Obwiednia w samym
+nagraniu (bez sieci): kropka 100 ms, kreska 242 ms, przerwa w znaku 42 ms —
+jednostka u = 71 ms, waga b = 0,4 u (w zakresie treningu −0,1…0,5).
+Sieć zboczy widzi to dobrze: z u = 71 ms Viterbi czyta czysto.
+**Przyczyna — jednostka.** Cepstrum 98 ms, grzebień 48 ms. Grzebień
+dopasowywał tylko POŁOŻENIA zboczy do siatki u. Gdy wszystkie zbocza leżą
+na wielokrotnościach 2u = 142 ms, siatka 142/3 = 47 ms trafia w nie tak samo
+dobrze jak 71 ms — tylko „kropka” ma wtedy 2 u, a kreska 5 u, czego w morsie
+nie ma. Na żywo grzebień liczony co 37,5 s, poprzednia jednostka zostaje
+kandydatką — przy wolnym kroku (0,45 s, laptop SQ2MMX) zła jednostka
+trzymała się przez całe CQ. Symulacja w tempie rzeczywistym ze
+spowolnieniem 2,5× odtwarza „0 M E 0 * * * * * * T 0 0 0”.
+**Zmiana** (`dsp/grzebien.py`, `_bledy`): do błędu doszły dwa składniki —
+długość znaku 1 albo 3 u, przerwa w znaku 1 u (inaczej stała kara jak
+krawędź spoza siatki). Przy okazji wszystkie wagi b liczone naraz w numpy:
+na 20 s historii 0,036 s zamiast 1,52 s (stara pętla) i 2,63 s (nowa
+pętla); jednostki z wersji numpy i pętli identyczne na 105 nagraniach.
+**Pomiary:**
+- syntetyk (10–35 WPM, waga −0,1…0,5, 4 teksty, rozrzut krawędzi 0/8/15% u):
+  jednostka w ±10% — stary **179/360**, nowy **358/360**; stary przy wadze
+  0,4–0,5 trafiał 1–6/12, także przy wadze 0 i 10 WPM 3/12;
+- na żywo (`na_zywo symuluj --szybko`, błędy wobec nadanego): qso6 kluczownik
+  12 WPM 45 → **12** i 65 → **28** /105, qso1 CQ 17 WPM 42 → **0** /24,
+  qrm_df060 31 → **25** /71, CQ ręką 91 → 80; zniknął zły początek sesji
+  („MMM MTM TTMMM” zamiast „…SQ2BVN = GM OM”);
+- SQ2MMX, 6 min z F5LOL, wolny krok 2,5×: oba CQ F5LOL czytane („CQ CQ DX
+  DE F5L*F5LOL K”, „CQ CQ CQ DE F5L*F5L*K”), reszta bez zmian;
+- pełny test słów (odczyt całego pliku, `viterbi_strojenie` na zboczy_5):
+  1469 → 1467 /1659. Grzebień zgadza się teraz z cepstrum (kluczownik i ręka
+  35 → 70 ms), więc słowa bez zmian; +1 OK1FPS, −3 SN0FMT_c — to nagranie to
+  głównie powtarzany niezidentyfikowany sygnał („S S S”), jedna jednostka na
+  cały plik wybiera się pod niego (37 ms); w oknach z samą stacją stary
+  i nowy grzebień dają to samo (78–80 ms).
+**Zostaje do decyzji:** grzebień kosztuje teraz tyle co nic — można go
+liczyć przy każdej analizie zamiast co 37,5 s (`GRZEBIEN_CO_S` w
+`tools/na_zywo.py`), co jeszcze skróci trzymanie się złej jednostki.
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany
