@@ -7,6 +7,8 @@ je wprost, bez logowania i bez haseł (zostają w Thunderbirdzie, u operatora).
 
     python -m tools.zgloszenia                      # folder CW-DECODER z profilu Thunderbirda
     python -m tools.zgloszenia ŚCIEŻKA [...]        # plik mbox, katalog z ZIP-ami albo ZIP
+    python -m tools.zgloszenia --odpisz [ZNAK]      # okna odpowiedzi w Thunderbirdzie (--pokaz: tylko treść,
+                                                    #   --od-nowa: jeszcze raz, gdy okno zamknięte bez wysłania)
 
 Każde nowe zgłoszenie -> zgloszenia/<czas>_<ZNAK>/ (poza gitem: audio, adresy):
 raport.zip i rozpakowane pliki, analiza.md (odczyt bieżącą wersją, sygnał,
@@ -88,6 +90,24 @@ def _model():
     return keras.models.load_model(MODEL_ZBOCZY)
 
 
+PRZERWA_NADAWANIA_S = 2.0   # dłuższa przerwa między kreskami = koniec nadawania (zmiana stacji)
+
+
+def dryf_tonu(kreski: list[tuple[float, float, float]]) -> float:
+    """Kreski (od, do, ton [Hz]) -> dryf: rozrzut tonu kresek W OBRĘBIE jednego
+    nadawania (p90 - p10), mediana po nadawaniach z >= 5 kreskami.
+    SQ2MMX 27.10: rozrzut z całego nagrania dał „ton pływa o 107 Hz”, a to dwie
+    stacje (SX37VER 719 Hz, SV1ENG 695 Hz, każda równa) i sąsiedzi w paśmie."""
+    grupy, ost = [], -np.inf
+    for a0, b0, fk in sorted(kreski):
+        if a0 - ost > PRZERWA_NADAWANIA_S:
+            grupy.append([])
+        grupy[-1].append(fk)
+        ost = b0
+    rozrzut = [float(np.percentile(g, 90) - np.percentile(g, 10)) for g in grupy if len(g) >= 5]
+    return float(np.median(rozrzut)) if rozrzut else float("nan")
+
+
 def analizuj(kat: Path, model) -> dict:
     """Odczyt nagrania bieżącą wersją + miary sygnału + diagnoza (heurystyki)."""
     from dsp import blokada as B, config as C, frontend, przeciwsygnal as PS, tune, viterbi as V
@@ -109,13 +129,14 @@ def analizuj(kat: Path, model) -> dict:
     # dryf tylko w KRESKACH: zgłoszenie 25.10 (mikrofon, operator mówił w przerwach) —
     # z całego nagrania „ton pływa o 126 Hz” (pętla szła za głosem), przy wciśniętym
     # kluczu 37 Hz (pojedyncze „E” z mowy też są „kluczem”); kreski z mowy prawie nie wychodzą
-    kreski = np.zeros(t.size, bool)
+    kreski = []
     if np.isfinite(r["u"]):
         for n, a0, b0 in V.dekoduj(p, r["u"])[1]:
             if n == "K3":
-                kreski |= (t >= a0 * V.DT) & (t <= b0 * V.DT)
-    fk = f[kreski & np.isfinite(f)]
-    dryf = float(np.percentile(fk, 95) - np.percentile(fk, 5)) if fk.size > 10 else float("nan")
+                fk = f[(t >= a0 * V.DT) & (t <= b0 * V.DT) & np.isfinite(f)]
+                if fk.size:
+                    kreski.append((a0 * V.DT, b0 * V.DT, float(np.median(fk))))
+    dryf = dryf_tonu(kreski)
     obce, nasza_db = [], None
     if np.isfinite(ton):
         x = np.asarray(surowe, np.float64)
@@ -149,9 +170,18 @@ def analizuj(kat: Path, model) -> dict:
         # pojedyncze E/T/I = szum albo mowa w przerwach czytane jako kropki
         wynik["pojedyncze_et"] = round(sum(len(x) == 1 and x in "ETI" for x in slowa) / len(slowa), 2)
     nad_txt = meta.get("nadane", "").strip().upper()
+    # SQ2MMX 27.10: w „nadane” opis („Dane do uczenia algorytmów”, to samo co w uwagach)
+    # -> „743 błędy na 23 znaki”. Liczymy tylko tekst, który da się nadać Morse'em.
+    if nad_txt == meta.get("opis", "").strip().upper() or not set(nad_txt) <= set(C.MORSE_DICT) | {" "}:
+        nad_txt = ""
     if nad_txt:
-        wynik["bledy_znakow"] = cer(r["tekst"].replace(" ", ""), nad_txt.replace(" ", ""))
-        wynik["znakow_nadanych"] = len(nad_txt.replace(" ", ""))
+        bledy = cer(r["tekst"].replace(" ", ""), nad_txt.replace(" ", ""))
+        # SQ2MMX 26.10: „Dane do trenowania modelu” — sam ASCII, inny niż opis, a też opis
+        # (971 „błędów” na 22 znaki). Żadne słowo nie odczytane i błędów > 2x znaków -> nie treść.
+        slowa = [s for s in nad_txt.split() if len(s) >= 3]
+        if bledy <= 2 * len(nad_txt.replace(" ", "")) or any(s in r["tekst"] for s in slowa):
+            wynik["bledy_znakow"] = bledy
+            wynik["znakow_nadanych"] = len(nad_txt.replace(" ", ""))
     wynik["diagnoza"] = diagnoza(wynik)
     return {"meta": meta, "analiza": wynik}
 
@@ -194,7 +224,7 @@ ODPOWIEDZ = {
            "dam znać. Można też samemu sprawdzić: zainstalować nową wersję obok starej "
            "i otworzyć to samo nagranie przyciskiem „Otwórz nagranie…”.\n\n"
            "Proszę o więcej takich zgłoszeń — każde przybliża dekoder do odczytu wszystkiego, "
-           "co słychać na paśmie.\n\n73, SQ2BVN — Dekoder CW\n"),
+           "co słychać na paśmie.\n"),
     "en": ("Thank you for the CW Decoder report{znak}! Recordings like this are the most valuable "
            "thing for the project — they show signals that cannot be collected in one place.\n\n"
            "What the recording shows: {diag}.\n\n"
@@ -202,7 +232,24 @@ ODPOWIEDZ = {
            "You can also check yourself: install the new version next to the old one and open the same "
            "recording with \"Open recording…\".\n\n"
            "Please keep sending such reports — each one brings the decoder closer to reading everything "
-           "you can hear on the band.\n\n73, SQ2BVN — CW Decoder\n"),
+           "you can hear on the band.\n"),
+}
+# podpis dokładany przy wysyłce (--odpisz), nie w szkicu (operator 27.10)
+PODPIS = {
+    "pl": "Odpowiedź przygotował Claude (AI) na zlecenie SQ2BVN.\n"
+          "Dziękuję za zgłoszenie i do usłyszenia — 73!\nSQ2BVN — Dekoder CW\n",
+    "en": "This reply was prepared by Claude (AI) on behalf of SQ2BVN.\n"
+          "Thank you for the report — 73!\nSQ2BVN — CW Decoder\n",
+}
+WSTEP_SEKCJI = {
+    "pl": ("Zmiany w projekcie wykonane na podstawie Twojego zgłoszenia i przesłanego nagrania "
+           "(wpisy z historii projektu):",
+           "Dalszy ciąg Twojego zgłoszenia — kolejne zmiany wykonane na podstawie przesłanego przez "
+           "Ciebie materiału (wpisy z historii projektu):"),
+    "en": ("Changes made in the project based on your report and recording "
+           "(entries from the project history, in Polish):",
+           "A follow-up to your report — further changes made based on the material you sent "
+           "(entries from the project history, in Polish):"),
 }
 DIAG_EN = [("brak odczytu — sygnał nie znaleziony (za słaby, zły ton, inna karta?)",
             "no reading — signal not found (too weak, wrong pitch, other sound card?)"),
@@ -285,7 +332,10 @@ def zapisz_analize(kat: Path, w: dict) -> None:
         f"**diagnoza:** {'; '.join(an['diagnoza'])}\n\n```\n"
         + json.dumps({k: v for k, v in an.items() if k not in ('tekst', 'diagnoza')}, ensure_ascii=False, indent=1)
         + "\n```\n", encoding="utf-8")
-    (kat / "odpowiedz.txt").write_text(odpowiedz(meta, an), encoding="utf-8")
+    # szkic poprawiony ręcznie zostaje (27.10: automatyczna diagnoza dwa razy myliła —
+    # „szum”, „dryf” — szkice przepisywane, --ponow nie może ich zetrzeć)
+    if not (kat / "odpowiedz.txt").exists():
+        (kat / "odpowiedz.txt").write_text(odpowiedz(meta, an), encoding="utf-8")
 
 
 def podsumowanie() -> None:
@@ -302,7 +352,7 @@ def podsumowanie() -> None:
 
 def ponow() -> None:
     """Analiza od nowa wszystkich przyjętych zgłoszeń (po zmianie dekodera albo diagnozy).
-    ODPOWIEDZI.html zostaje (linki ze starą treścią) — szkice w odpowiedz.txt są nowe."""
+    Szkice odpowiedz.txt i ODPOWIEDZI.html zostają."""
     model = _model()
     for kat in sorted(p.parent for p in KATALOG.glob("*/raport.json")):
         w = analizuj(kat, model)
@@ -330,17 +380,221 @@ def _dopisz_odpowiedz(nazwa: str, nadawca: str, temat: str, tresc: str) -> None:
         f.write(wiersz)
 
 
+# ---------------------------------------------------------------- odpisywanie
+# Operator 27.10: zgłaszający ma coś dostać, „żeby nie czuł, że wysłał pocztę
+# w kosmos”. Po każdej zmianie wynikłej ze zgłoszenia wpis w HISTORIA.md
+# z „zgłoszenie ZNAK” w tytule; --odpisz otwiera w Thunderbirdzie gotową
+# wiadomość (szkic + nowe wpisy + podpis), operator klika „Wyślij”.
+HISTORIA = KORZEN / "HISTORIA.md"
+WYSLANE = "wyslane.json"     # w zgloszenia/: {"odpowiedzi": {katalog: data}, "sekcje": {ZNAK: [tytuły]}}
+
+
+REPO_GH = "https://github.com/programmer-bvn/cw-decoder-dsp"
+
+
+def sekcje_historii(znak: str) -> list[tuple[str, str]]:
+    """Wpisy HISTORIA.md z „zgłoszenie ZNAK” albo „nagranie ZNAK” w tytule (zmiana
+    na podstawie materiału od tej osoby) -> [(tytuł, treść bez znaczników)]."""
+    if not znak or znak == "ANON" or not HISTORIA.exists():
+        return []
+    wynik, tytul, tresc = [], None, []
+    for linia in HISTORIA.read_text(encoding="utf-8").splitlines() + ["# koniec"]:
+        if linia.startswith("#"):
+            if tytul:
+                wynik.append((tytul, "\n".join(tresc).strip()))
+            t = linia.lstrip("#").strip()
+            tytul = t if re.search(rf"(zgłoszeni|nagrani)\w*\s[^)]*\b{re.escape(znak)}\b", t, re.I) else None
+            tresc = []
+        elif tytul:
+            tresc.append(linia.replace("**", "").replace("`", ""))
+    return wynik
+
+
+def _wydane(wersja: str) -> bool:
+    """Czy wydanie v<wersja> jest na GitHubie (tag w origin; wydanie tworzy operator)."""
+    import subprocess
+    try:
+        r = subprocess.run(["git", "ls-remote", "--tags", "origin", f"v{wersja}"], cwd=KORZEN,
+                           capture_output=True, text=True, timeout=30)
+        return bool(r.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _galaz() -> str:
+    import subprocess
+    try:
+        return subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=KORZEN,
+                              capture_output=True, text=True, timeout=30).stdout.strip() or "main"
+    except (OSError, subprocess.TimeoutExpired):
+        return "main"
+
+
+def gdzie_zmiana(tytul: str, tresc: str, jez: str) -> str:
+    """Wersja z linii „Wersja: X” wpisu (operator 27.10: w której wersji, w którym
+    wydaniu, gdzie plik historii). „Wersja: —” = zmiana tylko w narzędziach autora."""
+    m = re.search(r"^Wersja:\s*(\S+)", tresc, re.M)
+    w = m.group(1) if m else None
+    pl = jez == "pl"
+    if w and re.fullmatch(r"\d+\.\d+\.\d+", w):
+        if _wydane(w):
+            gdzie = (f"Zmiana jest w wersji {w}: {REPO_GH}/releases/tag/v{w}" if pl else
+                     f"The change is in version {w}: {REPO_GH}/releases/tag/v{w}")
+            hist = f"{REPO_GH}/blob/v{w}/HISTORIA.md"
+        else:
+            gdzie = (f"Zmiana wejdzie do wersji {w} (wydanie wkrótce; program sam powiadomi o aktualizacji)."
+                     if pl else f"The change goes into version {w} (release soon; the program will notify you).")
+            hist = f"{REPO_GH}/blob/{_galaz()}/HISTORIA.md"
+    else:
+        gdzie = ("Zmiana dotyczy narzędzi po stronie autora — w programie bez zmian." if pl else
+                 "This change is in the author's tools — the program itself is unchanged.")
+        hist = f"{REPO_GH}/blob/{_galaz()}/HISTORIA.md"
+    return (f"{gdzie}\nCała historia projektu: {hist} (wpis „{tytul}”)" if pl else
+            f"{gdzie}\nFull project history: {hist} (entry “{tytul}”)")
+
+
+def _bez_podpisu(szkic: str) -> str:
+    """Szkice sprzed 27.10 kończą się „73, SQ2BVN — …” — podpis dokłada --odpisz."""
+    akapity = szkic.strip().split("\n\n")
+    if akapity and akapity[-1].lstrip().startswith("73"):
+        akapity.pop()
+    return "\n\n".join(akapity).strip()
+
+
+def _znak(kat: Path) -> str:
+    return kat.name.split("_", 2)[2].split("_")[0] if kat.name.count("_") >= 2 else ""
+
+
+def do_wyslania(kat: Path, wyslane: dict, z_sekcjami: bool = True) -> tuple[str, str, str, list[str]] | None:
+    """-> (adres, temat, treść, nowe tytuły sekcji) albo None, gdy nie ma czego wysłać.
+    z_sekcjami=False: zgłoszenie nie jest najnowszym od tego znaku — wpisy z historii
+    pójdą przy najnowszym (jeden wpis, jedna wiadomość)."""
+    if not (kat / "nadawca.txt").exists():
+        return None                                      # raport z pliku — bez adresu
+    adres, temat = (kat / "nadawca.txt").read_text(encoding="utf-8").splitlines()[:2]
+    meta = json.loads((kat / "raport.json").read_text(encoding="utf-8"))
+    jez = meta.get("jezyk") if meta.get("jezyk") in PODPIS else "en"
+    znak = _znak(kat)
+    pierwsza = kat.name not in wyslane["odpowiedzi"]
+    juz = set(wyslane["sekcje"].get(znak, []))
+    nowe = [(t, x) for t, x in sekcje_historii(znak) if t not in juz] if z_sekcjami else []
+    if not pierwsza and not nowe:
+        return None
+    czesci = [_bez_podpisu((kat / "odpowiedz.txt").read_text(encoding="utf-8"))] if pierwsza \
+        else ["Cześć," if jez == "pl" else "Hello,"]
+    if nowe:
+        czesci.append(WSTEP_SEKCJI[jez][0 if pierwsza else 1])
+        czesci += [f"--- {t} ---\n\n{x}\n\n{gdzie_zmiana(t, x, jez)}" for t, x in nowe]
+    czesci.append(PODPIS[jez])
+    return adres, ("" if temat.lower().startswith("re:") else "Re: ") + temat, \
+        "\n\n".join(czesci), [t for t, _ in nowe]
+
+
+def _thunderbird() -> Path | None:
+    for baza in (os.environ.get("ProgramFiles", r"C:\Program Files"),
+                 os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")):
+        p = Path(baza) / "Mozilla Thunderbird" / "thunderbird.exe"
+        if p.exists():
+            return p
+    return None
+
+
+def _tozsamosc_projektu() -> str | None:
+    """Id tożsamości Thunderbirda ze skrzynką projektu (adres, na który przychodzą
+    raporty). Bez tego okno brało domyślne konto — 27.10 prywatne konto operatora."""
+    from tools.aplikacja import KONTAKT_EMAIL
+    for prefs in (Path(os.environ.get("APPDATA", "")) / "Thunderbird" / "Profiles").glob("*/prefs.js"):
+        m = re.search(rf'"mail\.identity\.(id\d+)\.useremail",\s*"{re.escape(KONTAKT_EMAIL)}"',
+                      prefs.read_text(encoding="utf-8", errors="replace"), re.I)
+        if m:
+            return m.group(1)
+    return None
+
+
+def otworz_wiadomosc(adres: str, temat: str, plik_tresci: Path) -> None:
+    """Okno nowej wiadomości w Thunderbirdzie (bez wysyłania). Treść z pliku
+    (message=) — w wierszu poleceń przecinki i apostrofy psułyby body=."""
+    import subprocess
+    tb = _thunderbird()
+    if tb is None:
+        raise SystemExit("Nie ma Thunderbirda w Program Files — treść jest w " + str(plik_tresci))
+    temat = temat.replace("'", "’")
+    tozs = _tozsamosc_projektu()
+    od = f",preselectid='{tozs}'" if tozs else ""
+    if not tozs:
+        print("UWAGA: brak tożsamości skrzynki projektu w Thunderbirdzie — sprawdź pole „Nadawca”")
+    subprocess.Popen([str(tb), "-compose",
+                      f"to='{adres}',subject='{temat}',format='text',message='{plik_tresci}'{od}"])
+
+
+def odpisz(nazwy: list[str], pokaz: bool, od_nowa: bool = False) -> None:
+    plik = KATALOG / WYSLANE
+    wyslane = json.loads(plik.read_text(encoding="utf-8")) if plik.exists() else {}
+    wyslane.setdefault("odpowiedzi", {})
+    wyslane.setdefault("sekcje", {})
+    wyslane.setdefault("sekcje_przy", {})          # katalog -> tytuły wysłane w jego wiadomości
+    katalogi = sorted(p.parent for p in KATALOG.glob("*/raport.json"))
+    if nazwy:
+        katalogi = [k for k in katalogi if any(n.upper() in k.name.upper() for n in nazwy)]
+    najnowsze = {_znak(k): k for k in sorted(p.parent for p in KATALOG.glob("*/raport.json"))}
+    if od_nowa:
+        # operator 27.10: okno zamknięte krzyżykiem zamiast „Wyślij” — skrypt i tak
+        # zapisał je jako wysłane. Tu zapominamy wybrane zgłoszenia i otwieramy jeszcze raz.
+        if not nazwy:
+            raise SystemExit("--od-nowa tylko z nazwą: --odpisz ZNAK_LUB_KATALOG --od-nowa")
+        # sam znak -> tylko jego najnowsze zgłoszenie (starsze mogły dostać odpowiedź ręcznie)
+        katalogi = [k for k in katalogi if najnowsze.get(_znak(k)) == k
+                    or any(n.upper() == k.name.upper() for n in nazwy)]
+        for kat in katalogi:
+            wyslane["odpowiedzi"].pop(kat.name, None)
+            tytuly = wyslane["sekcje_przy"].pop(kat.name, None)
+            if tytuly is None and najnowsze.get(_znak(kat)) == kat:      # zapis sprzed sekcje_przy
+                tytuly = wyslane["sekcje"].get(_znak(kat), [])
+            wyslane["sekcje"][_znak(kat)] = [t for t in wyslane["sekcje"].get(_znak(kat), [])
+                                             if t not in (tytuly or [])]
+    otwarte = 0
+    for kat in katalogi:
+        w = do_wyslania(kat, wyslane, najnowsze.get(_znak(kat)) == kat)
+        if w is None:
+            continue
+        adres, temat, tresc, tytuly = w
+        # zapisane przy OTWARCIU okna — czy operator kliknął „Wyślij”, stąd nie widać
+        wyslane["odpowiedzi"].setdefault(kat.name, time.strftime("%Y-%m-%d %H:%M"))
+        wyslane["sekcje"].setdefault(_znak(kat), []).extend(tytuly)
+        wyslane["sekcje_przy"].setdefault(kat.name, []).extend(tytuly)
+        if pokaz:
+            print(f"===== {kat.name} -> {temat}\n{tresc}\n")
+            continue
+        plik_tresci = kat / f"wyslij_{time.strftime('%Y%m%d_%H%M%S')}.txt"
+        plik_tresci.write_text(tresc, encoding="utf-8")
+        otworz_wiadomosc(adres, temat, plik_tresci)
+        plik.write_text(json.dumps(wyslane, ensure_ascii=False, indent=1), encoding="utf-8")
+        otwarte += 1
+        print(f"{kat.name}: okno wiadomości otwarte ({len(tytuly)} wpis(y) z historii)")
+        time.sleep(2)                                # Thunderbird gubi okna otwierane naraz
+    if not pokaz:
+        print(f"otwartych wiadomości: {otwarte}" if otwarte else "nic nowego do wysłania")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("zrodla", type=Path, nargs="*", help="mbox Thunderbirda, katalog z ZIP-ami, ZIP")
     ap.add_argument("--katalog", type=Path, default=None, help="gdzie zapisywać (domyślnie zgloszenia/)")
     ap.add_argument("--ponow", action="store_true", help="analiza od nowa wszystkich przyjętych zgłoszeń")
+    ap.add_argument("--odpisz", nargs="*", metavar="ZNAK_LUB_KATALOG",
+                    help="okna odpowiedzi w Thunderbirdzie: szkic + nowe wpisy HISTORIA.md + podpis")
+    ap.add_argument("--pokaz", action="store_true", help="z --odpisz: tylko wypisz treść, nic nie otwieraj")
+    ap.add_argument("--od-nowa", action="store_true",
+                    help="z --odpisz ZNAK: otwórz jeszcze raz (okno zamknięte bez wysłania)")
     a = ap.parse_args()
     global KATALOG
     if a.katalog:
         KATALOG = a.katalog
     if a.ponow:
         ponow()
+        return
+    if a.odpisz is not None:
+        odpisz(a.odpisz, a.pokaz, a.od_nowa)
         return
     zrodla = a.zrodla or _folder_thunderbirda()
     if not zrodla:

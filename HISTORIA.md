@@ -2122,6 +2122,7 @@ Pierwsze zgłoszenie z zewnątrz — dziękujemy SQ2MMX (0.9.2, laptop Windows 1
 `_ArrayMemoryError: Unable to allocate 90.0 MiB` i w drugiej `… 2.00 MiB`
 (splot w `dsp/siec_numpy.py`); odbiór stał do ponownego uruchomienia
 programu. Trzecia sesja przeszła 20 min bez błędu.
+**Wersja:** 0.9.3
 **Przyczyna:** brakło pamięci całemu systemowi — skoro nie dało się przydzielić
 nawet 2 MiB, to nie dekoder ją zjadł. Zmierzone na jego nagraniu (300 s,
 SiecNumpy jak w exe): szczyt 380 MiB dekoder, 510 MiB z procesem analizy;
@@ -2148,6 +2149,70 @@ w przerwach — to nie szum (jak podała automatyczna diagnoza
 `tools.zgloszenia`), tylko słabsze stacje ~10 dB nad szumem między
 nadawaniami aktywatora; blokada 6 dB nie pomaga i gubi część tekstu,
 10 dB obcina początek CQ.
+
+### Wolny laptop i fałszywy „dryf” w diagnozie (27.10, zgłoszenie SQ2MMX)
+
+Drugie zgłoszenie SQ2MMX (0.9.2): 13 min nasłuchu SX37VER i SV1ENG,
+22–28 WPM, wiele łączności pod rząd. Silne stacje czytane dobrze także na
+żywo na jego laptopie; „SM2MMX 5NN” sprawdzone w kluczowaniu — w eterze
+naprawdę SM (`... -- ..--- -- -- -..-`), nie błąd dekodera.
+**Wersja:** —
+**Wolny krok — objaw:** w sesji krok średnio 0,44 s przy założonych 0,25 s
+(58% kroków dłuższych). Zwykły krok na starcie 0,17 s, krok z przeliczeniem
+(co 2 s nowa analiza -> sieć od nowa na 7 s) 0,9 s; po ~150 s oba dwa razy
+wolniejsze (0,3 i 1,5–1,7 s) — hipoteza: procesor się grzeje albo oszczędza
+energię (Intel rodziny 6 model 186, 12 wątków — mobilny, część rdzeni
+energooszczędnych). U nas (Ryzen 5 3600) to samo nagranie: 0,074 i 0,35 s.
+**Czy to szkodzi — zmierzone:** odcinek 150–450 s na żywo, krok sztucznie
+spowolniony (sen po kroku, bez obciążania procesora), porównanie z odczytem
+całości (353 znaki): 1x — 74 różnice, 29/31 słów ≥ 4 litery; 2,5x (jak jego
+laptop na starcie) — 71, 29/31; 5x (krok 0,86 s) — 67, 28/31; jego laptop —
+93, 28/31. Wolny krok tylko opóźnia tekst, odczytu nie psuje (`dodaj()`
+łączy kroki, okno sieci 2,56 s pokrywa przerwę).
+**Gdzie idzie czas:** prawie cały w sieci (Viterbi 5 ms). Wątki OpenBLAS
+nic nie dają — 1 wątek 0,073 s na okno, 12 wątków 0,054 s; drugi proces
+liczący naraz dokłada ~0,015 s przy każdej liczbie wątków (sieć w numpy
+ograniczona pamięcią, nie rdzeniami). Przeliczenie 7 s liczy 6 okien po 512
+ramek (3072 ramki na 1400) i bierze środkowe połowy; sieć jest splotowa po
+czasie, zasięg 136 ramek. Jeden długi przebieg (zera 128 + obraz + 256):
+−41% czasu przeliczenia, decyzje P>0,5 różne w 7 ramkach na ~280 tys.
+(5 nagrań; różnica z 8 ramek zasięgu ponad połówkę okna). Do aplikacji
+NIE wprowadzone — zysk to krótsze opóźnienie, nie lepszy odczyt.
+**Diagnoza `tools.zgloszenia` — dwa błędy:** „ton pływa o 106,7 Hz” — dryfu
+nie ma: SX37VER równo 719 Hz, SV1ENG 695–697 Hz, rozrzut z całego nagrania
+łapał dwie stacje i sąsiadów. Teraz dryf to rozrzut tonu kresek w obrębie
+jednego nadawania (kreski z przerwą < 2 s), mediana po nadawaniach (≥ 5 kresek):
+to zgłoszenie 2,5 Hz; syntetyczne: równa 0, dryf 60 Hz w nadawaniu -> 38 Hz
+(wykryty), dwie równe stacje 700/760 Hz -> 0. Drugi: w polu „nadane” opis
+(„Dane do uczenia algorytmów”; 26.10 „Dane do trenowania modelu”) -> 743
+i 971 „błędów”. Teraz „nadane” liczone tylko, gdy da się je nadać Morse'em,
+nie jest kopią opisu i (przy błędach > 2x znaków) choć jedno słowo jest
+w odczycie; prawdziwa treść, nawet źle odczytana, nadal liczona.
+
+### Odpowiedzi na zgłoszenia: `--odpisz` (27.10)
+
+Operator: zgłaszający ma coś dostać, żeby nie czuł, że wysłał pocztę
+w kosmos — najlepiej wpis z historii o tym, co się zmieniło po jego zgłoszeniu.
+**Teraz:** wpis w HISTORIA.md z „zgłoszenie ZNAK” w tytule należy do zgłoszeń
+tego znaku. `python -m tools.zgloszenia --odpisz [ZNAK]` otwiera w Thunderbirdzie
+okno nowej wiadomości (adres, „Re: temat”, treść) — operator czyta i klika
+„Wyślij”; nic nie wychodzi samo. Treść: szkic `odpowiedz.txt` (przy pierwszej
+odpowiedzi), wpisy z historii jeszcze temu znakowi niewysłane (jeden znak —
+jedna wiadomość, przy najnowszym zgłoszeniu), podpis „Odpowiedź przygotował
+Claude (AI) na zlecenie SQ2BVN”. Gdy po czasie przybędzie wpis, następne
+`--odpisz` otwiera „dalszy ciąg” z samym nowym wpisem. Co poszło —
+`zgloszenia/wyslane.json` (zapisywane przy otwarciu okna; czy kliknięto
+„Wyślij”, skrypt nie widzi). `--pokaz`: tylko wypisuje treść.
+Treść idzie do Thunderbirda plikiem (`-compose "…,message='plik'"`), nie
+`body=` — przecinki i apostrofy w treści psułyby wiersz poleceń; mailto
+z ODPOWIEDZI.html ma limit długości. Nadawca: tożsamość Thunderbirda ze
+skrzynką projektu (`preselectid` z prefs.js, adres = `KONTAKT_EMAIL`) —
+w pierwszej próbie okno wzięło domyślne, prywatne konto operatora.
+**Sprawdzone** (27.10, okno testowe na skrzynkę projektu): polskie znaki,
+„cudzysłowy”, przecinki i apostrof w treści i temacie dochodzą bez zmian,
+format tekstowy, nadawca — skrzynka projektu. Szkice `odpowiedz.txt` poprawione ręcznie
+nie są już nadpisywane przez `--ponow` (27.10 oba szkice SQ2MMX trzeba było
+przepisać, bo automatyczna diagnoza się myliła).
 
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
