@@ -25,7 +25,7 @@ from pathlib import Path
 
 T_START = time.time()                        # dziennik: czas startu (25.10: 20-30 s)
 
-WERSJA_APLIKACJI = "0.9.4"
+WERSJA_APLIKACJI = "0.9.5"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
 # Skrzynka projektu na raporty (konto założył operator 25.10; w Thunderbirdzie na
