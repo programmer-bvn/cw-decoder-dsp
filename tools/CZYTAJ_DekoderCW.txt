@@ -18,7 +18,9 @@ karty komputera). Ton CW:
   port COM (program TYLKO odczytuje częstotliwość, tryb i ton CW — niczego nie
   przestawia i nie kluczuje),
 - inne radio: wpisz ręcznie ton CW (CW pitch) w Hz, np. 600,
-- puste pole: program sam szuka najmocniejszej kluczowanej stacji.
+- puste pole: program sam szuka najmocniejszej kluczowanej stacji
+  (w 400–1200 Hz; gdy tam nic nie ma, a stacja jest wyżej lub niżej —
+  w 300–3000 Hz).
 Ustawienia, położenie okna i próg blokady program zapamiętuje.
 Pierwsze ok. 20 s po starcie program się ładuje.
 

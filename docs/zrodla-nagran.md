@@ -72,7 +72,9 @@ POMIAR, a nie jako założenie.
 Co więcej, niestabilność przekładni jest tu **materiałem, a nie wadą**:
 `DRIFT_HZ = 8.0` opisuje dokładnie to, czego analogowy VFO nie umie
 utrzymać. Jedyny warunek praktyczny to trafić tonem gdziekolwiek
-w 400–1200 Hz, żeby front-end i pętla śledząca go widziały.
+w 400–1200 Hz, żeby front-end i pętla śledząca go widziały. Od 29.10 pętla
+znajdzie też ton w 300–3000 Hz, ale tylko gdy w 400–1200 Hz nie ma niczego
+porównywalnie głośnego (`tune.PRZEWAGA_DB`).
 
 ### Trzy rodzaje timingu (źródła 3, 5, 6)
 

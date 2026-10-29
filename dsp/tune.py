@@ -123,16 +123,29 @@ def retune(audio: np.ndarray, times: np.ndarray, freqs: np.ndarray,
     shift = np.where(np.isfinite(f_s), target - f_s, 0.0)
 
     phase = 2.0 * np.pi * np.cumsum(shift) / sr
-    # Sygnał analityczny BEZ tego, co poniżej RETUNE_FMIN_HZ. 17.10 operator
-    # wskazał na regeneracie mic1 (26,0-26,3 s) ton narastający i opadający
-    # w ciszy między znakami. Źródło: wolne falowanie podłogi w nagraniu
-    # (mikrofon, kilka Hz, -39 dB względem znaku) — przestrojenie o +53 Hz
-    # robiło z niego ton ~53 Hz. Przy przesunięciu o kilkaset Hz (ton 400 Hz
-    # -> 750) przydźwięk 50/100 Hz trafiłby prosto w pasmo CW.
-    X = np.fft.fft(x)
-    f = np.fft.fftfreq(x.size, 1.0 / sr)
-    an = np.fft.ifft(X * np.where(f >= RETUNE_FMIN_HZ, 2.0, 0.0))
+    an = analityczny(x, sr, -float(shift.min()) if shift.size else 0.0)
     return np.real(an * np.exp(1j * phase)).astype(np.float32)
+
+
+def analityczny(x: np.ndarray, sr: int, w_dol_hz: float = 0.0) -> np.ndarray:
+    """Sygnał analityczny do przestrojenia o `w_dol_hz` W DÓŁ (największe zejście).
+
+    BEZ tego, co poniżej RETUNE_FMIN_HZ. 17.10 operator wskazał na regeneracie
+    mic1 (26,0-26,3 s) ton narastający i opadający w ciszy między znakami.
+    Źródło: wolne falowanie podłogi w nagraniu (mikrofon, kilka Hz, -39 dB
+    względem znaku) — przestrojenie o +53 Hz robiło z niego ton ~53 Hz. Przy
+    przesunięciu o kilkaset Hz (ton 400 Hz -> 750) przydźwięk 50/100 Hz
+    trafiłby prosto w pasmo CW.
+
+    Przy zejściu w dół (ton 1490 -> 750, szukanie 29.10) składowe poniżej
+    zejścia przechodzą przez zero i wracają lustrem na |f - zejście|; odcięcie
+    pod zejście - (FMIN - 100) kładzie lustro poniżej 300 Hz, pod obrazem sieci.
+    Dla tonów z FMIN..FMAX (zejście <= 450 Hz) odcięcie zostaje 200 Hz — droga
+    bit w bit jak przedtem."""
+    X = np.fft.fft(np.asarray(x, np.float64))
+    f = np.fft.fftfreq(X.size, 1.0 / sr)
+    odc = max(RETUNE_FMIN_HZ, w_dol_hz - (C.FMIN - 100.0))
+    return np.fft.ifft(X * np.where(f >= odc, 2.0, 0.0))
 
 
 def bandpass(audio: np.ndarray, center: float = C.TONE_CENTER,
@@ -218,14 +231,99 @@ KL_WYGLADZ_HZ = 5.0
 KL_RADIO_HZ = 25.0
 
 
+# Ton poza pasmem obrazu (29.10, maciej_333 z elektrody: własne SDR na STM32,
+# krok strojenia ~7 kHz, NCO bez przestrajania — ton CW wychodzi przypadkowo,
+# u niego 1492 Hz). Pętla w FMIN..FMAX łapała wtedy szum ledwie nad progiem
+# (10 dB nad tłem; stacja 30 dB) albo nic i odczyt kończył się NaN.
+# Szersze pasmo dla wszystkich (20.10) psuło środek filtra z szumu (test_tonu
+# 92,2 -> 91,0%), więc 300-3000 Hz tylko wtedy, gdy kluczowana stacja spoza
+# FMIN..FMAX jest o PRZEWAGA_DB głośniejsza od najgłośniejszej w nim (albo
+# w nim nic, a ona >= ACQUIRE_SNR_DB + PRZEWAGA_DB). Zmierzone na całych
+# plikach (196: probki/, zgłoszenia, maciej_333): maciej +20,2 dB; poza nim
+# najwyżej +4,4 dB (pile-up maciej_333 — prawdziwa stacja w paśmie), reszta
+# <= +0,1 dB. Górę daje SR 8 kHz i filtr SSB radia (~3 kHz).
+SZUKAJ_FMIN_HZ = 300.0
+SZUKAJ_FMAX_HZ = 3000.0
+PRZEWAGA_DB = 10.0
+
+
+def _kluczowane(audio: np.ndarray, sr: int):
+    """-> (częstotliwości, poziom w chwilach wciśnięcia [dB nad tłem], kluczowana?)
+    w 300-3000 Hz z całego wejścia, albo None. Kryterium jak w _sledz, odniesienie
+    mocy jedno dla całego zakresu. Bloki bez nakładania (0,2 s) i float32:
+    15 min nagrania to ~50 MB, nie 400 (laptop SQ2MMX ma 7,7 GB)."""
+    x = np.asarray(audio, dtype=np.float64)
+    nb = max(64, int(round(BLOCK_S * sr)))
+    nfft = 1 << int(np.ceil(np.log2(nb * 4)))
+    f = np.fft.rfftfreq(nfft, 1.0 / sr)
+    band = (f >= SZUKAJ_FMIN_HZ) & (f <= SZUKAJ_FMAX_HZ)
+    fb = f[band]
+    win = np.hanning(nb)
+    S = np.array([(np.abs(np.fft.rfft(x[s:s + nb] * win, n=nfft)) ** 2)[band]
+                  for s in range(0, x.size - nb + 1, nb)], dtype=np.float32)
+    S = S[S.sum(1) > 0] if S.size else S                # cisza cyfrowa (nagranie z filmu)
+    if len(S) < 8:
+        return None
+    k = max(1, int(round(KL_WYGLADZ_HZ / (f[1] - f[0]))))
+    S = np.apply_along_axis(lambda r: np.convolve(r, np.ones(2 * k + 1) / (2 * k + 1), mode="same"), 1, S)
+    D = 10.0 * np.log10(np.maximum(S, 1e-30) / max(float(np.median(S)), 1e-30))
+    gora, dol = np.percentile(D, KL_GORA, axis=0), np.percentile(D, KL_DOL, axis=0)
+    return fb, gora, (gora >= ACQUIRE_SNR_DB) & (gora - dol >= KL_KONTRAST_DB)
+
+
+def poza_pasmem(audio: np.ndarray, sr: int = C.SR, fmin: float = C.FMIN,
+                fmax: float = C.FMAX) -> float | None:
+    """Ton stacji spoza fmin..fmax, gdy przeważa o PRZEWAGA_DB (z całego wejścia), inaczej None."""
+    k = _kluczowane(audio, sr)
+    if k is None:
+        return None
+    fb, gora, ok = k
+    w = (fb >= fmin) & (fb <= fmax)
+    if not (ok & ~w).any():
+        return None
+    g_w = float(gora[ok & w].max()) if (ok & w).any() else ACQUIRE_SNR_DB
+    j = int(np.argmax(np.where(ok & ~w, gora, -np.inf)))
+    return float(fb[j]) if gora[j] >= g_w + PRZEWAGA_DB else None
+
+
+def stacja_w_pasmie(audio: np.ndarray, sr: int = C.SR) -> bool:
+    """Kluczowana w FMIN..FMAX co najmniej ACQUIRE_SNR_DB + PRZEWAGA_DB nad tłem —
+    prawdziwa stacja, nie szum. Szum łapany przez pętlę: ~10 dB (maciej_333,
+    pierwsze 2 s: 575 Hz); stacje ze zgłoszeń SQ2MMX: 54-93 dB."""
+    k = _kluczowane(audio, sr)
+    if k is None:
+        return False
+    fb, gora, ok = k
+    w = (fb >= C.FMIN) & (fb <= C.FMAX)
+    return bool((ok & w & (gora >= ACQUIRE_SNR_DB + PRZEWAGA_DB)).any())
+
+
 def track_tone(audio: np.ndarray, sr: int = C.SR,
-                          fmin: float = C.FMIN, fmax: float = C.FMAX,
-                          block_s: float = BLOCK_S, step_s: float = STEP_S,
-                          ton_cw: float | None = None
-                          ) -> tuple[np.ndarray, np.ndarray]:
-    audio = np.asarray(audio, dtype=np.float64)
+               fmin: float = C.FMIN, fmax: float = C.FMAX,
+               block_s: float = BLOCK_S, step_s: float = STEP_S,
+               ton_cw: float | None = None, szukaj: bool = True
+               ) -> tuple[np.ndarray, np.ndarray]:
+    """-> (czasy bloków, ton naszej stacji albo NaN). `szukaj`: stacja spoza
+    FMIN..FMAX, gdy wyraźnie przeważa (albo ton z radia poza nim) — 300-3000 Hz."""
     if ton_cw is not None and not np.isfinite(ton_cw):
         ton_cw = None
+    if szukaj:
+        # CI-V podaje 300-900 Hz: ton z radia poniżej FMIN to od razu szukanie wokół niego;
+        # z radiem w paśmie zostajemy w nim (operator dostroił tam swoją stację)
+        if ton_cw is not None:
+            kotwica = ton_cw if not fmin <= ton_cw <= fmax else None
+        else:
+            kotwica = poza_pasmem(audio, sr, fmin, fmax)
+        if kotwica is not None:
+            # kotwica jak ton z radia: kluczowana w ±KL_RADIO_HZ wygrywa bez względu na poziom
+            return _sledz(audio, sr, SZUKAJ_FMIN_HZ, SZUKAJ_FMAX_HZ, block_s, step_s, kotwica)
+    return _sledz(audio, sr, fmin, fmax, block_s, step_s, ton_cw)
+
+
+def _sledz(audio: np.ndarray, sr: int, fmin: float, fmax: float,
+           block_s: float, step_s: float, ton_cw: float | None
+           ) -> tuple[np.ndarray, np.ndarray]:
+    audio = np.asarray(audio, dtype=np.float64)
     nb = max(64, int(round(block_s * sr)))
     ns = max(1, int(round(step_s * sr)))
     nfft = 1 << int(np.ceil(np.log2(nb * 4)))

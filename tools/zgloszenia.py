@@ -141,11 +141,11 @@ def analizuj(kat: Path, model) -> dict:
     if np.isfinite(ton):
         x = np.asarray(surowe, np.float64)
         # poziom naszej w tej samej skali co obce: szczyty bez wykluczenia okolicy tonu
-        nasza = [g for fo, g in PS.obce_stacje(x, ton + 1000.0, C.SR) if abs(fo - ton) < PS.ODSTEP_HZ]
+        nasza = [g for fo, g in PS.obce_stacje(x, ton + 1000.0, C.SR, PS.pasmo_obcych(ton)) if abs(fo - ton) < PS.ODSTEP_HZ]
         nasza_db = max(nasza) if nasza else None
         # względem naszej; liczą się od POZIOM_MIN_DB (-12 dB, jak przeciwsygnał) — słabsze
         # to zwykle prążki własnego kluczowania (6 m spokój: -24 dB, ręka: -32 dB; 40 m tłok: -3 dB)
-        obce = [(fo, g - nasza_db) for fo, g in PS.obce_stacje(x, ton, C.SR)
+        obce = [(fo, g - nasza_db) for fo, g in PS.obce_stacje(x, ton, C.SR, PS.pasmo_obcych(ton))
                 if nasza_db is not None and g - nasza_db >= PS.POZIOM_MIN_DB]
     u = r["u"]
     elem = {"K1": [], "K3": [], "PL": [], "PS": []}

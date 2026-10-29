@@ -86,7 +86,17 @@ def _srednia(x: np.ndarray, n: int) -> np.ndarray:
     return np.convolve(x, np.ones(n) / n, mode="same")
 
 
-def obce_stacje(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> list[tuple[float, float]]:
+def pasmo_obcych(f_nasza: float) -> tuple[float, float]:
+    """Gdzie szukać obcych: to, co po przestrojeniu naszej na TONE_CENTER wpada
+    w obraz FMIN..FMAX. Dla naszej w FMIN..FMAX — samo FMIN..FMAX, jak przed
+    29.10; dla tonu z szukania 300-3000 Hz (tune.SZUKAJ_*) — okolica naszej."""
+    if not np.isfinite(f_nasza) or C.FMIN <= f_nasza <= C.FMAX:
+        return C.FMIN, C.FMAX
+    return f_nasza - (C.TONE_CENTER - C.FMIN), f_nasza + (C.FMAX - C.TONE_CENTER)
+
+
+def obce_stacje(x: np.ndarray, f_nasza: float, sr: int = C.SR,
+                pasmo: tuple[float, float] = (C.FMIN, C.FMAX)) -> list[tuple[float, float]]:
     """Kluczowane szczyty widma poza ±ODSTEP_HZ od naszej: [(Hz, poziom dB)], od najgłośniejszej.
 
     Kryterium jak tune.track_tone (kontrast P90-P10 >= 10 dB, poziom >= 8 dB nad
@@ -94,7 +104,7 @@ def obce_stacje(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> list[tuple[flo
     """
     nb, ns, nfft = int(0.2 * sr), int(0.05 * sr), 4096
     f = np.fft.rfftfreq(nfft, 1 / sr)
-    band = (f >= C.FMIN) & (f <= C.FMAX)
+    band = (f >= pasmo[0]) & (f <= pasmo[1])
     fb = f[band]
     w = np.hanning(nb)
     starty = range(0, max(1, x.size - nb), ns)
@@ -245,7 +255,7 @@ def obce_w_oknie(x: np.ndarray, f_nasza: float, sr: int = C.SR) -> list[float]:
     if not np.isfinite(f_nasza):
         return []
     y = np.asarray(x, dtype=np.float64)
-    obce = obce_stacje(y, f_nasza, sr)
+    obce = obce_stacje(y, f_nasza, sr, pasmo_obcych(f_nasza))
     if not obce:
         return []
     an = hilbert(y)
@@ -268,7 +278,7 @@ def kasuj_obce(x: np.ndarray, f_nasza: float, sr: int = C.SR,
     if not np.isfinite(f_nasza):
         return np.asarray(x), []
     y = np.asarray(x, dtype=np.float64)
-    obce = obce_stacje(y, f_nasza, sr)
+    obce = obce_stacje(y, f_nasza, sr, pasmo_obcych(f_nasza))
     if obce:
         an = hilbert(y)
         e0 = _obwiednia(an, f_nasza, sr)

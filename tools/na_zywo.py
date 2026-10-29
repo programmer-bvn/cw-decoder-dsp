@@ -96,16 +96,14 @@ def _przygotuj(x: np.ndarray, n0: int, f_n: float, obce: list[float],
         for fo in obce:
             y = PS.odejmij(y, fo, f_n, sr)
     przes = C.TONE_CENTER - f_n if np.isfinite(f_n) else 0.0
-    X = np.fft.fft(y)
-    fr = np.fft.fftfreq(y.size, 1.0 / sr)
-    an = np.fft.ifft(X * np.where(fr >= tune.RETUNE_FMIN_HZ, 2.0, 0.0))
+    an = tune.analityczny(y, sr, -przes)
     y = np.real(an * np.exp(2j * np.pi * przes * (n0 + np.arange(y.size)) / sr))
     return np.clip(y * 10 ** (wzm_db / 20), -1, 1).astype(np.float32)
 
 
 def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray,
-             sr: int) -> tuple[float, list[float], float, list[float]]:
-    """-> (ton naszej, obce [Hz], wzmocnienie dB, kandydatki jednostki).
+             sr: int, szukaj: bool = True) -> tuple[float, list[float], float, list[float], bool]:
+    """-> (ton naszej, obce [Hz], wzmocnienie dB, kandydatki jednostki, stacja w FMIN..FMAX).
     Jednostka przy każdej analizie: grzebień od 28.10 liczy 0,04 s zamiast
     1,5 s (wcześniej co 37,5 s dźwięku, a między liczeniami trzymała się
     zła jednostka — F5LOL u SQ2MMX, wolny krok)."""
@@ -115,13 +113,14 @@ def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray,
     kand = []
     if hist.size:
         kand = [V.jednostka_cepstrum(hist)[0], jednostka_grzebienia(hist)]
-    t, f = tune.track_tone(x, ton_cw=ton_cw)
+    t, f = tune.track_tone(x, ton_cw=ton_cw, szukaj=szukaj)
     ok = np.isfinite(f)
     ost = ok & (t >= (x.size / sr - TON_S))
     f_n = float(np.median(f[ost])) if ost.any() else (float(np.median(f[ok])) if ok.any() else float("nan"))
     obce = PS.obce_w_oknie(x, f_n, sr)
     szczyt = wav2net.measure_peak_db(_przygotuj(x, n0, f_n, obce, 0.0, sr))
-    return f_n, obce, (wav2net.TARGET_PEAK_DB - szczyt if ok.any() else None, szczyt), kand
+    w_pasmie = szukaj and tune.stacja_w_pasmie(x, sr)
+    return f_n, obce, (wav2net.TARGET_PEAK_DB - szczyt if ok.any() else None, szczyt), kand, w_pasmie
 
 
 class OdczytNaZywo:
@@ -135,6 +134,12 @@ class OdczytNaZywo:
         self.n = 0                         # próbek dotąd
         self.od_kroku = 0                  # próbek od ostatniego kroku
         self.analiza: tuple | None = None  # (ton naszej, obce [Hz], wzmocnienie dB)
+        # Szukanie tonu w 300-3000 Hz (29.10) tylko do pierwszej stacji w FMIN..FMAX
+        # (tune.stacja_w_pasmie — nie sam ton pętli: w pierwszych 2 s maciej_333
+        # pętla złapała szum 575 Hz i szukanie zgasło na całą sesję). Potem każda
+        # przerwa korespondenta dłuższa niż okno analizy przerzucałaby dekoder
+        # na obcą stację spoza pasma, której operator nie słucha.
+        self.w_pasmie = False
         self.ost_analiza = -np.inf         # próbka, przy której ruszyła ostatnia analiza
         self._przyszla = None
         self._przelicz = False             # przyszła nowa analiza: przelicz niezatwierdzone
@@ -241,6 +246,7 @@ class OdczytNaZywo:
             wzm = 0.0 if wzm is None else wzm
             self.szczyt_stacji = szczyt
         self.analiza = (f_n, obce, wzm)
+        self.w_pasmie = self.w_pasmie or wynik[4]
         self.kand += wynik[3]
         self._przelicz = True
 
@@ -253,7 +259,7 @@ class OdczytNaZywo:
         x = self.raw[-int(ANALIZA_S * self.sr):].copy()
         n0 = self.raw0 + self.raw.size - x.size
         self.ost_analiza = self.n
-        arg = (x, n0, self.ton_cw, self.hist.copy(), self.sr)
+        arg = (x, n0, self.ton_cw, self.hist.copy(), self.sr, not self.w_pasmie)
         if self._watek is None or self.analiza is None:      # pierwsza: od razu
             self._odbierz(_analiza(*arg))
         else:

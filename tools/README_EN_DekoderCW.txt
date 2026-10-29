@@ -18,7 +18,9 @@ or the line input of the computer). CW pitch:
   and choose the COM port (the program ONLY reads frequency, mode and CW
   pitch — it never changes settings and never keys the radio),
 - other radios: enter the CW pitch in Hz, e.g. 600,
-- empty field: the program looks for the strongest keyed station.
+- empty field: the program looks for the strongest keyed station
+  (in 400-1200 Hz; if nothing is there and the station is higher or
+  lower - in 300-3000 Hz).
 Settings, window position and squelch level are remembered.
 The program needs about 20 s to load.
 

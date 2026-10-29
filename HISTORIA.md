@@ -2295,6 +2295,48 @@ odczytu, bo nadane to 15 znaków). Maks. krok w symulacji 0,36-1,34 s ->
 krok 2,5×: oba CQ czyste — „CQ CQ DX DE F5LOL F5LOL K”, „CQ CQ CQ DE F5LOL
 F5LOL K”; krok średnio 0,456 -> 0,384 s.
 
+### Ton poza 400–1200 Hz: szukanie w 300–3000 Hz, gdy w paśmie nic nie ma (29.10, nagranie maciej_333)
+
+**Wersja:** 0.9.5
+**Objaw.** maciej_333 (elektroda) przysłał nagranie z własnego SDR na STM32:
+krok strojenia tunera MxL5007 ok. 7 kHz, NCO bez przestrajania, więc ton CW
+wychodzi przypadkowo — u niego 1492 Hz. Odczyt całego pliku: pusty tekst
+(jednostka NaN). Przesunięty ręcznie na 750 Hz: „E R G HR YAESU FT 2OOO D ESAMP *
+P WR 7 00W ES ANTANT DIPOLE E”.
+**Przyczyna.** Pętla tonu patrzy tylko w FMIN..FMAX (400–1200 Hz) i łapała tam
+szum ledwie nad progiem (kluczowany prążek 10 dB nad tłem, stacja 30 dB).
+Szersze pasmo dla wszystkich było już próbowane i odrzucone (20.10: test_tonu
+92,2 → 91,0%, środek filtra z szumu słabo określony).
+**Zmiana** (`dsp/tune.py`): `track_tone` najpierw porównuje kluczowane prążki
+w 300–3000 Hz z całego wejścia (`poza_pasmem`, odniesienie mocy jedno dla
+zakresu). Gdy stacja spoza 400–1200 jest o `PRZEWAGA_DB` = 10 dB głośniejsza od
+najgłośniejszej w paśmie (albo w paśmie nic, a ona >= 18 dB), pętla idzie
+w 300–3000 Hz z tą stacją jako kotwicą (jak ton z radia: kluczowana w ±25 Hz
+wygrywa). Ton z radia (CI-V, ręczny) poza 400–1200 — od razu tam. Do tego:
+- `tune.analityczny`: przy zejściu w dół o więcej niż 450 Hz odcięcie pod
+  zejście − 300 Hz (inaczej składowe poniżej zejścia wracają lustrem w obraz);
+  dla tonów z pasma odcięcie zostaje 200 Hz;
+- `przeciwsygnal.pasmo_obcych`: obcych szuka tam, co po przestrojeniu wpada
+  w obraz (dla naszej w paśmie — 400–1200 jak dotąd);
+- na żywo (`tools/na_zywo.py`): szukanie tylko do pierwszej prawdziwej stacji
+  w paśmie (`tune.stacja_w_pasmie`, >= 18 dB nad tłem) — potem przerwa
+  korespondenta przerzucałaby dekoder na obcą spoza pasma. Pierwsza wersja
+  brała sam ton pętli: w pierwszych 2 s maciej_333 pętla złapała szum 575 Hz
+  i szukanie zgasło na całą sesję (na żywo pusty tekst).
+**Pomiary:**
+- próg przewagi z 196 plików (probki/, zgłoszenia, maciej_333), całe pliki:
+  maciej_333 (1) +20,2 dB; dalej najwyżej +4,4 dB (pile-up maciej_333 —
+  prawdziwa stacja w paśmie), pozostałe <= +0,1 dB. Szukanie włącza się
+  tylko na maciej_333 (1); koszt 1,2 s na 15 min nagrania;
+- maciej_333 (1) odczyt całości: tekst taki sam jak z ręcznego przesunięcia
+  na 750 Hz (było: pusty); na żywo w tempie nagrania: 6 znaków różnicy
+  z całością, wszystkie w pierwszych sekundach („T *N *INHR YAESU…”);
+- droga dla stacji w paśmie bit w bit: test_tonu 92,2% (bez zmian), okna jak
+  na żywo (10 s co 2 s do pierwszej stacji) — 0 różnic na 194 plikach;
+- diag 121/121 (nowy przypadek 16d: nadanie 1490 Hz, w paśmie szum).
+**Czego nie zmienia:** górny wodospad w okienku pokazuje 300–1300 Hz — stacji
+na 1492 Hz tam nie widać (widać ją na dolnym, „do sieci”, na 750 Hz).
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

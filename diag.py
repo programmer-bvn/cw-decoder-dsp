@@ -1198,6 +1198,18 @@ def test_tune_poza_pasmem():
           brak_albo_w_pasmie,
           "brak zaczepu" if not np.isfinite(f2) else f"zmierzone {f2:.0f} Hz")
 
+    # --- 16d. nadanie POZA pasmem, w nim tylko szum (29.10) ---
+    # maciej_333 z elektrody: własne SDR, ton CW wychodzi przypadkowo (1492 Hz).
+    # Kluczowana stacja spoza FMIN..FMAX, o PRZEWAGA_DB głośniejsza od wszystkiego
+    # w nim, ma być znaleziona (szukanie 300-3000 Hz) — nie szum w paśmie.
+    daleko, _ = morse.synth_cw("SQ2BVN", wpm=20.0, tone=1490.0, amp=0.30,
+                               sr=sr, rng=rng, return_spans=True)
+    klip2 = 0.002 * rng.standard_normal(n).astype(np.float32)
+    klip2[:min(n, daleko.size)] += daleko[:min(n, daleko.size)]
+    f3 = mediana_tonu(klip2)
+    check("nadanie 1490 Hz, w paśmie szum: zaczep na nadaniu",
+          np.isfinite(f3) and abs(f3 - 1490.0) < 20.0, f"zmierzone {f3:.0f} Hz")
+
 
 
 # ==========================================================================
