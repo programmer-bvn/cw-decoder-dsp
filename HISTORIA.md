@@ -2216,6 +2216,35 @@ format tekstowy, nadawca — skrzynka projektu. Szkice `odpowiedz.txt` poprawion
 nie są już nadpisywane przez `--ponow` (27.10 oba szkice SQ2MMX trzeba było
 przepisać, bo automatyczna diagnoza się myliła).
 
+### Licznik uruchomień: nowa wersja sprawdzana po pliku `latest.json` (31.10)
+
+**Wersja:** 0.9.4
+
+**Objaw.** Tydzień po ogłoszeniu: 68 pobrań instalatora (0.9.2: 50, 0.9.3: 18
+w 3 dni), zgłoszenia od dwóch osób (SQ2MMX, maciej_333). Nie wiadomo, czy
+pozostali używają programu i nie mają uwag, czy zainstalowali i porzucili.
+Pobrania instalatora tego nie rozstrzygają.
+
+**Przyczyna.** Program przy starcie (opcja „Sprawdzaj nowe wersje przy starcie
+(GitHub)”, domyślnie włączona) pytał API GitHuba o najnowsze wydanie — tych
+zapytań GitHub właścicielowi nie liczy.
+
+**Co zrobione.** Do każdego wydania dołączany jest plik `latest.json`
+(numer wersji i adres wydania; robi go `budowa_exe.bat` w `dist\`). Program
+sprawdza nową wersję, pobierając ten plik; GitHub liczy pobrania plików
+wydania, więc licznik `latest.json` przy wydaniu = ile razy uruchamiano program
+od jego publikacji (uruchomienia, nie osoby). Żadnych nowych danych: program
+łączył się z GitHubem już wcześniej, wysyła tyle, co każde pobranie pliku.
+Bez pliku w wydaniu — dawne zapytanie do API. Wyłączenie opcji w oknie
+startowym wyłącza też licznik.
+
+Sprawdzone: bez pliku (0.9.3) — odpowiedź z API jak dotąd; z plikiem
+(podstawiony) — wersja z pliku, API niewołane. Czy GitHub podbija licznik
+przy pobraniu przez `releases/latest/download/` — do sprawdzenia po wydaniu
+0.9.4 (jedno uruchomienie, licznik +1).
+
+**Gdzie mieszka.** `tools/aplikacja.py` (`sprawdz_wersje`), `budowa_exe.bat`.
+
 ### Tempo przy „ważonym” kluczowaniu: grzebień sprawdza długości znaków (28.10, zgłoszenie SQ2MMX)
 
 **Wersja:** 0.9.4

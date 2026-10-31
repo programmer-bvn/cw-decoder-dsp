@@ -32,8 +32,12 @@ if not exist "%ISCC%" (
     goto koniec
 )
 "%ISCC%" /Q /DWersja=%WERSJA% tools\instalator\DekoderCW.iss || goto blad
+rem latest.json dolacza sie do wydania obok instalatora: program sprawdza po nim
+rem nowa wersje, a GitHub liczy pobrania (licznik uruchomien, HISTORIA 31.10)
+>dist\latest.json echo {"version": "%WERSJA%", "url": "https://github.com/programmer-bvn/cw-decoder-dsp/releases/tag/v%WERSJA%"}
 echo.
 echo GOTOWE: dist\DekoderCW_setup_%WERSJA%.exe  (oraz dist\DekoderCW.zip)
+echo DO WYDANIA DOLACZ TAKZE: dist\latest.json
 :koniec
 pause
 exit /b 0

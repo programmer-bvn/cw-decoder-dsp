@@ -214,13 +214,26 @@ def okno_startowe() -> dict | None:
 
 # ------------------------------------------------------------- aktualizacje
 def sprawdz_wersje() -> tuple[str, str] | None:
-    """Najnowsze wydanie na GitHubie (publiczne API, bez logowania) -> (wersja, adres)
-    albo None, gdy nie nowsze."""
+    """Najnowsze wydanie na GitHubie (bez logowania) -> (wersja, adres)
+    albo None, gdy nie nowsze.
+
+    Najpierw plik latest.json dołączony do wydania: GitHub liczy jego pobrania,
+    więc licznik przy wydaniu mówi, ile razy program uruchamiano (decyzja
+    operatora 31.10: 68 pobrań instalatora, raporty od dwóch osób — nie wiadomo,
+    czy reszta używa). Zapytania do API GitHub nie liczy. Bez pliku (stare
+    wydanie, zapomniany przy publikacji) — API jak dotąd."""
     import urllib.request
-    zad = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases/latest",
-                                 headers={"Accept": "application/vnd.github+json", "User-Agent": NAZWA})
-    with urllib.request.urlopen(zad, timeout=10) as o:
-        d = json.load(o)
+    try:
+        zad = urllib.request.Request(f"https://github.com/{REPO}/releases/latest/download/latest.json",
+                                     headers={"User-Agent": NAZWA})
+        with urllib.request.urlopen(zad, timeout=10) as o:
+            d = json.load(o)
+        d = {"tag_name": d["version"], "html_url": d.get("url")}
+    except Exception:
+        zad = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases/latest",
+                                     headers={"Accept": "application/vnd.github+json", "User-Agent": NAZWA})
+        with urllib.request.urlopen(zad, timeout=10) as o:
+            d = json.load(o)
     tag = str(d.get("tag_name", "")).lstrip("vV")
 
     def liczby(w: str) -> tuple:
