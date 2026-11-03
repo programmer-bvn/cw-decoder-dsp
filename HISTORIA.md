@@ -2337,6 +2337,72 @@ wygrywa). Ton z radia (CI-V, ręczny) poza 400–1200 — od razu tam. Do tego:
 **Czego nie zmienia:** górny wodospad w okienku pokazuje 300–1300 Hz — stacji
 na 1492 Hz tam nie widać (widać ją na dolnym, „do sieci”, na 750 Hz).
 
+### S-metr na pasku: CI-V → dBm → S z kalibracji generatorem (03.11)
+
+**Wersja:** 0.9.5
+
+**Objaw.** Do raportu RST brakowało S. CI-V był czytany tylko raz, przy starcie
+(ton, pasmo), a wzór z opisu Icoma (0 = S0, 120 = S9, 241 = S9+60) nie mówi,
+czy to prawda w tym radiu i jak wpływa przedwzmacniacz.
+
+**Pomiar.** IC-7300MK2 operatora, 14,0147 MHz, generator National VP-8177A
+(dBµV; dBm = dBµV − 107, zakładane 50 Ω — za tym: bez P.AMP S9 wypada dokładnie
+przy −73 dBm). Bez P.AMP od S9 w górę zgodnie z normą (±2 dB), poniżej S9 radio
+zaniża (−85 dBm = S5 na ekranie, norma S7). AMP1 podnosi wskazanie o ~7 dB,
+AMP2 o ~12 dB (z punktów −59 i −43 dBm). Najsłabsze punkty (−121, −109 dBm)
+zawyżone szumem toru generatora (bez kabla CI-V = 0) — pominięte; −33 dBm przy
+AMP1 odstaje (przyrost 0,7 na dB zamiast ~2), podejrzany tłumik generatora.
+Pierwsza seria była pomieszana: generator przestawiany, zanim odczyt CI-V
+(3 s) się skończył — powtórzona z zasadą „nie ruszaj do »zapisane«”.
+
+**Co zrobione.** `tools/radio/smetr.py`: tabele z kalibracji dla OFF/AMP1/AMP2,
+przeliczenie na dBm i S wg normy (S9 = −73 dBm, powyżej 30 MHz −93 dBm, 6 dB na
+jednostkę); poniżej najniższego zmierzonego punktu „≤”, Icom inny niż IC-7300MK2
+(adres CI-V ≠ 0xB6) — wzór z opisu, „≈”. Odczyt w wątku okna co 0,5 s (pyserial,
+DTR/RTS wyłączone przed otwarciem; tylko polecenia bez danych: 15 02, 16 02, 11,
+03). Start z opóźnieniem 10 s i stop przed przełączeniem źródła — ten sam port
+czyta przy starcie ton i pasmo. Wynik na pasku stanu („S8 (−81 dBm)”) i w
+raporcie (`stan_okna.s_metr`). ATT dodany nominalnie — niekalibrowany (hipoteza).
+
+Sprawdzone: przeliczenie na punktach kalibracji i na brzegach; okno z udawanym
+radiem (podstawiony port) — pasek „S8 (−81 dBm)” dla 111 przy AMP1. Na
+prawdziwym radiu (antena, 14,0147 MHz, AMP2): CI-V 133–144, program S8–S9
+(−77…−72 dBm), ekran S9+10 — zgodnie z ~12 dB od AMP2. (Wcześniej radio
+wyłączone odpowiadało „NG” na każde polecenie — program pokazuje wtedy brak S.)
+
+**Gdzie mieszka.** `tools/radio/smetr.py`, `tools/radio/kalibracja_smetra_ic7300mk2.csv`,
+`tools/na_zywo.py` (`okno`: `smetr_start`/`smetr_stop`).
+
+### Transceiver w raporcie: producent i model z listy (03.11)
+
+**Wersja:** 0.9.5
+
+**Objaw.** Z raportów nie wiadomo, na jakim radiu dekoder pracował: karta
+zgłasza się jako „USB AUDIO CODEC” (SQ2MMX), CI-V jest tylko u Icoma. Tego
+samego dnia zadzwonił użytkownik Yaesu (FT-710?) — nie wiadomo, jakie radia
+program już widział, więc nie ma czego wpisać w instrukcji.
+
+**Co zrobione.** W formularzu „Zgłoś problem” dwa pola: producent i model
+(`tools/radia.py`, jak w CHIRP-ie — wybór z listy zamiast wpisu, bo wpis
+bywa z błędem). Gdy radia nie ma na liście, oba pola przyjmują wpis ręczny.
+Wybór zapamiętany w rejestrze, idzie do `raport.json` jako `radio`.
+`tools.zgloszenia` dopisuje radio do `analiza.md`, a w `PODSUMOWANIE.md`
+liczy radia z raportów i oznacza te spoza listy — do dopisania w
+`tools/radia.py`, w następnej wersji są już do wybrania. `SPRAWDZONE`
+w tym samym pliku: tylko radia, na których dekoder naprawdę pracował.
+Z niej `budowa_exe.bat` wstawia tabelę do rozdziału 7 instrukcji (między
+znacznikami `<!-- RADIA -->`) przed drukiem PDF-a — lista w instrukcji nie
+rozjedzie się z listą w programie. Zrzut formularza (`zglos_pl.png`) nowy.
+
+Sprawdzone: formularz z podstawionym rejestrem i katalogiem (zmiana
+producenta czyści model spoza jego listy, producent spoza listy zostawia
+wpis ręczny, `raport.json` ma `{"producent": "Yaesu", "model": "FT-710"}`);
+podsumowanie na trzech sztucznych analizach (radio z listy, spoza listy,
+raport bez pola).
+
+**Gdzie mieszka.** `tools/radia.py`, `tools/aplikacja.py` (`okno_raportu`,
+`_zbuduj_raport`), `tools/zgloszenia.py` (`podsumowanie`, `_radio`).
+
 ### Grzebień z cepstrum + Viterbi — odczyt bez bramki (19.10) — PRZEŁOM
 
 **Pomysł operatora:** jednostka z cepstrum („fizyka"), grzebień przykładany

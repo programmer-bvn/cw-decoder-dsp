@@ -1056,9 +1056,11 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
                     if na_dole:
                         tekst.see("end")
-                    stan.config(text=st)
+                    sm = smetr["m"].stan if smetr["m"] is not None else None
+                    stan.config(text=st + (f" | {sm['s']}" if sm else ""))
                     sesja["stan"] = {"stan_dekodera": st, "ton_nad_szumem_db": round(float(nad), 1),
-                                     "jednostka_s": round(float(u), 4) if np.isfinite(u) else None}
+                                     "jednostka_s": round(float(u), 4) if np.isfinite(u) else None,
+                                     **({"s_metr": sm} if sm else {})}
                     x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
                     miernik.coords(slupek, 0, 0, x, 16)
                     miernik.itemconfig(slupek, fill="#3fa34d" if prog.value <= 0 or nad >= prog.value else "#5a6068")
@@ -1093,6 +1095,21 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             pass
         dek["w"] = None
 
+    # S-metr przez CI-V na bieżąco (03.11, po kalibracji generatorem): w tym procesie,
+    # w wątku. Port jest jeden — start dekodera czyta przez niego ton i pasmo, więc
+    # odczyt rusza z opóźnieniem i staje przed każdym przełączeniem źródła.
+    smetr: dict = {"m": None}
+
+    def smetr_start() -> None:
+        if cfg["z_civ"] and smetr["m"] is None:
+            from tools.radio.smetr import SMetr
+            smetr["m"] = SMetr(civ_port or "COM5", civ_baud or 115200, opoznienie=10.0).start()
+
+    def smetr_stop() -> None:
+        if smetr["m"] is not None:
+            smetr["m"].stop()
+            smetr["m"] = None
+
     def uruchom(nadpis: dict) -> None:
         dek["stop"] = ctx.Event()
         # nie daemon: dekoder sam ma proces analizy (ProcessPoolExecutor)
@@ -1110,6 +1127,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
         """Nagranie (plik) albo z powrotem karta (None): dekoder od nowa, tekst od nowa."""
         stan.config(text=T("zamykam"))
         root.update()
+        smetr_stop()
         zatrzymaj()
         wyczysc()
         for k in kolejka_wod:
@@ -1119,6 +1137,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             sesja["sciezka"] = None
             przycisk_radio.pack_forget()
             uruchom({})
+            smetr_start()
             return
         from tools.radio import civ
         ton = civ.ton_z_opisu(Path(plik).with_suffix(".txt")) or cfg.get("ton_reczny")
@@ -1143,10 +1162,12 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
             except Exception as e:                   # zapamiętanie nie może zablokować zamknięcia
                 print(f"zapamiętanie ustawień: {e!r}", flush=True)
         root.update()
+        smetr_stop()
         zatrzymaj()
         root.destroy()
 
     uruchom({})
+    smetr_start()
     root.protocol("WM_DELETE_WINDOW", zamknij)
     root.after(50, odswiez)
     root.after(KLATKA_WOD_MS, animuj)

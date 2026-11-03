@@ -297,9 +297,9 @@ def _z_sesji(sesja: Path) -> dict:
 
 
 def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: dict,
-                   stan_okna: dict | None = None) -> Path:
+                   stan_okna: dict | None = None, radio: dict | None = None) -> Path:
     """ZIP w stałym układzie (do przetworzenia automatem):
-    raport.json — wersja, czas, język, znak, nadane, opis, ustawienia, nazwy plików;
+    raport.json — wersja, czas, język, znak, radio, nadane, opis, ustawienia, nazwy plików;
     nagranie.flac — ostatnie RAPORT_MIN min sesji; sesja.txt/.log; dziennik.txt (koniec)."""
     import zipfile
     import soundfile as sf
@@ -314,7 +314,7 @@ def _zbuduj_raport(sesja: Path, znak: str, nadane: str, opis: str, ustawienia: d
     flac = katalog / f"_nagranie_{stempel}.flac"
     sf.write(str(flac), x, sr, format="FLAC")
     meta = {"format": "cw-raport-1", "projekt": "CW-DECODER", "wersja": _wersja_pelna(), "czas": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "jezyk": teksty.JEZYK, "znak": znak.upper(), "nadane": nadane, "opis": opis,
+            "jezyk": teksty.JEZYK, "znak": znak.upper(), "radio": radio or {}, "nadane": nadane, "opis": opis,
             "sesja": sesja.name, "sesja_s": round(sf.info(str(sesja)).duration, 1),
             "nagranie_s": round(len(x) / sr, 1), "ustawienia": ustawienia,
             "stan_okna": stan_okna or {}, "z_sesji": _z_sesji(sesja), "srodowisko": _srodowisko()}
@@ -447,6 +447,29 @@ def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | 
     ttk.Label(f, text=T("rap_znak")).pack(anchor="w", pady=(10, 0))
     v_znak = tk.StringVar(value=ust.get("znak", ""))
     ttk.Entry(f, textvariable=v_znak, width=20).pack(anchor="w")
+    # radio z listy (tools/radia.py): wpis ręczny bywa z błędem, wybór nie (operator 03.11);
+    # zapamiętane w rejestrze — kolejny raport z tego samego radia bez klikania
+    from tools import radia
+    ttk.Label(f, text=T("rap_radio")).pack(anchor="w", pady=(8, 0))
+    r = ttk.Frame(f)
+    r.pack(anchor="w")
+    v_prod = tk.StringVar(value=ust.get("radio_producent", ""))
+    v_model = tk.StringVar(value=ust.get("radio_model", ""))
+    c_prod = ttk.Combobox(r, textvariable=v_prod, values=radia.producenci(), width=24)
+    c_prod.pack(side="left")
+    c_model = ttk.Combobox(r, textvariable=v_model, values=radia.modele(v_prod.get()), width=24)
+    c_model.pack(side="left", padx=(6, 0))
+
+    def lista_modeli(*_) -> None:
+        c_model.configure(values=radia.modele(v_prod.get()))
+
+    def wybor_producenta(*_) -> None:
+        # po wyborze producenta z listy model spoza jego listy znika (został po poprzednim)
+        lista_modeli()
+        if v_model.get() and not radia.na_liscie(v_prod.get(), v_model.get()):
+            v_model.set("")
+    c_prod.bind("<<ComboboxSelected>>", wybor_producenta)
+    c_prod.bind("<FocusOut>", lista_modeli)
     ttk.Label(f, text=T("rap_nadane")).pack(anchor="w", pady=(8, 0))
     v_nad = tk.StringVar()
     ttk.Entry(f, textvariable=v_nad, width=80).pack(anchor="w", fill="x")
@@ -456,10 +479,11 @@ def okno_raportu(sesja: str | None, rodzic, ustawienia: dict, stan_okna: dict | 
 
     def utworz() -> None:
         znak, nad, op = v_znak.get().strip(), v_nad.get().strip(), opis.get("1.0", "end").strip()
-        ust_zapisz({"znak": znak})
+        radio = {"producent": v_prod.get().strip(), "model": v_model.get().strip()}
+        ust_zapisz({"znak": znak, "radio_producent": radio["producent"], "radio_model": radio["model"]})
         d.destroy()
         try:
-            plik = _zbuduj_raport(Path(sesja), znak, nad, op, ustawienia, stan_okna)
+            plik = _zbuduj_raport(Path(sesja), znak, nad, op, ustawienia, stan_okna, radio)
         except Exception as e:
             print(f"raport: {e!r}", flush=True)
             messagebox.showerror(T("rap_tytul"), repr(e), parent=rodzic)

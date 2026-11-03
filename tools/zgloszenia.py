@@ -326,6 +326,7 @@ def zapisz_analize(kat: Path, w: dict) -> None:
     (kat / "analiza.json").write_text(json.dumps(w, ensure_ascii=False, indent=1), encoding="utf-8")
     (kat / "analiza.md").write_text(
         f"# {kat.name}\n\nwersja: {meta.get('wersja')}  \nznak: {meta.get('znak') or '-'}  \n"
+        f"radio: {_radio(meta) or '-'}  \n"
         f"nadane: {meta.get('nadane') or '-'}  \nuwagi: {meta.get('opis') or '-'}  \n"
         f"pasmo: {meta.get('z_sesji', {}).get('pasmo', '-')}\n\n"
         f"**odczyt bieżącą wersją:** {an.get('tekst', '')[:600]}\n\n"
@@ -338,16 +339,33 @@ def zapisz_analize(kat: Path, w: dict) -> None:
         (kat / "odpowiedz.txt").write_text(odpowiedz(meta, an), encoding="utf-8")
 
 
+def _radio(meta: dict) -> str:
+    r = meta.get("radio") or {}
+    return f"{r.get('producent', '')} {r.get('model', '')}".strip()
+
+
 def podsumowanie() -> None:
-    """PODSUMOWANIE.md od zera ze wszystkich analiza.json (bez adresów nadawców)."""
-    wiersze = []
+    """PODSUMOWANIE.md od zera ze wszystkich analiza.json (bez adresów nadawców).
+    Na końcu radia z raportów: „spoza listy” = do dopisania w tools/radia.py
+    (wpis ręczny w formularzu, 03.11), żeby w następnej wersji było do wybrania."""
+    from tools import radia
+    wiersze, ile = [], {}
     for a in sorted(KATALOG.glob("*/analiza.json")):
         w = json.loads(a.read_text(encoding="utf-8"))
         meta, an = w["meta"], w["analiza"]
+        r = meta.get("radio") or {}
+        if _radio(meta):
+            k = (r.get("producent", "").strip(), r.get("model", "").strip())
+            ile[k] = ile.get(k, 0) + 1
         wiersze.append(f"- **{a.parent.name}** {str(meta.get('wersja', '?')).split(' ')[0]}, "
+                       f"{_radio(meta) or 'radio ?'}, "
                        f"{an.get('czas_s', '?')} s: {'; '.join(an['diagnoza'])} — odczyt: `{an.get('tekst', '')[:120]}`")
+    lr = [f"- {p} {m}: {n}" + ("" if radia.na_liscie(p, m) else " — **spoza listy, dopisać do tools/radia.py**")
+          for (p, m), n in sorted(ile.items())]
     (KATALOG / "PODSUMOWANIE.md").write_text(
-        f"# Zgłoszenia — Dekoder CW ({len(wiersze)})\n\n" + "\n".join(wiersze) + "\n", encoding="utf-8")
+        f"# Zgłoszenia — Dekoder CW ({len(wiersze)})\n\n" + "\n".join(wiersze) + "\n\n"
+        f"## Radia w raportach ({len(lr)})\n\n" + ("\n".join(lr) or "- (raporty sprzed pola „radio”)") + "\n",
+        encoding="utf-8")
 
 
 def ponow() -> None:

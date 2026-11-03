@@ -101,6 +101,9 @@ mikrofon przy głośniku radia. Program <b>tylko odbiera</b>: niczego w radiu ni
       i patrz na górny wodospad (punkt 4) — przy dobrej karcie widać na nim sygnał z radia. Jeśli pusto,
       zamknij program i wybierz inną.</td></tr>
   <tr><td>Ton CW z radia przez CI-V</td><td>Tylko radia Icom z kablem CI-V/USB: zaznacz i wybierz port COM.
+      Program czyta wtedy ton CW i na bieżąco S-metr (tylko odczyt — niczego w radiu nie przestawia).
+      S liczone wg normy (S9 = −73 dBm, 6 dB na jednostkę) z uwzględnieniem przedwzmacniacza; dokładnie
+      tylko dla IC-7300MK2 (sprawdzone generatorem), dla innych Icomów przybliżone („≈”).
       Inne radia: zostaw puste.</td></tr>
   <tr><td>Ton CW wpisany ręcznie</td><td>Wysokość tonu CW ustawiona w radiu („CW pitch”), np. 600.
       Nie wiesz — zostaw puste, program sam znajdzie stację.</td></tr>
@@ -113,7 +116,8 @@ Kolejne — 2-3 sekundy.</div>
 <h2 class="strona">4. Okno programu</h2>
 <img class="zrzut" src="okno_pl.png" alt="Okno programu">
 <table>
-  <tr><td>Górny pasek</td><td>Poziom dźwięku, ton stacji, tempo (WPM). Przyciski: <b>Wyczyść</b> (tylko ekran), <b>Otwórz nagranie…</b>,
+  <tr><td>Górny pasek</td><td>Poziom dźwięku, ton stacji, tempo (WPM); z CI-V także siła sygnału
+      z S-metra radia, np. „S7 (−85 dBm)” — do raportu RST. Przyciski: <b>Wyczyść</b> (tylko ekran), <b>Otwórz nagranie…</b>,
       <b>Zgłoś problem z dekodowaniem…</b></td></tr>
   <tr><td>„ton nad szumem”</td><td>Zielony pasek: jak mocno stacja wystaje ponad szum.</td></tr>
   <tr><td>Suwak „blokada szumów”</td><td>Gdy w przerwach pojawiają się same E, I, T (szum czytany jako
@@ -127,7 +131,9 @@ Kolejne — 2-3 sekundy.</div>
 
 <h2>5. Zgłoś problem z dekodowaniem — to bardzo pomaga!</h2>
 <p>Gdy program źle czyta stację, którą dobrze słychać, kliknij <b class="przycisk">Zgłoś problem z dekodowaniem…</b>.
-Nic nie trzeba wpisywać — pola są nieobowiązkowe. Można dopisać swój znak i co było nadane.</p>
+Nic nie trzeba wpisywać — pola są nieobowiązkowe. Można dopisać swój znak, co było nadane
+i <b>transceiver</b>: najpierw producent, potem model z listy. Gdy Twojego modelu nie ma na liście, wpisz go —
+w następnej wersji będzie już do wybrania. Program zapamięta wybór.</p>
 <img class="zrzut maly" src="zglos_pl.png" alt="Zgłoszenie">
 <p>Kliknij <b class="przycisk">Utwórz raport i wyślij</b>. Pojawi się okno wysyłki:</p>
 <img class="zrzut maly" src="wysylka_pl.png" alt="Wysyłka">
@@ -152,6 +158,19 @@ co było przyczyną.</p>
   <tr><td>Program się nie uruchamia</td><td>Przyślij plik <b>Dokumenty\DekoderCW\dziennik.txt</b> na
       programmer.bvn@gmail.com.</td></tr>
 </table>
+
+<h2>7. Transceivery i odbiorniki, na których program już pracował</h2>
+<p>Dekoder potrzebuje tylko dźwięku z radia — działa z każdym odbiornikiem CW. Połączenie z radiem (CI-V)
+jest dodatkiem i na razie obsługuje tylko Icoma. Lista rośnie z każdym zgłoszeniem, w którym podasz model (punkt 5).</p>
+<!-- RADIA: tools/radia.py -->
+<table>
+  <tr><td>Icom IC-7300MK2</td><td>kabel USB: dźwięk i ton CW przez CI-V</td></tr>
+  <tr><td>Icom IC-746</td><td>dźwięk do karty dźwiękowej</td></tr>
+  <tr><td>Kenwood TS-520</td><td>dźwięk do karty dźwiękowej (radio lampowe, bez CAT)</td></tr>
+  <tr><td>CRT SS 6900</td><td>dźwięk z głośnika (kabel albo mikrofon), bez CAT</td></tr>
+  <tr><td>KiwiSDR</td><td>nagrania z odbiornika w sieci</td></tr>
+</table>
+<!-- /RADIA -->
 
 <p class="stopka">Pliki programu: Dokumenty\DekoderCW — <i>sesje</i> (nagrania), <i>raporty</i>,
 <i>slownik_osobisty.txt</i> (Twoje słowa na zielono: imię, QTH, znajomi). Kod źródłowy (GPL-3.0):

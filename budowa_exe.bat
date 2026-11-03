@@ -21,7 +21,9 @@ python -m PyInstaller --noconfirm --clean --name DekoderCW --windowed --onedir -
   --exclude-module torch --exclude-module IPython --exclude-module pandas --exclude-module h5py ^
   tools\aplikacja.py || goto blad
 copy /y tools\CZYTAJ_DekoderCW.txt dist\DekoderCW\CZYTAJ.txt >nul || goto blad
-rem instrukcja z obrazkami (docs\instrukcja): HTML -> PDF przez Edge
+rem instrukcja z obrazkami (docs\instrukcja): HTML -> PDF przez Edge;
+rem tabela sprawdzonych radiow (rozdzial 7) z tools\radia.py - jedno zrodlo listy
+python -m tools.radia --instrukcja docs\instrukcja\instrukcja_pl.html || goto blad
 set EDGE=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
 if exist "%EDGE%" "%EDGE%" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf="%~dp0docs\instrukcja\Dekoder_CW_instrukcja.pdf" "file:///%~dp0docs/instrukcja/instrukcja_pl.html" 2>nul
 copy /y docs\instrukcja\Dekoder_CW_instrukcja.pdf dist\DekoderCW\Instrukcja.pdf >nul || goto blad

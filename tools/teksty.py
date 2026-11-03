@@ -53,6 +53,8 @@ TEKSTY: dict[str, dict[str, str]] = {
                   "en": "Just click the button below — the recording (last {m} min), decoded text, program version,\n"
                         "settings and radio state are added automatically. The fields below are OPTIONAL."},
     "rap_znak": {"pl": "Twój znak (opcjonalnie):", "en": "Your callsign (optional):"},
+    "rap_radio": {"pl": "Transceiver / odbiornik — producent i model (wybierz; gdy brak na liście, wpisz):",
+                  "en": "Transceiver / receiver — make and model (pick one; if missing, type it):"},
     "rap_nadane": {"pl": "Co było nadane (jeśli wiesz):", "en": "What was sent (if known):"},
     "rap_opis": {"pl": "Uwagi (np. co było źle):", "en": "Remarks (e.g. what went wrong):"},
     "rap_utworz": {"pl": "Utwórz raport i wyślij", "en": "Create report and send"},
