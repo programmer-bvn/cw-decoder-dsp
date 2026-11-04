@@ -13,8 +13,8 @@ dopóki nie okazał się najdroższą pomyłką tego projektu.
 |---|---|---|---|
 | 1 | keyer + manipulator, IC-746 | audio | nadawanie własne, elementy maszynowe |
 | 2 | odbiór z pasma, IC-746 | audio | obce stacje, ARW IC-746 |
-| 3 | **klucz sztorcowy, TS-520** | audio | nadajnik lampowy: chirp, dryf, sag |
-| 4 | odbiór z pasma, TS-520 | audio | obce stacje, ARW lampowy |
+| 3 | **klucz sztorcowy, TS-520** | audio | VFO tranzystorowe, lampy tylko w stopniu końcowym nadajnika |
+| 4 | odbiór z pasma, TS-520 | audio | obce stacje, odbiornik tranzystorowy |
 | 5 | manipulator dwudźwigniowy, IC-7300MK2 | audio | nadawanie własne |
 | 6 | keyer, IC-7300MK2 | audio | timing idealny (odniesienie) |
 | 7 | odbiór z pasma, IC-7300MK2 | audio | obce stacje, rozstrojenia |
@@ -51,8 +51,11 @@ w zasilaczu, napięcie siada, a to przestraja generator LC — stąd ton
 750 Hz na początku kreski i 730 Hz na jej końcu. Fizyka się zgadza, ale
 **liczby nie są znikąd zmierzone**.
 
-TS-520 to konstrukcja lampowa z generatorem VFO i dokładnie takim
-zasilaczem. Jest jedynym dostępnym źródłem, na którym te cztery liczby
+Poprawka 03.11 (operator): TS-520 to hybryda — odbiornik i VFO tranzystorowe,
+lampy (dwie) tylko w stopniu końcowym nadajnika. Siadanie wysokiego napięcia
+lampy nie przestraja więc VFO wprost; chirp, jeśli jest, przyszedłby ze
+spadku zasilania VFO przy kluczowaniu (hipoteza). Pierwotnie zapisane: „TS-520
+to konstrukcja lampowa z generatorem VFO i dokładnie takim zasilaczem”. Jest jedynym dostępnym źródłem, na którym te cztery liczby
 da się zweryfikować, bo IC-746 i IC-7300 są syntezowane i tego zjawiska
 praktycznie nie mają.
 

@@ -38,7 +38,7 @@ SPRAWDZONE: list[tuple[str, str, str, str]] = [
     # (producent, model, jak podłączone — do instrukcji, skąd wiadomo — dla nas)
     ("Icom", "IC-7300MK2", "kabel USB: dźwięk i ton CW przez CI-V", "radio operatora, nagrania w probki/"),
     ("Icom", "IC-746", "dźwięk do karty dźwiękowej", "nagrania w probki/"),
-    ("Kenwood", "TS-520", "dźwięk do karty dźwiękowej (radio lampowe, bez CAT)", "nagrania w probki/"),
+    ("Kenwood", "TS-520", "dźwięk do karty dźwiękowej (bez CAT)", "nagrania w probki/"),
     ("CRT", "SS 6900", "dźwięk z głośnika (kabel albo mikrofon), bez CAT", "SQ2PVB, QSO 01.11.2026"),
     ("SDR / WebSDR", "KiwiSDR", "nagrania z odbiornika w sieci", "beacony NCDXF, rejestrator zawodów"),
 ]

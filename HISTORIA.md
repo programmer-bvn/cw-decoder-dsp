@@ -2370,8 +2370,19 @@ prawdziwym radiu (antena, 14,0147 MHz, AMP2): CI-V 133–144, program S8–S9
 (−77…−72 dBm), ekran S9+10 — zgodnie z ~12 dB od AMP2. (Wcześniej radio
 wyłączone odpowiadało „NG” na każde polecenie — program pokazuje wtedy brak S.)
 
+Poprawka tego samego wieczoru (operator, po instalacji 0.9.5 z mikrofonem):
+S tylko na pasku tekstu, i tylko z radiem — bez radia funkcji w ogóle nie widać.
+„Nie robi się takich rzeczy… zrób go na szaro, że jest nieaktywny… muszą wtedy
+marzyć o kablu”. Teraz rysowany S-metr obok suwaka blokady, widoczny zawsze:
+skala 1-9 na 55 % szerokości, +20/+40/+60 na reszcie, zielony do S9, czerwony
+powyżej, wartość z dBm na pasku. Bez CI-V szary z podpisem „podłącz radio kablem
+USB (CI-V)”, w pierwszych 10 s „łączę z radiem”, po błędzie portu „radio nie
+odpowiada”. Sprawdzone z kodu: okno z mikrofonem (szary) i z udawanym S-metrem
+(S6, S9+13 — zielony i czerwony we właściwych miejscach). Z prawdziwym radiem
+w oknie — jeszcze nie.
+
 **Gdzie mieszka.** `tools/radio/smetr.py`, `tools/radio/kalibracja_smetra_ic7300mk2.csv`,
-`tools/na_zywo.py` (`okno`: `smetr_start`/`smetr_stop`).
+`tools/na_zywo.py` (`okno`: `smetr_start`/`smetr_stop`, `rysuj_smetr`).
 
 ### Transceiver w raporcie: producent i model z listy (03.11)
 
@@ -3052,3 +3063,84 @@ koperty, `out/koperta_dpu_20261006_0004.txt` kontra `..._20261008_2220.txt`):
 `RANO.txt` pisze „ton 650–850 Hz", bo bierze skrajne komórki ≥ 50%.
 To myli: w środku zakresu tempa (15–22 WPM) model nadal czyta wyłącznie
 750 Hz. Zależność od `tune.py` się nie zmniejszyła.
+
+### Sugerowany raport RST pod S-metrem (04.11)
+
+**Wersja:** 0.9.5 (po wydaniu instalatora z 03.11 — jeszcze nie w exe)
+
+**Skąd.** Operator 03.11: po S z kalibracji zostaje R i T. Skala RST (W2BSR,
+QST 1934) jest tylko słowna; liczbowo zdefiniowany jest wyłącznie S (IARU R1).
+Przełożenie R i T ustalone z operatorem: R — „procent dopasowania do idealnego
+sygnału, uśredniony w długim czasie (20-30 znaków)”; T — z definicji wyłącznie
+tętnienie zasilania, więc z modulacji amplitudy 50/100 Hz w elementach, progi
+operatora: 5 % T9, 10 % T8, 15 % T7, ~20 % słyszalne tętnienie, 0-100 % brak
+filtra; T1-T2 dla zasilania bez prostowania (nadajnik nie nadaje przez pół okresu).
+
+**Pomiar.** Najpierw w odczycie całości (scratchpad `rst/ton_t.py`, `rst/rt.py`,
+17 nagrań z probki/ i sesja ze śpiewem operatora 03.11): chirpu w nagraniach
+z pasma brak (< 2 Hz); wahania częstotliwości 100 Hz u wielu różnych stacji ponad
+tłem — raczej linia 110 kV u operatora niż nadajniki (hipoteza); śpiew: wahania
+częstotliwości 35 Hz w kresce (CW 0,15-6 Hz). Średnia obwiedni „od naciśnięcia
+klucza” miała odróżnić siadający zasilacz od QSB, ale amplituda opada w kresce
+o 10-20 % u prawie każdej stacji — najpewniej ARW odbiornika (hipoteza, do
+sprawdzenia nagraniem z AGC OFF), więc wolne zmiany są z T usunięte (odjęta
+prosta z obwiedni elementu). Test syntetyczny `dsp/raport.py` (40 kresek):
+tętnienie 3/8/12/20/35/50/80/100 % zmierzone jako 2,9/8,1/12,1/19,9/34,9/49,9/79,5/99,5 %
+— po dwóch poprawkach: okno Hanna (bez niego 100 Hz przeciekało do częstotliwości
+tła: 6 % „tła” przy 100 % tętnienia) i korekta |H|² filtra 130 Hz (bez niej 100 Hz
+zaniżone o ~11 %). Zasilanie bez prostowania: 148 % → T1. Tło (ta sama miara na
+65/80/120 Hz) odejmowane; przy SNR 12 dB w 250 Hz tło 10 %, 10 % tętnienia
+zmierzone jako 8,9 %; powyżej 15 % tła T = „?”.
+
+Na żywo (dekoder kawałkami, nagrania z probki/): pierwsza wersja liczyła też
+znaki z szumu w przerwach (E, T) — LA4CIR z dobrym odczytem kończył R1. Teraz do
+raportu tylko znaki 8 dB ponad podłogą. Pewność na żywo: manipulator i
+kluczownik 0,985, SN0FMT 0,96, OK1FPS 0,93-0,95, LA4CIR w czasie 0,965 (czysty
+tekst) → 0,918 (z błędami) → 0,76-0,87 (sieczka), Nagrywanie (8) i śpiew 0,82.
+Stąd progi: R5 ≥ 0,95, R4 ≥ 0,90, R3 ≥ 0,85, R2 ≥ 0,80. T na tych nagraniach:
+T9 (manipulator, kluczownik, SN0FMT), T8 (OK1FPS, 7,8 % przy tle 10,7 %), „?” dla
+słabych (tło 19-30 %). Ani jednego nagrania z prawdziwie złym tonem — T poza T9/T8
+sprawdzone tylko syntetycznie.
+
+**Co zrobione.** `dsp/raport.py` (`Raport`, `pomiar_elementu`, progi), w
+`OdczytNaZywo._do_raportu` każdy zatwierdzony znak: pewność wzdłuż ścieżki
+Viterbiego (bez blokady szumów — zerowałaby p w przerwach) i elementy z surowego
+dźwięku przy tonie naszej. Okno: pod S-metrem „raport RST” — trzy cyfry, składnik
+bez danych szarą kreską, obok pewność i tętnienie; w raporcie zgłoszenia
+`stan_okna.raport_rst`. Pasek „ton nad szumem” 320 → 250 px, suwak 260 → 200 px,
+żeby całość mieściła się w oknie 1000 px. Sprawdzone: okno z nagraniem SN0FMT
+i udawanym S-metrem — „3 8 9, pewność 89 %, tętnienie 3 % (tło 3 %)”.
+
+**Gdzie mieszka.** `dsp/raport.py`, `tools/na_zywo.py` (`_do_raportu`, `rysuj_raport`).
+
+
+### Okno „nie odpowiada” po nocy: cały tekst w jednej linii (05.11)
+
+**Wersja:** 0.9.5 (po instalatorze z 03.11 — jeszcze nie w exe)
+
+**Objaw.** Noc 03/04.11: 0.9.5 z mikrofonem (bez radia) chodziło 7,6 h. Rano
+wentylatory na pełnych obrotach, okno nie dawało się zamknąć krzyżykiem, potem
+Windows: „Program DekoderCW.exe nie odpowiada”. Nagranie sesji ~480 MB (8 kHz,
+16 bit, 7,6 h — zgodnie z wyliczeniem; „skakanie” rozmiaru to tylko odświeżanie
+Eksploratora). W dzienniku po starcie sesji 23:49 nic — program zamknięty siłą,
+bez „sesja zapisana”.
+
+**Przyczyna.** Okno tekstu było jedną logiczną linią z zawijaniem słów; Tk przy
+każdej zmianie przelicza zawijanie całej linii. Pomiar 05.11 (Tk, Consolas 18,
+krok jak w oknie): 1000 znaków — 9 ms na krok, 5000 — 83 ms, 20 000 — 450 ms.
+Szum z mikrofonu czytany jako E/T daje tysiące znaków na godzinę; kilka kroków
+na sekundę — po godzinach okno nie nadąża, kroki czekają w kolejce, każdy
+rysowany osobno. Pierwsza poprawka (koniec linii co 300 znaków zamrożonego
+tekstu) nie działała: Tk przy `delete("otwarte", "end")`, gdy znacznik stoi na
+początku ostatniej linii, kasuje też poprzedni koniec linii — wstawiony „\n”
+znikał w następnym kroku (odtworzone w osobnym teście: 2959 znaków, 1 linia).
+
+**Co pomogło.** Koniec linii co `LINIA_ZNAKOW` = 300 znaków zamrożonego tekstu,
+kasowanie otwartej końcówki do `"end-1c"`, a wszystkie kroki zebrane w kolejce
+rysowane raz (`pokaz`). Test w oknie (sesja ze śpiewem 03.11, 26 min, tempo 3×,
+pomiar czasu operacji Tk co 30 s): wstawianie tekstu przed poprawką 0,03 → 5,7 s
+na 30 s i rosło, po poprawce 0,03-0,06 s na 30 s bez wzrostu; linie po ~300
+znaków. Wcześniejszy test tempem maks.: okno odpowiadało w 0-52 ms przez 9 min,
+zamknięcie 0,13 s. Pełnej nocy po poprawce nie sprawdzano.
+
+**Gdzie mieszka.** `tools/na_zywo.py` (`okno`: `pokaz`, `odswiez`, `LINIA_ZNAKOW`).

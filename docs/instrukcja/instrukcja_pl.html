@@ -116,10 +116,16 @@ Kolejne — 2-3 sekundy.</div>
 <h2 class="strona">4. Okno programu</h2>
 <img class="zrzut" src="okno_pl.png" alt="Okno programu">
 <table>
-  <tr><td>Górny pasek</td><td>Poziom dźwięku, ton stacji, tempo (WPM); z CI-V także siła sygnału
-      z S-metra radia, np. „S7 (−85 dBm)” — do raportu RST. Przyciski: <b>Wyczyść</b> (tylko ekran), <b>Otwórz nagranie…</b>,
+  <tr><td>Górny pasek</td><td>Poziom dźwięku, ton stacji, tempo (WPM). Przyciski: <b>Wyczyść</b> (tylko ekran), <b>Otwórz nagranie…</b>,
       <b>Zgłoś problem z dekodowaniem…</b></td></tr>
   <tr><td>„ton nad szumem”</td><td>Zielony pasek: jak mocno stacja wystaje ponad szum.</td></tr>
+  <tr><td>„S-metr”</td><td>Siła sygnału z S-metra radia, np. „S7 (−85 dBm)” — do raportu RST. Działa, gdy radio
+      jest podłączone kablem USB z odczytem CI-V (Icom); bez tego pasek jest szary i podpowiada, czego brakuje.</td></tr>
+  <tr><td>„raport RST”</td><td>Sugerowany raport, liczony z ostatnich ok. 25 znaków stacji (zmienia się razem
+      z warunkami). <b>R</b> — z pewności dekodera: im bardziej sygnał odbiega od idealnego, tym niżej.
+      <b>S</b> — z S-metra (bez CI-V kreska). <b>T</b> — z tętnienia zasilania nadajnika (modulacja 50/100 Hz):
+      do 5 % T9, 10 % T8, 15 % T7, 25 % T6, 40 % T5, 60 % T4, więcej T3; przerwy w nadawaniu (zasilanie bez
+      prostowania) T1-T2. „?” — szum za duży, żeby tętnienie zmierzyć. To podpowiedź, raport daje operator.</td></tr>
   <tr><td>Suwak „blokada szumów”</td><td>Gdy w przerwach pojawiają się same E, I, T (szum czytany jako
       kropki) — przesuń w prawo (przy silnej stacji 15-20). Przy słabej stacji trzymaj nisko (0 = wyłączona).</td></tr>
   <tr><td>Górny wodospad</td><td>Dźwięk z radia — kreski i kropki to nadawanie.</td></tr>
@@ -166,7 +172,7 @@ jest dodatkiem i na razie obsługuje tylko Icoma. Lista rośnie z każdym zgłos
 <table>
   <tr><td>Icom IC-7300MK2</td><td>kabel USB: dźwięk i ton CW przez CI-V</td></tr>
   <tr><td>Icom IC-746</td><td>dźwięk do karty dźwiękowej</td></tr>
-  <tr><td>Kenwood TS-520</td><td>dźwięk do karty dźwiękowej (radio lampowe, bez CAT)</td></tr>
+  <tr><td>Kenwood TS-520</td><td>dźwięk do karty dźwiękowej (bez CAT)</td></tr>
   <tr><td>CRT SS 6900</td><td>dźwięk z głośnika (kabel albo mikrofon), bez CAT</td></tr>
   <tr><td>KiwiSDR</td><td>nagrania z odbiornika w sieci</td></tr>
 </table>

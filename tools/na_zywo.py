@@ -38,7 +38,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp import blokada as B, config as C, frontend, viterbi as V, zbocza as Z  # noqa: E402
+from dsp import blokada as B, config as C, frontend, raport as RP, viterbi as V, zbocza as Z  # noqa: E402
 from dsp.grzebien import _ODWROTNY, NIEZNANY  # noqa: E402
 
 KROK_S = 0.25
@@ -168,6 +168,7 @@ class OdczytNaZywo:
         self.zegar = None                  # symulacja w tempie rzeczywistym: chwila = zegar()
         self.poziom_db = -180.0            # wejście w ostatnim kroku [dBFS]
         self.ost_y, self.ost_y0 = np.zeros(0, np.float32), 0   # ostatni sygnał do sieci, od próbki
+        self.raport = RP.Raport()          # sugerowany R i T, z zatwierdzanych znaków
 
     @property
     def wstepny(self) -> str:
@@ -362,6 +363,17 @@ class OdczytNaZywo:
             if naj is not None:
                 u, odc, _ = naj
                 self.u = u
+                # R: pewność sieci wzdłuż ścieżki (ton: p, przerwa: 1 − p) — bez
+                # blokady szumów, która zeruje p w przerwach i zawyżałaby pewność
+                ps = self.hist[-n_v:]
+                ton_sc = np.zeros(ps.size, bool)
+                elementy = []
+                for nazwa, a, b in odc:
+                    if nazwa in ("K1", "K3"):
+                        ton_sc[a:b] = True
+                        elementy.append(((v0 + a) * V.DT, (v0 + b) * V.DT))
+                zgodnosc = np.where(ton_sc, ps, 1.0 - ps)
+                nad_pod = self.hist_poz[-n_v:] - pod[-n_v:]
                 granica = koniec_buf if koniec else koniec_buf - self.opozn
                 self.wstepne = []
                 for z, a0, b0 in znaki_z_odcinkow(odc, v0 * V.DT):
@@ -376,6 +388,8 @@ class OdczytNaZywo:
                         self.zatwierdzone.append((z, a0, b0, 0.0))
                         self.ost = a0
                         nowe += z
+                        if z != " ":
+                            self._do_raportu(a0, b0, v0, zgodnosc, ton_sc, nad_pod, elementy, f_n)
                     else:
                         self.wstepne.append((z, a0, b0))
                 # litera bez przerwy międzyliterowej (>= 2 u) za sobą może być
@@ -400,6 +414,28 @@ class OdczytNaZywo:
 
     def tekst(self) -> str:
         return " ".join("".join(z[0] for z in self.zatwierdzone).split())
+
+    def _do_raportu(self, a0: float, b0: float, v0: int, zgodnosc: np.ndarray, ton_sc: np.ndarray,
+                    nad_pod: np.ndarray, elementy: list[tuple[float, float]], f_n: float) -> None:
+        """Zatwierdzony znak [a0, b0] s -> pewność do R, jego elementy z surowego dźwięku do T.
+        Tylko znaki stacji: 04.11 szum w przerwach czytany jako E/T wchodził do okna
+        R i LA4CIR (odczyt dobry) kończył z R1 — teraz elementy znaku muszą wystawać
+        RP.NAD_SZUMEM_DB ponad podłogę (ta sama miara co wskaźnik „ton nad szumem”)."""
+        i, k = int(round(a0 / V.DT)) - v0, int(round(b0 / V.DT)) - v0
+        if not (0 <= i < k <= zgodnosc.size) or not ton_sc[i:k].any():
+            return
+        if float(np.median(nad_pod[i:k][ton_sc[i:k]])) < RP.NAD_SZUMEM_DB:
+            return
+        self.raport.znak(float(np.mean(zgodnosc[i:k])))
+        if not np.isfinite(f_n):
+            return
+        marg = int(0.02 * self.sr)
+        for ea, eb in elementy:
+            if ea < a0 - 0.5 * V.DT or eb > b0 + 0.5 * V.DT:
+                continue
+            s, e = int(ea * self.sr) - self.raw0 - marg, int(eb * self.sr) - self.raw0 + marg
+            if s >= 0 and e <= self.raw.size:
+                self.raport.element(RP.pomiar_elementu(self.raw[s:e], self.sr, f_n, marg))
 
 
 def rozgrzej(model) -> None:
@@ -801,7 +837,8 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                     c = wod.srodki(d.n, d.raw0)
                     q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
                            d.wstepny, d.stan, d.nad_szumem_db, d.u,
-                           wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG)))
+                           wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG),
+                           d.raport.wynik()))
                     braki = 0                     # tylko po kroku: kawałki bez kroku nie liczą się
             except (MemoryError, BrokenProcessPool) as e:
                 # SQ2MMX 26.10 (laptop 7,7 GB): „Unable to allocate 2.00 MiB” —
@@ -832,7 +869,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                       f"{np.mean(d.czasy):.3f} s, maks. {np.max(d.czasy):.2f} s; odczyt: {d.tekst()[:300]}",
                       flush=True)
             q.put(("krok", [z[:3] for z in d.zatwierdzone[len(d.zatwierdzone) - len(nowe):]] if nowe else [],
-                   "", d.stan, 0.0, d.u, None, None))
+                   "", d.stan, 0.0, d.u, None, None, d.raport.wynik()))
         q.put(("koniec",))
 
 
@@ -900,17 +937,92 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     pas = tk.Frame(root, bg=TLO)
     pas.pack(fill="x", padx=10, pady=2)
     tk.Label(pas, text=T("ton_nad_szumem"), fg=SZARY, bg=TLO, font=("Segoe UI", 9)).pack(side="left")
-    W_M, ZAKRES = 320, 40.0
+    W_M, ZAKRES = 250, 40.0                   # 04.11: węższy — obok S-metr i raport (okno 1000 px)
     miernik = tk.Canvas(pas, width=W_M, height=16, bg="#22262b", highlightthickness=0)
     miernik.pack(side="left", padx=6)
     slupek = miernik.create_rectangle(0, 0, 0, 16, fill="#3fa34d", width=0)
     kreska = miernik.create_line(0, 0, 0, 16, fill="#e05050", width=2)
-    suwak = tk.Scale(pas, from_=0, to=30, resolution=1, orient="horizontal", length=260,
+    suwak = tk.Scale(pas, from_=0, to=30, resolution=1, orient="horizontal", length=200,
                      label=T("blokada"), bg=TLO, fg=SZARY,
                      troughcolor="#22262b", highlightthickness=0, font=("Segoe UI", 9),
                      command=lambda v: setattr(prog, "value", float(v)))
     suwak.set(prog.value)
-    suwak.pack(side="left", padx=12)
+    suwak.pack(side="left", padx=8)
+    # S-metr widoczny zawsze (operator 03.11): bez radia na CI-V szary, z podpisem,
+    # czego brakuje — żeby było widać, że funkcja jest i co daje kabel USB.
+    # Skala jak w radiu: S1-S9 na lewych 55 %, S9+60 dB na reszcie.
+    W_S, H_S = 250, 32
+    kol_s = tk.Frame(pas, bg=TLO)
+    kol_s.pack(side="left", padx=6)
+    rz_s = tk.Frame(kol_s, bg=TLO)
+    rz_s.pack(anchor="w")
+    tk.Label(rz_s, text=T("smetr"), fg=SZARY, bg=TLO, font=("Segoe UI", 9), width=8, anchor="w").pack(side="left")
+    smiernik = tk.Canvas(rz_s, width=W_S, height=H_S, bg=TLO, highlightthickness=0)
+    smiernik.pack(side="left")
+    # Sugerowany raport pod S-metrem (operator 04.11): R z pewności dekodera, S z
+    # S-metra, T z tętnienia (dsp/raport.py). Składnik bez danych — szara kreska.
+    rz_r = tk.Frame(kol_s, bg=TLO)
+    rz_r.pack(anchor="w")
+    tk.Label(rz_r, text=T("raport"), fg=SZARY, bg=TLO, font=("Segoe UI", 9), width=8, anchor="w").pack(side="left")
+    cyfry = {}
+    for c in "RST":
+        cyfry[c] = tk.Label(rz_r, text="–", fg="#4a5058", bg=TLO, font=("Consolas", 16, "bold"), width=1)
+        cyfry[c].pack(side="left")
+    raport_opis = tk.Label(rz_r, text="", fg=SZARY, bg=TLO, font=("Segoe UI", 8), anchor="w")
+    raport_opis.pack(side="left", padx=(8, 0))
+
+    def rysuj_raport(rst: dict | None, sm: dict | None) -> None:
+        rst = rst or {}
+        s = None
+        if sm:
+            m = re.search(r"S(\d)", sm["s"])
+            s = max(1, int(m.group(1))) if m else None
+        for c, v in (("R", rst.get("r")), ("S", s), ("T", rst.get("t"))):
+            cyfry[c].config(text="–" if v is None else str(v), fg=JASNY if v not in (None, "?") else "#4a5058")
+        czesci = []
+        if rst.get("pewnosc") is not None:
+            czesci.append(T("raport_r", p=f"{100 * rst['pewnosc']:.0f}"))
+        if rst.get("tetnienie_proc") is not None:
+            czesci.append(T("raport_t", t=f"{rst['tetnienie_proc']:.0f}", s=f"{rst['tlo_proc']:.0f}"))
+        raport_opis.config(text=", ".join(czesci) if czesci else T("raport_czeka"))
+    POL_S9 = 0.55 * W_S
+
+    def x_s(p_dbm: float, s9: float) -> float:
+        if p_dbm <= s9:
+            return max(0.0, (p_dbm - (s9 - 54)) / 54 * POL_S9)
+        return min(W_S, POL_S9 + (p_dbm - s9) / 60 * (W_S - POL_S9))
+
+    skala_s = []
+    for s in (1, 3, 5, 7, 9):
+        skala_s.append(smiernik.create_text(x_s(-73 - (9 - s) * 6, -73), 6, text=str(s), font=("Segoe UI", 7)))
+    for d in (20, 40, 60):
+        skala_s.append(smiernik.create_text(min(W_S - 8, x_s(-73 + d, -73)), 6, text=f"+{d}", font=("Segoe UI", 7)))
+    smiernik.create_rectangle(0, 14, W_S, H_S, fill="#22262b", width=0)
+    s_zielony = smiernik.create_rectangle(0, 14, 0, H_S, fill="#3fa34d", width=0)
+    s_czerwony = smiernik.create_rectangle(POL_S9, 14, POL_S9, H_S, fill="#c84a3a", width=0)
+    s_napis = smiernik.create_text(W_S / 2, 23, text="", font=("Segoe UI", 8))
+
+    def rysuj_smetr(sm: dict | None, opis: str) -> None:
+        if sm is None:
+            for t in skala_s:
+                smiernik.itemconfig(t, fill="#4a5058")
+            smiernik.itemconfig(s_zielony, state="hidden")
+            smiernik.itemconfig(s_czerwony, state="hidden")
+            smiernik.coords(s_napis, W_S / 2, 23)
+            smiernik.itemconfig(s_napis, text=opis, fill="#6a7078", anchor="center")
+            return
+        s9 = -93.0 if sm.get("mhz") and sm["mhz"] > 30 else -73.0
+        x = x_s(sm["dbm"], s9)
+        for t in skala_s:
+            smiernik.itemconfig(t, fill=SZARY)
+        smiernik.itemconfig(s_zielony, state="normal")
+        smiernik.itemconfig(s_czerwony, state="normal" if x > POL_S9 else "hidden")
+        smiernik.coords(s_zielony, 0, 14, min(x, POL_S9), H_S)
+        smiernik.coords(s_czerwony, POL_S9, 14, max(x, POL_S9), H_S)
+        smiernik.coords(s_napis, W_S - 4, 23)
+        smiernik.itemconfig(s_napis, text=sm["s"], fill=JASNY, anchor="e")
+
+    rysuj_smetr(None, T("smetr_brak"))
     obrazy = []
     # Płynny wodospad (operator 24.10): kolumny przychodzą skokami, raz na krok
     # dekodera (0,25 s i więcej, po ~12 naraz) — do kolejki, a animacja co
@@ -1017,7 +1129,53 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
         for w, zn in slowa:
             tekst.insert("end", w + " ", "zielone" if zn else ())
 
+    # Noc 03/04.11 (0.9.5, mikrofon, 7,6 h): rano komputer przeciążony, okno „nie
+    # odpowiada”. Cały tekst był jedną linią z zawijaniem — Tk przelicza zawijanie
+    # całej linii przy każdej zmianie: 1000 znaków 9 ms na krok, 5000 — 83 ms,
+    # 20 000 — 450 ms (pomiar 05.11), a szum z mikrofonu czytany jako E/T daje
+    # tysiące znaków na godzinę. Okno nie nadążało, kroki czekały w kolejce i były
+    # rysowane po jednym. Teraz koniec linii co LINIA_ZNAKOW zamrożonego tekstu
+    # (100 000 znaków: 3-7 ms na krok) i wszystkie zaległe kroki rysowane raz.
+    LINIA_ZNAKOW = 300
+
+    def pokaz(wst: str, st: str, nad: float, u: float, rst: dict | None) -> None:
+        zn = zat["znaki"]
+        na_dole = tekst.yview()[1] >= 0.999 and not tekst.tag_ranges("sel")
+        # do "end-1c", nie "end": Tk przy kasowaniu od początku ostatniej linii do
+        # "end" zabiera też poprzedni koniec linii — wstawiony niżej "\n" znikał
+        tekst.delete("otwarte", "end-1c")
+        if len(zn) - zat["od"] > OTWARTE:          # zamrożenie starszej części
+            k = len(zn) - OTWARTE // 2
+            while k < len(zn) and zn[k][0] != " ":
+                k += 1
+            rysuj(zn[zat["od"]:k], zat["u"])
+            if int(tekst.index("end-1c").split(".")[1]) > LINIA_ZNAKOW:
+                tekst.insert("end", "\n")
+            tekst.mark_set("otwarte", "end-1c")
+            zat["od"] = k
+        rysuj(zn[zat["od"]:], zat["u"])
+        pusto = tekst.get("end-2c", "end-1c") in ("", " ", "\n")
+        tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
+        if na_dole:
+            tekst.see("end")
+        sm = smetr["m"].stan if smetr["m"] is not None else None
+        stan.config(text=st)
+        rysuj_raport(rst, sm)
+        if smetr["m"] is None:
+            rysuj_smetr(None, T("smetr_brak"))
+        else:
+            rysuj_smetr(sm, T("smetr_cisza") if smetr["m"].blad else T("smetr_czeka"))
+        sesja["stan"] = {"stan_dekodera": st, "ton_nad_szumem_db": round(float(nad), 1),
+                         "jednostka_s": round(float(u), 4) if np.isfinite(u) else None,
+                         **({"s_metr": sm} if sm else {}), **({"raport_rst": rst} if rst else {})}
+        x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
+        miernik.coords(slupek, 0, 0, x, 16)
+        miernik.itemconfig(slupek, fill="#3fa34d" if prog.value <= 0 or nad >= prog.value else "#5a6068")
+        k = prog.value / ZAKRES * W_M
+        miernik.coords(kreska, k, 0, k, 16)
+
     def odswiez() -> None:
+        ost = None
         try:
             while True:
                 m = q.get_nowait()
@@ -1034,40 +1192,18 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
                     stan.config(text=T("blad_okno"), fg="#e05050")
                     tekst.insert("end", "\n" + m[1], "wst")
                 else:
-                    _, nowe, wst, st, nad, u, w_wej, w_syg = m
+                    _, nowe, wst, st, nad, u, w_wej, w_syg, rst = m
                     if w_wej is not None:
                         kolejka_wod[0].extend(w_wej)
                         kolejka_wod[1].extend(w_syg)
-                    zn = zat["znaki"]
-                    zn += nowe
+                    zat["znaki"] += nowe
                     if np.isfinite(u):
                         zat["u"] = u
-                    na_dole = tekst.yview()[1] >= 0.999 and not tekst.tag_ranges("sel")
-                    tekst.delete("otwarte", "end")
-                    if len(zn) - zat["od"] > OTWARTE:          # zamrożenie starszej części
-                        k = len(zn) - OTWARTE // 2
-                        while k < len(zn) and zn[k][0] != " ":
-                            k += 1
-                        rysuj(zn[zat["od"]:k], zat["u"])
-                        tekst.mark_set("otwarte", "end-1c")
-                        zat["od"] = k
-                    rysuj(zn[zat["od"]:], zat["u"])
-                    pusto = tekst.get("end-2c", "end-1c") in ("", " ", "\n")
-                    tekst.insert("end", wst.lstrip() if pusto else wst, "wst")
-                    if na_dole:
-                        tekst.see("end")
-                    sm = smetr["m"].stan if smetr["m"] is not None else None
-                    stan.config(text=st + (f" | {sm['s']}" if sm else ""))
-                    sesja["stan"] = {"stan_dekodera": st, "ton_nad_szumem_db": round(float(nad), 1),
-                                     "jednostka_s": round(float(u), 4) if np.isfinite(u) else None,
-                                     **({"s_metr": sm} if sm else {})}
-                    x = max(0.0, min(1.0, nad / ZAKRES)) * W_M
-                    miernik.coords(slupek, 0, 0, x, 16)
-                    miernik.itemconfig(slupek, fill="#3fa34d" if prog.value <= 0 or nad >= prog.value else "#5a6068")
-                    k = prog.value / ZAKRES * W_M
-                    miernik.coords(kreska, k, 0, k, 16)
+                    ost = (wst, st, nad, u, rst)
         except queue.Empty:
             pass
+        if ost is not None:
+            pokaz(*ost)
         root.after(50, odswiez)
 
     dek: dict = {"w": None, "stop": None}
