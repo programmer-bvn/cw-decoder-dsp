@@ -5,6 +5,8 @@
     python -m tools.zbocza_trening ocen     runs/zbocza_1/best.keras
     python -m tools.zbocza_trening generuj  out/zbocza/z5/czesc_0.npz 100000 --seed 1 --wersja 5
     (zboczy_5, 20.10: drugie wejście — obraz drobny 7,8 Hz wokół 750 Hz, tłok)
+    python -m tools.zbocza_trening generuj  out/zbocza/z6/czesc_0.npz 100000 --seed 1 --wersja 6
+    (zboczy_6, 06.11: jak 5 + negatywy — mowa, śpiew, gwizd, muzyka, pokój; dsp/negatywy)
 
 Pierwszy etap dwuetapowego dekodera (dsp/zbocza.py): widmo co 5 ms ->
 P(klucz wciśnięty) co 5 ms. Etykieta to PRAWDZIWY przebieg klucza z generatora
@@ -41,6 +43,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dsp import config as C, sn, tempo, zbocza as Z
 
 POLA = ("snr_db", "wpm", "tone", "waga", "ramp_ms", "tlo_db")
+# zboczy_6: rodzaj negatywu w klipie (indeks w tej liście; "" = bez negatywu)
+NAZWY_NEG = ("", "bank", "mowa", "spiew", "gwizd", "muzyka")
 PRZEDZIALY_SN = ((-3, 3), (3, 10), (10, 20), (20, 31), (31, 46))
 
 
@@ -51,12 +55,15 @@ def _kawalek(arg):
     i, n, seed, wersja = arg
     rng = np.random.default_rng([seed, i])
     X = np.zeros((n, Z.RAMKI_ZBOCZA, C.N_MELS), np.uint8)
-    X2 = np.zeros((n, Z.RAMKI_ZBOCZA, Z.DROBNY_PRAZKI), np.uint8) if wersja == 5 else None
+    X2 = np.zeros((n, Z.RAMKI_ZBOCZA, Z.DROBNY_PRAZKI), np.uint8) if wersja >= 5 else None
     K = np.zeros((n, Z.RAMKI_ZBOCZA), np.uint8)
+    NEG = np.zeros(n, np.uint8)
     M = {k: np.full(n, np.nan, np.float32) for k in POLA}
     for j in range(n):
-        if wersja == 5:
-            img, drob, kl, m = Z.klip_zboczy_5(rng)
+        if wersja >= 5:
+            img, drob, kl, m = Z.klip_zboczy_5(
+                rng, zakresy=Z.ZAKRESY_ZBOCZY_6 if wersja == 6 else None)
+            NEG[j] = NAZWY_NEG.index(m.get("negatyw", ""))
             X2[j] = np.round(np.clip(drob, 0, 1) * 255)
         else:
             img, kl, m = Z.klip_zboczy(rng)
@@ -65,7 +72,7 @@ def _kawalek(arg):
         for k in POLA:
             if m.get(k) is not None and m.get("text", "") != "":
                 M[k][j] = m[k]
-    return X, X2, K, M
+    return X, X2, K, M, NEG
 
 
 def generuj(wyj: Path, n: int, seed: int, procesy: int | None, wersja: int = 3) -> None:
@@ -73,11 +80,11 @@ def generuj(wyj: Path, n: int, seed: int, procesy: int | None, wersja: int = 3) 
     procesy = procesy or max(1, (os.cpu_count() or 4) - 1)
     per = 250
     kaw = [(i, min(per, n - i * per), seed, wersja) for i in range((n + per - 1) // per)]
-    Xs, X2s, Ks, Ms = [], [], [], []
+    Xs, X2s, Ks, Ms, NEGs = [], [], [], [], []
     t0 = time.time()
     with cf.ProcessPoolExecutor(max_workers=procesy) as ex:
-        for X, X2, K, M in ex.map(_kawalek, kaw):
-            Xs.append(X); X2s.append(X2); Ks.append(K); Ms.append(M)
+        for X, X2, K, M, NEG in ex.map(_kawalek, kaw):
+            Xs.append(X); X2s.append(X2); Ks.append(K); Ms.append(M); NEGs.append(NEG)
             g = sum(len(x) for x in Xs)
             el = time.time() - t0
             print(f"\r  {g}/{n}  {el:.0f}s  pozostało ~{el / g * (n - g):.0f}s ",
@@ -86,7 +93,9 @@ def generuj(wyj: Path, n: int, seed: int, procesy: int | None, wersja: int = 3) 
     wyj.parent.mkdir(parents=True, exist_ok=True)
     tymczasowy = wyj.with_name(wyj.name + ".part")
     with open(tymczasowy, "wb") as f:
-        dodatkowe = {"X2": np.concatenate(X2s)} if wersja == 5 else {}
+        dodatkowe = {"X2": np.concatenate(X2s)} if wersja >= 5 else {}
+        if wersja == 6:
+            dodatkowe["NEG"] = np.concatenate(NEGs)
         np.savez(f, X=np.concatenate(Xs), K=np.concatenate(Ks), **dodatkowe,
                  **{k: np.concatenate([m[k] for m in Ms]) for k in POLA},
                  meta=f"n={n};seed={seed};hop={Z.HOP_ZBOCZA};nfft={Z.N_FFT_ZBOCZA};wersja={wersja}")
@@ -274,7 +283,7 @@ def main() -> None:
     g.add_argument("wyj", type=Path); g.add_argument("n", type=int)
     g.add_argument("--seed", type=int, default=1)
     g.add_argument("--procesy", type=int, default=None)
-    g.add_argument("--wersja", type=int, default=3, choices=[3, 5])
+    g.add_argument("--wersja", type=int, default=3, choices=[3, 5, 6])
     t = sub.add_parser("trenuj")
     t.add_argument("zbior", type=Path); t.add_argument("katalog", type=Path)
     t.add_argument("--epoki", type=int, default=20)

@@ -71,6 +71,20 @@ ZAKRESY_ZBOCZY_5 = {**{k: v for k, v in ZAKRESY_ZBOCZY.items() if k != "QRM"},
                     "TLOK": {"prob": 0.3, "liczba": (2, 4), "df_hz": (15.0, 200.0),
                              "poziom_db": (-8.0, 4.0)}}
 
+# ZBOCZY_6 (06.11, gałąź elementy): negatywy (dsp/negatywy). Pomiar 05.11 na
+# zboczy_5: 21,3 fałszywych znaków/min z mikrofonu w pokoju, 35,7 na
+# radiofonii AM, 29,9 na SSB. Pustych klipów więcej (0,15 -> 0,35), bo
+# negatyw bez stacji to jedyne miejsce, gdzie sieć uczy się „tu nic nie ma”
+# na czymś innym niż szum. Poziom negatywu jak stacja od słabej do bardzo
+# silnej; retune w połowie przypadków (odczyt przestraja najsilniejszy ton
+# na 750 Hz — także na mowie i muzyce).
+ZAKRESY_ZBOCZY_6 = {**ZAKRESY_ZBOCZY_5,
+                    "PUSTE": 0.35,
+                    "NEGATYW": {"prob_pusty": 0.75, "prob_cw": 0.2,
+                                "poziom_db": (-5.0, 35.0), "retune": 0.5,
+                                "wagi": {"bank": 0.4, "mowa": 0.2, "spiew": 0.15,
+                                         "gwizd": 0.1, "muzyka": 0.15}}}
+
 _FB = None
 
 
@@ -141,17 +155,20 @@ def klip_zboczy(rng: np.random.Generator, realism: bool = True):
     return obraz, kl, meta
 
 
-def klip_zboczy_5(rng: np.random.Generator, realism: bool = True):
-    """Jak klip_zboczy, z zakresami ZAKRESY_ZBOCZY_5 i obrazem drobnym:
-    (obraz [512, N_MELS], drobny [512, DROBNY_PRAZKI], klucz [512], opis)."""
-    if rng.random() > C.SILENCE_FRACTION:
+def klip_zboczy_5(rng: np.random.Generator, realism: bool = True,
+                  zakresy: dict | None = None):
+    """Jak klip_zboczy, z zakresami ZAKRESY_ZBOCZY_5 (albo podanymi — zboczy_6)
+    i obrazem drobnym: (obraz [512, N_MELS], drobny [512, DROBNY_PRAZKI],
+    klucz [512], opis)."""
+    zakresy = ZAKRESY_ZBOCZY_5 if zakresy is None else zakresy
+    if rng.random() > zakresy.get("PUSTE", C.SILENCE_FRACTION):
         tekst = "".join(rng.choice(list(C.ALPHABET[1:]), ZNAKOW_W_KLIPIE))
     else:
         tekst = ""
     wpm = float(rng.uniform(*C.TEMPO_ZAKRES))
     audio, meta = radio.receive(tekst, rng, n_samples=C.CLIP_SAMPLES,
                                 wpm=wpm, realism=realism, tempo_staly=True,
-                                z_kluczem=bool(tekst), zakresy=ZAKRESY_ZBOCZY_5)
+                                z_kluczem=bool(tekst), zakresy=zakresy)
     obraz, s0 = wytnij(obraz_zboczy(audio))
     drobny, _ = wytnij(obraz_drobny(audio))
     k = meta.get("klucz")

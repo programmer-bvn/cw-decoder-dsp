@@ -11,6 +11,7 @@ sieć, która „w razie wątpliwości milczy”, zgubi słabe stacje.
 Bank negatywów: W:\\nagrania_cw\\negatywy\\<rodzaj>\\*.wav (poza gitem — nagrania
 z pokoju operatora i z cudzych odbiorników; tylko do pomiaru i treningu).
 Rodzaj = podkatalog (pokoj_mikrofon, kiwi_ssb, …), wynik osobno dla każdego.
+Pliki z TRENING.txt (część treningowa negatywów, dsp/negatywy) są pomijane.
 
     python -m tools.halucynacje tnij SESJA.wav pokoj_mikrofon [--min 1]   # kawałki do banku
     python -m tools.halucynacje ocen [--co 5] [--model PLIK] [--out PLIK]  # znaki/min
@@ -58,8 +59,12 @@ def ocen(model_p: Path | None, co: int = 1, bank: Path = BANK) -> dict:
     from tools.odczyt import MODEL_ZBOCZY, odczytaj
     model = keras.models.load_model(model_p or MODEL_ZBOCZY)
     wynik: dict = {"model": str(model_p or MODEL_ZBOCZY), "rodzaje": {}}
+    # TRENING.txt (06.11, dsp/negatywy): minuty, które zboczy_6 widziała w treningu
+    # — pomiar na nich mierzyłby pamięć sieci, nie halucynacje.
+    tr = bank / "TRENING.txt"
+    trening = set(tr.read_text(encoding="utf-8").split()) if tr.exists() else set()
     for kat in sorted(p for p in bank.iterdir() if p.is_dir()):
-        pliki = sorted(kat.glob("*.wav"))[::co]
+        pliki = [p for p in sorted(kat.glob("*.wav")) if f"{kat.name}/{p.name}" not in trening][::co]
         if not pliki:
             continue
         znaki, minuty, przyklady = [], 0.0, []

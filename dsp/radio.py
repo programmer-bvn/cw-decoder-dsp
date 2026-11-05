@@ -603,13 +603,25 @@ def receive(text: str, rng: np.random.Generator,
                           ton=float(np.clip(meta["tone"] + df, C.FMIN + 30.0, C.FMAX - 30.0)))
         meta["tlok"] = n_st
 
+    # zakresy["NEGATYW"] (06.11, zboczy_6, dsp/negatywy): mowa, śpiew, gwizd,
+    # muzyka, nagrania z pokoju — z etykietą „klucz puszczony”. Bez klucza
+    # w zakresach żadnego losowania: stare generatory bit w bit.
+    neg = zak_.get("NEGATYW")
+    meta["negatyw"] = ""
+    if realism and neg and rng.random() < (neg["prob_cw"] if text else neg["prob_pusty"]):
+        from . import negatywy
+        x_neg, m_neg = negatywy.negatyw(n_samples, rng, szum,
+                                        meta["tone"] if text else C.TONE_CENTER, neg)
+        zak = zak + x_neg
+        meta.update(m_neg)
+
     n_crashes = 0
     if realism and rng.random() < C.QRN_PROB:
         n_crashes = int(rng.integers(1, C.QRN_MAX + 1))
         zak = add_qrn(zak, rng, n_crashes=n_crashes,
                       amp=float(rng.uniform(*C.QRN_AMP)) * skala, sr=sr)
     meta["qrn"] = n_crashes
-    if prawdziwy and (qrm_amp > 0.0 or n_crashes > 0 or meta["tlok"] > 0):
+    if prawdziwy and (qrm_amp > 0.0 or n_crashes > 0 or meta["tlok"] > 0 or meta["negatyw"]):
         zak = filtr_jak_szum(zak, szum, sr=sr)
     audio = (audio + zak).astype(np.float32)
 
