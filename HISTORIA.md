@@ -3141,6 +3141,9 @@ rysowane raz (`pokaz`). Test w oknie (sesja ze śpiewem 03.11, 26 min, tempo 3×
 pomiar czasu operacji Tk co 30 s): wstawianie tekstu przed poprawką 0,03 → 5,7 s
 na 30 s i rosło, po poprawce 0,03-0,06 s na 30 s bez wzrostu; linie po ~300
 znaków. Wcześniejszy test tempem maks.: okno odpowiadało w 0-52 ms przez 9 min,
-zamknięcie 0,13 s. Pełnej nocy po poprawce nie sprawdzano.
+zamknięcie 0,13 s. Noc 04/05.11 z instalatora 0.9.5 (f12ce9b), mikrofon: 27 959 s
+(7,8 h), 88 830 kroków; operator rano — okno normalne, zamknięte krzyżykiem bez
+kłopotu; w dzienniku „sesja zapisana”, nagranie 447 MB zamknięte poprawnie. Krok
+dekodera w każdej godzinie 0,114-0,124 s średnio, bez wzrostu.
 
 **Gdzie mieszka.** `tools/na_zywo.py` (`okno`: `pokaz`, `odswiez`, `LINIA_ZNAKOW`).
