@@ -1,0 +1,17 @@
+{
+ "model": "runs\\zbocza_5\\best.keras",
+ "rodzaje": {
+  "pokoj_mikrofon": {
+   "kawalkow": 94,
+   "minut": 94.0,
+   "znakow_na_min": 21.3,
+   "mediana": 18.0,
+   "p90": 44.0,
+   "najgorsze": [
+    "91/min sesja_20261105_000631_0270.wav: E* IE ESI E N* I TM E A ESI AI~T 1EU A * TTNMEII E R * E *TW",
+    "64/min sesja_20261105_000631_0360.wav: E M DZ S E I EH *MIAI TIEDU T I A I E TKEOA T T MTN U ASTS *",
+    "59/min sesja_20261105_000631_0365.wav: EN E TB S E EEV XE E EEE R TGTU UK 5IS I ETT TUETT * E AT EE"
+   ]
+  }
+ }
+}

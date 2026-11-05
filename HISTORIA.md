@@ -3147,3 +3147,24 @@ kłopotu; w dzienniku „sesja zapisana”, nagranie 447 MB zamknięte poprawnie
 dekodera w każdej godzinie 0,114-0,124 s średnio, bez wzrostu.
 
 **Gdzie mieszka.** `tools/na_zywo.py` (`okno`: `pokaz`, `odswiez`, `LINIA_ZNAKOW`).
+
+### Halucynacje: pomiar wyjściowy na nagraniach bez telegrafii (05.11)
+
+**Objaw.** Operator 05.11: na mikrofonie (mowa, hałas w pokoju) dekoder bez
+przerwy wypisuje E, T, EE…; „sieć sama z siebie nie powinna rozpoznawać zboczy
+tam, gdzie ich nie ma” — bramka za siecią to „cerowanie”, naprawić trzeba sieć.
+
+**Przyczyna (z kodu).** Generator jako „brak tonu” zna tylko szum: puste radio
+(`SILENCE_FRACTION` 0,15), tło z probki/szum, QRN. Mowy, muzyki, SSB, gwizdów,
+pływającego tonu sieć w treningu nie widziała.
+
+**Pomiar.** `tools/halucynacje.py`: bank negatywów `W:\nagrania_cw\negatywy\<rodzaj>\`
+(poza gitem), na razie `pokoj_mikrofon` — noc 04/05.11, 466 kawałków po 1 min.
+Model `runs/zbocza_5`, odczyt całości, co 5. kawałek (94 min):
+**21,3 znaku/min** (mediana 18, p90 44, najgorsza minuta 91). Na żywo w tej samej
+nocy (dziennik sesji, 0.9.5): 17 344 znaki w 466 min = **37,2 znaku/min**.
+Druga strona porównania (stacje CW): test słów `tools/tester_viterbi`,
+`out/viterbi_zb5_tf.txt` — 1491/1628. Nowa sieć ma obniżyć pierwszą liczbę bez
+spadku drugiej.
+
+**Gdzie mieszka.** `tools/halucynacje.py`, `out/halucynacje_bazowa.txt/.json`.
