@@ -1,0 +1,41 @@
+{
+ "model": "runs/zbocza_5/best.keras",
+ "rodzaje": {
+  "kiwi_am": {
+   "kawalkow": 57,
+   "minut": 57.0,
+   "znakow_na_min": 35.7,
+   "mediana": 34.0,
+   "p90": 53.4,
+   "najgorsze": [
+    "64/min kiwi_am_20261105_220029_702_128_01.wav: E T E I Z E E E E E E E T E E I E E E E E E E E E E E E E E ",
+    "60/min kiwi_am_20261105_221038_693_kiwisdr_08.wav: EE E E E T T T T OI O E ATE T N E E E E T T TT T EE E TT EE ",
+    "57/min kiwi_am_20261105_223056_5975_joaofonseca_01.wav: I EE AO TMDW TEW EI N MTTDGE E TE TN AT T T4G E E E G E E EE"
+   ]
+  },
+  "kiwi_ssb": {
+   "kawalkow": 10,
+   "minut": 10.0,
+   "znakow_na_min": 29.9,
+   "mediana": 32.0,
+   "p90": 45.6,
+   "najgorsze": [
+    "60/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav: EE II T S E E E T E T T TI E II EEE TT E O AI E I E EE T T A",
+    "44/min kiwi_ssb_20261105_221032_3710_irelandnorth_05.wav: T T EM E TTE EM E T E ET T I E T EEE E E T E T E UT Z T E A ",
+    "40/min kiwi_ssb_20261105_221032_3710_irelandnorth_03.wav: E S E E E TEK E E E E E E E A T I T I T E AMT I E T T E S EE"
+   ]
+  },
+  "pokoj_mikrofon": {
+   "kawalkow": 166,
+   "minut": 166.0,
+   "znakow_na_min": 29.6,
+   "mediana": 27.0,
+   "p90": 54.5,
+   "najgorsze": [
+    "92/min sesja_20261105_000631_0442.wav: J E SERI E EK Q*TT A W N8 T *T 2I E EM IEH 5S HN D I5EIE H E",
+    "84/min sesja_20261105_000631_0432.wav: E E E E E E TA * A I G LE GW I E EEE G E T TE E H H T E EAE ",
+    "79/min sesja_20261105_000631_0408.wav: I E E I **MEEW** ** NG G E E E E I E EE TJ WTS T AT E H SY M"
+   ]
+  }
+ }
+}

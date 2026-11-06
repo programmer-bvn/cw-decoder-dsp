@@ -3168,3 +3168,44 @@ Druga strona porównania (stacje CW): test słów `tools/tester_viterbi`,
 spadku drugiej.
 
 **Gdzie mieszka.** `tools/halucynacje.py`, `out/halucynacje_bazowa.txt/.json`.
+
+### Negatywy w treningu sieci zboczy: zboczy_6 (06.11, gałąź `elementy`)
+
+**Objaw.** Pomiar z 05.11: zboczy_5 czyta mowę, muzykę i hałas jako E, T, I.
+
+**Co zrobione.** `dsp/negatywy.py`: dźwięk bez telegrafii z etykietą „klucz
+puszczony” — bank prawdziwy (minuty 0000-0299 nocy 04/05.11 z mikrofonu,
+`W:\nagrania_cw\negatywy\trening_8k.npy`, spis w `TRENING.txt`), mowa
+syntetyczna (impulsy krtaniowe przez formanty, sylaby 3-6/s), śpiew (nuty
+z vibrato 4-7 Hz, 12-60 Hz), gwizdy (przestrajany ton), muzyka (akordy,
+perkusja). Śpiew i gwizd zawsze z ruchem częstotliwości — stała nuta
+włączana i wyłączana to w radiu kluczowany ton. Połowa negatywów przesunięta
+tak, jak robi odczyt (najsilniejszy ton na 750 Hz). `ZAKRESY_ZBOCZY_6`: puste
+klipy 35% (było 15%), negatyw w 75% pustych i 20% klipów ze stacją, poziom
+-5...+35 dB względem szumu w paśmie 400-1200 Hz. Generator zboczy_5 bit w bit
+bez zmian (40 klipów, md5). Klip 34 ms (zboczy_5: 20 ms).
+Przebieg całości: `tools/bieg_zboczy.sh` (zbiór, trening, ocena, test słów,
+halucynacje), log `out/zbocza/bieg_6.log`. 160 tys. klipów, 20 epok.
+
+**Pomiar.** Halucynacje na minutach, których sieć nie widziała (pokój: 166 min
+z 0300-0465; KiwiSDR w całości — rodzaj, którego w treningu nie było):
+
+| negatywy | zboczy_5 | **zboczy_6** |
+|---|---|---|
+| pokój, mikrofon | 29,6 /min | **12,0** |
+| radiofonia AM | 35,7 | **10,0** |
+| SSB | 29,9 | **2,0** |
+
+Test słów na zestawie z 06.11 (w `probki/reka` przybyło nagrań — 1659 słów):
+zboczy_5 **1520**, zboczy_6 **1500** (-20: pasmo -2, kluczownik -3, syntetyk
++ szum -2, kluczownik + szum -8, QRM -5). `out/viterbi_zb5_teraz.txt`,
+`out/viterbi_zb6.txt`.
+
+**Wniosek.** Negatywy działają — także na rodzaju, którego w treningu nie było
+(AM, SSB z KiwiSDR). Koszt 1,3% słów. Hipoteza: klipów ze stacją było mniej
+(65% ze 160 tys. = 104 tys.; zboczy_5: 136 tys.). Sprawdzenie: bieg 6b,
+te same dwie części + trzecia (240 tys., 156 tys. ze stacją).
+
+**Gdzie mieszka.** `dsp/negatywy.py`, `ZAKRESY_ZBOCZY_6` w `dsp/zbocza.py`,
+`radio.receive` (`zakresy["NEGATYW"]`), `tools/zbocza_trening.py --wersja 6`,
+`tools/halucynacje.py` (pomija `TRENING.txt`), wagi `runs/zbocza_6` (poza gitem).
