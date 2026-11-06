@@ -105,7 +105,7 @@ def model_elementow():
     return keras.Model(wej, L.Dense(3)(x), name="elementy_a")
 
 
-def trenuj(katalog_zbioru: Path, katalog: Path, epoki: int, batch: int) -> None:
+def trenuj(katalog_zbioru: Path, katalog: Path, epoki: int, batch: int, miekkie: bool = False) -> None:
     import tensorflow as tf
     from tensorflow import keras
     tr = np.load(katalog_zbioru / "trening.npz")
@@ -114,22 +114,39 @@ def trenuj(katalog_zbioru: Path, katalog: Path, epoki: int, batch: int) -> None:
     print(f"trening {len(yt)} wycinków {np.bincount(yt, minlength=3)}, "
           f"walidacja {len(yv)} {np.bincount(yv, minlength=3)}")
 
-    def ds(X, y, mieszaj):
+    ult, ulv = tr["ul"], va["ul"]
+
+    def ds(X, y, ul, mieszaj):
         # CPU: inaczej from_tensor_slices ładuje zbiór do pamięci KARTY (CLAUDE.md).
         with tf.device("/cpu:0"):
-            d = tf.data.Dataset.from_tensor_slices((X, y))
+            d = tf.data.Dataset.from_tensor_slices((X, y, ul))
         if mieszaj:
             d = d.shuffle(200_000, reshuffle_each_iteration=True)
-        f = lambda x, t: (tf.cast(x, tf.float32)[..., None] / 255.0 * 1.25 - 0.25, t)
+
+        def f(x, t, u):
+            x = tf.cast(x, tf.float32)[..., None] / 255.0 * 1.25 - 0.25
+            if not miekkie:
+                return x, t
+            # Stopień wypełnienia (06.11, warunek kotwicy): ton = ułamek
+            # wciśnięcia przegródki, reszta do śmiecia (gdy etykieta śmieć)
+            # albo dziury. Przy etykiecie „ton" informacji o śmieciu nie ma
+            # — reszta do dziury.
+            w = tf.cast(u, tf.float32) / 255.0
+            sm = tf.cast(tf.equal(t, E.SMIEC), tf.float32)
+            return x, tf.stack([(1 - w) * (1 - sm), w, (1 - w) * sm], axis=-1)
         return d.batch(batch).map(f, num_parallel_calls=4).prefetch(4)
 
     m = model_elementow()
-    m.compile(optimizer=keras.optimizers.Adam(1e-3),
-              loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=["accuracy"])
+    if miekkie:
+        strata = keras.losses.CategoricalCrossentropy(from_logits=True)
+        miary = [keras.metrics.CategoricalAccuracy(name="accuracy")]
+    else:
+        strata = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        miary = ["accuracy"]
+    m.compile(optimizer=keras.optimizers.Adam(1e-3), loss=strata, metrics=miary)
     print(f"etap A: {m.count_params()} parametrów")
     katalog.mkdir(parents=True, exist_ok=True)
-    m.fit(ds(Xt, yt, True), validation_data=ds(Xv, yv, False), epochs=epoki, verbose=2,
+    m.fit(ds(Xt, yt, ult, True), validation_data=ds(Xv, yv, ulv, False), epochs=epoki, verbose=2,
           callbacks=[
               keras.callbacks.ModelCheckpoint(str(katalog / "best.keras"), save_best_only=True),
               keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=2),
@@ -164,6 +181,10 @@ def ocen(sciezka: Path, zbior: Path) -> None:
         print(f"  {n:>9} " + "".join(f"{v:9d}" for v in r) + f"   trafnie {r[i] / max(r.sum(), 1):.1%}")
     ton = q == E.TON
     print(f"  ton: precyzja {np.mean(y[ton] == E.TON):.1%}, czułość {np.mean(ton[y == E.TON]):.1%}")
+    for lo, hi in ((0.0, 0.05), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.95, 1.01)):
+        w = (ul >= lo) & (ul < hi) & (y != E.SMIEC)
+        if w.any():
+            print(f"  wypełnienie {lo:.2f}..{min(hi, 1):.2f}: średnie P(ton) {p[w, E.TON].mean():.2f}  ({w.sum()})")
     pewne = (ul < 0.2) | (ul > 0.8)
     print(f"  bez przegródek na granicy elementu (ułamek <0,2 albo >0,8): "
           f"trafnie {np.mean(q[pewne] == y[pewne]):.1%} ({pewne.mean():.0%} wycinków); "
@@ -248,6 +269,7 @@ def main() -> None:
     t = sp.add_parser("trenuj")
     t.add_argument("zbior", type=Path); t.add_argument("katalog", type=Path)
     t.add_argument("--epoki", type=int, default=20); t.add_argument("--batch", type=int, default=512)
+    t.add_argument("--miekkie", action="store_true", help="cel: stopień wypełnienia przegródki")
     o = sp.add_parser("ocen")
     o.add_argument("model", type=Path); o.add_argument("zbior", type=Path)
     n = sp.add_parser("negatywy")
@@ -258,7 +280,7 @@ def main() -> None:
     if a.cmd == "generuj":
         generuj(a.wyj, a.n, a.seed, a.procesy)
     elif a.cmd == "trenuj":
-        trenuj(a.zbior, a.katalog, a.epoki, a.batch)
+        trenuj(a.zbior, a.katalog, a.epoki, a.batch, a.miekkie)
     elif a.cmd == "ocen":
         ocen(a.model, a.zbior)
     else:
