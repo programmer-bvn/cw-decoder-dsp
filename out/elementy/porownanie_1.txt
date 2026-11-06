@@ -1,0 +1,23 @@
+zbocza: runs/zbocza_6/best.keras   elementy: runs/elementy_1/best.keras
+SYNTETYK — 150 klipów na przedział S/N, siatka: u +/-3%, ton +/-15 Hz
+  elementy (odcinki P>0,5) zgubione / fałszywe / zły typ (kropka-kreska) [% prawdziwych];
+  zbocze: |mediana| błędu [ms], w nawiasie klipy z wagą keyera < 0,1 u; ramki 5 ms trafnie
+  S/N  -3..3   dB  zbocza    : elementy zgubione  21.5%, fałszywe  18.7%, zły typ  6.7%;  zbocze  3.1 ms (waga<0,1:  3.4);  ramki 86.7%
+  S/N  -3..3   dB  przegródki: elementy zgubione  33.0%, fałszywe  21.4%, zły typ 10.1%;  zbocze  4.4 ms (waga<0,1:  5.0);  ramki 81.3%
+  S/N  -3..3   dB  kotwica   : elementy zgubione  41.8%, fałszywe  12.9%, zły typ  7.5%;  zbocze  8.2 ms (waga<0,1:  8.3);  ramki 77.6%
+  S/N   3..10  dB  zbocza    : elementy zgubione   5.0%, fałszywe   5.6%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  przegródki: elementy zgubione   8.5%, fałszywe  10.2%, zły typ  4.8%;  zbocze  2.5 ms (waga<0,1:  2.5);  ramki 92.0%
+  S/N   3..10  dB  kotwica   : elementy zgubione  16.8%, fałszywe   6.3%, zły typ  4.1%;  zbocze  8.1 ms (waga<0,1:  7.9);  ramki 85.6%
+  S/N  10..20  dB  zbocza    : elementy zgubione   6.8%, fałszywe   6.3%, zły typ  1.2%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  przegródki: elementy zgubione   7.9%, fałszywe  12.4%, zły typ  5.4%;  zbocze  2.5 ms (waga<0,1:  2.6);  ramki 92.0%
+  S/N  10..20  dB  kotwica   : elementy zgubione  19.4%, fałszywe   7.6%, zły typ  4.4%;  zbocze  9.0 ms (waga<0,1:  9.9);  ramki 84.8%
+  S/N  20..31  dB  zbocza    : elementy zgubione   2.4%, fałszywe   4.2%, zły typ  1.2%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.0%
+  S/N  20..31  dB  przegródki: elementy zgubione   2.3%, fałszywe   7.7%, zły typ  2.3%;  zbocze  2.6 ms (waga<0,1:  2.7);  ramki 95.1%
+  S/N  20..31  dB  kotwica   : elementy zgubione  12.0%, fałszywe   4.7%, zły typ  3.5%;  zbocze  8.9 ms (waga<0,1:  9.2);  ramki 87.3%
+  S/N  31..46  dB  zbocza    : elementy zgubione   0.8%, fałszywe   1.7%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.9%
+  S/N  31..46  dB  przegródki: elementy zgubione   0.8%, fałszywe   4.6%, zły typ  1.1%;  zbocze  2.6 ms (waga<0,1:  2.6);  ramki 96.1%
+  S/N  31..46  dB  kotwica   : elementy zgubione  14.6%, fałszywe   3.8%, zły typ  2.9%;  zbocze  9.7 ms (waga<0,1:  9.7);  ramki 87.6%
+NEGATYWY — elementy (zbocza narastające) na minutę; siatka 25 WPM, ton 750 Hz
+  kiwi_am         ( 57.0 min): zbocza   27.1 /min (mediana   5.0),  przegródki   21.8 /min (mediana  14.0)
+  kiwi_ssb        ( 10.0 min): zbocza    5.8 /min (mediana   0.0),  przegródki   11.7 /min (mediana  12.0)
+  pokoj_mikrofon  (166.0 min): zbocza    0.0 /min (mediana   0.0),  przegródki   18.0 /min (mediana   2.0)

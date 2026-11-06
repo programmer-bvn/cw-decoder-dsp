@@ -3287,3 +3287,57 @@ potem te same dwie liczby co zawsze (test słów 1659, halucynacje znaków/min).
 
 **Gdzie mieszka.** `dsp/elementy.py`, `tools/elementy_trening.py`,
 `tools/bieg_elementow.sh`, wagi `runs/elementy_1` (poza gitem).
+
+### Zbocza czy wnętrza: pierwsze porównanie w tych samych jednostkach (06.11, gałąź `elementy`)
+
+**Po co.** Operator: obie drogi odtwarzają prostokąt keyera — da się je porównać
+przed etapem B. `tools/porownaj_przegrodki.py`: sieć zboczy_6 (P co 5 ms)
+kontra etap A elementy_1, te same klipy (zakresy zboczy_6, 150 na przedział
+S/N), miara: elementy (odcinki P > 0,5) zgubione / fałszywe / zły typ, błąd
+zbocza; negatywy spoza treningu: elementy na minutę.
+
+**Trzy rzeczy wyszły po drodze.**
+1. Generator nadaje z WAGĄ keyera do +/-0,5 u (kropka 1,33 u, przerwa 0,67 u)
+   i przerwami między literami 3,0-7,8 u — nie wielokrotność u. Zbocza nie
+   leżą na zębach sztywnej siatki.
+2. Kotwica z największego prawdopodobieństwa NIE DZIAŁA na elementy_1: sieć
+   ocenia przegródkę wypełnioną w 76% jako „ton 1,00", tak samo jak pełną
+   (etykieta „klucz > połowy") — prawdopodobieństwa nie spadają przy
+   przesunięciu grzebienia (rysunek operatora: 70 / 60 / 40%), faza wybrana
+   o ćwierć u obok (czysty klip 40 dB: wypełnienie wybranych przegródek
+   0,76 / 0,17). Kotwica wymaga uczenia STOPNIA WYPEŁNIENIA (ułamek jest
+   w zbiorze, `ul`).
+3. Bez fazy: P(ton) przegródki = stan klucza w jej środku, wycinek co u/4 —
+   przebieg w środkach przegródek to odtworzony prostokąt (rozdzielczość u/4).
+4. Negatywy trzeba przepuścić przez `odczyt.przygotuj` (najsilniejszy ton na
+   750 Hz, wycięcie obcych, wzmocnienie). Na surowym dźwięku sieć zboczy
+   dała w pokoju 0 elementów/min — a przez odczyt 12 znaków/min.
+
+**Pomiar** (`out/elementy/porownanie_1.log`, `porownanie_1_negatywy.txt`).
+Syntetyk, elementy zgubione / fałszywe, błąd zbocza:
+
+| S/N | zbocza_6 | przegródki (środki) |
+|---|---|---|
+| -3..3 dB | 21,5% / 18,7%, 3,1 ms | 33,0% / 21,4%, 4,4 ms |
+| 3..10 | 5,0% / 5,6%, 1,2 ms | 8,5% / 10,2%, 2,5 ms |
+| 10..20 | 6,8% / 6,3%, 0,5 ms | 7,9% / 12,4%, 2,5 ms |
+| 20..31 | 2,4% / 4,2%, 0,3 ms | 2,3% / 7,7%, 2,6 ms |
+| 31..46 | 0,8% / 1,7%, 0,2 ms | 0,8% / 4,6%, 2,6 ms |
+
+Negatywy spoza treningu (jak w odczycie), elementy na minutę, PRZED grupowaniem:
+
+| | zbocza_6 | przegródki |
+|---|---|---|
+| pokój | 63,2 (mediana 50) | **28,6** (21,5) |
+| radiofonia AM | 61,6 (41) | **44,7** (33) |
+| SSB | **15,1** (9) | 18,5 (16) |
+
+**Wniosek.** Na syntetyku sieć zboczy lepsza: dokładniejsze zbocza (5 ms
+kontra u/4) i mniej fałszywych elementów — przegródki dokładają krótkie
+„mrugnięcia" na krawędziach. Na negatywach z pokoju przegródki dają o połowę
+mniej elementów, na AM o ćwierć, na SSB o ćwierć więcej. To jeszcze nie
+znaki — grupowanie (B) i gramatyka odsieją część po obu stronach. Nic tu nie
+rozstrzyga; najmocniejsza przesłanka za wnętrzami to pokój (te same rodzaje
+dźwięku co w treningu negatywów obu sieci, minuty spoza treningu).
+
+**Dalej.** Etap A uczony stopnia wypełnienia (warunek kotwicy), potem B.

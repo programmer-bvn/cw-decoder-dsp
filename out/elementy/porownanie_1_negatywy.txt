@@ -1,0 +1,5 @@
+zbocza: runs/zbocza_6/best.keras   elementy: runs/elementy_1/best.keras
+NEGATYWY — elementy (zbocza narastające) na minutę; dźwięk jak w odczycie (przygotuj), siatka 25 WPM
+  kiwi_am         ( 57.0 min): zbocza   61.6 /min (mediana  41.0),  przegródki   44.7 /min (mediana  33.0)
+  kiwi_ssb        ( 10.0 min): zbocza   15.1 /min (mediana   9.0),  przegródki   18.5 /min (mediana  16.0)
+  pokoj_mikrofon  (166.0 min): zbocza   63.2 /min (mediana  50.0),  przegródki   28.6 /min (mediana  21.5)
