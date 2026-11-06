@@ -614,6 +614,8 @@ def receive(text: str, rng: np.random.Generator,
                                         meta["tone"] if text else C.TONE_CENTER, neg)
         zak = zak + x_neg
         meta.update(m_neg)
+        if neg.get("zwroc_audio"):          # etykiety „śmieć” etapu A (dsp/elementy)
+            meta["negatyw_audio"] = x_neg
 
     n_crashes = 0
     if realism and rng.random() < C.QRN_PROB:
