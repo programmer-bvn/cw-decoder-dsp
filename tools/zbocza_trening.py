@@ -106,13 +106,33 @@ def generuj(wyj: Path, n: int, seed: int, procesy: int | None, wersja: int = 3) 
 
 
 def wczytaj(sciezka: Path):
+    """Części zbioru do jednej tablicy. Bieg 6b (06.11, 3 x 80 tys. klipów,
+    8 GB): concatenate trzymało naraz części i wynik, a from_tensor_slices
+    robiło trzecią kopię — 18,6 GB, OOM w WSL (24 GB). Teraz tablice
+    rezerwowane raz i wypełniane część po części."""
     pliki = sorted(sciezka.glob("*.npz")) if sciezka.is_dir() else [sciezka]
     if not pliki:
         raise SystemExit(f"brak części zbioru zboczy w {sciezka}")
-    d = [np.load(p) for p in pliki]
-    X = np.concatenate([x["X"] for x in d]); K = np.concatenate([x["K"] for x in d])
-    X2 = np.concatenate([x["X2"] for x in d]) if "X2" in d[0].files else None
-    M = {k: np.concatenate([x[k] for x in d]) for k in POLA}
+    dl = []
+    for p in pliki:
+        with np.load(p) as z:
+            dl.append(z["K"].shape[0])
+            ma_x2 = "X2" in z.files
+    n, X = sum(dl), None
+    for i, p in enumerate(pliki):
+        a = sum(dl[:i])
+        with np.load(p) as z:
+            if X is None:
+                X = np.empty((n,) + z["X"].shape[1:], np.uint8)
+                X2 = np.empty((n,) + z["X2"].shape[1:], np.uint8) if ma_x2 else None
+                K = np.empty((n,) + z["K"].shape[1:], np.uint8)
+                M = {k: np.empty(n, np.float32) for k in POLA}
+            X[a:a + dl[i]] = z["X"]
+            K[a:a + dl[i]] = z["K"]
+            if ma_x2:
+                X2[a:a + dl[i]] = z["X2"]
+            for k in POLA:
+                M[k][a:a + dl[i]] = z[k]
     return X, X2, K, M
 
 
@@ -189,18 +209,30 @@ def trenuj(zbior: Path, katalog: Path, epoki: int, batch: int) -> None:
     print(f"zbiór {n} klipów: trening {len(tr)}, walidacja {nv}")
 
     def ds(ii, mieszaj):
-        # CPU: inaczej from_tensor_slices ładuje zbiór do pamięci KARTY
+        # Same INDEKSY w tf.data, wsad wyjmowany z numpy (bieg 6b, 06.11:
+        # from_tensor_slices kopiował cały zbiór — OOM przy 240 tys. klipów).
+        # CPU: inaczej from_tensor_slices ładuje dane do pamięci KARTY.
         with tf.device("/cpu:0"):
-            d = tf.data.Dataset.from_tensor_slices(
-                ((X[ii], X2[ii]) if X2 is not None else X[ii], K[ii]))
+            d = tf.data.Dataset.from_tensor_slices(ii.astype(np.int64))
         if mieszaj:
-            d = d.shuffle(20000, reshuffle_each_iteration=True)
+            d = d.shuffle(len(ii), reshuffle_each_iteration=True)
+
+        def wsad(j):
+            j = np.sort(j)
+            return (X[j], X2[j] if X2 is not None else X[j][:, :, :1], K[j])
+
         obraz = lambda x: tf.cast(x, tf.float32)[..., None] / 255.0
-        d = d.batch(batch).map(
-            lambda x, k: ((obraz(x[0]), obraz(x[1])) if X2 is not None else obraz(x),
-                          tf.cast(k, tf.float32) / 255.0),
-            num_parallel_calls=tf.data.AUTOTUNE)
-        return d.prefetch(tf.data.AUTOTUNE)
+
+        def na_tensory(j):
+            x, x2, k = tf.numpy_function(wsad, [j], [tf.uint8, tf.uint8, tf.uint8])
+            x.set_shape((None,) + X.shape[1:]); k.set_shape((None,) + K.shape[1:])
+            if X2 is not None:
+                x2.set_shape((None,) + X2.shape[1:])
+            wej = (obraz(x), obraz(x2)) if X2 is not None else obraz(x)
+            return wej, tf.cast(k, tf.float32) / 255.0
+
+        d = d.batch(batch).map(na_tensory, num_parallel_calls=4)
+        return d.prefetch(4)
 
     m = model_zboczy_5() if X2 is not None else model_zboczy()
     m.compile(optimizer=keras.optimizers.Adam(1e-3),
