@@ -1,0 +1,249 @@
+start Fri Nov  6 05:28:45 CET 2026  bieg 6b, wersja 6, 80000 klipów x 3, 20 epok, kod 5aa3f46
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+karty: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+część 0 jest — pomijam generowanie
+część 1 jest — pomijam generowanie
+
+=== zbiór, część 2 (05:29) ===
+  250/80000  13s  pozostało ~4001s   500/80000  13s  pozostało ~2039s   750/80000  13s  pozostało ~1355s   1000/80000  13s  pozostało ~1013s   1250/80000  13s  pozostało ~824s   1500/80000  13s  pozostało ~685s   1750/80000  13s  pozostało ~585s   2000/80000  13s  pozostało ~510s   2250/80000  13s  pozostało ~452s   2500/80000  13s  pozostało ~406s   2750/80000  13s  pozostało ~367s   3000/80000  22s  pozostało ~572s   3250/80000  23s  pozostało ~533s   3500/80000  23s  pozostało ~494s   3750/80000  23s  pozostało ~459s   4000/80000  23s  pozostało ~433s   4250/80000  23s  pozostało ~417s   4500/80000  23s  pozostało ~393s   4750/80000  23s  pozostało ~371s   5000/80000  23s  pozostało ~351s   5250/80000  23s  pozostało ~333s   5500/80000  24s  pozostało ~320s   5750/80000  31s  pozostało ~406s   6000/80000  32s  pozostało ~397s   6250/80000  33s  pozostało ~387s   6500/80000  33s  pozostało ~371s   6750/80000  33s  pozostało ~356s   7000/80000  33s  pozostało ~342s   7250/80000  33s  pozostało ~331s   7500/80000  33s  pozostało ~319s   7750/80000  34s  pozostało ~316s   8000/80000  34s  pozostało ~306s   8250/80000  34s  pozostało ~296s   8500/80000  42s  pozostało ~350s   8750/80000  42s  pozostało ~339s   9000/80000  42s  pozostało ~329s   9250/80000  43s  pozostało ~325s   9500/80000  43s  pozostało ~316s   9750/80000  44s  pozostało ~315s   10000/80000  44s  pozostało ~306s   10250/80000  44s  pozostało ~297s   10500/80000  44s  pozostało ~289s   10750/80000  44s  pozostało ~281s   11000/80000  44s  pozostało ~277s   11250/80000  52s  pozostało ~315s   11500/80000  52s  pozostało ~308s   11750/80000  52s  pozostało ~300s   12000/80000  52s  pozostało ~293s   12250/80000  53s  pozostało ~291s   12500/80000  53s  pozostało ~285s   12750/80000  53s  pozostało ~279s   13000/80000  53s  pozostało ~273s   13250/80000  53s  pozostało ~268s   13500/80000  54s  pozostało ~267s   13750/80000  54s  pozostało ~263s   14000/80000  62s  pozostało ~290s   14250/80000  62s  pozostało ~286s   14500/80000  62s  pozostało ~280s   14750/80000  62s  pozostało ~275s   15000/80000  62s  pozostało ~269s   15250/80000  62s  pozostało ~265s   15500/80000  62s  pozostało ~260s   15750/80000  63s  pozostało ~257s   16000/80000  63s  pozostało ~252s   16250/80000  64s  pozostało ~251s   16500/80000  65s  pozostało ~250s   16750/80000  71s  pozostało ~269s   17000/80000  72s  pozostało ~266s   17250/80000  72s  pozostało ~261s   17500/80000  72s  pozostało ~256s   17750/80000  72s  pozostało ~252s   18000/80000  72s  pozostało ~247s   18250/80000  73s  pozostało ~246s   18500/80000  73s  pozostało ~242s   18750/80000  73s  pozostało ~240s   19000/80000  74s  pozostało ~237s   19250/80000  75s  pozostało ~238s   19500/80000  82s  pozostało ~253s   19750/80000  82s  pozostało ~249s   20000/80000  82s  pozostało ~246s   20250/80000  82s  pozostało ~242s   20500/80000  82s  pozostało ~239s   20750/80000  82s  pozostało ~235s   21000/80000  82s  pozostało ~231s   21250/80000  83s  pozostało ~228s   21500/80000  83s  pozostało ~226s   21750/80000  84s  pozostało ~225s   22000/80000  86s  pozostało ~226s   22250/80000  90s  pozostało ~235s   22500/80000  91s  pozostało ~233s   22750/80000  92s  pozostało ~230s   23000/80000  93s  pozostało ~230s   23250/80000  93s  pozostało ~226s   23500/80000  93s  pozostało ~223s   23750/80000  93s  pozostało ~220s   24000/80000  93s  pozostało ~217s   24250/80000  93s  pozostało ~214s   24500/80000  94s  pozostało ~214s   24750/80000  96s  pozostało ~215s   25000/80000  100s  pozostało ~221s   25250/80000  101s  pozostało ~219s   25500/80000  101s  pozostało ~217s   25750/80000  102s  pozostało ~214s   26000/80000  102s  pozostało ~212s   26250/80000  102s  pozostało ~209s   26500/80000  103s  pozostało ~208s   26750/80000  103s  pozostało ~205s   27000/80000  104s  pozostało ~204s   27250/80000  104s  pozostało ~202s   27500/80000  106s  pozostało ~203s   27750/80000  110s  pozostało ~207s   28000/80000  112s  pozostało ~207s   28250/80000  112s  pozostało ~205s   28500/80000  112s  pozostało ~203s   28750/80000  112s  pozostało ~200s   29000/80000  113s  pozostało ~198s   29250/80000  113s  pozostało ~196s   29500/80000  113s  pozostało ~193s   29750/80000  114s  pozostało ~193s   30000/80000  114s  pozostało ~191s   30250/80000  116s  pozostało ~191s   30500/80000  120s  pozostało ~195s   30750/80000  121s  pozostało ~194s   31000/80000  121s  pozostało ~192s   31250/80000  123s  pozostało ~191s   31500/80000  123s  pozostało ~189s   31750/80000  123s  pozostało ~187s   32000/80000  123s  pozostało ~184s   32250/80000  123s  pozostało ~182s   32500/80000  125s  pozostało ~182s   32750/80000  125s  pozostało ~180s   33000/80000  126s  pozostało ~180s   33250/80000  131s  pozostało ~185s   33500/80000  132s  pozostało ~183s   33750/80000  132s  pozostało ~181s   34000/80000  132s  pozostało ~178s   34250/80000  133s  pozostało ~178s   34500/80000  133s  pozostało ~175s   34750/80000  133s  pozostało ~173s   35000/80000  133s  pozostało ~171s   35250/80000  134s  pozostało ~170s   35500/80000  135s  pozostało ~169s   35750/80000  137s  pozostało ~169s   36000/80000  140s  pozostało ~172s   36250/80000  141s  pozostało ~170s   36500/80000  142s  pozostało ~169s   36750/80000  142s  pozostało ~168s   37000/80000  143s  pozostało ~166s   37250/80000  143s  pozostało ~164s   37500/80000  143s  pozostało ~162s   37750/80000  143s  pozostało ~160s   38000/80000  144s  pozostało ~159s   38250/80000  145s  pozostało ~158s   38500/80000  147s  pozostało ~158s   38750/80000  150s  pozostało ~160s   39000/80000  151s  pozostało ~159s   39250/80000  153s  pozostało ~158s   39500/80000  153s  pozostało ~157s   39750/80000  153s  pozostało ~155s   40000/80000  153s  pozostało ~153s   40250/80000  154s  pozostało ~152s   40500/80000  154s  pozostało ~150s   40750/80000  154s  pozostało ~148s   41000/80000  155s  pozostało ~147s   41250/80000  157s  pozostało ~148s   41500/80000  160s  pozostało ~148s   41750/80000  161s  pozostało ~147s   42000/80000  163s  pozostało ~148s   42250/80000  163s  pozostało ~146s   42500/80000  163s  pozostało ~144s   42750/80000  163s  pozostało ~142s   43000/80000  164s  pozostało ~141s   43250/80000  164s  pozostało ~140s   43500/80000  164s  pozostało ~138s   43750/80000  165s  pozostało ~137s   44000/80000  167s  pozostało ~137s   44250/80000  170s  pozostało ~137s   44500/80000  170s  pozostało ~136s   44750/80000  173s  pozostało ~136s   45000/80000  173s  pozostało ~135s   45250/80000  173s  pozostało ~133s   45500/80000  173s  pozostało ~131s   45750/80000  173s  pozostało ~130s   46000/80000  174s  pozostało ~129s   46250/80000  175s  pozostało ~128s   46500/80000  175s  pozostało ~126s   46750/80000  177s  pozostało ~126s   47000/80000  180s  pozostało ~127s   47250/80000  180s  pozostało ~125s   47500/80000  182s  pozostało ~125s   47750/80000  183s  pozostało ~124s   48000/80000  183s  pozostało ~122s   48250/80000  183s  pozostało ~121s   48500/80000  183s  pozostało ~119s   48750/80000  184s  pozostało ~118s   49000/80000  184s  pozostało ~117s   49250/80000  185s  pozostało ~116s   49500/80000  188s  pozostało ~116s   49750/80000  191s  pozostało ~116s   50000/80000  191s  pozostało ~115s   50250/80000  192s  pozostało ~114s   50500/80000  192s  pozostało ~112s   50750/80000  193s  pozostało ~111s   51000/80000  193s  pozostało ~110s   51250/80000  193s  pozostało ~108s   51500/80000  194s  pozostało ~108s   51750/80000  194s  pozostało ~106s   52000/80000  195s  pozostało ~105s   52250/80000  198s  pozostało ~105s   52500/80000  200s  pozostało ~105s   52750/80000  201s  pozostało ~104s   53000/80000  202s  pozostało ~103s   53250/80000  202s  pozostało ~101s   53500/80000  203s  pozostało ~100s   53750/80000  203s  pozostało ~99s   54000/80000  203s  pozostało ~98s   54250/80000  204s  pozostało ~97s   54500/80000  205s  pozostało ~96s   54750/80000  205s  pozostało ~95s   55000/80000  208s  pozostało ~94s   55250/80000  210s  pozostało ~94s   55500/80000  211s  pozostało ~93s   55750/80000  212s  pozostało ~92s   56000/80000  212s  pozostało ~91s   56250/80000  213s  pozostało ~90s   56500/80000  213s  pozostało ~89s   56750/80000  214s  pozostało ~88s   57000/80000  214s  pozostało ~86s   57250/80000  214s  pozostało ~85s   57500/80000  215s  pozostało ~84s   57750/80000  218s  pozostało ~84s   58000/80000  220s  pozostało ~83s   58250/80000  221s  pozostało ~83s   58500/80000  222s  pozostało ~82s   58750/80000  222s  pozostało ~80s   59000/80000  223s  pozostało ~79s   59250/80000  223s  pozostało ~78s   59500/80000  224s  pozostało ~77s   59750/80000  225s  pozostało ~76s   60000/80000  225s  pozostało ~75s   60250/80000  225s  pozostało ~74s   60500/80000  228s  pozostało ~73s   60750/80000  230s  pozostało ~73s   61000/80000  232s  pozostało ~72s   61250/80000  232s  pozostało ~71s   61500/80000  232s  pozostało ~70s   61750/80000  233s  pozostało ~69s   62000/80000  233s  pozostało ~68s   62250/80000  234s  pozostało ~67s   62500/80000  235s  pozostało ~66s   62750/80000  235s  pozostało ~65s   63000/80000  235s  pozostało ~63s   63250/80000  238s  pozostało ~63s   63500/80000  240s  pozostało ~62s   63750/80000  241s  pozostało ~61s   64000/80000  242s  pozostało ~60s   64250/80000  242s  pozostało ~59s   64500/80000  243s  pozostało ~58s   64750/80000  243s  pozostało ~57s   65000/80000  245s  pozostało ~57s   65250/80000  245s  pozostało ~55s   65500/80000  245s  pozostało ~54s   65750/80000  245s  pozostało ~53s   66000/80000  248s  pozostało ~53s   66250/80000  250s  pozostało ~52s   66500/80000  251s  pozostało ~51s   66750/80000  251s  pozostało ~50s   67000/80000  252s  pozostało ~49s   67250/80000  253s  pozostało ~48s   67500/80000  253s  pozostało ~47s   67750/80000  254s  pozostało ~46s   68000/80000  255s  pozostało ~45s   68250/80000  256s  pozostało ~44s   68500/80000  256s  pozostało ~43s   68750/80000  258s  pozostało ~42s   69000/80000  260s  pozostało ~41s   69250/80000  261s  pozostało ~40s   69500/80000  261s  pozostało ~39s   69750/80000  262s  pozostało ~38s   70000/80000  263s  pozostało ~38s   70250/80000  264s  pozostało ~37s   70500/80000  264s  pozostało ~36s   70750/80000  265s  pozostało ~35s   71000/80000  265s  pozostało ~34s   71250/80000  265s  pozostało ~33s   71500/80000  268s  pozostało ~32s   71750/80000  270s  pozostało ~31s   72000/80000  271s  pozostało ~30s   72250/80000  272s  pozostało ~29s   72500/80000  272s  pozostało ~28s   72750/80000  272s  pozostało ~27s   73000/80000  274s  pozostało ~26s   73250/80000  274s  pozostało ~25s   73500/80000  274s  pozostało ~24s   73750/80000  275s  pozostało ~23s   74000/80000  275s  pozostało ~22s   74250/80000  278s  pozostało ~22s   74500/80000  280s  pozostało ~21s   74750/80000  281s  pozostało ~20s   75000/80000  282s  pozostało ~19s   75250/80000  282s  pozostało ~18s   75500/80000  282s  pozostało ~17s   75750/80000  283s  pozostało ~16s   76000/80000  284s  pozostało ~15s   76250/80000  285s  pozostało ~14s   76500/80000  285s  pozostało ~13s   76750/80000  285s  pozostało ~12s   77000/80000  287s  pozostało ~11s   77250/80000  290s  pozostało ~10s   77500/80000  291s  pozostało ~9s   77750/80000  291s  pozostało ~8s   78000/80000  292s  pozostało ~7s   78250/80000  292s  pozostało ~7s   78500/80000  293s  pozostało ~6s   78750/80000  294s  pozostało ~5s   79000/80000  294s  pozostało ~4s   79250/80000  294s  pozostało ~3s   79500/80000  294s  pozostało ~2s   79750/80000  295s  pozostało ~1s   80000/80000  296s  pozostało ~0s 
+zapisano out/zbocza/z6/czesc_2.npz (2541 MB, 330 s)
+
+=== trening runs/zbocza_6b (05:34) ===
+start Fri Nov  6 05:43:35 CET 2026  bieg 6b, wersja 6, 80000 klipów x 3, 20 epok, kod c9520bb
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+karty: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+część 0 jest — pomijam generowanie
+część 1 jest — pomijam generowanie
+część 2 jest — pomijam generowanie
+
+=== trening runs/zbocza_6b (05:43) ===
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/trainers/epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+zbiór 240000 klipów: trening 228000, walidacja 12000
+sieć zboczy: 1060929 parametrów
+Epoch 1/20
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        79.79MiB
+MaxInUse:                    686.87MiB
+NumAllocs:                        2795
+MaxAllocSize:                416.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                       112.41MiB
+MaxInUse:                    686.87MiB
+NumAllocs:                        3099
+MaxAllocSize:                416.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                       113.04MiB
+MaxInUse:                    686.87MiB
+NumAllocs:                        3473
+MaxAllocSize:                416.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                       113.35MiB
+MaxInUse:                    686.87MiB
+NumAllocs:                        6402
+MaxAllocSize:                416.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        66.49MiB
+MaxInUse:                      1.73GiB
+NumAllocs:                       32517
+MaxAllocSize:                  1.71GiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        67.05MiB
+MaxInUse:                      1.73GiB
+NumAllocs:                       32867
+MaxAllocSize:                  1.71GiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        78.71MiB
+MaxInUse:                      1.73GiB
+NumAllocs:                       34571
+MaxAllocSize:                  1.71GiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        92.82MiB
+MaxInUse:                      2.22GiB
+NumAllocs:                       36735
+MaxAllocSize:                  2.13GiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+3563/3563 - 1231s - 346ms/step - loss: 0.1400 - val_loss: 0.1198 - learning_rate: 0.0010
+Epoch 2/20
+3563/3563 - 1085s - 304ms/step - loss: 0.1129 - val_loss: 0.1119 - learning_rate: 0.0010
+Epoch 3/20
+3563/3563 - 1085s - 305ms/step - loss: 0.1052 - val_loss: 0.1015 - learning_rate: 0.0010
+Epoch 4/20
+3563/3563 - 1085s - 304ms/step - loss: 0.1003 - val_loss: 0.0998 - learning_rate: 0.0010
+Epoch 5/20
+3563/3563 - 1090s - 306ms/step - loss: 0.0965 - val_loss: 0.1009 - learning_rate: 0.0010
+Epoch 6/20
+3563/3563 - 1106s - 310ms/step - loss: 0.0938 - val_loss: 0.0963 - learning_rate: 0.0010
+Epoch 7/20
+3563/3563 - 1107s - 311ms/step - loss: 0.0915 - val_loss: 0.0925 - learning_rate: 0.0010
+Epoch 8/20
+3563/3563 - 1106s - 311ms/step - loss: 0.0894 - val_loss: 0.0948 - learning_rate: 0.0010
+Epoch 9/20
+3563/3563 - 1091s - 306ms/step - loss: 0.0875 - val_loss: 0.0896 - learning_rate: 0.0010
+Epoch 10/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0861 - val_loss: 0.0947 - learning_rate: 0.0010
+Epoch 11/20
+3563/3563 - 1084s - 304ms/step - loss: 0.0846 - val_loss: 0.0928 - learning_rate: 0.0010
+Epoch 12/20
+3563/3563 - 1084s - 304ms/step - loss: 0.0791 - val_loss: 0.0883 - learning_rate: 5.0000e-04
+Epoch 13/20
+3563/3563 - 1084s - 304ms/step - loss: 0.0775 - val_loss: 0.0862 - learning_rate: 5.0000e-04
+Epoch 14/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0763 - val_loss: 0.0866 - learning_rate: 5.0000e-04
+Epoch 15/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0750 - val_loss: 0.0888 - learning_rate: 5.0000e-04
+Epoch 16/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0713 - val_loss: 0.0882 - learning_rate: 2.5000e-04
+Epoch 17/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0701 - val_loss: 0.0901 - learning_rate: 2.5000e-04
+Epoch 18/20
+3563/3563 - 1083s - 304ms/step - loss: 0.0677 - val_loss: 0.0903 - learning_rate: 1.2500e-04
+
+=== syntetyk: sieć vs próg klasyczny (11:15) ===
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                        84.10MiB
+MaxInUse:                    648.32MiB
+NumAllocs:                        4460
+MaxAllocSize:                320.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+Limit:                         3.54GiB
+InUse:                       111.41MiB
+MaxInUse:                    648.32MiB
+NumAllocs:                        4518
+MaxAllocSize:                320.12MiB
+Reserved:                           0B
+PeakReserved:                       0B
+LargestFreeBlock:                   0B
+
+model runs/zbocza_6b/best.keras, 150 klipów na przedział S/N (błąd zbocza: |mediana| i 90%, przesunięcie narast./opad. ze znakiem)
+S/N  -3..  3 dB klasyczna: mediana   4.6 ms, 90%  13.3 ms; pominięte 12.2%, fałszywe  96.8%; przesunięcie  -1.1/ +0.9 ms
+S/N  -3..  3 dB sieć     : mediana   2.5 ms, 90%   8.9 ms; pominięte  6.4%, fałszywe  12.7%; przesunięcie  -0.1/ +0.5 ms
+S/N   3.. 10 dB klasyczna: mediana   4.6 ms, 90%   9.2 ms; pominięte  7.1%, fałszywe  23.6%; przesunięcie  -4.4/ +4.0 ms
+S/N   3.. 10 dB sieć     : mediana   1.0 ms, 90%   3.7 ms; pominięte  1.3%, fałszywe   4.4%; przesunięcie  -0.0/ +0.3 ms
+S/N  10.. 20 dB klasyczna: mediana   6.1 ms, 90%   9.9 ms; pominięte  7.2%, fałszywe   9.9%; przesunięcie  -6.5/ +5.7 ms
+S/N  10.. 20 dB sieć     : mediana   0.4 ms, 90%   1.4 ms; pominięte  0.1%, fałszywe   1.3%; przesunięcie  +0.0/ +0.1 ms
+S/N  20.. 31 dB klasyczna: mediana   9.3 ms, 90%  11.9 ms; pominięte 10.8%, fałszywe   9.0%; przesunięcie  -9.5/ +9.0 ms
+S/N  20.. 31 dB sieć     : mediana   0.3 ms, 90%   1.0 ms; pominięte  0.2%, fałszywe   1.1%; przesunięcie  +0.0/ +0.1 ms
+S/N  31.. 46 dB klasyczna: mediana   9.9 ms, 90%  13.2 ms; pominięte 14.8%, fałszywe  10.0%; przesunięcie -10.1/ +9.5 ms
+S/N  31.. 46 dB sieć     : mediana   0.2 ms, 90%   0.9 ms; pominięte  0.3%, fałszywe   1.6%; przesunięcie  -0.0/ +0.1 ms
+
+=== test słów (zboczy_5 na zestawie z 06.11: 1520/1659) (11:17) ===
+  RAZEM probki: tabela 53/62, viterbi 54/62
+  RAZEM probki/kluczownik: tabela 335/369, viterbi 362/369
+  RAZEM probki/reka: tabela 42/45, viterbi 43/45
+  RAZEM probki/zaszumione: tabela 337/470, viterbi 467/470
+  RAZEM probki/zaszumione_real: tabela 116/456, viterbi 440/456
+  RAZEM probki/qrm: tabela 141/257, viterbi 143/257
+RAZEM: tabela 1024/1659, viterbi 1509/1659
+
+=== halucynacje na negatywach spoza treningu (11:31) ===
+HALUCYNACJE — model runs/zbocza_5/best.keras
+  kiwi_am: 35.7 znaków/min (mediana 34.0, p90 53.4), 57 kawałków, 57.0 min
+      64/min kiwi_am_20261105_220029_702_128_01.wav: E T E I Z E E E E E E E T E E I E E E E E E E E E E E E E E 
+      60/min kiwi_am_20261105_221038_693_kiwisdr_08.wav: EE E E E T T T T OI O E ATE T N E E E E T T TT T EE E TT EE 
+      57/min kiwi_am_20261105_223056_5975_joaofonseca_01.wav: I EE AO TMDW TEW EI N MTTDGE E TE TN AT T T4G E E E G E E EE
+  kiwi_ssb: 29.9 znaków/min (mediana 32.0, p90 45.6), 10 kawałków, 10.0 min
+      60/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav: EE II T S E E E T E T T TI E II EEE TT E O AI E I E EE T T A
+      44/min kiwi_ssb_20261105_221032_3710_irelandnorth_05.wav: T T EM E TTE EM E T E ET T I E T EEE E E T E T E UT Z T E A 
+      40/min kiwi_ssb_20261105_221032_3710_irelandnorth_03.wav: E S E E E TEK E E E E E E E A T I T I T E AMT I E T T E S EE
+  pokoj_mikrofon: 29.6 znaków/min (mediana 27.0, p90 54.5), 166 kawałków, 166.0 min
+      92/min sesja_20261105_000631_0442.wav: J E SERI E EK Q*TT A W N8 T *T 2I E EM IEH 5S HN D I5EIE H E
+      84/min sesja_20261105_000631_0432.wav: E E E E E E TA * A I G LE GW I E EEE G E T TE E H H T E EAE 
+      79/min sesja_20261105_000631_0408.wav: I E E I **MEEW** ** NG G E E E E I E EE TJ WTS T AT E H SY M
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+HALUCYNACJE — model runs/zbocza_6b/best.keras
+  kiwi_am: 12.6 znaków/min (mediana 6.0, p90 37.4), 57 kawałków, 57.0 min
+      61/min kiwi_am_20261105_223052_594_176_05.wav: EM E UN H*MI O A*E* I US M*T MPI I * I S E E I ATE EE *E N *
+      49/min kiwi_am_20261105_223052_594_176_03.wav: E I E EIN E W E T A E ENI A 8 ZE E E A * A E S E E W MEU5IE 
+      49/min kiwi_am_20261105_223052_594_176_02.wav: TI HTE I* E* EEM EE EJME NE ES EE IT* .NN9 ETES TEAUTEMR IKW
+  kiwi_ssb: 2.6 znaków/min (mediana 1.5, p90 5.4), 10 kawałków, 10.0 min
+      9/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav: E E E E T EIE E
+      5/min kiwi_ssb_20261105_223104_3690_178_05.wav: I E ETT
+      5/min kiwi_ssb_20261105_221032_3710_irelandnorth_03.wav: E E T /E
+  pokoj_mikrofon: 17.7 znaków/min (mediana 16.0, p90 34.0), 166 kawałków, 166.0 min
+      53/min sesja_20261105_000631_0396.wav: E E B T TVTO KE EAM T M TTTN T T ET N TI E TWT E WEE E E JNT
+      44/min sesja_20261105_000631_0397.wav: N N E E T ET RT TE O E * W E T WN U NM T T W E M T MTK E E T
+      44/min sesja_20261105_000631_0392.wav: E N E T E E * T BO E * Y E NTET TE 1 E T EITTE A GE AATT D M
+
+KONIEC Fri Nov  6 11:43:17 CET 2026

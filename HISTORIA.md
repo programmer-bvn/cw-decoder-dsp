@@ -3206,6 +3206,30 @@ zboczy_5 **1520**, zboczy_6 **1500** (-20: pasmo -2, kluczownik -3, syntetyk
 (65% ze 160 tys. = 104 tys.; zboczy_5: 136 tys.). Sprawdzenie: bieg 6b,
 te same dwie części + trzecia (240 tys., 156 tys. ze stacją).
 
+**Bieg 6b (06.11, `out/zbocza/bieg_6b.log`).** Pierwsze podejście padło na
+OOM (python 18,6 GB z 23 GB WSL): `wczytaj` sklejał części `np.concatenate`
+(dwie kopie naraz), a `from_tensor_slices` brał trzecią. Teraz tablice
+rezerwowane raz i wypełniane część po części, do `tf.data` idą same indeksy,
+wsady z numpy (`tf.numpy_function`) — krok bez zmian (~0,33 s przy 64).
+Wynik, 240 tys. klipów, 20 epok (najlepsza epoka 12, val_loss 0,0862;
+zboczy_6: 0,0951):
+
+| | zboczy_5 | zboczy_6 | **zboczy_6b** |
+|---|---|---|---|
+| test słów (1659) | 1520 | 1500 | **1509** |
+| pokój, mikrofon | 29,6 /min | 12,0 | **17,7** |
+| radiofonia AM | 35,7 | 10,0 | **12,6** |
+| SSB | 29,9 | 2,0 | **2,6** |
+
+Słowa wobec zboczy_6: kluczownik +1, syntetyk + szum -1, kluczownik + szum +6,
+QRM +3. Więcej klipów ze stacją oddało 9 z 20 słów, ale halucynacje w pokoju
+wzrosły o połowę, choć udział negatywów w zbiorze ten sam (35% pustych).
+Hipoteza (niesprawdzona): rozrzut między biegami jest tego samego rzędu co
+różnica — jeden bieg na wariant nie rozstrzyga. Żaden wariant nie jest
+lepszy w obu liczbach naraz; zboczy_6 zostaje odniesieniem dla halucynacji,
+6b dla słów. Dalej: klasyfikator elementów (kropka/kreska/przerwa/„nie CW”),
+nie dalsze dokładanie danych do sieci zboczy.
+
 **Gdzie mieszka.** `dsp/negatywy.py`, `ZAKRESY_ZBOCZY_6` w `dsp/zbocza.py`,
 `radio.receive` (`zakresy["NEGATYW"]`), `tools/zbocza_trening.py --wersja 6`,
 `tools/halucynacje.py` (pomija `TRENING.txt`), wagi `runs/zbocza_6` (poza gitem).
