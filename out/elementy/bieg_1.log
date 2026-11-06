@@ -1,0 +1,130 @@
+start Fri Nov  6 20:35:15 CET 2026  bieg 1, 60000 klipów, 20 epok, kod f09b7a0 + zmiany
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+
+=== zbiór treningowy (20:35) ===
+  2000/60000 klipów  11s  pozostało ~311s
+  4000/60000 klipów  18s  pozostało ~246s
+  6000/60000 klipów  24s  pozostało ~217s
+  8000/60000 klipów  31s  pozostało ~202s
+  10000/60000 klipów  38s  pozostało ~189s
+  12000/60000 klipów  44s  pozostało ~177s
+  14000/60000 klipów  51s  pozostało ~168s
+  16000/60000 klipów  57s  pozostało ~156s
+  18000/60000 klipów  64s  pozostało ~148s
+  20000/60000 klipów  70s  pozostało ~141s
+  22000/60000 klipów  77s  pozostało ~134s
+  24000/60000 klipów  84s  pozostało ~125s
+  26000/60000 klipów  90s  pozostało ~118s
+  28000/60000 klipów  97s  pozostało ~111s
+  30000/60000 klipów  102s  pozostało ~102s
+  32000/60000 klipów  109s  pozostało ~95s
+  34000/60000 klipów  116s  pozostało ~89s
+  36000/60000 klipów  122s  pozostało ~81s
+  38000/60000 klipów  129s  pozostało ~75s
+  40000/60000 klipów  135s  pozostało ~67s
+  42000/60000 klipów  141s  pozostało ~60s
+  44000/60000 klipów  147s  pozostało ~53s
+  46000/60000 klipów  153s  pozostało ~47s
+  48000/60000 klipów  159s  pozostało ~40s
+  50000/60000 klipów  166s  pozostało ~33s
+  52000/60000 klipów  172s  pozostało ~26s
+  54000/60000 klipów  178s  pozostało ~20s
+  56000/60000 klipów  184s  pozostało ~13s
+  58000/60000 klipów  190s  pozostało ~7s
+  60000/60000 klipów  195s  pozostało ~0s
+zapisano out/elementy/trening.npz: 9646631 wycinków, dziura/ton/śmieć [6325534 2978028  343069], 2751 MB, 227 s
+
+=== zbiór walidacyjny (osobne klipy) (20:39) ===
+  2000/3000 klipów  10s  pozostało ~5s
+  3000/3000 klipów  13s  pozostało ~0s
+zapisano out/elementy/walidacja.npz: 477199 wycinków, dziura/ton/śmieć [313387 147905  15907], 136 MB, 15 s
+
+=== trening runs/elementy_1 (20:39) ===
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/trainers/epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+trening 9646631 wycinków [6325534 2978028  343069], walidacja 477199 [313387 147905  15907]
+etap A: 127651 parametrów
+Epoch 1/20
+
+18842/18842 - 458s - 24ms/step - accuracy: 0.9262 - loss: 0.2052 - val_accuracy: 0.9285 - val_loss: 0.2074 - learning_rate: 0.0010
+Epoch 2/20
+18842/18842 - 422s - 22ms/step - accuracy: 0.9352 - loss: 0.1794 - val_accuracy: 0.9316 - val_loss: 0.2007 - learning_rate: 0.0010
+Epoch 3/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9377 - loss: 0.1715 - val_accuracy: 0.9351 - val_loss: 0.1874 - learning_rate: 0.0010
+Epoch 4/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9395 - loss: 0.1664 - val_accuracy: 0.9313 - val_loss: 0.2065 - learning_rate: 0.0010
+Epoch 5/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9407 - loss: 0.1627 - val_accuracy: 0.9374 - val_loss: 0.1842 - learning_rate: 0.0010
+Epoch 6/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9416 - loss: 0.1599 - val_accuracy: 0.9360 - val_loss: 0.1860 - learning_rate: 0.0010
+Epoch 7/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9422 - loss: 0.1576 - val_accuracy: 0.9379 - val_loss: 0.1826 - learning_rate: 0.0010
+Epoch 8/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9428 - loss: 0.1557 - val_accuracy: 0.9381 - val_loss: 0.1829 - learning_rate: 0.0010
+Epoch 9/20
+18842/18842 - 430s - 23ms/step - accuracy: 0.9433 - loss: 0.1542 - val_accuracy: 0.9381 - val_loss: 0.1816 - learning_rate: 0.0010
+Epoch 10/20
+18842/18842 - 432s - 23ms/step - accuracy: 0.9437 - loss: 0.1527 - val_accuracy: 0.9376 - val_loss: 0.1832 - learning_rate: 0.0010
+Epoch 11/20
+18842/18842 - 425s - 23ms/step - accuracy: 0.9442 - loss: 0.1515 - val_accuracy: 0.9381 - val_loss: 0.1842 - learning_rate: 0.0010
+Epoch 12/20
+18842/18842 - 428s - 23ms/step - accuracy: 0.9450 - loss: 0.1494 - val_accuracy: 0.9390 - val_loss: 0.1801 - learning_rate: 5.0000e-04
+Epoch 13/20
+18842/18842 - 429s - 23ms/step - accuracy: 0.9455 - loss: 0.1479 - val_accuracy: 0.9383 - val_loss: 0.1816 - learning_rate: 5.0000e-04
+Epoch 14/20
+18842/18842 - 425s - 23ms/step - accuracy: 0.9458 - loss: 0.1469 - val_accuracy: 0.9394 - val_loss: 0.1795 - learning_rate: 5.0000e-04
+Epoch 15/20
+18842/18842 - 427s - 23ms/step - accuracy: 0.9460 - loss: 0.1462 - val_accuracy: 0.9391 - val_loss: 0.1818 - learning_rate: 5.0000e-04
+Epoch 16/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9461 - loss: 0.1456 - val_accuracy: 0.9395 - val_loss: 0.1818 - learning_rate: 5.0000e-04
+Epoch 17/20
+18842/18842 - 421s - 22ms/step - accuracy: 0.9463 - loss: 0.1457 - val_accuracy: 0.9392 - val_loss: 0.1792 - learning_rate: 2.5000e-04
+Epoch 18/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9466 - loss: 0.1448 - val_accuracy: 0.9391 - val_loss: 0.1806 - learning_rate: 2.5000e-04
+Epoch 19/20
+18842/18842 - 420s - 22ms/step - accuracy: 0.9467 - loss: 0.1443 - val_accuracy: 0.9387 - val_loss: 0.1802 - learning_rate: 2.5000e-04
+Epoch 20/20
+18842/18842 - 426s - 23ms/step - accuracy: 0.9465 - loss: 0.1456 - val_accuracy: 0.9404 - val_loss: 0.1759 - learning_rate: 1.2500e-04
+
+=== ocena na syntetyku (23:02) ===
+ETAP A — runs/elementy_1/best.keras, out/elementy/walidacja.npz: 477199 wycinków
+  macierz pomyłek (wiersz = prawda, kolumna = sieć):
+               dziura      ton    śmieć
+     dziura    303025     7415     2947   trafnie 96.7%
+        ton     11094   135669     1142   trafnie 91.7%
+      śmieć      5214      632    10061   trafnie 63.2%
+  ton: precyzja 94.4%, czułość 91.7%
+  bez przegródek na granicy elementu (ułamek <0,2 albo >0,8): trafnie 94.7% (81% wycinków); wszystkie 94.0%
+  S/N  -3..3   dB: trafnie 85.2%, ton czułość 71.5%  (27438)
+  S/N   3..10  dB: trafnie 93.2%, ton czułość 89.3%  (29992)
+  S/N  10..20  dB: trafnie 96.4%, ton czułość 95.5%  (47557)
+  S/N  20..46  dB: trafnie 97.5%, ton czułość 97.9%  (115217)
+  klipy bez CW, negatyw    brak: sieć „ton” w 0.91% przegródek (46387)
+  klipy bez CW, negatyw    bank: sieć „ton” w 2.06% przegródek (47855)
+  klipy bez CW, negatyw    mowa: sieć „ton” w 2.55% przegródek (23964)
+  klipy bez CW, negatyw   spiew: sieć „ton” w 1.92% przegródek (17264)
+  klipy bez CW, negatyw   gwizd: sieć „ton” w 5.04% przegródek (11838)
+  klipy bez CW, negatyw  muzyka: sieć „ton” w 3.41% przegródek (19120)
+
+=== negatywy spoza treningu (23:02) ===
+ETAP A NA NEGATYWACH — runs/elementy_1/best.keras (przegródki „ton” na minutę, siatki 15/25/35 WPM, ton 750 Hz)
+  kiwi_am: 28.3 /min (mediana 15.0, p90 75.3), 57 kawałków
+      194/min kiwi_am_20261105_220035_6070_31_09.wav
+      138/min kiwi_am_20261105_220035_6070_31_08.wav
+      85/min kiwi_am_20261105_220029_702_128_04.wav
+  kiwi_ssb: 11.9 /min (mediana 12.0, p90 17.1), 10 kawałków
+      27/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav
+      16/min kiwi_ssb_20261105_221032_3710_irelandnorth_01.wav
+      14/min kiwi_ssb_20261105_221032_3710_irelandnorth_00.wav
+  pokoj_mikrofon: 12.3 /min (mediana 2.3, p90 41.8), 166 kawałków
+      116/min sesja_20261105_000631_0318.wav
+      93/min sesja_20261105_000631_0316.wav
+      86/min sesja_20261105_000631_0315.wav
+
+KONIEC Fri Nov  6 23:06:00 CET 2026

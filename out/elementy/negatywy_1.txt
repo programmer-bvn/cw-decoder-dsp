@@ -1,0 +1,13 @@
+ETAP A NA NEGATYWACH — runs/elementy_1/best.keras (przegródki „ton” na minutę, siatki 15/25/35 WPM, ton 750 Hz)
+  kiwi_am: 28.3 /min (mediana 15.0, p90 75.3), 57 kawałków
+      194/min kiwi_am_20261105_220035_6070_31_09.wav
+      138/min kiwi_am_20261105_220035_6070_31_08.wav
+      85/min kiwi_am_20261105_220029_702_128_04.wav
+  kiwi_ssb: 11.9 /min (mediana 12.0, p90 17.1), 10 kawałków
+      27/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav
+      16/min kiwi_ssb_20261105_221032_3710_irelandnorth_01.wav
+      14/min kiwi_ssb_20261105_221032_3710_irelandnorth_00.wav
+  pokoj_mikrofon: 12.3 /min (mediana 2.3, p90 41.8), 166 kawałków
+      116/min sesja_20261105_000631_0318.wav
+      93/min sesja_20261105_000631_0316.wav
+      86/min sesja_20261105_000631_0315.wav

@@ -3233,3 +3233,57 @@ nie dalsze dokładanie danych do sieci zboczy.
 **Gdzie mieszka.** `dsp/negatywy.py`, `ZAKRESY_ZBOCZY_6` w `dsp/zbocza.py`,
 `radio.receive` (`zakresy["NEGATYW"]`), `tools/zbocza_trening.py --wersja 6`,
 `tools/halucynacje.py` (pomija `TRENING.txt`), wagi `runs/zbocza_6` (poza gitem).
+
+### Etap A klasyfikatora elementów: przegródka grzebienia -> dziura / ton / śmieć (06.11, gałąź `elementy`)
+
+**Skąd.** Zboczy_6/6b: żaden wariant nie wygrywa w obu liczbach naraz —
+dokładanie danych do sieci zboczy przestało pomagać. Pomysł operatora (rysunek
+06.11): grzebień z zębami co u jedzie po sygnale, sieć ocenia, co leży między
+zębami; dwa etapy — A: każda przegródka osobno („wzorce rozwalonych kropek
+i dziur"), B: grupowanie (3 tony = kreska, długość dziur = rodzaj przerwy)
+z kotwicą i zatrzaśnięciem zegara. Wejście: wodospad, nie obwiednia
+(„kolor jako wysokość — przestrzennie traktować widmo"): sieć zboczy widzi
+34 ms i daje jedną liczbę, sylaba mowy wygląda w niej jak klucz.
+
+**Co zrobione.** `dsp/elementy.py`: wycinek 24 rzędy (ton +/- 300 Hz) x 12
+kolumn (3 przegródki po K=4), okno FFT u/2 (10-40 ms) — kropka przy 12
+i 32 WPM wygląda tak samo (podgląd). Poziom: dB nad medianą wodospadu klipu.
+Etykieta środkowej przegródki: ton (klucz > połowy), śmieć (negatyw wystaje
+3 dB ponad tło = szum + mediana negatywu — pierwsza wersja „ponad szum" dała
+śmieć na całym nagraniu pokoju +5 dB, którego na wodospadzie nie widać),
+inaczej dziura. Jednostka i ton siatki z błędem +/-10% i +/-15 Hz.
+`tools/elementy_trening.py`, `tools/bieg_elementow.sh`. 60 tys. klipów
+(zakresy zboczy_6) -> 9,6 mln wycinków, 4 min generowania; sieć Conv2D
+128 tys. parametrów, 20 epok po 7 min. Walidacja na OSOBNYCH klipach (3000).
+`radio.receive`: `NEGATYW["zwroc_audio"]` — zboczy_5/6 bit w bit (md5).
+
+**Pomiar** (`out/elementy/bieg_1.log`). Walidacja 94,0% przegródek (bez
+przegródek na granicy elementu 94,7%):
+
+| prawda \ sieć | dziura | ton | śmieć |
+|---|---|---|---|
+| dziura | **96,7%** | 2,4% | 0,9% |
+| ton | 7,5% | **91,7%** | 0,8% |
+| śmieć | 32,9% | 4,0% | **63,2%** |
+
+Ton: precyzja 94,4%, czułość 91,7%; czułość wg S/N: -3..3 dB 71,5%,
+3..10 dB 89,3%, 10..20 dB 95,5%, > 20 dB 97,9%. Śmieć mylony z dziurą
+nie szkodzi (oba „nie ton"). Klipy bez CW: sieć „ton" w 0,9% (sam szum,
+QRM) do 5,0% (gwizd) przegródek.
+
+Negatywy spoza treningu, przegródki „ton" na minutę (siatki 15/25/35 WPM, ton
+750 Hz; przy 25 WPM minuta to ~1250 przegródek): pokój 12,3 /min (mediana 2,3),
+AM 28,3 (mediana 15,0), SSB 11,9. To NIE są znaki — pojedyncza przegródka
+„ton" bez sąsiadów na siatce ma odpaść w etapie B (kotwica wymaga 2-3
+elementów na tych samych zębach). Porównanie z zboczy_6 (12,0 / 10,0 / 2,0
+znaków/min) dopiero po etapie B. Najgorsze AM: 6070 kHz (31), minuty 08-09
+— 194 i 138 /min; minuty 05-07 tego nagrania odsiew odrzucił jako CW
+(prążek 334 Hz, skok 22-25 dB). Hipoteza: w 08-09 też jest kluczowany
+sygnał, tuż pod progiem odsiewu — do odsłuchu.
+
+**Dalej.** Etap B: oceny A jako emisje Viterbiego (kropka = 1 przegródka
+„ton", kreska = 3, dziury 1/3/7), stan „nie CW", kotwica z potwierdzeniem;
+potem te same dwie liczby co zawsze (test słów 1659, halucynacje znaków/min).
+
+**Gdzie mieszka.** `dsp/elementy.py`, `tools/elementy_trening.py`,
+`tools/bieg_elementow.sh`, wagi `runs/elementy_1` (poza gitem).
