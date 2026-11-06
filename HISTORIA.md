@@ -3296,7 +3296,7 @@ kontra etap A elementy_1, te same klipy (zakresy zboczy_6, 150 na przedział
 S/N), miara: elementy (odcinki P > 0,5) zgubione / fałszywe / zły typ, błąd
 zbocza; negatywy spoza treningu: elementy na minutę.
 
-**Trzy rzeczy wyszły po drodze.**
+**Cztery rzeczy wyszły po drodze.**
 1. Generator nadaje z WAGĄ keyera do +/-0,5 u (kropka 1,33 u, przerwa 0,67 u)
    i przerwami między literami 3,0-7,8 u — nie wielokrotność u. Zbocza nie
    leżą na zębach sztywnej siatki.
