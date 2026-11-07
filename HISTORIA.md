@@ -3514,3 +3514,29 @@ k26-starter-kits` -> „Loaded with slot_handle 0" w 0,59 s, FPGA Manager
 overlay removed` — typowe dla nakładek device tree, nie błąd.
 Ten bitstream to sama „skorupa" płyty (bez DPU); do sieci potrzebna aplikacja
 z DPU (np. B4096 z Vitis AI) — model kompiluje się pod jej `arch.json`.
+
+### KV260: sieć zboczy w INT8 — symulacja DPU (07.11)
+
+Pytanie przed narzędziami Vitis AI (docker 2,12 GB, zocl i VART na Ubuntu
+24.04 nie istnieją gotowe): czy 8 bitów w ogóle wystarcza tej sieci.
+`dsp/siec_int8.py` liczy jak DPUCZDX8G: int8, skala potęga dwójki, wagi
+z max|w|, aktywacje z kalibracji min MSE (60 klipów generatora, nie test),
+złączenie i suma rezydualna we wspólnej skali. Pozycje wyszły 2^-2…2^-7,
+żadna warstwa skrajna. Pomiar `tools/int8_ocena.py`, zbocza_5,
+`out/int8_zbocza_5.txt`:
+
+| | float | int8 |
+|---|---|---|
+| test słów (/1659) | 1517 | 1521 |
+| halucynacje pokój, zn./min | 29,6 | 30,6 |
+| halucynacje AM | 35,7 | 36,4 |
+| halucynacje SSB | 29,9 | 30,2 |
+
+|P_float − P_int8|: średnio 0,0035, 99. percentyl 0,079, maks 0,483;
+ramki po progu 0,5 zgodne w 99,64%. Halucynacje tu bez łączenia
+z przegródkami i bez bramki — porównanie float/int8, nie z zb6.
+
+Wniosek: kwantyzacja nie psuje odczytu (+4 słowa, +2–3% halucynacji —
+w szumie pomiaru). Otwarte: czy DPU liczy jak symulacja — dopiero
+`.xmodel` na płytce, wejście te same pozycje (`runs/zbocza_5/siec_int8_pozycje.npz`,
+poza gitem jak inne npz; odtwarza je `tools.int8_ocena`).

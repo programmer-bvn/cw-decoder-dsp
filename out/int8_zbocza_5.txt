@@ -1,0 +1,13 @@
+INT8 — wagi runs/zbocza_5/siec.npz, kalibracja na 60 klipach generatora -> runs/zbocza_5/siec_int8_pozycje.npz
+  pozycje aktywacji (skala 2^-p): wej_a:7, conv2d:4, conv2d_1:4, conv2d_2:4, conv2d_3:4, conv2d_4:4, wej_b:7, conv2d_5:3, conv2d_6:3, conv2d_7:4, conv2d_8:4, conv2d_9:4, zlacz_wej:4, conv2d_10:4, conv2d_11:5, conv2d_11_suma:4, conv2d_12:5, conv2d_12_suma:4, conv2d_13:5, conv2d_13_suma:4, conv2d_14:4, conv2d_14_suma:4, conv2d_15:4, conv2d_15_suma:3, conv2d_16:3, conv2d_16_suma:3, logit:2
+  probki                   słowa float   53  int8   56  / 62
+  probki/kluczownik        słowa float  364  int8  364  / 369
+  probki/reka              słowa float   43  int8   43  / 45
+  probki/zaszumione        słowa float  470  int8  470  / 470
+  probki/zaszumione_real   słowa float  442  int8  443  / 456
+  probki/qrm               słowa float  145  int8  145  / 257
+RAZEM słowa: float 1517, int8 1521 / 1659
+  |P_float - P_int8|: średnio 0.0035, 99. percentyl 0.079, maks 0.483; ramki zgodne (P>0,5) 99.6414%
+  halucynacje pokoj_mikrofon  ( 166 min): float  29.6, int8  30.6 znaków/min
+  halucynacje kiwi_am         (  57 min): float  35.7, int8  36.4 znaków/min
+  halucynacje kiwi_ssb        (  10 min): float  29.9, int8  30.2 znaków/min
