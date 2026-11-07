@@ -3503,3 +3503,14 @@ Pomiar: `qso1_cq_kluczownik17wpm` (26,9 s) — ten sam tekst co na PC
 Wniosek: na ARM tyle samo czasu co sieć zjada przygotowanie dźwięku — DPU
 przyspieszy tylko połowę. Przed DPU: profil `przygotuj` (tune.track_tone,
 przeciwsygnal.kasuj_obce) na ARM.
+
+### KV260: ładowanie bitstreamu (07.11)
+
+`dfx-mgr` przy starcie sam ładuje `k26-starter-kits`
+(`/lib/firmware/xilinx/k26-starter-kits/`: `.bit.bin` 1,9 MB + `.dtbo`).
+Próba cyklu: `xmutil unloadapp` -> slot pusty, `xmutil loadapp
+k26-starter-kits` -> „Loaded with slot_handle 0" w 0,59 s, FPGA Manager
+`operating`. Ostrzeżenia `OF: overlay: WARNING: memory leak will occur if
+overlay removed` — typowe dla nakładek device tree, nie błąd.
+Ten bitstream to sama „skorupa" płyty (bez DPU); do sieci potrzebna aplikacja
+z DPU (np. B4096 z Vitis AI) — model kompiluje się pod jej `arch.json`.
