@@ -140,7 +140,7 @@ def syntetyk(mz, me, n, seed):
              "  elementy (odcinki P>0,5) zgubione / fałszywe / zły typ (kropka-kreska) [% prawdziwych];",
              "  zbocze: |mediana| błędu [ms], w nawiasie klipy z wagą keyera < 0,1 u; ramki 5 ms trafnie"]
     for lo, hi in PRZEDZIALY_SN:
-        wyniki = {"zbocza": [], "przegródki": [], "kotwica": []}
+        wyniki = {"zbocza": [], "przegródki": [], "kotwica": [], "iloczyn": [], "kaskada": []}
         zebrane = 0
         while zebrane < n:
             tekst = "".join(rng.choice(list(C.ALPHABET[1:]), E.ZNAKOW))
@@ -159,7 +159,9 @@ def syntetyk(mz, me, n, seed):
             pz = Z.przebieg_sieci(audio, mz)[:nr][fa:fb]
             uf = E.jednostka(wpm) / DT
             for nazwa, p in (("zbocza", pz), ("przegródki", pe[fa:fb]),
-                             ("kotwica", Z.klucz_ramek(ke, nr)[fa:fb])):
+                             ("kotwica", Z.klucz_ramek(ke, nr)[fa:fb]),
+                             ("iloczyn", E.polacz_iloczyn(pz, pe[fa:fb])),
+                             ("kaskada", E.polacz_kaskada(pz, pe[fa:fb]))):
                 r = Z.blad_zboczy(p, prawda, tol_ramek=0.5 * uf)
                 r["ramki"] = float(np.mean((p > 0.5) == (prawda > 0.5)))
                 r["el"] = elementy_zgodnosc(p, prawda, uf)
@@ -190,7 +192,7 @@ def negatywy(mz, me, bank, wpm=25.0):
         pliki = [p for p in sorted(kat.glob("*.wav")) if f"{kat.name}/{p.name}" not in trening]
         if not pliki:
             continue
-        ez, ee, minuty = [], [], 0.0
+        ez, ee, ei, ek, minuty = [], [], [], [], 0.0
         for p in pliki:
             # Jak odczyt (tools.odczyt.przygotuj): najsilniejszy ton na 750 Hz,
             # wycięcie obcych, wzmocnienie — tak powstają halucynacje w aplikacji.
@@ -198,7 +200,13 @@ def negatywy(mz, me, bank, wpm=25.0):
             # w pokoju, a przez odczyt ta sama sieć 12 znaków/min.
             x, _ = przygotuj(frontend.load_audio(p))
             mi = x.size / C.SR / 60
-            ez.append(len(Z.zbocza(Z.przebieg_sieci(x, mz))[0]) / mi)
+            pz = Z.przebieg_sieci(x, mz)
+            ez.append(len(Z.zbocza(pz)[0]) / mi)
+            # połączenie (07.11): przegródki na całym kawałku, te same ramki co pz
+            P, st = p_elementow(me, x, u, C.TONE_CENTER)
+            pe, _ = przebieg_przegrodek(P, st, u, pz.size)
+            ei.append(len(Z.zbocza(E.polacz_iloczyn(pz, pe))[0]) / mi)
+            ek.append(len(Z.zbocza(E.polacz_kaskada(pz, pe))[0]) / mi)
             n4, ile = C.CLIP_SAMPLES, 0
             for s in range(0, x.size - n4 + 1, n4):
                 P, st = p_elementow(me, x[s:s + n4], u, C.TONE_CENTER)
@@ -207,7 +215,8 @@ def negatywy(mz, me, bank, wpm=25.0):
             ee.append(ile / mi)
             minuty += mi
         linie.append(f"  {kat.name:15s} ({minuty:5.1f} min): zbocza {np.mean(ez):6.1f} /min (mediana {np.median(ez):5.1f}),"
-                     f"  przegródki {np.mean(ee):6.1f} /min (mediana {np.median(ee):5.1f})")
+                     f"  przegródki {np.mean(ee):6.1f} /min (mediana {np.median(ee):5.1f}),"
+                     f"  iloczyn {np.mean(ei):6.1f} /min, kaskada {np.mean(ek):6.1f} /min")
         print(linie[-1], flush=True)
     return linie
 

@@ -51,14 +51,18 @@ def tnij(sesja: Path, rodzaj: str, minut: float = 1.0, bank: Path = BANK) -> int
     return n
 
 
-def ocen(model_p: Path | None, co: int = 1, bank: Path = BANK) -> dict:
+def ocen(model_p: Path | None, co: int = 1, bank: Path = BANK, elementy: Path | None = None,
+         laczenie: str | None = None) -> dict:
     """Odczyt całości (tools.odczyt, ta sama ścieżka co „Otwórz nagranie”, bez
     blokady szumów) na co `co`-tym kawałku każdego rodzaju -> znaki na minutę."""
     import soundfile as sf
     from tensorflow import keras
     from tools.odczyt import MODEL_ZBOCZY, odczytaj
-    model = keras.models.load_model(model_p or MODEL_ZBOCZY)
-    wynik: dict = {"model": str(model_p or MODEL_ZBOCZY), "rodzaje": {}}
+    # --elementy (07.11): P z etapu A przegródek zamiast sieci zboczy, Viterbi ten sam
+    me = keras.models.load_model(elementy) if elementy else None
+    model = None if me is not None and not laczenie else keras.models.load_model(model_p or MODEL_ZBOCZY)
+    wynik: dict = {"model": f"{model_p or MODEL_ZBOCZY} + {elementy} ({laczenie})" if laczenie
+                   else str(elementy or model_p or MODEL_ZBOCZY), "rodzaje": {}}
     # TRENING.txt (06.11, dsp/negatywy): minuty, które zboczy_6 widziała w treningu
     # — pomiar na nich mierzyłby pamięć sieci, nie halucynacje.
     tr = bank / "TRENING.txt"
@@ -69,7 +73,7 @@ def ocen(model_p: Path | None, co: int = 1, bank: Path = BANK) -> dict:
             continue
         znaki, minuty, przyklady = [], 0.0, []
         for p in pliki:
-            t = odczytaj(p, model, ton_cw=None)["tekst"]
+            t = odczytaj(p, model, ton_cw=None, model_elementow=me, laczenie=laczenie)["tekst"]
             min_ = sf.info(p).duration / 60
             ile = sum(1 for z in t if z != " ")
             znaki.append(ile / min_)
@@ -90,6 +94,9 @@ def main(argv=None) -> int:
     t = sub.add_parser("tnij"); t.add_argument("sesja", type=Path); t.add_argument("rodzaj")
     t.add_argument("--min", type=float, default=1.0)
     o = sub.add_parser("ocen"); o.add_argument("--model", type=Path, default=None)
+    o.add_argument("--elementy", type=Path, default=None, help="model etapu A (dsp/elementy)")
+    o.add_argument("--laczenie", choices=("iloczyn", "kaskada"), default=None,
+                   help="z --elementy: zbocza (--model) połączone z przegródkami")
     o.add_argument("--co", type=int, default=1, help="co który kawałek (szybki pomiar)")
     o.add_argument("--out", type=Path, default=None)
     for p in (t, o):
@@ -98,7 +105,7 @@ def main(argv=None) -> int:
     if a.cmd == "tnij":
         print(f"{tnij(a.sesja, a.rodzaj, a.min, a.bank)} kawałków -> {a.bank / a.rodzaj}")
         return 0
-    w = ocen(a.model, a.co, a.bank)
+    w = ocen(a.model, a.co, a.bank, a.elementy, a.laczenie)
     linie = [f"HALUCYNACJE — model {w['model']}"]
     for r, d in w["rodzaje"].items():
         linie.append(f"  {r}: {d['znakow_na_min']} znaków/min (mediana {d['mediana']}, p90 {d['p90']}), "

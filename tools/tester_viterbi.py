@@ -34,6 +34,16 @@ def main() -> None:
     if "--model" in argv0:
         i = argv0.index("--model"); model = argv0[i + 1]; del sys.argv[1 + i:1 + i + 2]
     mz = keras.models.load_model(model)
+    # --elementy PLIK (07.11): P z etapu A przegródek (tools.odczyt.przebieg_elementow)
+    # do Viterbiego; „tabela" dalej z sieci zboczy — odniesienie bez zmian
+    me = None
+    if "--elementy" in sys.argv:
+        i = sys.argv.index("--elementy"); me = keras.models.load_model(sys.argv[i + 1])
+        print(f"Viterbi na etapie A: {sys.argv[i + 1]}"); del sys.argv[i:i + 2]
+    laczenie = None                           # --laczenie iloczyn|kaskada: zbocza + przegródki
+    if "--laczenie" in sys.argv:
+        i = sys.argv.index("--laczenie"); laczenie = sys.argv[i + 1]; del sys.argv[i:i + 2]
+        print(f"połączenie: {laczenie}")
     print(f"model zboczy: {model}" + ("" if "--bez-kasowania" in sys.argv else "  + przeciwsygnał"))
     # --filtr HZ: po przestrojeniu filtr ±HZ wokół tonu, zanim sieć zboczy
     # (19.10, test QRM: obca stacja 60 Hz obok mieszała się w przebieg)
@@ -80,8 +90,13 @@ def main() -> None:
             oo = [Z.odcinki_z_przebiegu(pz[s // Z.HOP_ZBOCZA:s // Z.HOP_ZBOCZA + r5],
                                         histereza=(Z.PROG_WL, Z.PROG_WYL)) for s in starty]
             tab, nuty_, _, _ = T.droga(a, oo, starty, n8)
+            if me is not None:
+                from tools.odczyt import przebieg_elementow, przebieg_laczony, jednostka_grzebienia
+                pz = przebieg_laczony(a, mz, me, laczenie) if laczenie else przebieg_elementow(a, me)
+                u_g = jednostka_grzebienia(pz)
+            else:
+                u_g = float(np.median([x[2] for x in nuty_])) if nuty_ else float("nan")
             u_c, _ = V.jednostka_cepstrum(pz)
-            u_g = float(np.median([x[2] for x in nuty_])) if nuty_ else float("nan")
             vit, u, _ = V.dekoduj_najlepiej(pz, [u_c, u_g])
             s_t, s_v = T.slowa(tab, chce)[0], T.slowa(vit.replace(" ", ""), chce)[0]
             sk["tab"] += s_t; sk["vit"] += s_v; sk["n"] += len(chce)

@@ -1,0 +1,93 @@
+start Sat Nov  7 14:19:11 CET 2026  kod 57eefdc + zmiany
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+
+=== halucynacje: kaskada
+HALUCYNACJE — model runs/zbocza_6/best.keras + runs/elementy_2/best.keras (kaskada)
+  kiwi_am: 8.1 znaków/min (mediana 0.0, p90 24.2), 57 kawałków, 57.0 min
+      54/min kiwi_am_20261105_223052_594_176_02.wav: S IE E E EE TE E T E E T K E EV EE E E E LEOEK E E EO MO E* 
+      34/min kiwi_am_20261105_222044_9580_heerde_06.wav: T T *T MINOE**OTE EE IE E T T ET * WA T N Z TETEE
+      31/min kiwi_am_20261105_223052_594_176_00.wav: T E AT E R ET IE E T N T T E E ETN A E T T T EE AN E E
+  kiwi_ssb: 0.0 znaków/min (mediana 0.0, p90 0.0), 10 kawałków, 10.0 min
+      0/min kiwi_ssb_20261105_223104_3690_178_05.wav: 
+      0/min kiwi_ssb_20261105_223104_3690_178_04.wav: 
+      0/min kiwi_ssb_20261105_223104_3690_178_03.wav: 
+  pokoj_mikrofon: 1.6 znaków/min (mediana 0.0, p90 7.5), 166 kawałków, 166.0 min
+      26/min sesja_20261105_000631_0379.wav: * *W A U GK * * * * NRS * * *R * T M I TEEI
+      16/min sesja_20261105_000631_0314.wav: E T SE ETI E E E TE I E E E
+      15/min sesja_20261105_000631_0382.wav: EE ME P E E E E EE E E E E
+
+=== halucynacje: iloczyn
+HALUCYNACJE — model runs/zbocza_6/best.keras + runs/elementy_2/best.keras (iloczyn)
+  kiwi_am: 10.2 znaków/min (mediana 4.0, p90 27.4), 57 kawałków, 57.0 min
+      80/min kiwi_am_20261105_223052_594_176_02.wav: D NE EI I H ETE T T AE * E E NE* EE EE EV S E EE IE E NER LE
+      45/min kiwi_am_20261105_223052_594_176_05.wav: E I IE TTE E EE * I 5ES EEI N STETEREET E E E SS E E EME E E
+      42/min kiwi_am_20261105_223052_594_176_00.wav: R EUT NEU E I T E P EIEI NT E K E TTI EI E EEZ2 N I R T A E 
+  kiwi_ssb: 1.0 znaków/min (mediana 0.0, p90 2.6), 10 kawałków, 10.0 min
+      8/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav: E E E EE I I E
+      2/min kiwi_ssb_20261105_223104_3690_178_03.wav: E I
+      0/min kiwi_ssb_20261105_223104_3690_178_05.wav: 
+  pokoj_mikrofon: 5.0 znaków/min (mediana 0.0, p90 18.0), 166 kawałków, 166.0 min
+      46/min sesja_20261105_000631_0394.wav: E E E TE E T E E E E E E E EE E E E E EE E NE ETE E T T E T 
+      44/min sesja_20261105_000631_0382.wav: E E TE T TA T MNT OET E E M ET TT E E E T I T EE T E E E E E
+      40/min sesja_20261105_000631_0413.wav: T E A *MMTN R T M *E * T T T WN E E PN AEE E E ET T I EEE E 
+
+=== test słów: kaskada
+  RAZEM probki: tabela 53/62, viterbi 46/62
+  RAZEM probki/kluczownik: tabela 334/369, viterbi 356/369
+  RAZEM probki/reka: tabela 42/45, viterbi 43/45
+  RAZEM probki/zaszumione: tabela 336/470, viterbi 451/470
+  RAZEM probki/zaszumione_real: tabela 116/456, viterbi 367/456
+  RAZEM probki/qrm: tabela 140/257, viterbi 139/257
+RAZEM: tabela 1021/1659, viterbi 1402/1659
+
+=== test słów: iloczyn
+  RAZEM probki: tabela 53/62, viterbi 49/62
+  RAZEM probki/kluczownik: tabela 334/369, viterbi 362/369
+  RAZEM probki/reka: tabela 42/45, viterbi 43/45
+  RAZEM probki/zaszumione: tabela 336/470, viterbi 455/470
+  RAZEM probki/zaszumione_real: tabela 116/456, viterbi 422/456
+  RAZEM probki/qrm: tabela 140/257, viterbi 142/257
+RAZEM: tabela 1021/1659, viterbi 1473/1659
+
+=== porównanie syntetyk + negatywy (elementy)
+zbocza: runs/zbocza_6/best.keras   elementy: runs/elementy_2/best.keras
+SYNTETYK — 150 klipów na przedział S/N, siatka: u +/-3%, ton +/-15 Hz
+  elementy (odcinki P>0,5) zgubione / fałszywe / zły typ (kropka-kreska) [% prawdziwych];
+  zbocze: |mediana| błędu [ms], w nawiasie klipy z wagą keyera < 0,1 u; ramki 5 ms trafnie
+  S/N  -3..3   dB  zbocza    : elementy zgubione  21.5%, fałszywe  18.7%, zły typ  6.7%;  zbocze  3.1 ms (waga<0,1:  3.4);  ramki 86.7%
+  S/N  -3..3   dB  przegródki: elementy zgubione  35.8%, fałszywe  18.4%, zły typ  8.5%;  zbocze  5.1 ms (waga<0,1:  6.1);  ramki 80.6%
+  S/N  -3..3   dB  kotwica   : elementy zgubione  43.3%, fałszywe  11.7%, zły typ  6.6%;  zbocze  6.9 ms (waga<0,1:  6.8);  ramki 78.3%
+  S/N  -3..3   dB  iloczyn   : elementy zgubione  26.0%, fałszywe  11.9%, zły typ  5.8%;  zbocze  3.2 ms (waga<0,1:  3.6);  ramki 85.6%
+  S/N  -3..3   dB  kaskada   : elementy zgubione  34.2%, fałszywe  11.3%, zły typ  6.2%;  zbocze  2.9 ms (waga<0,1:  3.2);  ramki 83.1%
+  S/N   3..10  dB  zbocza    : elementy zgubione   5.0%, fałszywe   5.6%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  przegródki: elementy zgubione  10.0%, fałszywe   8.8%, zły typ  4.0%;  zbocze  2.3 ms (waga<0,1:  2.2);  ramki 91.8%
+  S/N   3..10  dB  kotwica   : elementy zgubione  14.2%, fałszywe   5.0%, zły typ  3.8%;  zbocze  5.4 ms (waga<0,1:  5.0);  ramki 88.0%
+  S/N   3..10  dB  iloczyn   : elementy zgubione   5.4%, fałszywe   3.3%, zły typ  0.9%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  kaskada   : elementy zgubione   9.2%, fałszywe   4.9%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 93.8%
+  S/N  10..20  dB  zbocza    : elementy zgubione   6.8%, fałszywe   6.3%, zły typ  1.2%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  przegródki: elementy zgubione   9.2%, fałszywe  10.2%, zły typ  3.8%;  zbocze  1.3 ms (waga<0,1:  1.2);  ramki 92.7%
+  S/N  10..20  dB  kotwica   : elementy zgubione  13.5%, fałszywe   6.5%, zły typ  3.5%;  zbocze  5.2 ms (waga<0,1:  4.6);  ramki 88.1%
+  S/N  10..20  dB  iloczyn   : elementy zgubione   7.0%, fałszywe   4.5%, zły typ  0.9%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  kaskada   : elementy zgubione   7.8%, fałszywe   4.8%, zły typ  1.4%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 94.9%
+  S/N  20..31  dB  zbocza    : elementy zgubione   2.4%, fałszywe   4.2%, zły typ  1.2%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.0%
+  S/N  20..31  dB  przegródki: elementy zgubione   2.9%, fałszywe   6.6%, zły typ  2.3%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 96.2%
+  S/N  20..31  dB  kotwica   : elementy zgubione   6.9%, fałszywe   4.1%, zły typ  2.1%;  zbocze  4.9 ms (waga<0,1:  4.9);  ramki 91.2%
+  S/N  20..31  dB  iloczyn   : elementy zgubione   1.0%, fałszywe   2.4%, zły typ  1.0%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.5%
+  S/N  20..31  dB  kaskada   : elementy zgubione   3.4%, fałszywe   3.4%, zły typ  1.3%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 97.5%
+  S/N  31..46  dB  zbocza    : elementy zgubione   0.8%, fałszywe   1.7%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.9%
+  S/N  31..46  dB  przegródki: elementy zgubione   1.3%, fałszywe   3.6%, zły typ  1.0%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 97.4%
+  S/N  31..46  dB  kotwica   : elementy zgubione   3.7%, fałszywe   2.6%, zły typ  1.2%;  zbocze  5.1 ms (waga<0,1:  4.4);  ramki 92.4%
+  S/N  31..46  dB  iloczyn   : elementy zgubione   0.3%, fałszywe   1.2%, zły typ  0.2%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 99.1%
+  S/N  31..46  dB  kaskada   : elementy zgubione   1.0%, fałszywe   1.5%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.8%
+NEGATYWY — elementy (zbocza narastające) na minutę; dźwięk jak w odczycie (przygotuj), siatka 25 WPM
+  kiwi_am         ( 57.0 min): zbocza   61.5 /min (mediana  41.0),  przegródki   41.6 /min (mediana  29.0),  iloczyn   47.4 /min, kaskada   34.8 /min
+  kiwi_ssb        ( 10.0 min): zbocza   15.1 /min (mediana   9.0),  przegródki   17.5 /min (mediana  13.0),  iloczyn    6.6 /min, kaskada    3.8 /min
+  pokoj_mikrofon  (166.0 min): zbocza   63.2 /min (mediana  50.0),  przegródki   21.3 /min (mediana  13.0),  iloczyn   21.8 /min, kaskada   10.6 /min
+
+KONIEC Sat Nov  7 15:20:12 CET 2026

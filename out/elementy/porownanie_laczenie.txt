@@ -1,0 +1,33 @@
+zbocza: runs/zbocza_6/best.keras   elementy: runs/elementy_2/best.keras
+SYNTETYK — 150 klipów na przedział S/N, siatka: u +/-3%, ton +/-15 Hz
+  elementy (odcinki P>0,5) zgubione / fałszywe / zły typ (kropka-kreska) [% prawdziwych];
+  zbocze: |mediana| błędu [ms], w nawiasie klipy z wagą keyera < 0,1 u; ramki 5 ms trafnie
+  S/N  -3..3   dB  zbocza    : elementy zgubione  21.5%, fałszywe  18.7%, zły typ  6.7%;  zbocze  3.1 ms (waga<0,1:  3.4);  ramki 86.7%
+  S/N  -3..3   dB  przegródki: elementy zgubione  35.8%, fałszywe  18.4%, zły typ  8.5%;  zbocze  5.1 ms (waga<0,1:  6.1);  ramki 80.6%
+  S/N  -3..3   dB  kotwica   : elementy zgubione  43.3%, fałszywe  11.7%, zły typ  6.6%;  zbocze  6.9 ms (waga<0,1:  6.8);  ramki 78.3%
+  S/N  -3..3   dB  iloczyn   : elementy zgubione  26.0%, fałszywe  11.9%, zły typ  5.8%;  zbocze  3.2 ms (waga<0,1:  3.6);  ramki 85.6%
+  S/N  -3..3   dB  kaskada   : elementy zgubione  34.2%, fałszywe  11.3%, zły typ  6.2%;  zbocze  2.9 ms (waga<0,1:  3.2);  ramki 83.1%
+  S/N   3..10  dB  zbocza    : elementy zgubione   5.0%, fałszywe   5.6%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  przegródki: elementy zgubione  10.0%, fałszywe   8.8%, zły typ  4.0%;  zbocze  2.3 ms (waga<0,1:  2.2);  ramki 91.8%
+  S/N   3..10  dB  kotwica   : elementy zgubione  14.2%, fałszywe   5.0%, zły typ  3.8%;  zbocze  5.4 ms (waga<0,1:  5.0);  ramki 88.0%
+  S/N   3..10  dB  iloczyn   : elementy zgubione   5.4%, fałszywe   3.3%, zły typ  0.9%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  kaskada   : elementy zgubione   9.2%, fałszywe   4.9%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 93.8%
+  S/N  10..20  dB  zbocza    : elementy zgubione   6.8%, fałszywe   6.3%, zły typ  1.2%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  przegródki: elementy zgubione   9.2%, fałszywe  10.2%, zły typ  3.8%;  zbocze  1.3 ms (waga<0,1:  1.2);  ramki 92.7%
+  S/N  10..20  dB  kotwica   : elementy zgubione  13.5%, fałszywe   6.5%, zły typ  3.5%;  zbocze  5.2 ms (waga<0,1:  4.6);  ramki 88.1%
+  S/N  10..20  dB  iloczyn   : elementy zgubione   7.0%, fałszywe   4.5%, zły typ  0.9%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  kaskada   : elementy zgubione   7.8%, fałszywe   4.8%, zły typ  1.4%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 94.9%
+  S/N  20..31  dB  zbocza    : elementy zgubione   2.4%, fałszywe   4.2%, zły typ  1.2%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.0%
+  S/N  20..31  dB  przegródki: elementy zgubione   2.9%, fałszywe   6.6%, zły typ  2.3%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 96.2%
+  S/N  20..31  dB  kotwica   : elementy zgubione   6.9%, fałszywe   4.1%, zły typ  2.1%;  zbocze  4.9 ms (waga<0,1:  4.9);  ramki 91.2%
+  S/N  20..31  dB  iloczyn   : elementy zgubione   1.0%, fałszywe   2.4%, zły typ  1.0%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.5%
+  S/N  20..31  dB  kaskada   : elementy zgubione   3.4%, fałszywe   3.4%, zły typ  1.3%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 97.5%
+  S/N  31..46  dB  zbocza    : elementy zgubione   0.8%, fałszywe   1.7%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.9%
+  S/N  31..46  dB  przegródki: elementy zgubione   1.3%, fałszywe   3.6%, zły typ  1.0%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 97.4%
+  S/N  31..46  dB  kotwica   : elementy zgubione   3.7%, fałszywe   2.6%, zły typ  1.2%;  zbocze  5.1 ms (waga<0,1:  4.4);  ramki 92.4%
+  S/N  31..46  dB  iloczyn   : elementy zgubione   0.3%, fałszywe   1.2%, zły typ  0.2%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 99.1%
+  S/N  31..46  dB  kaskada   : elementy zgubione   1.0%, fałszywe   1.5%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.8%
+NEGATYWY — elementy (zbocza narastające) na minutę; dźwięk jak w odczycie (przygotuj), siatka 25 WPM
+  kiwi_am         ( 57.0 min): zbocza   61.5 /min (mediana  41.0),  przegródki   41.6 /min (mediana  29.0),  iloczyn   47.4 /min, kaskada   34.8 /min
+  kiwi_ssb        ( 10.0 min): zbocza   15.1 /min (mediana   9.0),  przegródki   17.5 /min (mediana  13.0),  iloczyn    6.6 /min, kaskada    3.8 /min
+  pokoj_mikrofon  (166.0 min): zbocza   63.2 /min (mediana  50.0),  przegródki   21.3 /min (mediana  13.0),  iloczyn   21.8 /min, kaskada   10.6 /min

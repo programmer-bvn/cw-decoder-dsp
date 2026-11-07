@@ -1,0 +1,13 @@
+HALUCYNACJE — model runs/zbocza_6/best.keras + runs/elementy_2/best.keras (iloczyn)
+  kiwi_am: 10.2 znaków/min (mediana 4.0, p90 27.4), 57 kawałków, 57.0 min
+      80/min kiwi_am_20261105_223052_594_176_02.wav: D NE EI I H ETE T T AE * E E NE* EE EE EV S E EE IE E NER LE
+      45/min kiwi_am_20261105_223052_594_176_05.wav: E I IE TTE E EE * I 5ES EEI N STETEREET E E E SS E E EME E E
+      42/min kiwi_am_20261105_223052_594_176_00.wav: R EUT NEU E I T E P EIEI NT E K E TTI EI E EEZ2 N I R T A E 
+  kiwi_ssb: 1.0 znaków/min (mediana 0.0, p90 2.6), 10 kawałków, 10.0 min
+      8/min kiwi_ssb_20261105_221032_3710_irelandnorth_02.wav: E E E EE I I E
+      2/min kiwi_ssb_20261105_223104_3690_178_03.wav: E I
+      0/min kiwi_ssb_20261105_223104_3690_178_05.wav: 
+  pokoj_mikrofon: 5.0 znaków/min (mediana 0.0, p90 18.0), 166 kawałków, 166.0 min
+      46/min sesja_20261105_000631_0394.wav: E E E TE E T E E E E E E E EE E E E E EE E NE ETE E T T E T 
+      44/min sesja_20261105_000631_0382.wav: E E TE T TA T MNT OET E E M ET TT E E E T I T EE T E E E E E
+      40/min sesja_20261105_000631_0413.wav: T E A *MMTN R T M *E * T T T WN E E PN AEE E E ET T I EEE E 

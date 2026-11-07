@@ -1,0 +1,13 @@
+HALUCYNACJE — model runs/zbocza_6/best.keras + runs/elementy_2/best.keras (kaskada)
+  kiwi_am: 8.1 znaków/min (mediana 0.0, p90 24.2), 57 kawałków, 57.0 min
+      54/min kiwi_am_20261105_223052_594_176_02.wav: S IE E E EE TE E T E E T K E EV EE E E E LEOEK E E EO MO E* 
+      34/min kiwi_am_20261105_222044_9580_heerde_06.wav: T T *T MINOE**OTE EE IE E T T ET * WA T N Z TETEE
+      31/min kiwi_am_20261105_223052_594_176_00.wav: T E AT E R ET IE E T N T T E E ETN A E T T T EE AN E E
+  kiwi_ssb: 0.0 znaków/min (mediana 0.0, p90 0.0), 10 kawałków, 10.0 min
+      0/min kiwi_ssb_20261105_223104_3690_178_05.wav: 
+      0/min kiwi_ssb_20261105_223104_3690_178_04.wav: 
+      0/min kiwi_ssb_20261105_223104_3690_178_03.wav: 
+  pokoj_mikrofon: 1.6 znaków/min (mediana 0.0, p90 7.5), 166 kawałków, 166.0 min
+      26/min sesja_20261105_000631_0379.wav: * *W A U GK * * * * NRS * * *R * T M I TEEI
+      16/min sesja_20261105_000631_0314.wav: E T SE ETI E E E TE I E E E
+      15/min sesja_20261105_000631_0382.wav: EE ME P E E E E EE E E E E

@@ -166,3 +166,37 @@ def wycinki(db: np.ndarray, et: np.ndarray, ul: np.ndarray, krok: int = 1):
     j = np.arange(0, T - KOLUMNY + 1, krok)
     X = np.stack([x[:, i:i + KOLUMNY] for i in j])
     return X, et[j + K], ul[j + K]
+
+
+# --------------------------------------------------------------------------
+# Łączenie z siecią zboczy (07.11, pomysł operatora: „jak centrum badawcze —
+# dwie metody, kaskada filtrów"). Pomiar elementy_2 (HISTORIA): zbocza_6
+# trafia zbocze do 0,2 ms, ale na pokoju daje 63 elementy/min; przegródki
+# 1,0 ms i 21/min. Dwa sposoby, oba do pomiaru:
+#   iloczyn — niezależne świadectwa: suma log-szans (hipoteza: błędy obu sieci
+#             są skorelowane, bo to ten sam dźwięk — stąd wagi do strojenia);
+#   kaskada — zbocza wyzwalają, przegródki potwierdzają: odcinek z P_zboczy
+#             > 0,5 zostaje, gdy średnie P(ton) przegródek na nim >= PROG;
+#             inaczej P_zboczy tłumione do min(P_zboczy, P_przegródek).
+# --------------------------------------------------------------------------
+EPS_P = 1e-3
+
+
+def _logit(p):
+    p = np.clip(np.asarray(p, np.float64), EPS_P, 1 - EPS_P)
+    return np.log(p / (1 - p))
+
+
+def polacz_iloczyn(pz, pe, wz=1.0, we=1.0):
+    return (1 / (1 + np.exp(-(wz * _logit(pz) + we * _logit(pe))))).astype(np.float32)
+
+
+def polacz_kaskada(pz, pe, prog=0.5):
+    pz = np.asarray(pz, np.float32)
+    out = pz.copy()
+    w = np.r_[False, pz > 0.5, False]
+    d = np.diff(w.astype(np.int8))
+    for a, b in zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)):
+        if float(np.mean(pe[a:b])) < prog:
+            out[a:b] = np.minimum(pz[a:b], pe[a:b])
+    return out

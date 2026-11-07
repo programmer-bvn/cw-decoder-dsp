@@ -59,14 +59,60 @@ def jednostka_grzebienia(pz: np.ndarray) -> float:
     return float(np.median(us)) if us else float("nan")
 
 
-def odczytaj(sciezka: Path, model=None, ton_cw: float | None = None) -> dict:
+def przebieg_elementow(a: np.ndarray, model, iteracji: int = 3) -> np.ndarray:
+    """P(klucz) co 5 ms z ETAPU A (dsp/elementy, sieć przegródek) zamiast sieci
+    zboczy — próba 07.11: ta sama gramatyka (Viterbi), inne oczy.
+    Etap A potrzebuje u (trening: u z błędem +/-10%), a u bierze się
+    z przebiegu: start na siatce 25 WPM, cepstrum z P przegródek, powtórka
+    na nowym u, aż się ustali (hipoteza: 2-3 obroty wystarczą — do pomiaru)."""
+    from tools.porownaj_przegrodki import p_elementow, przebieg_przegrodek
+    n = a.size // Z.HOP_ZBOCZA
+    u = 1.2 / 25
+    p = np.zeros(n, np.float32)
+    for _ in range(iteracji):
+        P, start = p_elementow(model, a, u, C.TONE_CENTER)
+        p, _ = przebieg_przegrodek(P, start, u, n)
+        u_c, _ = V.jednostka_cepstrum(p)
+        if not np.isfinite(u_c) or abs(u_c - u) < 0.1 * u:
+            break
+        u = float(np.clip(u_c, 1.2 / 60, 1.2 / 8))
+    return p
+
+
+def przebieg_laczony(a: np.ndarray, mz, me, sposob: str = "kaskada") -> np.ndarray:
+    """Zbocza + przegródki (dsp/elementy.polacz_*). Jednostka dla etapu A
+    z przebiegu sieci zboczy — jedno przejście A zamiast obrotów
+    przebieg_elementow (próba 07.11: kilka obrotów na długich nagraniach liczy
+    się minutami). u = to, które wybiera dekoder (cepstrum albo grzebień):
+    pierwszy pomiar 07.11 brał samo cepstrum i na zaszumione/*_sn+20 dostał
+    195 ms zamiast 66 (długość kreski) — grzebień 3x za szeroki, słowa 28 -> 2."""
+    from dsp import elementy as E
+    from tools.porownaj_przegrodki import p_elementow, przebieg_przegrodek
+    pz = Z.przebieg_sieci(a, mz)
+    u_c, _ = V.jednostka_cepstrum(pz)
+    _, u, _ = V.dekoduj_najlepiej(pz, [u_c, jednostka_grzebienia(pz)])
+    if not np.isfinite(u):
+        return pz
+    P, start = p_elementow(me, a, float(np.clip(u, 1.2 / 60, 1.2 / 8)), C.TONE_CENTER)
+    pe, _ = przebieg_przegrodek(P, start, u, pz.size)
+    return E.polacz_iloczyn(pz, pe) if sposob == "iloczyn" else E.polacz_kaskada(pz, pe)
+
+
+def odczytaj(sciezka: Path, model=None, ton_cw: float | None = None, model_elementow=None,
+             laczenie: str | None = None) -> dict:
     from tensorflow import keras
-    model = model or keras.models.load_model(MODEL_ZBOCZY)
+    if model_elementow is None or laczenie:
+        model = model or keras.models.load_model(MODEL_ZBOCZY)
     if ton_cw is None:
         from tools.radio import civ
         ton_cw = civ.ton_z_opisu(Path(sciezka).with_suffix(".txt"))
     a, ton = przygotuj(frontend.load_audio(sciezka), ton_cw=ton_cw)
-    pz = Z.przebieg_sieci(a, model)
+    if model_elementow is not None and laczenie:
+        pz = przebieg_laczony(a, model, model_elementow, laczenie)
+    elif model_elementow is not None:
+        pz = przebieg_elementow(a, model_elementow)
+    else:
+        pz = Z.przebieg_sieci(a, model)
     u_c, _ = V.jednostka_cepstrum(pz)
     u_g = jednostka_grzebienia(pz)
     tekst, u, wynik = V.dekoduj_najlepiej(pz, [u_c, u_g])
