@@ -4,5 +4,5 @@
     "kernel": [
         "subgraph_quant_conv2d"
     ],
-    "target": "DPUCZDX8G_ISA1_B4096"
+    "target": "DPUCZDX8G_ISA1_B4096_0101000016010407"
 }

@@ -67,7 +67,11 @@ def zbuduj(w):
 
     def splot(x, n, d=1, relu=True):
         W, b = w[n + "_W"], w[n + "_b"]
-        c = L.Conv2D(W.shape[3], W.shape[:2], padding="same", dilation_rate=(d, 1), name=n)
+        # rozszerzenie (d, d), nie (d, 1): przy jądrze (5,1) i szerokości 1
+        # to ta sama operacja, a (d, 1) skompilowane pod DPU 0x101000016010407
+        # liczy się źle (07.11, małe sieci testowe na płytce: korelacja z vai_q
+        # ok. 0; (d, d) i wszystkie pozostałe warstwy — co do bitu)
+        c = L.Conv2D(W.shape[3], W.shape[:2], padding="same", dilation_rate=(d, d), name=n)
         y = c(x)
         c.set_weights([W, b])
         return L.ReLU(name=n + "_relu")(y) if relu else y

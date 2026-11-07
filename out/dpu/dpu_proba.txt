@@ -1,0 +1,14 @@
+podgrafy DPU: 1
+  quant_drobny_5ms (1, 512, 32, 1) xint8 fix_point 7
+  quant_widmo_5ms (1, 512, 32, 1) xint8 fix_point 7
+  quant_logit_fix (1, 512, 1, 1) xint8 fix_point 2
+21 okien w 0.131 s (6.26 ms/okno; okno = 512 ramek = 2,56 s)
+DPU vs vai_q (PC): |dP| średnio 0.0000, maks 0.052, ramki zgodne 100.0000%, logity identyczne 98.83%
+DPU vs float (numpy): |dP| średnio 0.0013, maks 0.102, ramki zgodne 99.8698%, logity identyczne 0.01%
+DPU logity: min/max/średnia -32.0 14.75 -4.8737907  unikalnych 186
+vai_q logity: -32.0 14.75 -4.8739767
+korelacja DPU~vai_q 0.9999976773318714
+okno 3, ramki 200..215 DPU : [  8.8   7.8   8.5   8.2   7.5   7.    6.5   7.2   3.5  -1.  -10.2 -13.5
+ -14.2 -18.  -21.5 -22.2]
+okno 3, ramki 200..215 vaiq: [  8.8   7.8   8.5   8.2   7.5   7.    6.5   7.2   3.5  -1.  -10.2 -13.5
+ -14.2 -18.  -21.5 -22.2]

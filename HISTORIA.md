@@ -3565,3 +3565,49 @@ Pomiar (`out/dpu/kompilacja.log`):
 Otwarte: bitstream kv260-benchmark-b4096 zbudowany Vitis 2022.1 (era
 Vitis AI 2.5), kompilator z 3.5 — zgodność „fingerprint" DPU sprawdzi
 dopiero VART przy ładowaniu modelu. Na płytce wciąż brak zocl i VART.
+
+### KV260: sieć zboczy liczy się na DPU (07.11)
+
+Objaw po kolei i co pomogło (stos: `srodowisko/kv260/buduj_vart.sh`):
+
+1. **Brak sterownika.** Ubuntu 24.04 dla Kria ma XRT 2.18 z obrazu, ale bez
+   zocl; `xrt-dkms` z universe to 2.8 (2020), nie pasuje — usunięty (razem
+   z `libxrt1` 2022.10, które konfliktowało z XRT 2.18). zocl 2.16 nie
+   kompiluje się na jądrze 6.8 (`vm_flags`, `DRM_UNLOCKED`,
+   `of_overlay_fdt_apply`). zocl 2.18 ze źródeł (tag 202420.2.18.179) —
+   tak; w `/lib/modules/.../updates`, ładowany przy starcie.
+2. **VART 3.5 nie linkuje się z XRT 2.18:** `libxrt_core` 2.18 ukrywa stary
+   interfejs C (`XCL_DRIVER_DLLHIDDEN` = `visibility("hidden")` dla
+   `xclOpen`, `xclAllocBO`, `xclExecBuf`, `xclOpenContext`,
+   `xclIPName2Index`...). Własne `libxrt_core`/`libxrt_coreutil` z tych
+   samych źródeł z widocznością „default", w `/opt/xilinx/xrt`
+   (`/etc/ld.so.conf.d/00-xrt-opt.conf`); pakiet systemowy nieruszony.
+   Po drodze: `XRT_NATIVE_BUILD=no` to zmienna środowiska, nie opcja CMake
+   (pierwsza budowa dała wersję PCIe); budowa bez AIE w 2.18 ma błąd
+   w `hwctx_object.cpp` (łatka w skrypcie); xdp wyłączone.
+3. **VART + gcc 13:** brak `<cstdint>` (`-include cstdint`), `-Werror`
+   na nowych ostrzeżeniach (usunięte z CMake), biblioteki statyczne bez
+   -fPIC (`BUILD_SHARED_LIBS=ON`), brak `uuid-dev`; `<xrt/xrt.h>` brany
+   z `/usr/include` z ukrytymi funkcjami -> „undefined reference"
+   (`-I/opt/xilinx/xrt/include` na początku).
+4. **Zawieszenie płytki** przy pierwszym `show_dpu` (równolegle Python
+   wczytywał model; zocl ładowany ręcznie insmod). Sprawdzone: zegary PL0/PL1
+   100 MHz włączone (CRL_APB CLKACT=1, `clk_ignore_unused`), szerokości
+   portów HPM 32 bity jak w platformie (AFI `0xFD615000` -> 0), rejestr
+   DPU czytany wprost przez /dev/mem odpowiada. Po restarcie (zocl przy
+   starcie, potem `xmutil loadapp`) `show_dpu` i model działają — przyczyna
+   nieznana, hipoteza: kolejność ładowania zocl / równoległe procesy.
+5. **„fingerprint check failure":** `KV260/arch.json` z Vitis AI 3.5 to
+   0x101000056010407, DPU z bitstreamu 2022.1 zgłasza 0x101000016010407.
+   `tools/dpu_kompiluj.sh` daje kompilatorowi odcisk sprzętu.
+6. **Wynik zły (ramki 75%, korelacja 0,54).** Małe sieci testowe
+   (`srodowisko/kv260/testy_warstw.py`): splot, pooling (1,2), złączenie,
+   suma — co do bitu jak vai_q; splot rozszerzony `dilation (d,1)` — korelacja
+   ok. 0. `dilation (d,d)` (przy jądrze (5,1) i szerokości 1 ta sama operacja)
+   i „przestawienie czasu" reshape — co do bitu. W `tools/dpu_eksport.py` (d,d).
+
+Pomiar (`out/dpu/dpu_proba.txt`, 21 okien kluczownika qso1):
+DPU vs vai_q z PC — ramki zgodne 100%, logity identyczne 98,8%, maks |dP|
+0,052; DPU vs float — ramki 99,87%. Czas 6,3 ms na okno 2,56 s (z Pythonem,
+wsad 1) — sieć ok. 400× szybciej niż nagranie; na ARM w numpy sieć brała
+ok. połowę z 0,76× czasu nagrania. Teraz wąskie gardło to `przygotuj`.
