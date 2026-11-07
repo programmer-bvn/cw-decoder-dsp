@@ -1,0 +1,47 @@
+2026-11-07 12:37:45.528233: I tensorflow/core/platform/cpu_feature_guard.cc:186] This TensorFlow binary is optimized with Zen Deep Neural Network Library (ZenDNN) to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TF 2.12.0: zgodność z numpy — maks |dlogit| 1.53e-05 (zakres 32.3)
+[VAI INFO] Using func format quantizer
+[VAI INFO] Update include_fast_ft: False
+[VAI INFO] Quantizing without specific `target`.
+[VAI INFO] Start CrossLayerEqualization...
+ 1/10 [==>...........................] - ETA: 0s 2/10 [=====>........................] - ETA: 2s 3/10 [========>.....................] - ETA: 2s 4/10 [===========>..................] - ETA: 2s 5/10 [==============>...............] - ETA: 1s 6/10 [=================>............] - ETA: 1s 7/10 [====================>.........] - ETA: 0s 8/10 [=======================>......] - ETA: 0s 9/10 [==========================>...] - ETA: 0s10/10 [==============================] - 3s 320ms/step
+[VAI INFO] CrossLayerEqualization Done.
+[VAI INFO] Start Quantize Calibration...
+ 1/15 [=>............................] - ETA: 2:04 2/15 [===>..........................] - ETA: 13s  3/15 [=====>........................] - ETA: 12s 4/15 [=======>......................] - ETA: 11s 5/15 [=========>....................] - ETA: 10s 6/15 [===========>..................] - ETA: 9s  7/15 [=============>................] - ETA: 8s 8/15 [===============>..............] - ETA: 7s 9/15 [=================>............] - ETA: 6s10/15 [===================>..........] - ETA: 5s11/15 [=====================>........] - ETA: 4s12/15 [=======================>......] - ETA: 3s13/15 [=========================>....] - ETA: 2s14/15 [===========================>..] - ETA: 1s15/15 [==============================] - ETA: 0s15/15 [==============================] - 23s 1s/step
+WARNING:tensorflow:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+[VAI INFO] Quantize Calibration Done.
+[VAI INFO] Start Post-Quant Model Refinement...
+[VAI INFO] Start Quantize Position Ajustment...
+[VAI INFO] Quantize Position Ajustment Done.
+[VAI INFO] Post-Quant Model Refninement Done.
+[VAI INFO] Start Model Finalization...
+[VAI INFO] Model Finalization Done.
+[VAI INFO] Quantization Finished.
+vai_q int8: |P_float - P_int8| średnio 0.0013, 99. percentyl 0.039, maks 0.102; ramki zgodne (P>0,5) 99.8698%
+arch: {
+    "target": "DPUCZDX8G_ISA1_B4096"
+}
+[INFO] parse raw model     :  0%|          | 0/56 [00:00<?, ?it/s]                           [INFO] Namespace(batchsize=1, inputs_shape=None, layout='NHWC', model_files=['out/dpu/zbocza_5_int8.h5'], model_type='tensorflow2', named_inputs_shape=None, out_filename='/tmp/zbocza_5_DPUCZDX8G_ISA1_B4096_org.xmodel', proto=None)
+[INFO] tensorflow2 model: /workspace/out/dpu/zbocza_5_int8.h5
+[INFO] keras version: 2.12.0
+[INFO] Tensorflow Keras model type: functional
+[INFO] parse raw model     :100%|██████████| 56/56 [00:00<00:00, 21016.56it/s]               
+[INFO] infer shape (NHWC)  :  0%|          | 0/91 [00:00<?, ?it/s]                           [INFO] infer shape (NHWC)  :100%|██████████| 91/91 [00:00<00:00, 2661.49it/s]                
+[INFO] perform level-0 opt :  0%|          | 0/1 [00:00<?, ?it/s]                            [INFO] perform level-0 opt :100%|██████████| 1/1 [00:00<00:00, 264.79it/s]                   
+[INFO] perform level-1 opt :  0%|          | 0/2 [00:00<?, ?it/s]                            [INFO] perform level-1 opt :100%|██████████| 2/2 [00:00<00:00, 869.29it/s]                   
+[INFO] generate xmodel     :  0%|          | 0/91 [00:00<?, ?it/s]                           [INFO] generate xmodel     :100%|██████████| 91/91 [00:00<00:00, 4485.62it/s]                [INFO] dump xmodel ...[INFO] dump xmodel: /tmp/zbocza_5_DPUCZDX8G_ISA1_B4096_org.xmodel
+
+[UNILOG][INFO] Compile mode: dpu
+[UNILOG][INFO] Debug mode: null
+[UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+[UNILOG][INFO] Graph name: zbocza_5, with op num: 163
+[UNILOG][INFO] Begin to compile...
+[UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+[UNILOG][INFO] Compile done.
+[UNILOG][INFO] The meta json is saved to "/workspace/out/dpu/xmodel/meta.json"
+[UNILOG][INFO] The compiled xmodel is saved to "/workspace/out/dpu/xmodel/zbocza_5.xmodel"
+[UNILOG][INFO] The compiled xmodel's md5sum is 7f90bc59e9b3cf3656add6419ef2a21a, and has been saved to "/workspace/out/dpu/xmodel/md5sum.txt"
+**************************************************
+* VITIS_AI Compilation - Xilinx Inc.
+**************************************************

@@ -1,0 +1,8 @@
+{
+    "lib": "libvart-dpu-runner.so",
+    "filename": "zbocza_5.xmodel",
+    "kernel": [
+        "subgraph_quant_conv2d"
+    ],
+    "target": "DPUCZDX8G_ISA1_B4096"
+}

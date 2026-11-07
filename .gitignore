@@ -194,3 +194,7 @@ wersja.txt
 
 # instrukcja z obrazkami (docs/instrukcja/instrukcja_pl.html -> PDF w budowa_exe.bat)
 !docs/instrukcja/*.png
+
+# DPU: model po kwantyzacji i logity kontrolne odtwarza tools/dpu_kompiluj.sh
+out/dpu/*.h5
+out/dpu/*.npy

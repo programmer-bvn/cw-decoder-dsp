@@ -3540,3 +3540,28 @@ Wniosek: kwantyzacja nie psuje odczytu (+4 słowa, +2–3% halucynacji —
 w szumie pomiaru). Otwarte: czy DPU liczy jak symulacja — dopiero
 `.xmodel` na płytce, wejście te same pozycje (`runs/zbocza_5/siec_int8_pozycje.npz`,
 poza gitem jak inne npz; odtwarza je `tools.int8_ocena`).
+
+### KV260: sieć zboczy skompilowana pod DPU B4096 (07.11)
+
+Docker w WSL (`apt install docker.io`, Ubuntu 26.04), obraz
+`xilinx/vitis-ai-tensorflow2-cpu:latest` (Vitis AI 3.5, 9,7 GB po
+rozpakowaniu; przez Wi-Fi ok. 0,3 MB/s, ok. 1,5 h). `best.keras` jest
+z Keras 3 i TF 2.12 w kontenerze go nie wczyta — sieć buduje się od nowa
+z `runs/zbocza_5/siec.npz` (normalizacja wliczona w sploty):
+`tools/dpu_eksport.py` (okna kalibracyjne w środowisku projektu, potem
+budowa i vai_q w kontenerze), `tools/dpu_kompiluj.sh` (całość + vai_c).
+
+Pomiar (`out/dpu/kompilacja.log`):
+- TF 2.12 z wag npz zgodny z numpy: maks |dlogit| 1,5e-5 przy zakresie 32;
+- vai_q (kalibracja 240 okien z tych samych 60 klipów co `tools.int8_ocena`)
+  na 21 oknach kluczownika qso1: |P_float − P_int8| średnio 0,0013,
+  99. percentyl 0,039, maks 0,102, ramki zgodne 99,87% — lepiej niż moja
+  symulacja (0,0035 / 99,64%, ale tamta na całym teście słów);
+- vai_c, cel DPUCZDX8G_ISA1_B4096: „DPU subgraph number 1" — cała sieć
+  (sploty z rozszerzeniem do 32, pooling, złączenie, sumy) idzie na DPU,
+  nic na CPU. `out/dpu/xmodel/zbocza_5.xmodel` 1,8 MB, skopiowany na płytkę
+  do `~/dpu/`.
+
+Otwarte: bitstream kv260-benchmark-b4096 zbudowany Vitis 2022.1 (era
+Vitis AI 2.5), kompilator z 3.5 — zgodność „fingerprint" DPU sprawdzi
+dopiero VART przy ładowaniu modelu. Na płytce wciąż brak zocl i VART.
