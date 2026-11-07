@@ -3450,3 +3450,30 @@ zgubione/fałszywe przy 20-31 dB 1,0/2,4% (zbocza 2,4/4,2%), przy 31-46 dB
 **Gdzie mieszka.** `dsp/elementy.py` (polacz_*), `tools/odczyt.py`
 (przebieg_laczony), `tools/bieg_laczenia.sh`; aplikacja nadal na samych
 zboczach — przełączenie po decyzji operatora.
+
+### KV260: pierwsze uruchomienie (07.11)
+
+**Co.** Płytka z Mousera (zwrot do ok. 20.11) — sprawdzenie, czy działa.
+- Bez karty: FSBL/PMU 2023.2, U-Boot 2023.01 (05.2024) z QSPI, moduł
+  SMK-K26-XCL2G, płyta SCK-KV-G rev 2, 4 GiB. Firmware świeży — Ubuntu 24.04
+  wstaje bez aktualizacji QSPI.
+- Karta „SC64G" 64 GB (stara, z Raspberry Pi). Najpierw kopia
+  na `W:\Karta64GB` (1471 plików, SHA-256 zgodne). Obraz
+  `iot-limerick-kria-classic-server-2404-classic-24.04-x07-20250423.img.xz`
+  (xz -t OK, 4,4 GB po rozpakowaniu) zapisany `W:\KV-260\zapisz_karte.ps1`
+  (+ `.py`: blokada woluminu, zapis strumieniem, odczyt i SHA-256): 9 MB/s,
+  odczyt kontrolny zgodny.
+- Sieć przewodowa 192.168.137.0/24 bez DHCP: płytka 192.168.137.26 przez
+  `/etc/netplan/99-kv260.yaml` (99 — po `50-cloud-init.yaml`). SSH kluczem
+  `~/.ssh/kv260` (PC). Wklejenie klucza przez konsolę szeregową NIE
+  zadziałało (gubi znaki w długiej linii) — skopiowany przez `ssh ... cat >>`.
+- Linux: jądro 6.8.0-1015-xilinx, 29-30 °C, moduł 5,05 V x 0,69 A = 3,5 W
+  na jałowym (INA260 u14), karta rozszerzona do 58 GB. Dźwięk tylko „DP mon"
+  (wyjście DisplayPort); HDMI na tej płycie idzie przez PL.
+
+**Objaw.** Pierwszy start: w 1. sekundzie `usb usb1-port1: disabled by hub
+(EMI?)`, koncentrator USB 2.0 (USB2744) odłączony na stałe — pendrive
+niewidoczny; USB 3.0 (USB5744) został. Po `reboot` wszystko na miejscu,
+pendrive jako sda, zero „EMI" w dzienniku. Hipoteza: przypadłość startu,
+nie sprzęt (1 z 2 startów) — liczyć dalej (`journalctl -k -b -N | grep EMI`);
+jeśli wraca, usługa przeładowania koncentratora po starcie.
