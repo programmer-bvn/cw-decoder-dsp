@@ -100,9 +100,11 @@ def przebieg_laczony(a: np.ndarray, mz, me, sposob: str = "kaskada") -> np.ndarr
 
 def odczytaj(sciezka: Path, model=None, ton_cw: float | None = None, model_elementow=None,
              laczenie: str | None = None) -> dict:
-    from tensorflow import keras
-    if model_elementow is None or laczenie:
-        model = model or keras.models.load_model(MODEL_ZBOCZY)
+    # TensorFlow tylko, gdy model trzeba wczytać z pliku — z gotową siecią
+    # (dsp.siec_numpy) odczyt działa bez niego (KV260, 07.11: brak TF na ARM)
+    if (model_elementow is None or laczenie) and model is None:
+        from tensorflow import keras
+        model = keras.models.load_model(MODEL_ZBOCZY)
     if ton_cw is None:
         from tools.radio import civ
         ton_cw = civ.ton_z_opisu(Path(sciezka).with_suffix(".txt"))

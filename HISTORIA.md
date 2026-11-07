@@ -3477,3 +3477,29 @@ niewidoczny; USB 3.0 (USB5744) został. Po `reboot` wszystko na miejscu,
 pendrive jako sda, zero „EMI" w dzienniku. Hipoteza: przypadłość startu,
 nie sprzęt (1 z 2 startów) — liczyć dalej (`journalctl -k -b -N | grep EMI`);
 jeśli wraca, usługa przeładowania koncentratora po starcie.
+
+### KV260: odczyt na samym ARM, bez DPU (07.11)
+
+Pakiety: numpy 1.26.4, scipy 1.11.4, soundfile z apt; numba 0.68.1 i librosa
+z pip do `~/venv` (python3-numba nie ma w Ubuntu 24.04 arm64). Internet przez
+komputer udostępniający (brama 192.168.137.1); `apt` z
+`Acquire::ForceIPv4` (DNS daje IPv6, sieć go nie routuje).
+
+`tools/odczyt.odczytaj` importował TensorFlow zawsze — teraz tylko, gdy model
+trzeba wczytać z pliku; z `dsp.siec_numpy.SiecNumpy` (wagi zboczy_5) działa bez TF.
+
+Pomiar: `qso1_cq_kluczownik17wpm` (26,9 s) — ten sam tekst co na PC
+(„AN CQ CQ CQ DE SQ2BVN SQ2BVN PSE K"), 34,3 s za pierwszym razem
+(kompilacja numba), potem 20,4 s = 0,76 czasu nagrania. Rozkład:
+
+| etap | czas |
+|---|---|
+| wczytanie | 0,01 s |
+| przygotuj (pętla tonu, kasowanie obcych, wzmocnienie) | **10,0 s** |
+| sieć zboczy (numpy) | 9,5 s |
+| jednostka (cepstrum + grzebień) | 0,6 s |
+| Viterbi | 0,2 s |
+
+Wniosek: na ARM tyle samo czasu co sieć zjada przygotowanie dźwięku — DPU
+przyspieszy tylko połowę. Przed DPU: profil `przygotuj` (tune.track_tone,
+przeciwsygnal.kasuj_obce) na ARM.
