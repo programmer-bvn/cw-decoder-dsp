@@ -3611,3 +3611,26 @@ DPU vs vai_q z PC — ramki zgodne 100%, logity identyczne 98,8%, maks |dP|
 0,052; DPU vs float — ramki 99,87%. Czas 6,3 ms na okno 2,56 s (z Pythonem,
 wsad 1) — sieć ok. 400× szybciej niż nagranie; na ARM w numpy sieć brała
 ok. połowę z 0,76× czasu nagrania. Teraz wąskie gardło to `przygotuj`.
+
+### KV260: odczyt z siecią na DPU (07.11)
+
+`dsp/siec_dpu.py` — `SiecDPU` z tym samym interfejsem co `SiecNumpy`
+(`inputs`, `przod`), więc `zbocza.przebieg_sieci` i `odczyt.odczytaj` bez
+zmian. Pierwsza wersja: segfault w `execute_async` — `xir.Graph` był
+zmienną lokalną konstruktora, runner wskazywał na zwolniony podgraf;
+graf trzymany w obiekcie. Działa bez sudo (użytkownik w grupie render).
+
+Pomiar `tools/pomiar_kv260.py` (`out/pomiar_kv260_dpu.txt`), 9 nagrań
+kluczownik + ręka, 862 s, części czasu nagrania:
+
+| etap | ARM (numpy) | DPU |
+|---|---|---|
+| przygotuj (pętla tonu, kasowanie obcych) | 0,218× | 0,218× |
+| sieć (z obrazami mel i drobnym na ARM) | 0,362× | 0,022× |
+| dekoder (Viterbi) | 0,031× | 0,031× |
+| **cały odczyt** | **0,614×** | **0,274×** |
+
+Słowa te same (kluczownik 7/7, cq 6/6, kkb 8/8, qso6 29/31); w 3 nagraniach
+tekst różni się poza oczekiwanymi słowami (int8 vs float). Sieć 16× szybsza;
+teraz 80% czasu to `przygotuj` — następne do przyspieszenia. Pierwsze
+nagranie zawiera rozgrzewkę numby (przygotuj 15,9 s na 26,9 s).

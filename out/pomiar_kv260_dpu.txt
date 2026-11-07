@@ -1,0 +1,12 @@
+nagranie                              dł.  wczyt  przyg | sieć: numpy / DPU | dekoder | słowa numpy / DPU
+qso1_cq_kluczownik17wpm_20261018_1  26.9s  1.45s 15.88s |   9.56s /  0.54s |  0.74s |   7 /   7 / 7
+cq_reka_20261018_1826.wav          145.8s  0.19s 26.11s |  52.34s /  3.16s |  3.87s |   6 /   6 / 6  TEKST RÓŻNY
+eeee_15wpm_20261018_1900.wav        44.9s  0.06s  7.83s |  16.50s /  0.99s |  1.44s |  -1 /  -1 / 0
+eeee_15wpm_20261018_1909.wav        44.9s  0.06s  9.32s |  16.47s /  0.99s |  1.11s |  -1 /  -1 / 0  TEKST RÓŻNY
+kkb_reka_20261018_1842.wav         149.8s  0.19s 27.94s |  54.26s /  3.25s |  4.88s |   8 /   8 / 8  TEKST RÓŻNY
+qso6_reka.wav                      180.0s  0.24s 44.73s |  64.98s /  3.91s |  6.03s |  29 /  29 / 31
+qso7_reka.wav                      180.0s  0.24s 30.52s |  64.74s /  3.93s |  6.02s |  -1 /  -1 / 0
+tttt_15wpm_20261018_1916.wav        44.9s  0.06s 12.84s |  16.57s /  0.99s |  1.07s |  -1 /  -1 / 0
+tttt_20wpm_20261018_1912.wav        44.9s  0.06s 12.97s |  16.61s /  0.99s |  1.81s |  -1 /  -1 / 0
+RAZEM 862 s nagrań: wczytanie 0.003×, przygotuj 0.218×, sieć numpy 0.362× / DPU 0.022×, dekoder 0.031×
+  cały odczyt: z siecią na ARM 0.614× czasu nagrania, z DPU 0.274×
