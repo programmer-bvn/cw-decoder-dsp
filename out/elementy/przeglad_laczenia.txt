@@ -1,0 +1,10 @@
+probki {'zb6': 52, 'kask0.15': 48, 'kask0.25': 46, 'kask0.35': 46, 'kask0.5': 46, 'ilo0.3': 54, 'ilo0.5': 53, 'ilo0.7': 52, 'ilo1.0': 49}
+probki/kluczownik {'zb6': 361, 'kask0.15': 361, 'kask0.25': 360, 'kask0.35': 358, 'kask0.5': 356, 'ilo0.3': 362, 'ilo0.5': 363, 'ilo0.7': 362, 'ilo1.0': 362}
+probki/reka {'zb6': 43, 'kask0.15': 43, 'kask0.25': 43, 'kask0.35': 43, 'kask0.5': 43, 'ilo0.3': 43, 'ilo0.5': 43, 'ilo0.7': 43, 'ilo1.0': 43}
+probki/zaszumione {'zb6': 468, 'kask0.15': 455, 'kask0.25': 453, 'kask0.35': 453, 'kask0.5': 451, 'ilo0.3': 469, 'ilo0.5': 469, 'ilo0.7': 461, 'ilo1.0': 455}
+probki/zaszumione_real {'zb6': 434, 'kask0.15': 407, 'kask0.25': 396, 'kask0.35': 381, 'kask0.5': 367, 'ilo0.3': 431, 'ilo0.5': 427, 'ilo0.7': 427, 'ilo1.0': 422}
+probki/qrm {'zb6': 140, 'kask0.15': 140, 'kask0.25': 140, 'kask0.35': 140, 'kask0.5': 139, 'ilo0.3': 141, 'ilo0.5': 141, 'ilo0.7': 142, 'ilo1.0': 142}
+SŁOWA RAZEM: {'zb6': 1498, 'kask0.15': 1454, 'kask0.25': 1438, 'kask0.35': 1421, 'kask0.5': 1402, 'ilo0.3': 1500, 'ilo0.5': 1496, 'ilo0.7': 1487, 'ilo1.0': 1473} z 1659
+HALUCYNACJE pokoj_mikrofon (166 min): {'zb6': 11.9, 'kask0.15': 3.8, 'kask0.25': 2.7, 'kask0.35': 2.1, 'kask0.5': 1.7, 'ilo0.3': 6.8, 'ilo0.5': 5.1, 'ilo0.7': 4.7, 'ilo1.0': 5.1}
+HALUCYNACJE kiwi_am (57 min): {'zb6': 9.8, 'kask0.15': 8.7, 'kask0.25': 8.5, 'kask0.35': 8.2, 'kask0.5': 8.1, 'ilo0.3': 10.4, 'ilo0.5': 8.9, 'ilo0.7': 9.7, 'ilo1.0': 10.4}
+HALUCYNACJE kiwi_ssb (10 min): {'zb6': 1.9, 'kask0.15': 0.9, 'kask0.25': 0.5, 'kask0.35': 0.4, 'kask0.5': 0.0, 'ilo0.3': 1.1, 'ilo0.5': 0.9, 'ilo0.7': 0.8, 'ilo1.0': 1.0}

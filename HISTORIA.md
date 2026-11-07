@@ -3397,3 +3397,56 @@ AM 44,7 -> **41,6** (61,6), SSB 18,5 -> 17,5 (15,0).
 
 **Gdzie mieszka.** `tools/elementy_trening.py` (`--miekkie`, kalibracja
 w `ocen`), `runs/elementy_2/best.keras` (poza gitem), `tools/bieg_elementow_2.sh`.
+
+### Zbocza + przegródki razem: kaskada i iloczyn (07.11, gałąź `elementy`)
+
+**Po co.** Operator: „jak przy szukaniu egzoplanet — łączyć metody". Sieć
+zboczy precyzyjna (zbocze 0,2 ms), ale na pokoju 63 elementy/min; przegródki
+spokojniejsze (21/min), ale tępsze. `dsp/elementy.polacz_kaskada` (odcinek
+zboczy zostaje, gdy średnie P(ton) przegródek na nim >= próg — zbocza
+wyzwalają, wnętrze potwierdza) i `polacz_iloczyn` (suma log-szans, waga
+przegródek). Wejście dla Viterbiego to dalej P co 5 ms — gramatyka bez zmian.
+`tools/odczyt.przebieg_laczony`, `--elementy/--laczenie` w `tester_viterbi`
+i `halucynacje`, `tools/bieg_laczenia.sh`.
+
+**Pułapka po drodze.** Pierwszy pomiar: kaskada 1269 słów, iloczyn 1366. Spadek
+w jednym poziomie zaszumionych — najczystszym (sn+20: 28 -> 2 słów). u dla
+grzebienia przegródek brane z samego cepstrum, a cepstrum dało 195 ms zamiast
+66 (długość kreski; ten sam błąd co 19.10, stąd w dekoderze wybór z dwóch
+kandydatek). Teraz etap A dostaje u wybrane przez dekoder.
+
+**Pomiar** (`out/elementy/przeglad_laczenia.txt`; sieci liczone raz,
+warianty na tych samych P; zbocza_6 + elementy_2). Słowa z 1659, halucynacje
+znaków/min pokój / AM / SSB:
+
+| wariant | słowa | pokój | AM | SSB |
+|---|---|---|---|---|
+| zbocza_6 | 1498 | 11,9 | 9,8 | 1,9 |
+| kaskada 0,15 | 1454 | 3,8 | 8,7 | 0,9 |
+| kaskada 0,25 | 1438 | 2,7 | 8,5 | 0,5 |
+| kaskada 0,5 | 1402 | 1,7 | 8,1 | 0,0 |
+| iloczyn 0,3 | **1500** | 6,8 | 10,4 | 1,1 |
+| iloczyn 0,5 | 1496 | **5,1** | **8,9** | 0,9 |
+| iloczyn 1,0 | 1473 | 5,1 | 10,4 | 1,0 |
+
+Syntetyk (`out/elementy/porownanie_laczenie.txt`, u znane): iloczyn 1,0
+zgubione/fałszywe przy 20-31 dB 1,0/2,4% (zbocza 2,4/4,2%), przy 31-46 dB
+0,3/1,2% (0,8/1,7%); zbocze tak samo dokładne jak w zboczach (0,2-0,5 ms).
+
+**Wniosek.**
+- Pierwszy raz od początku pomiaru halucynacji: połowa halucynacji w pokoju
+  BEZ straty słów (iloczyn 0,5: 1496 kontra 1498) — i bez bramki.
+- Kaskada tnie halucynacje najmocniej (pokój 7x), ale kosztuje 44-96 słów,
+  prawie całość w `zaszumione_real` (434 -> 367..407): przegródki przy
+  słabym sygnale mają czułość tonu 72% (elementy_2), a kaskada wetuje
+  odcinek, gdy wnętrze „nie widzi". Iloczyn pozwala pewnym zboczom
+  przegłosować niepewne wnętrze.
+- AM (radiofonia) prawie się nie rusza w żadnym wariancie (8-10/min) — tam
+  obie sieci widzą to samo (hipoteza: kluczowanie mową/muzyką wygląda jak
+  ton w obu reprezentacjach; do odsłuchu, por. 6070 kHz 08-09).
+- Dalej (pomysł operatora): uczyć wnętrze ZAKŁÓCEŃ wprost — klasa „śmieć"
+  na fragmentach, które zbocza biorą za element (wydobyte z negatywów).
+
+**Gdzie mieszka.** `dsp/elementy.py` (polacz_*), `tools/odczyt.py`
+(przebieg_laczony), `tools/bieg_laczenia.sh`; aplikacja nadal na samych
+zboczach — przełączenie po decyzji operatora.
