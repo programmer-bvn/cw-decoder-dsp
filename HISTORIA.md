@@ -3341,3 +3341,59 @@ rozstrzyga; najmocniejsza przesłanka za wnętrzami to pokój (te same rodzaje
 dźwięku co w treningu negatywów obu sieci, minuty spoza treningu).
 
 **Dalej.** Etap A uczony stopnia wypełnienia (warunek kotwicy), potem B.
+
+### Etap A ze stopniem wypełnienia: elementy_2 (07.11, gałąź `elementy`)
+
+**Objaw.** elementy_1 (etykieta „klucz > połowy przegródki") oceniała
+przegródkę wypełnioną w 76% jako „ton 1,00" — kotwica nie miała po czym
+znaleźć fazy (wpis wyżej).
+
+**Co zrobione.** `tools/elementy_trening.py trenuj --miekkie`: cel
+`[(1-w)(1-śmieć), w, (1-w)·śmieć]`, w = ułamek wypełnienia (`ul` w zbiorze);
+ten sam zbiór i walidacja co elementy_1, 20 epok po ok. 7 min
+(`out/elementy/bieg_2.log`, `runs/elementy_2/log.csv`).
+
+**Pomiar.** Kalibracja — średnie P(ton) wg wypełnienia przegródki:
+
+| wypełnienie | 0-0,05 | 0,2-0,4 | 0,4-0,6 | 0,6-0,8 | 0,95-1 |
+|---|---|---|---|---|---|
+| P(ton) | 0,04 | 0,30 | 0,47 | 0,65 | 0,91 |
+
+Sieć mówi teraz „ile tonu", nie „czy ton". Twarda trafność spadła nieznacznie,
+jak trzeba się było spodziewać (walidacja 94,0 -> 93,4%, ton precyzja 94,4 ->
+93,1%, czułość 91,7 -> 90,8%).
+
+Porównanie (`out/elementy/porownanie_2.txt`), elementy zgubione / fałszywe,
+błąd zbocza — przegródki (środki) elementy_1 -> elementy_2, kotwica 1 -> 2:
+
+| S/N | przegródki 1 | przegródki 2 | kotwica 1 | kotwica 2 |
+|---|---|---|---|---|
+| -3..3 | 33,0/21,4, 4,4 ms | 35,8/18,4, 5,1 ms | 41,8/12,9, 8,2 ms | 43,3/11,7, 6,9 ms |
+| 3..10 | 8,5/10,2, 2,5 | 10,0/8,8, 2,3 | 16,8/6,3, 8,1 | 14,2/5,0, 5,4 |
+| 10..20 | 7,9/12,4, 2,5 | 9,2/10,2, 1,3 | 19,4/7,6, 9,0 | 13,5/6,5, 5,2 |
+| 20..31 | 2,3/7,7, 2,6 | 2,9/6,6, 1,0 | 12,0/4,7, 8,9 | 6,9/4,1, 4,9 |
+| 31..46 | 0,8/4,6, 2,6 | 1,3/3,6, 1,0 | 14,6/3,8, 9,7 | 3,7/2,6, 5,1 |
+
+(zbocza_6 bez zmian: 21,5/18,7 ... 0,8/1,7, 3,1 ... 0,2 ms.)
+
+Negatywy (jak w odczycie), elementy/min: pokój 28,6 -> **21,3** (zbocza 63,0),
+AM 44,7 -> **41,6** (61,6), SSB 18,5 -> 17,5 (15,0).
+
+**Wniosek.**
+- Stopień wypełnienia działa: zbocze z przegródek 2,6 -> 1,0 ms przy dobrym
+  S/N (miękkie P interpoluje się między środkami), mniej fałszywych
+  elementów, mniej halucynacji na wszystkich trzech negatywach. Cena: przy
+  słabym sygnale ok. 1-3 pkt więcej zgubionych (graniczny element ma teraz
+  P ~0,5 zamiast 1 — próg 0,5 na skalibrowanym P jest zbyt ostry; to robota
+  dla etapu B, nie progu).
+- Kotwica poprawiła się wyraźnie (przy 31-46 dB zgubione 14,6 -> 3,7%), ale
+  nadal przegrywa z odczytem ze środków: sztywny grzebień daje zbocza
+  w krokach u/4 (25 WPM: 12 ms, mediana błędu ~5 ms), a waga keyera do
+  +/-0,5 u przesuwa każde zbocze względem zębów. Hipoteza: kotwica nie jest
+  dobrą drogą do ZBOCZY — jest zegarem (tempo, „jest/nie ma CW") dla etapu B;
+  zbocza bierze się ze środków przegródek.
+- Zbocza_6 dalej lepsza na syntetyku, przegródki na pokoju (o 2/3 mniej) i AM.
+  Rozstrzygnie etap B: znaki/min na negatywach i test słów.
+
+**Gdzie mieszka.** `tools/elementy_trening.py` (`--miekkie`, kalibracja
+w `ocen`), `runs/elementy_2/best.keras` (poza gitem), `tools/bieg_elementow_2.sh`.

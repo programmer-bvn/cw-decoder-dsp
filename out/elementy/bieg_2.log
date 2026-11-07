@@ -1,0 +1,95 @@
+start Fri Nov  6 23:50:58 CET 2026  kod 7f35ecb
+kandydaci na venv (wygrywa pierwszy kompletny):
+    /root/venv_gpu: kompletny  <-- WYBRANY (natywny system plików WSL)
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/venv_gpu: brak
+    /mnt/w/PyCharmMiscProject/cw-decoder-dsp/.venv: brak
+venv:   /root/venv_gpu
+python: /root/venv_gpu/bin/python  (Python 3.12.13)
+CUDA:   9 katalogów w LD_LIBRARY_PATH
+/root/venv_gpu/lib/python3.12/site-packages/keras/src/trainers/epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+trening 9646631 wycinków [6325534 2978028  343069], walidacja 477199 [313387 147905  15907]
+etap A: 127651 parametrów
+Epoch 1/20
+
+18842/18842 - 457s - 24ms/step - accuracy: 0.9163 - loss: 0.3110 - val_accuracy: 0.9227 - val_loss: 0.3168 - learning_rate: 0.0010
+Epoch 2/20
+18842/18842 - 433s - 23ms/step - accuracy: 0.9268 - loss: 0.2902 - val_accuracy: 0.9218 - val_loss: 0.3096 - learning_rate: 0.0010
+Epoch 3/20
+18842/18842 - 435s - 23ms/step - accuracy: 0.9299 - loss: 0.2836 - val_accuracy: 0.9191 - val_loss: 0.3143 - learning_rate: 0.0010
+Epoch 4/20
+18842/18842 - 430s - 23ms/step - accuracy: 0.9319 - loss: 0.2797 - val_accuracy: 0.9280 - val_loss: 0.3055 - learning_rate: 0.0010
+Epoch 5/20
+18842/18842 - 430s - 23ms/step - accuracy: 0.9332 - loss: 0.2768 - val_accuracy: 0.9292 - val_loss: 0.3024 - learning_rate: 0.0010
+Epoch 6/20
+18842/18842 - 426s - 23ms/step - accuracy: 0.9342 - loss: 0.2747 - val_accuracy: 0.9296 - val_loss: 0.3046 - learning_rate: 0.0010
+Epoch 7/20
+18842/18842 - 432s - 23ms/step - accuracy: 0.9348 - loss: 0.2729 - val_accuracy: 0.9298 - val_loss: 0.3017 - learning_rate: 0.0010
+Epoch 8/20
+18842/18842 - 432s - 23ms/step - accuracy: 0.9355 - loss: 0.2714 - val_accuracy: 0.9295 - val_loss: 0.3018 - learning_rate: 0.0010
+Epoch 9/20
+18842/18842 - 426s - 23ms/step - accuracy: 0.9360 - loss: 0.2701 - val_accuracy: 0.9307 - val_loss: 0.3048 - learning_rate: 0.0010
+Epoch 10/20
+18842/18842 - 432s - 23ms/step - accuracy: 0.9371 - loss: 0.2687 - val_accuracy: 0.9320 - val_loss: 0.3010 - learning_rate: 5.0000e-04
+Epoch 11/20
+18842/18842 - 424s - 23ms/step - accuracy: 0.9376 - loss: 0.2671 - val_accuracy: 0.9318 - val_loss: 0.2992 - learning_rate: 5.0000e-04
+Epoch 12/20
+18842/18842 - 426s - 23ms/step - accuracy: 0.9379 - loss: 0.2662 - val_accuracy: 0.9311 - val_loss: 0.3017 - learning_rate: 5.0000e-04
+Epoch 13/20
+18842/18842 - 431s - 23ms/step - accuracy: 0.9381 - loss: 0.2654 - val_accuracy: 0.9313 - val_loss: 0.3028 - learning_rate: 5.0000e-04
+Epoch 14/20
+18842/18842 - 431s - 23ms/step - accuracy: 0.9384 - loss: 0.2659 - val_accuracy: 0.9327 - val_loss: 0.2989 - learning_rate: 2.5000e-04
+Epoch 15/20
+18842/18842 - 431s - 23ms/step - accuracy: 0.9386 - loss: 0.2650 - val_accuracy: 0.9320 - val_loss: 0.2997 - learning_rate: 2.5000e-04
+Epoch 16/20
+18842/18842 - 426s - 23ms/step - accuracy: 0.9388 - loss: 0.2644 - val_accuracy: 0.9328 - val_loss: 0.2988 - learning_rate: 2.5000e-04
+Epoch 17/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9389 - loss: 0.2640 - val_accuracy: 0.9324 - val_loss: 0.2995 - learning_rate: 2.5000e-04
+Epoch 18/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9391 - loss: 0.2636 - val_accuracy: 0.9325 - val_loss: 0.2996 - learning_rate: 2.5000e-04
+Epoch 19/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9389 - loss: 0.2649 - val_accuracy: 0.9334 - val_loss: 0.2965 - learning_rate: 1.2500e-04
+Epoch 20/20
+18842/18842 - 419s - 22ms/step - accuracy: 0.9391 - loss: 0.2644 - val_accuracy: 0.9337 - val_loss: 0.2954 - learning_rate: 1.2500e-04
+ETAP A — runs/elementy_2/best.keras, out/elementy/walidacja.npz: 477199 wycinków
+  macierz pomyłek (wiersz = prawda, kolumna = sieć):
+               dziura      ton    śmieć
+     dziura    301376     9065     2946   trafnie 96.2%
+        ton     12548   134306     1051   trafnie 90.8%
+      śmieć      5186      844     9877   trafnie 62.1%
+  ton: precyzja 93.1%, czułość 90.8%
+  wypełnienie 0.00..0.05: średnie P(ton) 0.04  (252393)
+  wypełnienie 0.20..0.40: średnie P(ton) 0.30  (29942)
+  wypełnienie 0.40..0.60: średnie P(ton) 0.47  (29533)
+  wypełnienie 0.60..0.80: średnie P(ton) 0.65  (29612)
+  wypełnienie 0.95..1.00: średnie P(ton) 0.91  (82478)
+  bez przegródek na granicy elementu (ułamek <0,2 albo >0,8): trafnie 94.8% (81% wycinków); wszystkie 93.4%
+  S/N  -3..3   dB: trafnie 85.2%, ton czułość 71.9%  (27438)
+  S/N   3..10  dB: trafnie 93.3%, ton czułość 89.7%  (29992)
+  S/N  10..20  dB: trafnie 96.6%, ton czułość 95.9%  (47557)
+  S/N  20..46  dB: trafnie 97.7%, ton czułość 98.2%  (115217)
+  klipy bez CW, negatyw    brak: sieć „ton” w 0.80% przegródek (46387)
+  klipy bez CW, negatyw    bank: sieć „ton” w 1.98% przegródek (47855)
+  klipy bez CW, negatyw    mowa: sieć „ton” w 2.34% przegródek (23964)
+  klipy bez CW, negatyw   spiew: sieć „ton” w 1.80% przegródek (17264)
+  klipy bez CW, negatyw   gwizd: sieć „ton” w 5.06% przegródek (11838)
+  klipy bez CW, negatyw  muzyka: sieć „ton” w 4.08% przegródek (19120)
+  S/N  -3..3   dB  zbocza    : elementy zgubione  21.5%, fałszywe  18.7%, zły typ  6.7%;  zbocze  3.1 ms (waga<0,1:  3.4);  ramki 86.7%
+  S/N  -3..3   dB  przegródki: elementy zgubione  35.8%, fałszywe  18.4%, zły typ  8.5%;  zbocze  5.1 ms (waga<0,1:  6.1);  ramki 80.6%
+  S/N  -3..3   dB  kotwica   : elementy zgubione  43.3%, fałszywe  11.7%, zły typ  6.6%;  zbocze  6.9 ms (waga<0,1:  6.8);  ramki 78.3%
+  S/N   3..10  dB  zbocza    : elementy zgubione   5.0%, fałszywe   5.6%, zły typ  1.4%;  zbocze  1.2 ms (waga<0,1:  1.2);  ramki 94.9%
+  S/N   3..10  dB  przegródki: elementy zgubione  10.0%, fałszywe   8.8%, zły typ  4.0%;  zbocze  2.3 ms (waga<0,1:  2.2);  ramki 91.8%
+  S/N   3..10  dB  kotwica   : elementy zgubione  14.2%, fałszywe   5.0%, zły typ  3.8%;  zbocze  5.4 ms (waga<0,1:  5.0);  ramki 88.0%
+  S/N  10..20  dB  zbocza    : elementy zgubione   6.8%, fałszywe   6.3%, zły typ  1.2%;  zbocze  0.5 ms (waga<0,1:  0.5);  ramki 95.3%
+  S/N  10..20  dB  przegródki: elementy zgubione   9.2%, fałszywe  10.2%, zły typ  3.8%;  zbocze  1.3 ms (waga<0,1:  1.2);  ramki 92.7%
+  S/N  10..20  dB  kotwica   : elementy zgubione  13.5%, fałszywe   6.5%, zły typ  3.5%;  zbocze  5.2 ms (waga<0,1:  4.6);  ramki 88.1%
+  S/N  20..31  dB  zbocza    : elementy zgubione   2.4%, fałszywe   4.2%, zły typ  1.2%;  zbocze  0.3 ms (waga<0,1:  0.3);  ramki 98.0%
+  S/N  20..31  dB  przegródki: elementy zgubione   2.9%, fałszywe   6.6%, zły typ  2.3%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 96.2%
+  S/N  20..31  dB  kotwica   : elementy zgubione   6.9%, fałszywe   4.1%, zły typ  2.1%;  zbocze  4.9 ms (waga<0,1:  4.9);  ramki 91.2%
+  S/N  31..46  dB  zbocza    : elementy zgubione   0.8%, fałszywe   1.7%, zły typ  0.5%;  zbocze  0.2 ms (waga<0,1:  0.2);  ramki 98.9%
+  S/N  31..46  dB  przegródki: elementy zgubione   1.3%, fałszywe   3.6%, zły typ  1.0%;  zbocze  1.0 ms (waga<0,1:  1.0);  ramki 97.4%
+  S/N  31..46  dB  kotwica   : elementy zgubione   3.7%, fałszywe   2.6%, zły typ  1.2%;  zbocze  5.1 ms (waga<0,1:  4.4);  ramki 92.4%
+  kiwi_am         ( 57.0 min): zbocza   61.6 /min (mediana  41.0),  przegródki   41.6 /min (mediana  29.0)
+  kiwi_ssb        ( 10.0 min): zbocza   15.0 /min (mediana   9.0),  przegródki   17.5 /min (mediana  13.0)
+  pokoj_mikrofon  (166.0 min): zbocza   63.0 /min (mediana  50.0),  przegródki   21.3 /min (mediana  13.0)
+KONIEC Sat Nov  7 02:31:55 CET 2026
