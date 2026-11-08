@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Okno Dekodera CW (Qt6 / PySide6) — 08.11.2026.
+  Układ i wygląd ustawia operator w Qt Designerze (tools\gui\designer.bat).
+  Kod szuka elementów PO NAZWIE (objectName) — nazw nie zmieniać; wolno
+  przesuwać, zmieniać rozmiary, kolory, czcionki, kolejność w układach.
+  Ramki „ramka*" to miejsca na rysowane elementy (wodospady, S-metr,
+  miernik tonu, przebieg P): kod wstawia w nie swój widżet na całą ramkę.
+-->
+<ui version="4.0">
+ <class>OknoDekodera</class>
+ <widget class="QMainWindow" name="OknoDekodera">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>1100</width><height>820</height></rect></property>
+  <property name="windowTitle"><string>Dekoder CW SQ2BVN</string></property>
+  <widget class="QWidget" name="centralny">
+   <layout class="QVBoxLayout" name="ukladGlowny">
+    <property name="spacing"><number>6</number></property>
+
+    <!-- pasek górny: stan + przyciski -->
+    <item>
+     <layout class="QHBoxLayout" name="ukladGora">
+      <item><widget class="QLabel" name="lblStan"><property name="text"><string>Start…</string></property></widget></item>
+      <item><spacer name="odstepGora"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+      <item><widget class="QLabel" name="lblWersja"><property name="text"><string>nowa wersja</string></property></widget></item>
+      <item><widget class="QPushButton" name="btnWyczysc"><property name="text"><string>Wyczyść</string></property></widget></item>
+      <item><widget class="QPushButton" name="btnOtworz"><property name="text"><string>Otwórz plik…</string></property></widget></item>
+      <item><widget class="QPushButton" name="btnRadio"><property name="text"><string>Wróć do radia</string></property></widget></item>
+      <item><widget class="QLabel" name="lblTempo"><property name="text"><string>tempo</string></property></widget></item>
+      <item>
+       <widget class="QComboBox" name="cmbTempo">
+        <item><property name="text"><string>1×</string></property></item>
+        <item><property name="text"><string>2×</string></property></item>
+        <item><property name="text"><string>4×</string></property></item>
+        <item><property name="text"><string>max</string></property></item>
+       </widget>
+      </item>
+      <item><widget class="QPushButton" name="btnZglos"><property name="text"><string>Zgłoś problem</string></property></widget></item>
+     </layout>
+    </item>
+
+    <!-- pasek pomiarów: ton nad szumem + próg blokady, S-metr, raport RST -->
+    <item>
+     <layout class="QHBoxLayout" name="ukladPomiary">
+      <item>
+       <layout class="QVBoxLayout" name="ukladTon">
+        <item><widget class="QLabel" name="lblTonNadSzumem"><property name="text"><string>ton nad szumem</string></property></widget></item>
+        <item>
+         <widget class="QFrame" name="ramkaMiernikTonu">
+          <property name="minimumSize"><size><width>220</width><height>16</height></size></property>
+          <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="ukladProg">
+          <item><widget class="QLabel" name="lblProg"><property name="text"><string>próg blokady</string></property></widget></item>
+          <item>
+           <widget class="QSlider" name="sldProg">
+            <property name="minimum"><number>0</number></property>
+            <property name="maximum"><number>30</number></property>
+            <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           </widget>
+          </item>
+          <item><widget class="QLabel" name="lblProgWartosc"><property name="text"><string>0 dB</string></property></widget></item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item><spacer name="odstepPomiary"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+      <item>
+       <layout class="QVBoxLayout" name="ukladSmetr">
+        <item><widget class="QLabel" name="lblSmetr"><property name="text"><string>S-metr</string></property></widget></item>
+        <item>
+         <widget class="QFrame" name="ramkaSmetr">
+          <property name="minimumSize"><size><width>240</width><height>28</height></size></property>
+          <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="ukladRaport">
+        <item><widget class="QLabel" name="lblRaport"><property name="text"><string>raport</string></property></widget></item>
+        <item>
+         <layout class="QHBoxLayout" name="ukladRST">
+          <item><widget class="QLabel" name="lblR"><property name="text"><string>–</string></property></widget></item>
+          <item><widget class="QLabel" name="lblS"><property name="text"><string>–</string></property></widget></item>
+          <item><widget class="QLabel" name="lblT"><property name="text"><string>–</string></property></widget></item>
+         </layout>
+        </item>
+        <item><widget class="QLabel" name="lblRaportOpis"><property name="text"><string/></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+
+    <!-- wodospady: wejście, to co idzie do sieci (dźwięk), oczami sieci (obraz) -->
+    <item><widget class="QLabel" name="lblWodWejscie"><property name="text"><string>wejście (karta dźwiękowa)</string></property></widget></item>
+    <item>
+     <widget class="QFrame" name="ramkaWodWejscie">
+      <property name="minimumSize"><size><width>600</width><height>90</height></size></property>
+      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+     </widget>
+    </item>
+    <item><widget class="QLabel" name="lblWodDoSieci"><property name="text"><string>po obróbce (pętla tonu, kasowanie obcych)</string></property></widget></item>
+    <item>
+     <widget class="QFrame" name="ramkaWodDoSieci">
+      <property name="minimumSize"><size><width>600</width><height>90</height></size></property>
+      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+     </widget>
+    </item>
+    <item><widget class="QLabel" name="lblWodSiec"><property name="text"><string>oczami sieci (pasma mel co 5 ms)</string></property></widget></item>
+    <item>
+     <widget class="QFrame" name="ramkaWodSiec">
+      <property name="minimumSize"><size><width>600</width><height>64</height></size></property>
+      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="ramkaPrzebiegP">
+      <property name="minimumSize"><size><width>600</width><height>24</height></size></property>
+      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+     </widget>
+    </item>
+
+    <!-- odczytany tekst -->
+    <item>
+     <widget class="QTextEdit" name="txtOdczyt">
+      <property name="readOnly"><bool>true</bool></property>
+      <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="pasekStanu"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
