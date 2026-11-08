@@ -3720,3 +3720,15 @@ Test bez okna, przez prawdziwy proces: qso1 w tempie 2× -> „AN CQ CQ CQ DE
 SQ2BVN SQ2BVN PSE K" (jak z pliku), 87 kroków, krok śr. 0,10 s, maks.
 0,39 s; rozrzut zboczy od regeneratu 1,6 ms = 0,02 u. NIE sprawdzone:
 prawdziwa karta z radia i S-metr przez CI-V — wymaga operatora przy IC-7300.
+
+Pierwsza próba okna Qt z IC-7300 (08.11): pasy stały. Przyczyna: okno
+podawało dekoderowi opis z listy („Mikrofon (3 — USB Audio Device) — MME"),
+a `znajdz_karte` szuka kawałka NAZWY urządzenia — dopisek „— MME" nie pasował,
+proces kończył się `SystemExit`, którego `_praca_okna` nie łapało (tylko
+Exception) — okno nie dostało ani słowa. Do tego napis o końcu nadpisywał
+ostatni krok z tej samej porcji kolejki. Teraz: `cfg_karty` zamienia opis na
+numer z bieżącej listy (jak 0.9.x przy starcie), `_praca_okna` łapie też
+SystemExit, błąd idzie na pasek stanu. Test na karcie radia (bez okna,
+z kopią ustawień operatora): 20 s, 66 kroków, krok śr. 0,11 s, widok szedł
+równo z zegarem, S-metr ≤S5. Test nieistniejącej karty: na pasku „Nie ma
+karty wejściowej z …", przycisk wraca na „Słuchaj".

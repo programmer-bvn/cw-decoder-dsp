@@ -91,6 +91,7 @@ class Odbior(QObject):
         self.poz_otwarte = 0                  # pozycja w tekście, od której końcówka
         self.u = float("nan")
         self.sesja = None
+        self.blad = False
         self.timer = QTimer()
         self.timer.timeout.connect(self._odbierz)
         self.timer.start(50)
@@ -104,6 +105,7 @@ class Odbior(QObject):
         from tools.na_zywo import _praca_okna
         self.stop()
         self.wyczysc_tekst()
+        self.blad = False
         self.stop_ev = self.ctx.Event()
         # nie daemon: dekoder sam ma proces analizy (ProcessPoolExecutor)
         self.proc = self.ctx.Process(target=_praca_okna, args=(self.q, self.stop_ev, self.prog,
@@ -144,19 +146,22 @@ class Odbior(QObject):
     # ------------------------------------------------------------ kolejka
     def _odbierz(self) -> None:
         from tools.teksty import T
-        ost = None
+        ost, koniec = None, None
         try:
             for _ in range(200):                  # nie zawłaszczać okna przy zaległościach
                 m = self.q.get_nowait()
                 if m[0] == "koniec":
-                    self.dek.stan.setText(T("koniec_pracy"))
+                    # ostatni krok przychodzi w tej samej porcji — napis o końcu
+                    # (albo błędzie) ustawiany PO nim, inaczej znikał pod stanem kroku
+                    koniec = self.dek.stan.text() if self.blad else T("koniec_pracy")
                     self.dek.koniec_odbioru()
                 elif m[0] == "sesja":
                     self.sesja = m[1]
                 elif m[0] == "info":
                     self.dek.stan.setText(T(m[1], **m[2]))
                 elif m[0] == "blad":
-                    self.dek.stan.setText(T("blad_okno"))
+                    self.blad = True
+                    self.dek.stan.setText(m[1].strip().splitlines()[-1][:160])
                     self.dek.tekst.append(m[1])
                 elif m[0] == "widok":
                     self._widok(m[1])
@@ -170,6 +175,8 @@ class Odbior(QObject):
             pass
         if ost is not None:
             self._pokaz(*ost)
+        if koniec is not None:
+            self.dek.stan.setText(koniec)
         if self.smetr is not None:
             self.dek.smetr.sm = self.smetr.stan
             self.dek.smetr.opis = T("smetr_cisza") if self.smetr.blad else T("smetr_czeka")
@@ -261,13 +268,18 @@ class Odbior(QObject):
 def cfg_karty(nazwa: str, u) -> dict:
     """Ustawienia z zakładek -> cfg procesu dekodera (jak aplikacja 0.9.x)."""
     from tools.gui import analiza as A
-    from tools.gui.ustawienia import katalog
-    ton = u.value("aplikacja/ton", "")
+    from tools.gui.ustawienia import karty, katalog
+    ton =u.value("aplikacja/ton", "")
     try:
         ton = float(ton) if ton not in ("", None, "None") else None
     except (TypeError, ValueError):
         ton = None
-    return dict(device=nazwa, z_civ=u.value("aplikacja/civ", False, type=bool),
+    # dekoder szuka karty po KAWAŁKU nazwy urządzenia, a lista ma opis
+    # „nazwa — API": 08.11 pierwsza próba z IC-7300 — „Nie ma karty… — MME"
+    # i odbiór stał. Numer z bieżącej listy (jak 0.9.x przy starcie); gdy
+    # karty nie ma, sama nazwa — dekoder powie, czego brakuje.
+    numer = next((i for i, n in karty() if n == nazwa), None)
+    return dict(device=numer if numer is not None else nazwa.split(" — ")[0], z_civ=u.value("aplikacja/civ", False, type=bool),
                 zapis=u.value("aplikacja/zapis", True, type=bool),
                 model_npz=str(Path(A.SIEC).resolve()),
                 civ_port=u.value("aplikacja/port", "") or None,

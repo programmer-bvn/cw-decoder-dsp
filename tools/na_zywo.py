@@ -858,7 +858,9 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                 if braki >= BRAKI_PAMIECI:
                     raise
         gen.close()
-    except Exception:
+    except (Exception, SystemExit):
+        # SystemExit też: „Nie ma karty…" (znajdz_karte) kończyło proces bez
+        # słowa w oknie — 08.11, pierwsza próba okna Qt z IC-7300
         print(traceback.format_exc(), flush=True)        # aplikacja: do dziennika
         q.put(("blad", traceback.format_exc()))
     finally:
