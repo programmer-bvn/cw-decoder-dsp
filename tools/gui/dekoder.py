@@ -17,10 +17,10 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QFile, QObject, Qt, Signal
+from PySide6.QtCore import QFile, QObject, QSettings, Qt, Signal
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (QAbstractButton, QApplication, QFileDialog, QLabel,
-                               QStatusBar, QTextEdit)
+from PySide6.QtWidgets import (QAbstractButton, QApplication, QFileDialog, QLabel, QMenu,
+                               QStatusBar, QTextEdit, QToolButton)
 
 from dsp import config as C
 from tools.gui.analiza import _prazki, hz_mel
@@ -41,10 +41,13 @@ class Dekoder:
         hz = _prazki()[2]
         self.widok = wstaw(self.okno, "ramkaWidokSygnalu", WidokSygnalu([
             ("wejście", "obraz", hz.size, 3, {"hz": hz, "db": db}),
-            ("po obróbce (ton przestrojony na 750 Hz)", "obraz", hz.size, 3, {"hz": hz, "db": db}),
+            ("po obróbce", "obraz", hz.size, 3, {"hz": hz, "db": db}),
             ("oczami sieci", "obraz", C.N_MELS, 2, {"hz": hz_mel(), "db": db}),
-            ("P(klucz)", "przebieg", 0, 1)]))
+            ("P(klucz)", "przebieg", 0, 1),
+            ("regenerat", "przebieg", 0, 1, {"kolor": "#7cf0a0", "odchylki": True})]))
+        self.widok._po_nazwie["po obróbce"].opis = "(ton przestrojony na 750 Hz)"
         polacz_lupe(self.okno, self.widok)
+        self._menu_pasow()
         self.tekst = self.okno.findChild(QTextEdit, "txtOdczyt")
         self.stan = self.okno.findChild(QLabel, "lblStan")
         self.pasek = self.okno.findChild(QStatusBar, "pasekStanu")
@@ -57,6 +60,23 @@ class Dekoder:
         self.most.gotowe.connect(self.pokaz)
         self.siec = None
         self.stan.setText("Otwórz plik WAV")
+
+    def _menu_pasow(self):
+        """Pasy do wyboru jak w IC-7300 (operator 08.11); wybór w QSettings
+        (rejestr Windows), więc okno otwiera się tak, jak je zostawiono."""
+        ust = QSettings("SQ2BVN", "DekoderCW")
+        menu = QMenu(self.okno)
+        for p in self.widok.pasma:
+            a = menu.addAction(p.nazwa)
+            a.setCheckable(True)
+            tak = ust.value(f"pasy/{p.nazwa}", True, type=bool)
+            a.setChecked(tak)
+            self.widok.pokaz_pasmo(p.nazwa, tak)
+            a.toggled.connect(lambda v, n=p.nazwa: (self.widok.pokaz_pasmo(n, v),
+                                                    ust.setValue(f"pasy/{n}", v)))
+        btn = self.okno.findChild(QToolButton, "btnPasy")
+        btn.setMenu(menu)
+        self._menu = menu                        # Python trzyma menu przy życiu
 
     def wybierz(self):
         p, _ = QFileDialog.getOpenFileName(self.okno, "Plik do odczytu", str(Path("probki").resolve()),
@@ -91,10 +111,16 @@ class Dekoder:
         w = self.widok
         w.ustaw_pamiec(r["dl_s"] + 1)
         w.dodaj("wejście", r["wej"])
-        w.dodaj("po obróbce (ton przestrojony na 750 Hz)", r["dos"])
+        w.dodaj("po obróbce", r["dos"])
         w.dodaj("oczami sieci", r["siec"])
         w.dodaj("P(klucz)", r["p"])
+        w.dodaj("regenerat", r["regen"])
         w.dodaj_zeby(r["zeby"]); w.dodaj_zbocza(r["zbocza"])
+        o = r["odchylki"]
+        w.ustaw_odchylki(o["pary"])
+        reg = w._po_nazwie["regenerat"]
+        reg.opis = (f"— zbocza P od regeneratu: rozrzut {o['rozrzut_ms']:.1f} ms = {o['rozrzut_u']:.2f} u, "
+                    f"waga {o['waga_ms']:+.0f} ms ({o['n']} zboczy)" if "rozrzut_ms" in o else "")
         wpm = 1.2 / r["u"] if np.isfinite(r["u"]) else float("nan")
         w.opis = f"u {r['u'] * 1000:.0f} ms · {wpm:.0f} WPM · ton {r['ton']:.0f} Hz"
         w.ustaw_lupe(4.0)

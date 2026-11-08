@@ -6,6 +6,7 @@ ale zachowuje wszystko, co pokazuje widok sygnału, kolumna co 5 ms:
     po obróbce   to samo po pętli tonu, kasowaniu obcych i przestrojeniu na 750 Hz
     oczami sieci obraz mel zboczy — dokładnie to, co dostaje sieć
     P(klucz)     wyjście sieci
+    regenerat    czysty prostokąt z nut, z odchyłkami zboczy P od niego
 oraz nakładki: zęby grzebienia i zbocza regeneratu (nuty z grzebienia).
 
 Sieć: dsp.siec_numpy (runs/zbocza_5/siec.npz) — bez TensorFlow, start okna
@@ -96,6 +97,47 @@ def nakladki(pz: np.ndarray, u: float) -> dict:
     return dict(zeby=np.array(zeby), zbocza=np.array(zbocza), okna=okna)
 
 
+def regenerat(zbocza: np.ndarray, n: int) -> np.ndarray:
+    """Czysty prostokąt z nut (pary narastające/opadające) na kolumny 5 ms."""
+    r = np.zeros(n, np.float32)
+    d = Z.HOP_ZBOCZA / C.SR
+    for a, z in zbocza.reshape(-1, 2):
+        r[int(round(a / d)):int(round(z / d))] = 1.0
+    return r
+
+
+def odchylki(pz: np.ndarray, zbocza: np.ndarray, u: float) -> dict:
+    """Pomysł operatora 08.11: regenerat przyłożony do sygnału, mierzymy, jak
+    daleko od zbocza regeneratu P przecina 0,5 (interpolowane). Narastające
+    i opadające osobno: nuty stawiają oba na siatce k·u, a prawdziwe znaki
+    są dłuższe o wagę b (pogłos, ARW, keyer) — średnia opadających minus
+    średnia narastających to waga, a rozrzut wokół średnich to „pofalowanie"
+    (hipoteza do R w raporcie: im większe, tym gorsza czytelność).
+    Zbocze bez przecięcia P bliżej niż u/2 nie jest liczone."""
+    d = Z.HOP_ZBOCZA / C.SR
+    gora, dol = (np.asarray(x) for x in Z.zbocza(pz, 0.5))
+    gora, dol = (gora + 0.5) * d, (dol + 0.5) * d       # środek ramki, jak w widoku
+    pary, typ = [], []
+    for i, t in enumerate(zbocza):
+        cel = gora if i % 2 == 0 else dol
+        if cel.size == 0:
+            continue
+        j = int(np.argmin(np.abs(cel - t)))
+        if abs(cel[j] - t) < 0.5 * u:
+            pary.append((t, cel[j]))
+            typ.append(i % 2)
+    pary, typ = np.array(pary).reshape(-1, 2), np.array(typ)
+    dev = pary[:, 1] - pary[:, 0] if len(pary) else np.zeros(0)
+    wynik = dict(pary=pary, n=int(dev.size))
+    if dev.size >= 4 and (typ == 0).any() and (typ == 1).any():
+        sr_g, sr_d = dev[typ == 0].mean(), dev[typ == 1].mean()
+        rozrzut = float(np.sqrt(np.mean((dev - np.where(typ == 0, sr_g, sr_d)) ** 2)))
+        wynik.update(srednia_nar_ms=1000 * sr_g, srednia_opad_ms=1000 * sr_d,
+                     waga_ms=1000 * (sr_d - sr_g), rozrzut_ms=1000 * rozrzut,
+                     rozrzut_u=rozrzut / u if np.isfinite(u) else float("nan"))
+    return wynik
+
+
 def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None) -> dict:
     from dsp.siec_numpy import SiecNumpy
     from tools import odczyt
@@ -112,5 +154,7 @@ def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None) -> dict:
     tekst, u, _ = V.dekoduj_najlepiej(pz, [u_c, u_g])
     wej, hz = widmo(surowe)
     dos, _ = widmo(a)
+    nk = nakladki(pz, u)
     return dict(wej=wej, dos=dos, siec=Z.obraz_zboczy(a), p=pz, hz=hz, hz_mel=hz_mel(),
-                tekst=tekst, u=u, ton=ton, dl_s=surowe.size / C.SR, **nakladki(pz, u))
+                tekst=tekst, u=u, ton=ton, dl_s=surowe.size / C.SR, **nk,
+                regen=regenerat(nk["zbocza"], pz.size), odchylki=odchylki(pz, nk["zbocza"], u))

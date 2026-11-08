@@ -112,6 +112,13 @@
       <item><widget class="QCheckBox" name="chkGrzebien"><property name="text"><string>grzebień</string></property><property name="checked"><bool>true</bool></property></widget></item>
       <item><widget class="QCheckBox" name="chkKursory"><property name="text"><string>kursory</string></property><property name="toolTip"><string>Dwa kursory czasu (A, B) na każdym pasie, na każdym dwie kropki: poziom w % i częstotliwość</string></property></widget></item>
       <item><widget class="QCheckBox" name="chkPrzyciagaj"><property name="text"><string>przyciągaj do linii</string></property><property name="checked"><bool>true</bool></property></widget></item>
+      <item>
+       <widget class="QToolButton" name="btnPasy">
+        <property name="text"><string>pasy ▾</string></property>
+        <property name="toolTip"><string>Które pasy widać (wybór zapamiętany)</string></property>
+        <property name="popupMode"><enum>QToolButton::InstantPopup</enum></property>
+       </widget>
+      </item>
       <item><spacer name="odstepLupa"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
       <item><widget class="QPushButton" name="btnNaZywo"><property name="text"><string>na żywo</string></property><property name="checkable"><bool>true</bool></property><property name="checked"><bool>true</bool></property></widget></item>
      </layout>

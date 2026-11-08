@@ -3669,3 +3669,14 @@ ten sam ton ma ten sam odcień co w obrazie sieci. Pięć nagrań (Windows,
 numpy): qso1 kluczownik 27 s / 10 s odczytu, pewność grzebienia 0,99;
 mic2 ręka 237 s / 39 s, 0,97; LA3WAA 180 s / 34 s, 0,93; OK1FPS 182 s /
 21 s, 0,91; dwie stacje 104 s / 11 s, 0,76 (tekst śmieciowy — jak było).
+
+Pas regeneratu i odchyłki zboczy (08.11, pomysł operatora: regenerat
+przyłożony do sygnału). `analiza.odchylki`: dla każdego zbocza regeneratu
+najbliższe przecięcie P przez 0,5 (interpolowane), bliżej niż u/2.
+Narastające i opadające osobno: różnica średnich to waga, rozrzut wokół
+średnich to „pofalowanie". Pierwszy pomiar: kluczownik qso1 2,7 ms =
+0,04 u (172 zbocza), mic2 4,5 ms = 0,07 u (1358), LA3WAA z pasma 5,0 ms =
+0,11 u (820) — kolejność zgodna z oczekiwaniem (keyer < ręka/mikrofon <
+pasmo). Waga −0,7…−1,7 ms: nuty biorą wagę z grzebienia, zostaje mało.
+Hipoteza do sprawdzenia: rozrzut w u jako składnik R w raporcie.
+Wybór pasów: menu „pasy ▾", zapamiętany w QSettings (jak w IC-7300).

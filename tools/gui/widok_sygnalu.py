@@ -97,6 +97,10 @@ class Pasmo:
         o = opcje or {}
         self.hz = None if o.get("hz") is None else np.asarray(o["hz"], float)
         self.db = o.get("db")
+        self.kolor = QColor(o.get("kolor", "#e0b050"))
+        self.pokaz_odchylki = bool(o.get("odchylki", False))
+        self.widoczne = True
+        self.opis = ""                         # dopisek przy nazwie (np. rozrzut zboczy)
         self.buf = (_Pierscien(n, wiersze, np.uint8) if rodzaj == "obraz"
                     else _Pierscien(n, 0, np.float32))
         self.kursory: list[dict] = []          # A, B: {"t": s, "y": [kropka1, kropka2] 0..1 od dołu}
@@ -155,7 +159,8 @@ class WidokSygnalu(QWidget):
         self.kursory_wl = False
         self.przyciaganie = True
         self._chwyt = None                  # (pasmo, nr kursora, nr kropki | None)
-        self._prostokaty: list[QRectF] = []
+        self._prostokaty: list[tuple[Pasmo, QRectF]] = []      # tylko widoczne
+        self.odchylki = np.zeros((0, 2))    # [(t zbocza regeneratu, t przecięcia P 0,5)]
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setMinimumHeight(120)
         self.setMouseTracking(False)
@@ -176,6 +181,16 @@ class WidokSygnalu(QWidget):
 
     def dodaj_zeby(self, t: np.ndarray) -> None:
         self.zeby = self._przytnij(np.r_[self.zeby, np.asarray(t, float)])
+
+    def pokaz_pasmo(self, nazwa: str, tak: bool) -> None:
+        """Wybór pasów (operator 08.11, jak w IC-7300: komu za dużo na ekranie,
+        wyłącza; reszta pasów dzieli wysokość między siebie)."""
+        self._po_nazwie[nazwa].widoczne = tak
+        self.update()
+
+    def ustaw_odchylki(self, o: np.ndarray) -> None:
+        self.odchylki = np.asarray(o, float).reshape(-1, 2)
+        self.update()
 
     def ustaw_pamiec(self, pamiec_s: float) -> None:
         """Plik dłuższy niż pamięć na żywo (120 s): bufory od nowa, na cały plik."""
@@ -244,7 +259,7 @@ class WidokSygnalu(QWidget):
         if not self.kursory_wl:
             return None
         lewy = self._prawy() - self.widok_s
-        for p, r in zip(self.pasma, self._prostokaty):
+        for p, r in self._prostokaty:
             if not r.contains(pos):
                 continue
             for k, ku in enumerate(p.kursory):
@@ -292,7 +307,7 @@ class WidokSygnalu(QWidget):
             if i is None:
                 ku["t"] = self._przyciagnij(self._t(e.position().x()))
             else:
-                r = self._prostokaty[self.pasma.index(p)]
+                r = dict((id(a), b) for a, b in self._prostokaty)[id(p)]
                 ku["y"][i] = float(np.clip((r.bottom() - e.position().y()) / r.height(), 0, 1))
             self.update()
         elif self._ciag is not None:
@@ -320,22 +335,22 @@ class WidokSygnalu(QWidget):
         prawy = self._prawy()
         lewy = prawy - self.widok_s
         j0, j1 = int(np.floor(lewy / KOLUMNA_S)), int(np.ceil(prawy / KOLUMNA_S))
-        suma = sum(p.waga for p in self.pasma)
+        widoczne = [p for p in self.pasma if p.widoczne]
+        suma = sum(p.waga for p in widoczne) or 1.0
         y = ob.top()
-        prostokaty = []
-        for p in self.pasma:
+        self._prostokaty = []
+        for p in widoczne:
             h = ob.height() * p.waga / suma
             r = QRectF(0, y, ob.width(), h - 2)
-            prostokaty.append(r)
+            self._prostokaty.append((p, r))
             self._rysuj_pasmo(q, p, r, j0, j1, lewy)
             y += h
         self._rysuj_znaczniki(q, ob, lewy, prawy)
-        self._prostokaty = prostokaty
         if self.kursory_wl:
-            for p, r in zip(self.pasma, prostokaty):
+            for p, r in self._prostokaty:
                 self._rysuj_kursory(q, p, r, lewy)
-        for p, r in zip(self.pasma, prostokaty):
-            self._etykieta(q, r.topLeft() + QPointF(4, 2), p.nazwa)
+        for p, r in self._prostokaty:
+            self._etykieta(q, r.topLeft() + QPointF(4, 2), p.nazwa + (f"  {p.opis}" if p.opis else ""))
         if self.opis:
             q.setFont(QFont(self.font().family(), 9))
             w = q.fontMetrics().horizontalAdvance(self.opis) + 10
@@ -370,8 +385,28 @@ class WidokSygnalu(QWidget):
             q.drawLine(QPointF(r.left(), r.center().y()), QPointF(r.right(), r.center().y()))
             xs = x0 + (np.arange(len(d)) + 0.5) * szer / len(d)
             ys = r.bottom() - 1 - np.clip(d, 0, 1) * (r.height() - 3)
-            q.setPen(QPen(QColor("#e0b050"), 1.5))
+            q.setPen(QPen(p.kolor, 1.5))
             q.drawPolyline([QPointF(float(a_), float(b_)) for a_, b_ in zip(xs, ys)])
+        if p.pokaz_odchylki and len(self.odchylki):
+            self._rysuj_odchylki(q, r, lewy)
+
+    def _rysuj_odchylki(self, q: QPainter, r: QRectF, lewy: float):
+        """Odcinek od zbocza regeneratu do miejsca, gdzie P przecina 0,5:
+        czerwony = P spóźnione, niebieski = P przed regeneratem. Na
+        wysokości połowy pasa, z kropką po stronie P."""
+        o = self.odchylki
+        o = o[(o[:, 0] >= lewy) & (o[:, 0] <= lewy + self.widok_s)]
+        if len(o) > self.width() / GESTO_PX:
+            return
+        y = r.center().y()
+        for t_r, t_p in o:
+            x0, x1 = self._x(t_r, lewy), self._x(t_p, lewy)
+            kol = QColor("#ff5050") if t_p > t_r else QColor("#50a0ff")
+            q.setPen(QPen(kol, 3))
+            q.drawLine(QPointF(x0, y), QPointF(x1, y))
+            q.setBrush(kol)
+            q.drawEllipse(QPointF(x1, y), 3, 3)
+            q.setBrush(Qt.NoBrush)
 
     def _rysuj_znaczniki(self, q: QPainter, ob: QRectF, lewy: float, prawy: float):
         """Linie gęściej niż co GESTO_PX zalewają obraz (widok 30 s: sama żółć
