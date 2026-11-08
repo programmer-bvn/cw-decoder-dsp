@@ -3824,3 +3824,46 @@ Obserwacja operatora tego samego dnia: na nośnej „jest zbocze i zaliczono
 to jako E, ale impuls się nie kończy" — P faluje wokół 0,5 od szumu
 w filtrze; kaskada wetuje takie odcinki, bo przegródki nie widzą w nich
 kluczowania.
+
+### Takt z cepstrum — „okienka" zamiast progu kontrastu (08.11)
+
+**Objaw.** Z kaskadą nośna z IC-7300 dalej dawała E (18 na 3,5 min sesji);
+dekoder pokazywał 24–33 WPM. Odtworzenie sesji: nośna stoi na 761 Hz
+(+50 dB nad medianą pasma), a pętla tonu skacze 705–806 Hz (łapie środek
+szumu w filtrze), każda analiza przestraja; sieć daje na stałym tonie P ~0,4.
+
+**Najpierw próg kontrastu** (element musi wystawać o X dB ponad przerwy obok,
+poziom z blokady): negatywy w dół, ale słowa też — operator przewidział:
+„przestaniemy czytać słabe sygnały”. Zestaw 1659 słów, zbocza_5: 1517 ->
+1489 (3 dB) -> 1371 (6 dB), `zaszumione_real` 442 -> 421 -> 324; nośna przy
+3 dB nawet gorzej (17,4 -> 22,2 zn./min). Odrzucony.
+
+**Pomysł operatora.** Grzebień na nośnej powinien dać „tempo nieskończenie
+małe”; poszarpana nośna = szum w cepstrum = prędkości nie znamy. Okienka na
+cepstrum: `dsp/takt.py` — dołek przy u i przy 3u (±6 %) względem tła obok
+(±6–35 %), w jednostkach rozrzutu tła (z); takt okna = u z największym
+min(z1, z3). Rozkład z w oknach 8 s (zbocza_6): negatywy mediana ~2,1,
+99. percentyl 3,4–3,9, maks. 5,75 (nośna); kluczownik 24, qrm 15, ręka 14,
+zaszumione 7,7, zaszumione_real 6,6 (część okien to przerwy w nadawaniu).
+Takt na nośnej skacze (82, 162, 192, 77 ms), na kluczowniku stoi (71 ms).
+
+**Bramka** (ramka przepuszczona, gdy obejmujące ją okno 8 s ma z >= próg),
+P zapisane raz, przygotowanie jak `tools.odczyt` (słowa: 1675, z sesjami):
+
+| | słowa | zaszum._real | nośna | pokój | AM | SSB |
+|---|---|---|---|---|---|---|
+| zbocza_6 | 1466 | 434 | 15,1 | 6,3 | 9,9 | 1,9 |
+| zbocza_6 + z>=3 | 1422 | 404 | 1,0 | 0,3 | 1,6 | 0,2 |
+| zbocza_6 + z>=4 | 1384 | 369 | 0,0 | 0,0 | 0,1 | 0,0 |
+| zbocza_5 | 1483 | 442 | 17,4 | 17,2 | 35,7 | 29,9 |
+| zbocza_5 + z>=3 | 1458 | 428 | 1,8 | 3,8 | 9,6 | 7,5 |
+| **zbocza_5 + z>=4** | **1447** | 419 | **0,2** | **0,8** | **1,9** | **0,0** |
+
+(Kaskada dla porównania, zestaw 1659: 1402 słowa, nośna 6,7, AM 7,6.)
+Wariant z zgodnością taktu sąsiednich okien (z >= 2,5 i u ±8 %) nic nie
+dał (zbocza_6: 1425 / 1406 przy progach 3 / 4) — usunięty, nie wszedł do kodu.
+
+**Wniosek.** zbocza_5 + bramka taktu z >= 4: −36 słów (2,4 %), halucynacje
+10–20x mniej na wszystkich negatywach — lepiej niż kaskada w obu liczbach
+naraz i bez utraty OK1FPS (zbocza_5). Pomiar na całych plikach (okna 8 s);
+w dekoderze na żywo jeszcze nie ma.
