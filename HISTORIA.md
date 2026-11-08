@@ -3732,3 +3732,13 @@ SystemExit, błąd idzie na pasek stanu. Test na karcie radia (bez okna,
 z kopią ustawień operatora): 20 s, 66 kroków, krok śr. 0,11 s, widok szedł
 równo z zegarem, S-metr ≤S5. Test nieistniejącej karty: na pasku „Nie ma
 karty wejściowej z …", przycisk wraca na „Słuchaj".
+
+Płynny przesuw na żywo (08.11, operator przy IC-7300: „wodospady nie są
+płynne"). Widok skakał o porcję co krok dekodera (~0,3 s = ~80 px przy
+lupie 4 s). Prawy brzeg ma teraz własny zegar (QTimer 33 ms, PreciseTimer —
+domyślny zgrubny tykał co 47 ms), prędkość z pętli PI do napływu danych,
+0,4 s za końcem danych. Pierwsze wzmocnienie P = 2 przenosiło piłę porcji
+na prędkość: p10–p90 = 0,0–1,9 przy tempie 1×. Po P = 0,4, I = 0,15:
+1,03 (0,91–1,11), skok maks. 72 ms na klatkę, 0,43 s za danymi;
+rysowanie 11 ms na klatkę. Tempo 2× (test z pliku) dochodzi wolniej,
+ale bez zatrzymań. Odczyt pliku (cały naraz) bez zegara — jak był.

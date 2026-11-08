@@ -39,13 +39,24 @@ koniec — nie przesuwa reszty.
 
 from __future__ import annotations
 
+import time
+
 import numpy as np
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 KOLUMNA_S = 0.005
 SKALA_PX = 18                 # wysokość paska skali czasu u dołu
+# Płynny przesuw na żywo (08.11, operator przy IC-7300: „wodospady nie są
+# płynne"). Dane przychodzą porcjami co krok dekodera (~0,3 s, przy lupie
+# 4 s to skok ~80 px). Prawy brzeg ma własny zegar: jedzie co klatkę,
+# prędkość dociągana pętlą PI do napływu danych (sama się ustawia przy
+# tempie 2× z pliku), ZA_DANYMI_S za końcem danych, żeby nie dojeżdżać
+# do pustej kolumny między porcjami.
+KLATKA_MS = 33
+ZA_DANYMI_S = 0.4
+WZM_P, WZM_I = 0.4, 0.15       # PI: P = 2 przenosiło piłę porcji (0,3 s) na prędkość ±60 %
 GESTO_PX = 8                  # najmniejszy średni odstęp linii nakładki (4 px: przy 30 s wciąż sama żółć)
 
 
@@ -166,6 +177,12 @@ class WidokSygnalu(QWidget):
         self.widok_s, self.pamiec_s = 4.0, pamiec_s
         self.prawy_s = 0.0                  # czas prawego brzegu (gdy nie na żywo)
         self.na_zywo = True
+        self.plynnie = False                # zegar prawego brzegu (odbiór na żywo)
+        self._t_ekr = 0.0
+        self._pr, self._calka, self._ost = 1.0, 1.0, None
+        self._zegar = QTimer(self)
+        self._zegar.setTimerType(Qt.PreciseTimer)     # domyślny zgrubny: co 47 ms zamiast 33
+        self._zegar.timeout.connect(self._klatka)
         self.pokaz_zbocza = self.pokaz_grzebien = True
         self.zbocza = np.zeros(0)           # czasy w s od początku
         self.zeby = np.zeros(0)
@@ -252,6 +269,31 @@ class WidokSygnalu(QWidget):
         return max(p.buf.licz for p in self.pasma) * KOLUMNA_S
 
     # ---- widok ----
+    def ustaw_plynny(self, tak: bool) -> None:
+        """Odbiór na żywo: prawy brzeg na własnym zegarze; po końcu — koniec danych."""
+        self.plynnie = tak
+        self._t_ekr = max(0.0, self.koniec_s() - ZA_DANYMI_S)
+        self._calka, self._ost = 1.0, None
+        if tak:
+            self._zegar.start(KLATKA_MS)
+        else:
+            self._zegar.stop()
+        self.update()
+
+    def _klatka(self) -> None:
+        teraz = time.monotonic()
+        dt = 0.0 if self._ost is None else min(0.2, teraz - self._ost)
+        self._ost = teraz
+        cel = self.koniec_s() - ZA_DANYMI_S
+        if cel - self._t_ekr > 3.0 or cel < self._t_ekr - 3.0:   # start, przerwa, czyszczenie
+            self._t_ekr, self._calka = cel, 1.0
+        blad = cel - self._t_ekr
+        self._calka = float(np.clip(self._calka + WZM_I * blad * dt, 0.0, 8.0))
+        self._pr = float(np.clip(self._calka + WZM_P * blad, 0.0, 10.0))
+        self._t_ekr = min(self._t_ekr + self._pr * dt, self.koniec_s())
+        if self.na_zywo:
+            self.update()
+
     def ustaw_lupe(self, s: float) -> None:
         s = float(np.clip(s, 0.25, self.pamiec_s))
         if s != self.widok_s:
@@ -310,7 +352,9 @@ class WidokSygnalu(QWidget):
         return None
 
     def _prawy(self) -> float:
-        return self.koniec_s() if self.na_zywo else self.prawy_s
+        if not self.na_zywo:
+            return self.prawy_s
+        return self._t_ekr if self.plynnie else self.koniec_s()
 
     def _obszar(self) -> QRectF:
         return QRectF(0, 0, self.width(), self.height() - SKALA_PX)

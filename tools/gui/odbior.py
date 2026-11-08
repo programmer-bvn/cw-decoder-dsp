@@ -111,6 +111,7 @@ class Odbior(QObject):
         self.proc = self.ctx.Process(target=_praca_okna, args=(self.q, self.stop_ev, self.prog,
                                                                {**cfg, "widok": True, "t0": time.time()}))
         self.proc.start()
+        self.dek.widok.ustaw_plynny(True)
         if cfg.get("z_civ") and not cfg.get("wav"):
             # port jest jeden: start dekodera czyta przez niego ton i pasmo,
             # więc S-metr rusza z opóźnieniem (jak w okienku tkinter)
@@ -133,8 +134,9 @@ class Odbior(QObject):
             p.join(timeout=0.1)
         if p.is_alive():
             p.terminate()
-        self._oproznij()
+        self._oproznij()                         # „koniec" też przepada — zegar widoku stop tutaj
         self.proc = None
+        self.dek.widok.ustaw_plynny(False)
 
     def _oproznij(self) -> None:
         try:
@@ -200,7 +202,7 @@ class Odbior(QObject):
                 w._po_nazwie["regenerat"].opis = n["opis"]
         if np.isfinite(self.u):
             w.opis = f"u {self.u * 1000:.0f} ms · {1.2 / self.u:.0f} WPM"
-        if w.na_zywo:
+        if w.na_zywo and not w.plynnie:          # płynnie: odświeża zegar widoku
             w.update()
 
     # ------------------------------------------------------------ tekst

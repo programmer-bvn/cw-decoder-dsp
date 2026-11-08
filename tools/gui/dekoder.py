@@ -278,6 +278,7 @@ class Dekoder:
         self.okno.findChild(QTabWidget, "zakladki").setCurrentIndex(0)
 
     def koniec_odbioru(self):
+        self.widok.ustaw_plynny(False)
         self._przyciski(False)
 
     def _pamiec_okna(self):
