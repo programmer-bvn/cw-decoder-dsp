@@ -136,13 +136,8 @@
          z boku pasek: czcionka, wyczyść, kopiuj, zapisz (HTML z kolorami albo TXT) -->
     <item>
      <layout class="QHBoxLayout" name="ukladTekst">
-      <item>
-       <widget class="QTextEdit" name="txtOdczyt">
-        <property name="readOnly"><bool>true</bool></property>
-        <property name="textInteractionFlags"><set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set></property>
-        <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
-       </widget>
-      </item>
+      <!-- pasek po LEWEJ (operator 08.11: na Zachodzie przyborniki są z lewej, jak w PyCharmie;
+           przy języku pisanym od prawej Qt sam odwraca układ — layoutDirection) -->
       <item>
        <layout class="QVBoxLayout" name="ukladPasekTekstu">
         <item><widget class="QToolButton" name="btnCzcionkaWieksza"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>A+</string></property><property name="toolTip"><string>Większa czcionka (też Ctrl + kółko)</string></property></widget></item>
@@ -152,6 +147,13 @@
         <item><widget class="QToolButton" name="btnZapisz"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>Zapisz…</string></property><property name="toolTip"><string>Do pliku: HTML z kolorami (otwiera każda przeglądarka i Word) albo zwykły tekst</string></property></widget></item>
         <item><spacer name="odstepPasekTekstu"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
        </layout>
+      </item>
+      <item>
+       <widget class="QTextEdit" name="txtOdczyt">
+        <property name="readOnly"><bool>true</bool></property>
+        <property name="textInteractionFlags"><set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set></property>
+        <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
+       </widget>
       </item>
      </layout>
     </item>
