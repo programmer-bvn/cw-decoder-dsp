@@ -64,6 +64,8 @@ def polacz_lupe(okno, widok: WidokSygnalu) -> None:
     for nazwa, pole in (("chkZbocza", "pokaz_zbocza"), ("chkGrzebien", "pokaz_grzebien")):
         okno.findChild(QAbstractButton, nazwa).toggled.connect(
             lambda v, pole=pole: (setattr(widok, pole, v), widok.update()))
+    okno.findChild(QAbstractButton, "chkKursory").toggled.connect(widok.ustaw_kursory)
+    okno.findChild(QAbstractButton, "chkPrzyciagaj").toggled.connect(widok.ustaw_przyciaganie)
     zyw.toggled.connect(widok.ustaw_na_zywo)
     widok.na_zywo_zmienione.connect(lambda v: (zyw.blockSignals(True), zyw.setChecked(v),
                                                zyw.blockSignals(False)))
@@ -112,9 +114,16 @@ def main() -> None:
     app = QApplication(sys.argv)
     f = QFile(str(a.ui)); f.open(QFile.ReadOnly)
     okno = QUiLoader().load(f); f.close()
+    from dsp import config as C, melref
+    db = (C.DB_MIN, C.DB_MAX)              # skala koloru jak wejście sieci
+    hz_wej = np.linspace(300, 1200, 120)   # atrapa; prawdziwy wodospad poda swoje
+    m = np.linspace(melref.hz_to_mel(C.FMIN), melref.hz_to_mel(C.FMAX), C.N_MELS + 2)
+    hz_mel = np.asarray(melref.mel_to_hz(m[1:-1]))
     widok = wstaw(okno, "ramkaWidokSygnalu", WidokSygnalu([
-        ("wejście", "obraz", 120, 3), ("po obróbce", "obraz", 120, 3),
-        ("oczami sieci", "obraz", 32, 2), ("P(klucz)", "przebieg", 0, 1)]))
+        ("wejście", "obraz", 120, 3, {"hz": hz_wej, "db": db}),
+        ("po obróbce", "obraz", 120, 3, {"hz": hz_wej, "db": db}),
+        ("oczami sieci", "obraz", 32, 2, {"hz": hz_mel, "db": db}),
+        ("P(klucz)", "przebieg", 0, 1)]))
     widok.opis = "atrapa · u 60 ms · 20 WPM"
     ton = wstaw(okno, "ramkaMiernikTonu", Pasek("#4caf50"))
     sm = wstaw(okno, "ramkaSmetr", Pasek("#e0b050"))

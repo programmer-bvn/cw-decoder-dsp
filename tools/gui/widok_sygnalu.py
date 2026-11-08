@@ -15,6 +15,22 @@ Obsługa myszą:
     prawy, ciągnij   pomiar odcinka: Δt w ms (np. długość kropki)
     dwuklik          z powrotem „na żywo" (prawy brzeg = najnowsze dane)
 
+KURSORY (operator 08.11, „jak na oscyloskopie"). Każdy pas ma swoją grupę:
+dwa pionowe kursory czasu A i B (Δt), na każdym dwie kropki do przesuwania
+góra-dół. Kropka odczytuje poziom i częstotliwość swojego wiersza; dwie
+kropki na jednym kursorze — szerokość pasma (Δf) i stosunek poziomów
+(sygnał do tła), te same kropki na A i B — dryf częstotliwości. Kursor
+przyciąga się (gdy włączone) do najbliższej widocznej linii: zęba
+grzebienia albo zbocza — wtedy kropki i kreski mierzy się co do jednostki.
+Ciągnie się je lewym przyciskiem; poza kursorami lewy dalej przesuwa czas.
+
+POZIOM W PROCENTACH, nie w dB (operator 08.11): dB bezwzględne trzeba by
+kalibrować na każdej karcie dźwiękowej. Kolor wodospadu jest w skali dB
+(DB_MIN...DB_MAX, jak wejście sieci), więc kropka przelicza go z powrotem
+na AMPLITUDĘ LINIOWĄ w % góry skali — procent z samego koloru (80% sygnał,
+75% tło) wyglądałby na małą różnicę, a to 0,05 x 54 dB = 2,7 dB, 1,4x
+amplitudy. Odczyt to średnia 3 x 3 komórek: jedna komórka szumu skacze.
+
 Wszystkie pasy mają kolumnę co KOLUMNA_S (5 ms, jak sieć zboczy) — wtedy
 zbocze z P(klucz) leży dokładnie nad tą samą kolumną wodospadu. Pas, który
 przychodzi później (sieć liczy oknami po 2,56 s), po prostu ma krótszy
@@ -72,10 +88,41 @@ class _Pierscien:
 
 
 class Pasmo:
-    def __init__(self, nazwa: str, rodzaj: str, wiersze: int, waga: float, n: int):
-        self.nazwa, self.rodzaj, self.waga = nazwa, rodzaj, waga
+    """opcje: hz — środki wierszy w Hz od dołu (mel: nierówne odstępy),
+    db — (min, max) skali koloru; bez db procent = wartość wprost."""
+
+    def __init__(self, nazwa: str, rodzaj: str, wiersze: int, waga: float,
+                 opcje: dict | None, n: int):
+        self.nazwa, self.rodzaj, self.waga, self.wiersze = nazwa, rodzaj, waga, wiersze
+        o = opcje or {}
+        self.hz = None if o.get("hz") is None else np.asarray(o["hz"], float)
+        self.db = o.get("db")
         self.buf = (_Pierscien(n, wiersze, np.uint8) if rodzaj == "obraz"
                     else _Pierscien(n, 0, np.float32))
+        self.kursory: list[dict] = []          # A, B: {"t": s, "y": [kropka1, kropka2] 0..1 od dołu}
+
+    def procent(self, v: float) -> float:
+        """Wartość 0..1 z bufora -> amplituda liniowa w % góry skali."""
+        if self.db is None:
+            return 100.0 * v
+        return 100.0 * 10 ** ((v - 1.0) * (self.db[1] - self.db[0]) / 20.0)
+
+    def wiersz(self, y: float) -> int:
+        return int(np.clip(y * self.wiersze, 0, self.wiersze - 1))
+
+    def odczyt(self, t: float, y: float = 0.0) -> float:
+        """Poziom (%) w czasie t i wysokości y: średnia 3 kolumny x 3 wiersze."""
+        j = int(t / KOLUMNA_S)
+        _, d = self.buf.wycinek(j - 1, j + 2)
+        if len(d) == 0:
+            return float("nan")
+        if self.rodzaj != "obraz":
+            return 100.0 * float(d.mean())
+        w = self.wiersz(y)
+        return self.procent(float(d[:, max(0, w - 1):w + 2].mean()) / 255.0)
+
+    def czestotliwosc(self, y: float) -> float:
+        return float("nan") if self.hz is None else float(self.hz[self.wiersz(y)])
 
 
 def _ladny_krok(s: float) -> float:
@@ -90,10 +137,11 @@ class WidokSygnalu(QWidget):
 
     def __init__(self, pasma: list[tuple[str, str, int, float]], pamiec_s: float = 120.0,
                  parent=None):
-        """pasma: [(nazwa, 'obraz'|'przebieg', wierszy, waga wysokości), ...]."""
+        """pasma: [(nazwa, 'obraz'|'przebieg', wierszy, waga wysokości[, opcje]), ...]
+        — opcje jak w Pasmo (hz, db)."""
         super().__init__(parent)
         n = int(pamiec_s / KOLUMNA_S)
-        self.pasma = [Pasmo(*p, n) for p in pasma]
+        self.pasma = [Pasmo(*p[:4], p[4] if len(p) > 4 else None, n) for p in pasma]
         self._po_nazwie = {p.nazwa: p for p in self.pasma}
         self.widok_s, self.pamiec_s = 4.0, pamiec_s
         self.prawy_s = 0.0                  # czas prawego brzegu (gdy nie na żywo)
@@ -104,6 +152,10 @@ class WidokSygnalu(QWidget):
         self.opis = ""                      # np. „u 60 ms · 20 WPM"
         self._ciag = None                   # (x startu, prawy_s na starcie)
         self._pomiar = None                 # (t0, t1)
+        self.kursory_wl = False
+        self.przyciaganie = True
+        self._chwyt = None                  # (pasmo, nr kursora, nr kropki | None)
+        self._prostokaty: list[QRectF] = []
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setMinimumHeight(120)
         self.setMouseTracking(False)
@@ -153,6 +205,48 @@ class WidokSygnalu(QWidget):
             self.na_zywo_zmienione.emit(tak)
         self.update()
 
+    def ustaw_kursory(self, tak: bool) -> None:
+        """Włączenie stawia A i B na 1/3 i 2/3 widoku (tam, gdzie się patrzy),
+        kropki na połowie i na 1/5 wysokości pasa."""
+        self.kursory_wl = tak
+        if tak:
+            lewy = self._prawy() - self.widok_s
+            for p in self.pasma:
+                p.kursory = [{"t": lewy + self.widok_s * f, "y": [0.5, 0.2]} for f in (1 / 3, 2 / 3)]
+        self.update()
+
+    def ustaw_przyciaganie(self, tak: bool) -> None:
+        self.przyciaganie = tak
+
+    def _przyciagnij(self, t: float) -> float:
+        if not self.przyciaganie:
+            return t
+        linie = [x for pokaz, x in ((self.pokaz_grzebien, self.zeby), (self.pokaz_zbocza, self.zbocza))
+                 if pokaz and x.size]
+        if not linie:
+            return t
+        x = np.concatenate(linie)
+        i = int(np.argmin(np.abs(x - t)))
+        return float(x[i]) if abs(x[i] - t) / self.widok_s * self.width() < 12 else t
+
+    def _trafienie(self, pos: QPointF):
+        """Kursor / kropka pod myszą: (pasmo, nr kursora, nr kropki | None)."""
+        if not self.kursory_wl:
+            return None
+        lewy = self._prawy() - self.widok_s
+        for p, r in zip(self.pasma, self._prostokaty):
+            if not r.contains(pos):
+                continue
+            for k, ku in enumerate(p.kursory):
+                x = self._x(ku["t"], lewy)
+                if p.rodzaj == "obraz":
+                    for i, y in enumerate(ku["y"]):
+                        if abs(pos.x() - x) < 8 and abs(pos.y() - (r.bottom() - y * r.height())) < 8:
+                            return p, k, i
+                if abs(pos.x() - x) < 5:
+                    return p, k, None
+        return None
+
     def _prawy(self) -> float:
         return self.koniec_s() if self.na_zywo else self.prawy_s
 
@@ -171,6 +265,9 @@ class WidokSygnalu(QWidget):
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
+            self._chwyt = self._trafienie(e.position())
+            if self._chwyt is not None:
+                return
             self.ustaw_na_zywo(False)
             self._ciag = (e.position().x(), self.prawy_s)
         elif e.button() == Qt.RightButton:
@@ -179,7 +276,16 @@ class WidokSygnalu(QWidget):
             self.update()
 
     def mouseMoveEvent(self, e):
-        if self._ciag is not None:
+        if self._chwyt is not None:
+            p, k, i = self._chwyt
+            ku = p.kursory[k]
+            if i is None:
+                ku["t"] = self._przyciagnij(self._t(e.position().x()))
+            else:
+                r = self._prostokaty[self.pasma.index(p)]
+                ku["y"][i] = float(np.clip((r.bottom() - e.position().y()) / r.height(), 0, 1))
+            self.update()
+        elif self._ciag is not None:
             x0, p0 = self._ciag
             dt = (e.position().x() - x0) / max(1, self.width()) * self.widok_s
             self.prawy_s = float(np.clip(p0 - dt, min(self.widok_s, self.koniec_s()),
@@ -190,7 +296,7 @@ class WidokSygnalu(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, e):
-        self._ciag = None
+        self._ciag = self._chwyt = None
 
     def mouseDoubleClickEvent(self, e):
         self._pomiar = None
@@ -214,6 +320,10 @@ class WidokSygnalu(QWidget):
             self._rysuj_pasmo(q, p, r, j0, j1, lewy)
             y += h
         self._rysuj_znaczniki(q, ob, lewy, prawy)
+        self._prostokaty = prostokaty
+        if self.kursory_wl:
+            for p, r in zip(self.pasma, prostokaty):
+                self._rysuj_kursory(q, p, r, lewy)
         for p, r in zip(self.pasma, prostokaty):
             self._etykieta(q, r.topLeft() + QPointF(4, 2), p.nazwa)
         if self.opis:
@@ -275,6 +385,43 @@ class WidokSygnalu(QWidget):
             q.setFont(QFont(self.font().family(), 9))
             self._etykieta(q, QPointF(ob.center().x() - q.fontMetrics().horizontalAdvance(napis) / 2,
                                       ob.top() + 2), napis)
+
+    def _rysuj_kursory(self, q: QPainter, p: Pasmo, r: QRectF, lewy: float):
+        kolory = (QColor("#40e0ff"), QColor("#ff60d0"))
+        q.save()
+        q.setClipRect(r)
+        opisy = []
+        for k, (ku, kol) in enumerate(zip(p.kursory, kolory)):
+            x = self._x(ku["t"], lewy)
+            # Ciągła 2 px: przerywana 1 px ginęła w szumie wodospadu (zrzut 08.11)
+            q.setPen(QPen(kol, 2))
+            q.drawLine(QPointF(x, r.top()), QPointF(x, r.bottom()))
+            lit = "AB"[k]
+            if p.rodzaj != "obraz":
+                opisy.append(f"{lit}: P {p.odczyt(ku['t']):.0f}%")
+                continue
+            vals = []
+            for i, y in enumerate(ku["y"]):
+                yy = r.bottom() - y * r.height()
+                q.setPen(QPen(QColor("black"), 1))
+                q.setBrush(kol)
+                q.drawEllipse(QPointF(x, yy), 4.5, 4.5)
+                v, f = p.odczyt(ku["t"], y), p.czestotliwosc(y)
+                vals.append((v, f))
+                napis = f"{lit}{i + 1} {v:.1f}%" + ("" if np.isnan(f) else f" · {f:.0f} Hz")
+                self._etykieta(q, QPointF(x + 7, yy - 9), napis)
+            q.setBrush(Qt.NoBrush)
+            (v1, f1), (v2, f2) = vals
+            stos = f"{v1 / v2:.1f}×" if v2 > 0 else "∞"
+            opisy.append(f"{lit}1/{lit}2 {stos}" + ("" if np.isnan(f1) else f" Δf {abs(f1 - f2):.0f} Hz"))
+        a, b = p.kursory
+        linia = f"A→B Δt {1000 * abs(b['t'] - a['t']):.0f} ms   " + "   ".join(opisy)
+        if p.rodzaj == "obraz" and p.hz is not None:
+            linia += f"   dryf A1→B1 {p.czestotliwosc(b['y'][0]) - p.czestotliwosc(a['y'][0]):+.0f} Hz"
+        q.setFont(QFont(self.font().family(), 9))
+        w = q.fontMetrics().horizontalAdvance(linia) + 10
+        self._etykieta(q, QPointF(r.right() - w, r.bottom() - q.fontMetrics().height() - 4), linia)
+        q.restore()
 
     def _rysuj_skale(self, q: QPainter, ob: QRectF, lewy: float, prawy: float):
         """Podziałka liczona od prawego brzegu (−200 ms, −400 ms...): tak

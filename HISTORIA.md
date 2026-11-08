@@ -3650,3 +3650,12 @@ Dwie rzeczy wyszły na zrzutach atrapy: (1) przy szerokim widoku kolumny
 gdy średni odstęp < 8 px, nakładka znika z napisem „przybliż lupą".
 Na razie tylko atrapa (`podglad.py`); prawdziwe dane po przeniesieniu
 logiki z tkintera.
+
+Kursory (08.11, operator: „jak na oscyloskopie"): na każdym pasie A i B
+(Δt), na każdym dwie kropki — poziom i częstotliwość wiersza, stosunek
+kropek, Δf, dryf A1→B1. Przyciąganie do widocznej linii (ząb, zbocze) —
+test myszą: kursor puszczony 6 px obok zbocza staje dokładnie na nim.
+Poziom w % amplitudy liniowej (kolor w dB przeliczony z powrotem), nie
+w % koloru i nie w dB bezwzględnych — bez kalibracji karty. Atrapa: ton
+35%, tło 1,4%, stosunek 24x. Przerywane linie kursorów ginęły w szumie —
+ciągłe 2 px.
