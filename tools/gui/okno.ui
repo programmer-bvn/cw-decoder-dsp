@@ -24,7 +24,6 @@
       <item><widget class="QLabel" name="lblStan"><property name="text"><string>Start…</string></property></widget></item>
       <item><spacer name="odstepGora"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
       <item><widget class="QLabel" name="lblWersja"><property name="text"><string>nowa wersja</string></property></widget></item>
-      <item><widget class="QPushButton" name="btnWyczysc"><property name="text"><string>Wyczyść</string></property></widget></item>
       <item><widget class="QPushButton" name="btnOtworz"><property name="text"><string>Otwórz plik…</string></property></widget></item>
       <item><widget class="QPushButton" name="btnRadio"><property name="text"><string>Wróć do radia</string></property></widget></item>
       <item><widget class="QLabel" name="lblTempo"><property name="text"><string>tempo</string></property></widget></item>
@@ -133,13 +132,28 @@
      </widget>
     </item>
 
-    <!-- odczytany tekst: zaznaczanie i kopiowanie (Ctrl+C) działa, pisać się nie da -->
+    <!-- odczytany tekst: zaznaczanie i kopiowanie (Ctrl+C) działa, pisać się nie da;
+         z boku pasek: czcionka, wyczyść, kopiuj, zapisz (HTML z kolorami albo TXT) -->
     <item>
-     <widget class="QTextEdit" name="txtOdczyt">
-      <property name="readOnly"><bool>true</bool></property>
-      <property name="textInteractionFlags"><set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set></property>
-      <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
-     </widget>
+     <layout class="QHBoxLayout" name="ukladTekst">
+      <item>
+       <widget class="QTextEdit" name="txtOdczyt">
+        <property name="readOnly"><bool>true</bool></property>
+        <property name="textInteractionFlags"><set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set></property>
+        <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="ukladPasekTekstu">
+        <item><widget class="QToolButton" name="btnCzcionkaWieksza"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>A+</string></property><property name="toolTip"><string>Większa czcionka (też Ctrl + kółko)</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnCzcionkaMniejsza"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>A−</string></property><property name="toolTip"><string>Mniejsza czcionka</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnWyczysc"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>Wyczyść</string></property><property name="toolTip"><string>Wyczyść bufor tekstu</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnKopiuj"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>Kopiuj</string></property><property name="toolTip"><string>Do schowka: zaznaczenie, a bez zaznaczenia cały tekst</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnZapisz"><property name="minimumSize"><size><width>76</width><height>26</height></size></property><property name="text"><string>Zapisz…</string></property><property name="toolTip"><string>Do pliku: HTML z kolorami (otwiera każda przeglądarka i Word) albo zwykły tekst</string></property></widget></item>
+        <item><spacer name="odstepPasekTekstu"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+       </layout>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

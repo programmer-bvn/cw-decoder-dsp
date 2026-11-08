@@ -53,13 +53,64 @@ class Dekoder:
         self.pasek = self.okno.findChild(QStatusBar, "pasekStanu")
         self.btn = self.okno.findChild(QAbstractButton, "btnOtworz")
         self.btn.clicked.connect(self.wybierz)
-        self.okno.findChild(QAbstractButton, "btnWyczysc").clicked.connect(self.tekst.clear)
+        self._pasek_tekstu()
         for n in ("btnRadio", "btnZglos", "btnNaZywo"):     # jeszcze nie w tej wersji
             self.okno.findChild(QAbstractButton, n).setEnabled(False)
         self.most = _Most()
         self.most.gotowe.connect(self.pokaz)
         self.siec = None
+        self.zrodlo = None                       # ostatni plik: podpowiedź nazwy przy zapisie
         self.stan.setText("Otwórz plik WAV")
+
+    def _pasek_tekstu(self):
+        """Pasek obok tekstu (operator 08.11): czcionka +/-, wyczyść, kopiuj,
+        zapisz. Wielkość czcionki zapamiętana jak wybór pasów."""
+        ust = QSettings("SQ2BVN", "DekoderCW")
+        t = self.tekst
+
+        def czcionka(pt: float):
+            f = t.font()
+            f.setPointSizeF(float(np.clip(pt, 6, 72)))
+            t.setFont(f)
+            ust.setValue("tekst/punkty", f.pointSizeF())
+
+        czcionka(ust.value("tekst/punkty", 12.0, type=float))
+        b = lambda n: self.okno.findChild(QAbstractButton, n)    # noqa: E731
+        b("btnCzcionkaWieksza").clicked.connect(lambda: czcionka(t.font().pointSizeF() * 1.15))
+        b("btnCzcionkaMniejsza").clicked.connect(lambda: czcionka(t.font().pointSizeF() / 1.15))
+        b("btnWyczysc").clicked.connect(t.clear)
+        b("btnKopiuj").clicked.connect(self.kopiuj)
+        b("btnZapisz").clicked.connect(self.zapisz)
+
+    def kopiuj(self):
+        """Zaznaczenie, a bez zaznaczenia cały tekst; do schowka idzie też
+        wersja z kolorami (wklejona do Worda czy Thunderbirda zostaje kolorowa)."""
+        from PySide6.QtCore import QMimeData
+        c = self.tekst.textCursor()
+        m = QMimeData()
+        if c.hasSelection():
+            m.setText(c.selectedText().replace(" ", "\n"))
+            m.setHtml(c.selection().toHtml())
+        else:
+            m.setText(self.tekst.toPlainText())
+            m.setHtml(self.tekst.toHtml())
+        QApplication.clipboard().setMimeData(m)
+        self.pasek.showMessage("Skopiowane do schowka", 3000)
+
+    def zapisz(self):
+        """HTML zamiast RTF: Qt zapisuje go sam, z kolorami, a otwiera go każda
+        przeglądarka, Word i LibreOffice — bez żadnych dodatkowych narzędzi."""
+        domyslna = str(Path(self.zrodlo).with_suffix(".html")) if self.zrodlo else "odczyt.html"
+        p, filtr = QFileDialog.getSaveFileName(self.okno, "Zapisz odczyt", domyslna,
+                                               "HTML z kolorami (*.html);;Zwykły tekst (*.txt)")
+        if not p:
+            return
+        p = Path(p)
+        if "txt" in filtr:
+            p.with_suffix(".txt").write_text(self.tekst.toPlainText(), encoding="utf-8")
+        else:
+            p.with_suffix(".html").write_text(self.tekst.toHtml(), encoding="utf-8")
+        self.pasek.showMessage(f"Zapisane: {p}", 5000)
 
     def _menu_pasow(self):
         """Pasy do wyboru jak w IC-7300 (operator 08.11); wybór w QSettings
@@ -127,6 +178,7 @@ class Dekoder:
         w.ustaw_na_zywo(False)
         w.prawy_s = min(4.0, r["dl_s"])                 # plik czyta się od początku
         w.update()
+        self.zrodlo = sciezka
         self.tekst.setPlainText(r["tekst"])
         self.stan.setText(f"{sciezka.name} — {r['dl_s']:.0f} s nagrania, odczyt {czas:.0f} s")
         okna = r["okna"]

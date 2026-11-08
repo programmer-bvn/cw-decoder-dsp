@@ -3680,3 +3680,10 @@ Narastające i opadające osobno: różnica średnich to waga, rozrzut wokół
 pasmo). Waga −0,7…−1,7 ms: nuty biorą wagę z grzebienia, zostaje mało.
 Hipoteza do sprawdzenia: rozrzut w u jako składnik R w raporcie.
 Wybór pasów: menu „pasy ▾", zapamiętany w QSettings (jak w IC-7300).
+
+Pasek przy tekście (08.11): A+/A− (zapamiętane), Wyczyść (przeniesione
+z górnego paska), Kopiuj (zaznaczenie albo całość; do schowka idzie też
+HTML, więc w Wordzie/Thunderbirdzie kolory zostają), Zapisz… — HTML
+z kolorami albo TXT. HTML zamiast RTF: Qt zapisuje go sam, otwiera każda
+przeglądarka, Word i LibreOffice. Test: kolory #30c060/#888888 przeszły
+przez schowek i plik.
