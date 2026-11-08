@@ -3900,3 +3900,38 @@ domyślnie włączony). Sieć zawsze zbocza_5 (`analiza.SIEC`).
 Krok na żywo bez zmian (średnio 0,11 s przy obu). OK1FPS to ta cena
 z pomiaru (−2,4 % słów): słaba stacja z pasma, część okien 8 s poniżej
 z = 4. Przy słabych sygnałach przełącznik można wyłączyć.
+
+### Ton z radia przyciągał pętlę do szumu — stacja 50 Hz obok (08.11)
+
+**Objaw.** Odbiór na żywo, 14,005 MHz CW-R, FIL3, ton z radia 760 Hz:
+w „wejściu" wyraźna telegrafia, a „po obróbce" rozmyta; P sieci ~0,05,
+bramka taktu „brak taktu", tekst „EE I IE E S E E II". Bez bramki też
+śmieci („E E E UTN E H…") — bramka nie była przyczyną.
+
+**Przyczyna.** Stacja nadawała na 811 Hz (kontrast 90/10: 24–29 dB, kropki
+~60 ms), 51 Hz od tonu z radia. Reguła z 20.10: kluczowana w ±25 Hz od tonu
+z radia wygrywa bez względu na poziom. Przy 760 Hz w filtrze był sam szum —
+a szum przechodzi test „kluczowana": kontrast 90/10 10–13 dB (szum Rayleigha
+daje tyle sam z siebie), próg 10 dB. Pętla siadała na szumie, `kasuj_obce`
+wycinało prawdziwą stację jako obcą.
+
+**Co nie pomogło.** Wyższy próg kontrastu dla reguły radia. Nasza stacja
+w teście QRM obok obcej +12 dB (df 30 Hz) ma w pętli 12–13,5 dB:
+15 dB — QRM 145 -> 138 słów; 13 dB — pętla na celu 15/16, sesja dalej
+w 2/3 czasu na szumie. Kontrast się nakłada, nie rozdziela.
+
+**Co pomogło.** Wybitność prążka: szczyt „góry" (90. percentyl) ponad
+medianę pierścienia 15–40 Hz obok, niższą z dwóch stron (obca może stać po
+jednej). Szum przy 760 Hz: maks. 4,2 dB; nasza w 16 plikach QRM: min. 13,6 dB.
+Próg 8 dB:
+- sesja: pętla poza szumem 760 Hz przez 83 % czasu (było 0 %), tekst
+  z treścią („…CIAO…", „QRZ?") — nadal poszarpany, na częstotliwości co
+  najmniej dwie stacje (811 i 831 Hz);
+- QRM na celu 16/16 (bez zmian);
+- tester_viterbi na wszystkim z polem „ton CW:" (qrm, kluczownik, ręka,
+  sesje): 568/687 przed i po, każdy plik bez zmian.
+
+**Gdzie mieszka.** `dsp/tune.py`: `KL_RADIO_WYBITNOSC_DB = 8`,
+`KL_RADIO_PIERSCIEN_HZ = (15, 40)`, `_wybitnosc()`. Nagranie sesji:
+`Dokumenty\DekoderCW\sesje\sesja_20261108_142656` (bez znanej treści —
+nie wchodzi do testera).

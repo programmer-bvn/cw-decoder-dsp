@@ -229,6 +229,26 @@ KL_WYGLADZ_HZ = 5.0
 # pętla na celu 16/16 (bez radia 9/16); ton = środek filtra (nasza do 20 Hz
 # obok): 14/16. Bez tonu z radia droga bez zmian (bit w bit).
 KL_RADIO_HZ = 25.0
+# ...ale tylko prawdziwa stacja, nie garb szumu. 08.11, 14,005 MHz, CW-R:
+# stacja 51 Hz od tonu z radia (811 przy 760 Hz); przy 760 Hz w filtrze sam
+# szum — kontrast 90/10 10-13 dB (szum Rayleigha daje tyle sam z siebie),
+# próg KL_KONTRAST_DB przechodził, szum wygrywał przez bliskość radia,
+# a stację kasowało kasuj_obce jako obcą: P sieci ~0,05, tekst „E E E".
+# Kontrastem tego nie rozdzielić: nasza stacja w teście QRM obok obcej
+# +12 dB ma 12-13,5 dB (próg 13: QRM 15/16, sesja dalej na szumie).
+# Rozdziela WYBITNOŚĆ: szczyt „góry" ponad medianę pierścienia 15-40 Hz
+# obok (niższą z dwóch stron — obca stacja może stać po jednej):
+# szum przy 760 Hz maks. 4,2 dB, nasza w QRM min. 13,6 dB.
+KL_RADIO_WYBITNOSC_DB = 8.0
+KL_RADIO_PIERSCIEN_HZ = (15.0, 40.0)
+
+
+def _wybitnosc(gora: np.ndarray, fb: np.ndarray, j: int) -> float:
+    a, b = KL_RADIO_PIERSCIEN_HZ
+    d = fb - fb[j]
+    boki = [gora[(d <= -a) & (d >= -b)], gora[(d >= a) & (d <= b)]]
+    boki = [np.median(x) for x in boki if x.size]
+    return float(gora[j] - min(boki)) if boki else float("inf")
 
 
 # Ton poza pasmem obrazu (29.10, maciej_333 z elektrody: własne SDR na STM32,
@@ -378,7 +398,8 @@ def _sledz(audio: np.ndarray, sr: int, fmin: float, fmax: float,
         lm = np.flatnonzero((poz[1:-1] >= poz[:-2]) & (poz[1:-1] >= poz[2:]) & ok[1:-1]) + 1
         if not lm.size:
             lm = np.array([int(np.argmax(poz))])
-        przy_radiu = lm[np.abs(fb[lm] - srodek) <= KL_RADIO_HZ] if ton_cw is not None else lm[:0]
+        przy_radiu = np.array([j for j in lm if abs(fb[j] - srodek) <= KL_RADIO_HZ
+                               and _wybitnosc(gora, fb, j) >= KL_RADIO_WYBITNOSC_DB], int)             if ton_cw is not None else lm[:0]
         lm = przy_radiu if przy_radiu.size else lm[poz[lm] >= poz[lm].max() - KL_REMIS_DB]
         kand = fb[lm]
         j = lm[np.argmin(np.abs(kand - srodek))]
