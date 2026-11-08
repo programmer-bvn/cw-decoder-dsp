@@ -15,6 +15,14 @@
   <property name="geometry"><rect><x>0</x><y>0</y><width>1100</width><height>820</height></rect></property>
   <property name="windowTitle"><string>Dekoder CW SQ2BVN</string></property>
   <widget class="QWidget" name="centralny">
+   <layout class="QVBoxLayout" name="ukladZakladki">
+    <property name="leftMargin"><number>4</number></property><property name="topMargin"><number>4</number></property>
+    <property name="rightMargin"><number>4</number></property><property name="bottomMargin"><number>0</number></property>
+    <item>
+     <!-- zakładki (operator 08.11): „Odbiór" — praca, „Ustawienia" — zamiast okienka startowego -->
+     <widget class="QTabWidget" name="zakladki">
+      <widget class="QWidget" name="zakOdbior">
+       <attribute name="title"><string>Odbiór</string></attribute>
    <layout class="QVBoxLayout" name="ukladGlowny">
     <property name="spacing"><number>6</number></property>
 
@@ -156,6 +164,63 @@
        </widget>
       </item>
      </layout>
+    </item>
+   </layout>
+      </widget>
+      <widget class="QWidget" name="zakUstawienia">
+       <attribute name="title"><string>Ustawienia</string></attribute>
+       <layout class="QVBoxLayout" name="ukladUstawienia">
+        <item>
+         <widget class="QGroupBox" name="grpKatalog">
+          <property name="title"><string>Folder nagrań i ustawień</string></property>
+          <layout class="QHBoxLayout" name="ukladKatalog">
+           <item><widget class="QLineEdit" name="edtKatalog"><property name="readOnly"><bool>true</bool></property></widget></item>
+           <item><widget class="QPushButton" name="btnKatalogOtworz"><property name="text"><string>Otwórz folder</string></property></widget></item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="grpOdbior">
+          <property name="title"><string>Odbiór</string></property>
+          <layout class="QFormLayout" name="ukladOdbior">
+           <item row="0" column="0"><widget class="QLabel" name="lblKarta"><property name="text"><string>Karta dźwiękowa</string></property></widget></item>
+           <item row="0" column="1"><widget class="QComboBox" name="cmbKarta"/></item>
+           <item row="1" column="0"><widget class="QCheckBox" name="chkCiv"><property name="text"><string>CI-V (Icom)</string></property><property name="toolTip"><string>Częstotliwość, tryb i ton CW z radia — tylko odczyt, program nic do radia nie wysyła</string></property></widget></item>
+           <item row="1" column="1">
+            <layout class="QHBoxLayout" name="ukladCiv">
+             <item><widget class="QLabel" name="lblPort"><property name="text"><string>port</string></property></widget></item>
+             <item><widget class="QComboBox" name="cmbPort"><property name="editable"><bool>true</bool></property></widget></item>
+             <item><widget class="QLabel" name="lblBaud"><property name="text"><string>szybkość</string></property></widget></item>
+             <item>
+              <widget class="QComboBox" name="cmbBaud">
+               <item><property name="text"><string>115200</string></property></item>
+               <item><property name="text"><string>19200</string></property></item>
+               <item><property name="text"><string>9600</string></property></item>
+              </widget>
+             </item>
+             <item><spacer name="odstepCiv"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+            </layout>
+           </item>
+           <item row="2" column="0"><widget class="QLabel" name="lblTon"><property name="text"><string>Ton CW ręcznie [Hz]</string></property></widget></item>
+           <item row="2" column="1"><widget class="QLineEdit" name="edtTon"><property name="placeholderText"><string>puste = szukaj sam (albo z CI-V)</string></property><property name="maximumSize"><size><width>220</width><height>16777215</height></size></property></widget></item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="grpInne">
+          <property name="title"><string>Inne</string></property>
+          <layout class="QVBoxLayout" name="ukladInne">
+           <item><widget class="QCheckBox" name="chkZapis"><property name="text"><string>Zapisuj sesje (WAV i tekst) w podfolderze „sesje”</string></property></widget></item>
+           <item><widget class="QCheckBox" name="chkAktualizacje"><property name="text"><string>Przy starcie sprawdzaj, czy jest nowsza wersja</string></property></widget></item>
+           <item><widget class="QLabel" name="lblSlownik"><property name="text"><string>Słownik osobisty: slownik_osobisty.txt w folderze nagrań</string></property></widget></item>
+          </layout>
+         </widget>
+        </item>
+        <item><widget class="QLabel" name="lblUstawieniaUwaga"><property name="wordWrap"><bool>true</bool></property><property name="text"><string>Zmiany zapisują się od razu w pliku ustawienia.ini w folderze nagrań.</string></property></widget></item>
+        <item><spacer name="odstepUstawienia"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+       </layout>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>

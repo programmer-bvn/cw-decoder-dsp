@@ -17,14 +17,17 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QFile, QObject, QSettings, Qt, Signal
+from PySide6.QtCore import QEvent, QFile, QObject, Qt, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (QAbstractButton, QApplication, QFileDialog, QLabel, QMenu,
-                               QStatusBar, QTextEdit, QToolButton)
+from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QFileDialog, QLabel,
+                               QLineEdit, QMenu, QStatusBar, QTabWidget, QTextEdit,
+                               QToolButton)
 
 from dsp import config as C
 from tools.gui.analiza import _prazki, hz_mel
 from tools.gui.podglad import UI, polacz_lupe, wstaw
+from tools.gui.ustawienia import katalog, karty, porty_com, ustawienia
 from tools.gui.widok_sygnalu import WidokSygnalu
 
 
@@ -54,6 +57,8 @@ class Dekoder:
         self.btn = self.okno.findChild(QAbstractButton, "btnOtworz")
         self.btn.clicked.connect(self.wybierz)
         self._pasek_tekstu()
+        self._zakladka_ustawien()
+        self._pamiec_okna()
         for n in ("btnRadio", "btnZglos", "btnNaZywo"):     # jeszcze nie w tej wersji
             self.okno.findChild(QAbstractButton, n).setEnabled(False)
         self.most = _Most()
@@ -65,7 +70,7 @@ class Dekoder:
     def _pasek_tekstu(self):
         """Pasek obok tekstu (operator 08.11): czcionka +/-, wyczyść, kopiuj,
         zapisz. Wielkość czcionki zapamiętana jak wybór pasów."""
-        ust = QSettings("SQ2BVN", "DekoderCW")
+        ust = ustawienia()
         t = self.tekst
 
         def czcionka(pt: float):
@@ -112,10 +117,82 @@ class Dekoder:
             p.with_suffix(".html").write_text(self.tekst.toHtml(), encoding="utf-8")
         self.pasek.showMessage(f"Zapisane: {p}", 5000)
 
+    def _zakladka_ustawien(self):
+        """Zakładka „Ustawienia" zamiast okienka startowego aplikacji 0.9.x
+        (operator 08.11). Te same pola pod tymi samymi nazwami (aplikacja/...),
+        zapis od razu po zmianie. Karta zapamiętana NAZWĄ z API, nie numerem:
+        Windows przenumerowuje karty po przepięciu USB (23.10: 15 -> 18 -> 20).
+        Radio na żywo jeszcze w starej aplikacji — tu pola już czekają."""
+        u = ustawienia()
+        o = self.okno
+        k = katalog()
+        o.findChild(QLineEdit, "edtKatalog").setText(str(k))
+        o.findChild(QAbstractButton, "btnKatalogOtworz").clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(k))))
+        zap = lambda klucz: (lambda v: u.setValue(f"aplikacja/{klucz}", v))   # noqa: E731
+        ck = o.findChild(QComboBox, "cmbKarta")
+        nazwy = [n for _, n in karty()]
+        ck.addItems(nazwy)
+        pam = u.value("aplikacja/karta", "")
+        dom = next((n for n in nazwy if "USB Audio" in n and "WASAPI" in n), nazwy[0] if nazwy else "")
+        ck.setCurrentText(pam if pam in nazwy else dom)
+        ck.currentTextChanged.connect(zap("karta"))
+        for nazwa, klucz, dom in (("chkCiv", "civ", False), ("chkZapis", "zapis", True),
+                                  ("chkAktualizacje", "aktualizacje", True)):
+            c = o.findChild(QAbstractButton, nazwa)
+            c.setChecked(u.value(f"aplikacja/{klucz}", dom, type=bool))
+            c.toggled.connect(zap(klucz))
+        cp = o.findChild(QComboBox, "cmbPort")
+        porty = porty_com()
+        cp.addItems(porty)
+        cp.setCurrentText(u.value("aplikacja/port", porty[0] if porty else ""))
+        cp.currentTextChanged.connect(zap("port"))
+        cb = o.findChild(QComboBox, "cmbBaud")
+        cb.setCurrentText(str(u.value("aplikacja/baud", 115200)))
+        cb.currentTextChanged.connect(lambda v: u.setValue("aplikacja/baud", int(v or 115200)))
+        et = o.findChild(QLineEdit, "edtTon")
+        ton = u.value("aplikacja/ton", None)
+        et.setText("" if ton in (None, "", "None") else f"{float(ton):g}")
+
+        def ton_zmiana():
+            try:
+                v = float(et.text().replace(",", ".")) if et.text().strip() else None
+            except ValueError:
+                v = None
+            u.setValue("aplikacja/ton", v if v else "")
+        et.editingFinished.connect(ton_zmiana)
+        if not u.contains("aplikacja/karta"):      # pierwszy start: najpierw ustawienia
+            o.findChild(QTabWidget, "zakladki").setCurrentIndex(1)
+            u.setValue("aplikacja/karta", ck.currentText())
+
+    def _pamiec_okna(self):
+        """Położenie i rozmiar okna, lupa, przełączniki nakładek, zakładka —
+        przy zamknięciu do ustawienia.ini, przy starcie z powrotem."""
+        u, o = ustawienia(), self.okno
+        if u.contains("okno/geometria"):
+            o.restoreGeometry(u.value("okno/geometria"))
+        for n in ("chkZbocza", "chkGrzebien", "chkPrzyciagaj"):
+            if u.contains(f"okno/{n}"):
+                o.findChild(QAbstractButton, n).setChecked(u.value(f"okno/{n}", True, type=bool))
+        if u.contains("okno/lupa_s"):
+            self.widok.ustaw_lupe(u.value("okno/lupa_s", 4.0, type=float))
+
+        class _Zamkniecie(QObject):
+            def eventFilter(s, obj, ev):
+                if ev.type() == QEvent.Close:
+                    u.setValue("okno/geometria", o.saveGeometry())
+                    for n in ("chkZbocza", "chkGrzebien", "chkPrzyciagaj"):
+                        u.setValue(f"okno/{n}", o.findChild(QAbstractButton, n).isChecked())
+                    u.setValue("okno/lupa_s", self.widok.widok_s)
+                    u.sync()
+                return False
+        self._filtr = _Zamkniecie()
+        o.installEventFilter(self._filtr)
+
     def _menu_pasow(self):
-        """Pasy do wyboru jak w IC-7300 (operator 08.11); wybór w QSettings
-        (rejestr Windows), więc okno otwiera się tak, jak je zostawiono."""
-        ust = QSettings("SQ2BVN", "DekoderCW")
+        """Pasy do wyboru jak w IC-7300 (operator 08.11); wybór w ustawienia.ini,
+        więc okno otwiera się tak, jak je zostawiono."""
+        ust = ustawienia()
         menu = QMenu(self.okno)
         for p in self.widok.pasma:
             a = menu.addAction(p.nazwa)
@@ -130,9 +207,12 @@ class Dekoder:
         self._menu = menu                        # Python trzyma menu przy życiu
 
     def wybierz(self):
-        p, _ = QFileDialog.getOpenFileName(self.okno, "Plik do odczytu", str(Path("probki").resolve()),
+        ust = ustawienia()
+        start = ust.value("okno/folder_plikow", str(katalog() / "sesje"))
+        p, _ = QFileDialog.getOpenFileName(self.okno, "Plik do odczytu", start,
                                            "Dźwięk (*.wav *.flac *.ogg);;Wszystkie (*)")
         if p:
+            ust.setValue("okno/folder_plikow", str(Path(p).parent))
             self.otworz(Path(p))
 
     def otworz(self, sciezka: Path):

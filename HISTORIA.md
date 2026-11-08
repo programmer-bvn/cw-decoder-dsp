@@ -3687,3 +3687,16 @@ HTML, więc w Wordzie/Thunderbirdzie kolory zostają), Zapisz… — HTML
 z kolorami albo TXT. HTML zamiast RTF: Qt zapisuje go sam, otwiera każda
 przeglądarka, Word i LibreOffice. Test: kolory #30c060/#888888 przeszły
 przez schowek i plik.
+
+Ustawienia w INI i zakładki (08.11, operator: „żeby 20 razy tego samego
+nie ustawiał", program będzie też na Linuksie — tam nie ma rejestru).
+`tools/gui/ustawienia.py`: QSettings w formacie INI, plik ustawienia.ini
+w folderze nagrań (Windows: Dokumenty\DekoderCW jak aplikacja 0.9.x,
+Linux: Dokumenty wg XDG) — na koncie użytkownika, obok sesji. Pierwszy
+start przejmuje z rejestru ustawienia 0.9.x (karta, CI-V, port, ton...).
+Okno: zakładki „Odbiór" i „Ustawienia" — zakładka zamiast okienka
+startowego; przy czystym pierwszym starcie otwiera się „Ustawienia".
+Zapamiętane: pola ustawień (od razu po zmianie), położenie i rozmiar okna,
+lupa, nakładki, pasy, czcionka, ostatni folder plików. Test w osobnym
+folderze (DEKODER_KATALOG): drugi start wraca z tymi samymi wartościami.
+Język — jeszcze nie: przyjdzie z tłumaczeniami Qt (.ts / Linguist).
