@@ -124,6 +124,12 @@ def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray,
 
 
 TAKT_PROG_Z = 4.0           # dsp/takt: z >= 4 — zbocza_5: −36 słów z 1675, halucynacje 10–20x mniej (08.11)
+# Podtrzymanie: po oknie z >= 4 bramka otwarta jeszcze TAKT_TRZYMAJ_S (QSO trwa,
+# a sąsiednie okna mają z 2-3). Sesja 08.11 16:30 (14,005 MHz): z ≥ 4 samo
+# dawało „2YN OK2", z 12 s „2YN OK2YN OK2N". Zestaw: 1447 -> 1458 słów z 1675;
+# zn./min nośna 0,2 -> 0,4, pokój 0,8 -> 1,3, AM 1,9 -> 4,4, SSB 0 -> 2,0
+# (bez bramki 17-36). 20 s: 1459, 30 s: 1460 — a AM 5,8 / 6,9.
+TAKT_TRZYMAJ_S = 12.0
 TAKT_CO_S = 2.0             # okno taktu (8 s) co tyle dźwięku; znaki zatwierdzane 4 s z tyłu — już pokryte
 
 
@@ -137,7 +143,8 @@ class OdczytNaZywo:
         # Ramki P przechodzą do Viterbiego tylko pod oknem 8 s z wyraźnym
         # taktem (dołki przy u i 3u, z >= TAKT_PROG_Z); reszta jak cisza.
         self.takt = takt
-        self.okna_taktu: list[tuple[int, int, float, float]] = []   # (ramka od, do, z, u)
+        self.okna_taktu: list[tuple[int, int, float, float, bool]] = []   # (ramka od, do, z, u, otwarte)
+        self._takt_ost = None                  # ramka startu ostatniego okna z z >= próg
         self._takt_n = 0                       # próbka, przy której liczono ostatnie okno
         self.hist_k = np.zeros(0, np.float32)  # P do Viterbiego: po bramce taktu albo hist
         self.krok, self.opozn = krok_s, opoznienie_s
@@ -310,11 +317,15 @@ class OdczytNaZywo:
             self._takt_n = self.n
             o = TK.okno(self.hist[-n8:])
             k = self.h0 + self.hist.size
-            self.okna_taktu.append((k - min(n8, self.hist.size), k, o["z"], o["u"]))
+            a = k - min(n8, self.hist.size)
+            if np.isfinite(o["z"]) and o["z"] >= TAKT_PROG_Z:
+                self._takt_ost = a
+            otw = self._takt_ost is not None and (a - self._takt_ost) * V.DT <= TAKT_TRZYMAJ_S
+            self.okna_taktu.append((a, k, o["z"], o["u"], otw))
             self.okna_taktu = [w for w in self.okna_taktu if w[1] > self.h0]
         m = np.zeros(self.hist.size, bool)
-        for a, b, zz, _ in self.okna_taktu:
-            if np.isfinite(zz) and zz >= TAKT_PROG_Z:
+        for a, b, _, _, otw in self.okna_taktu:
+            if otw:
                 m[max(0, a - self.h0):max(0, b - self.h0)] = True
         self.hist_k = np.where(m, self.hist, 0.0).astype(np.float32)
 
@@ -323,8 +334,7 @@ class OdczytNaZywo:
         """Ostatnie okno ma wyraźny takt (bez bramki — zawsze)."""
         if not self.takt:
             return True
-        return bool(self.okna_taktu) and np.isfinite(self.okna_taktu[-1][2]) \
-            and self.okna_taktu[-1][2] >= TAKT_PROG_Z
+        return bool(self.okna_taktu) and self.okna_taktu[-1][4]
 
     def _do_historii(self, p: np.ndarray, a0: int, poz: np.ndarray) -> None:
         """P okna od ramki a0. Starsze od środka okna zostają zamrożone."""

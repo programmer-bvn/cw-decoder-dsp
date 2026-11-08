@@ -30,14 +30,18 @@ SIEC = Path("runs/zbocza_5/siec.npz")
 
 
 def bramka_taktu(pz: np.ndarray, prog: float | None = None) -> np.ndarray:
-    """P tylko pod oknami 8 s z wyraźnym taktem (dsp/takt), reszta jak cisza."""
+    """P tylko pod oknami 8 s z wyraźnym taktem (dsp/takt) i TAKT_TRZYMAJ_S
+    po nich — jak na żywo; reszta jak cisza."""
     from dsp import takt
-    from tools.na_zywo import TAKT_PROG_Z
+    from tools.na_zywo import TAKT_PROG_Z, TAKT_TRZYMAJ_S
     prog = TAKT_PROG_Z if prog is None else prog
     n8 = int(takt.OKNO_S / V.DT)
     m = np.zeros(pz.size, bool)
+    ost = -np.inf
     for o in takt.okna(pz):
         if np.isfinite(o["z"]) and o["z"] >= prog:
+            ost = o["t"]
+        if o["t"] - ost <= TAKT_TRZYMAJ_S:
             s = int(round(o["t"] / V.DT)); m[s:s + n8] = True
     return np.where(m, pz, 0.0).astype(np.float32)
 

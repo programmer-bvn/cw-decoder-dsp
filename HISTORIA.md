@@ -3935,3 +3935,30 @@ Próg 8 dB:
 `KL_RADIO_PIERSCIEN_HZ = (15, 40)`, `_wybitnosc()`. Nagranie sesji:
 `Dokumenty\DekoderCW\sesje\sesja_20261108_142656` (bez znanej treści —
 nie wchodzi do testera).
+
+### Bramka taktu „nie startuje" na paśmie — podtrzymanie 12 s (08.11)
+
+**Objaw.** Sesja 16:30–16:48, 14,005 MHz: przez 18 minut tekst tylko
+w kilku miejscach, „— WPM (brak taktu)" przy widocznym kluczowaniu w P.
+
+**Pomiar.** Pasmo zatłoczone: naraz stacje na 754 / 775 / 796 Hz, kontrast
+7–13 dB. Bez bramki ta sesja też daje śmieci; prawdziwa treść tylko
+w 800–870 s (OK2YN, OK2DIN, R5NNTU). Tam okna mają z = 4,5–7,8, ale
+sąsiednie 2,3–3,3 — sama bramka z >= 4 zostawiała „2YN OK2 R5NNTU".
+
+**Co pomogło.** Po oknie z >= 4 bramka otwarta jeszcze `TAKT_TRZYMAJ_S`:
+
+| | słowa /1675 | nośna | pokój | AM | SSB (zn./min) |
+|---|---|---|---|---|---|
+| bez bramki | 1483 | 17,4 | 17,2 | 35,7 | 29,9 |
+| z >= 4 | 1447 | 0,2 | 0,8 | 1,9 | 0,0 |
+| **+ 12 s** | **1458** | 0,4 | 1,3 | 4,4 | 2,0 |
+| + 20 s | 1459 | 0,6 | 1,5 | 5,8 | 3,2 |
+| + 30 s | 1460 | 0,7 | 1,6 | 6,9 | 4,1 |
+
+Sesja 800–870 s: „…2YN OK2YN OK2DIN R5NNTU" (na żywo, 4×: to samo);
+nośna z IC-7300 nadal 0 znaków. W probki/ (62 słowa) −3 przy podtrzymaniu
+(56 -> 53) — cena przyjęta.
+
+**Gdzie mieszka.** `tools/na_zywo.py`: `TAKT_TRZYMAJ_S = 12`, okno taktu
+ma znacznik „otwarte"; `tools/gui/analiza.bramka_taktu` — to samo dla pliku.
