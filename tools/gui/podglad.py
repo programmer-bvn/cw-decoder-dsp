@@ -51,10 +51,12 @@ def polacz_lupe(okno, widok: WidokSygnalu) -> None:
     from PySide6.QtWidgets import QAbstractButton, QLabel, QSlider
     sld, lbl = okno.findChild(QSlider, "sldLupa"), okno.findChild(QLabel, "lblLupaWartosc")
     zyw = okno.findChild(QAbstractButton, "btnNaZywo")
-    lo, hi = np.log(0.25), np.log(widok.pamiec_s)
+    lo = np.log(0.25)
 
-    def na_s(v): return float(np.exp(lo + (hi - lo) * v / 100))
-    def z_s(s): return int(round(100 * (np.log(s) - lo) / (hi - lo)))
+    # górna granica czytana za każdym razem: plik zmienia pamięć widoku
+    def hi(): return np.log(max(widok.pamiec_s, 0.5))
+    def na_s(v): return float(np.exp(lo + (hi() - lo) * v / 100))
+    def z_s(s): return int(round(100 * (np.log(s) - lo) / (hi() - lo)))
     def opis(s): lbl.setText(f"{s * 1000:.0f} ms" if s < 1 else f"{s:.1f} s")
 
     sld.setValue(z_s(widok.widok_s)); opis(widok.widok_s)

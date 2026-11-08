@@ -177,6 +177,16 @@ class WidokSygnalu(QWidget):
     def dodaj_zeby(self, t: np.ndarray) -> None:
         self.zeby = self._przytnij(np.r_[self.zeby, np.asarray(t, float)])
 
+    def ustaw_pamiec(self, pamiec_s: float) -> None:
+        """Plik dłuższy niż pamięć na żywo (120 s): bufory od nowa, na cały plik."""
+        self.pamiec_s = pamiec_s
+        n = int(np.ceil(pamiec_s / KOLUMNA_S))
+        for p in self.pasma:
+            p.buf = (_Pierscien(n, p.wiersze, np.uint8) if p.rodzaj == "obraz"
+                     else _Pierscien(n, 0, np.float32))
+        self.zbocza = self.zeby = np.zeros(0)
+        self.lupa_zmieniona.emit(self.widok_s)
+
     def wyczysc(self) -> None:
         for p in self.pasma:
             p.buf.licz = 0

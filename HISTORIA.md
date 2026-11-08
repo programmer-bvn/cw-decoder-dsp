@@ -3659,3 +3659,13 @@ Poziom w % amplitudy liniowej (kolor w dB przeliczony z powrotem), nie
 w % koloru i nie w dB bezwzględnych — bez kalibracji karty. Atrapa: ton
 35%, tło 1,4%, stosunek 24x. Przerywane linie kursorów ginęły w szumie —
 ciągłe 2 px.
+
+Prawdziwe dane (08.11): `tools/gui/analiza.py` (łańcuch odczytu z widmami
+po drodze, sieć numpy) i `tools/gui/dekoder.py` (`dekoder.bat`) — „Otwórz
+plik…", odczyt w tle, tekst do skopiowania. Grzebień do nakładek w oknach
+~8 s ciętych zawsze w przerwie (żaden element nie jest przecięty).
+Widmo wejścia FFT 512 z korektą -20,35 dB — zmierzona `zmierz_korekte()`,
+ten sam ton ma ten sam odcień co w obrazie sieci. Pięć nagrań (Windows,
+numpy): qso1 kluczownik 27 s / 10 s odczytu, pewność grzebienia 0,99;
+mic2 ręka 237 s / 39 s, 0,97; LA3WAA 180 s / 34 s, 0,93; OK1FPS 182 s /
+21 s, 0,91; dwie stacje 104 s / 11 s, 0,76 (tekst śmieciowy — jak było).
