@@ -1,0 +1,17 @@
+{
+ "model": "runs\\zbocza_5\\best.keras",
+ "rodzaje": {
+  "ic7300_nosna": {
+   "kawalkow": 9,
+   "minut": 8.7,
+   "znakow_na_min": 18.5,
+   "mediana": 19.0,
+   "p90": 20.6,
+   "najgorsze": [
+    "23/min sesja_20261108_112359_0002.wav: *C*AE* E I* EEE EE E ET P ET* T*",
+    "20/min sesja_20261108_112359_0003.wav: * EE ME E E E U E E *9E *Q E E E U",
+    "20/min sesja_20261108_112359_0008.wav: EE E G*MEU N EB IE"
+   ]
+  }
+ }
+}

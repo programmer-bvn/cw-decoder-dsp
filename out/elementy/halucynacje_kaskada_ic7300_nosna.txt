@@ -1,0 +1,5 @@
+HALUCYNACJE — model runs\zbocza_6\best.keras + runs\elementy_2\best.keras (kaskada)
+  ic7300_nosna: 6.3 znaków/min (mediana 5.0, p90 13.4), 9 kawałków, 8.7 min
+      19/min sesja_20261108_112359_0005.wav: EEG * I I I E K E E IN T E IEE E
+      12/min sesja_20261108_112359_0007.wav: E OE IN E E IE E T T
+      11/min sesja_20261108_112359_0006.wav: E E P E EE N N I E T

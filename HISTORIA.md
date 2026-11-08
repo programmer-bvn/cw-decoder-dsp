@@ -3742,3 +3742,27 @@ na prędkość: p10–p90 = 0,0–1,9 przy tempie 1×. Po P = 0,4, I = 0,15:
 1,03 (0,91–1,11), skok maks. 72 ms na klatkę, 0,43 s za danymi;
 rysowanie 11 ms na klatkę. Tempo 2× (test z pliku) dochodzi wolniej,
 ale bez zatrzymań. Odczyt pliku (cały naraz) bez zegara — jak był.
+
+### Halucynacje na stałej nośnej z pasma (08.11)
+
+**Objaw.** Pierwszy odbiór oknem Qt z IC-7300 (14,005 MHz CW-R, FIL3):
+na tonie stała nośna, dekoder wypisywał „E E EE E E S PW*EME…".
+
+**Pomiar.** Nowy rodzaj w banku negatywów: `ic7300_nosna` (9 min, sesja
+20261108_112359, nośna 766 Hz bez dryfu, ~18 dB nad szumem w filtrze, w widmie
+bez kluczowanej stacji). `tools.halucynacje ocen`, znaki/min:
+
+| model | nośna IC-7300 | pokój | AM | SSB |
+|---|---|---|---|---|
+| zbocza_5 (w programie) | 18,5 | 29,6 | 35,7 | 29,9 |
+| zbocza_6 | 11,0 | 12,0 | 10,0 | 2,0 |
+| zbocza_6 + elementy_2 kaskada | 6,3 | 1,6 | 8,1 | 0,0 |
+
+Kaskada, która w pokoju tnie halucynacje 7×, na nośnej tnie tylko ~3× —
+nośna na tonie to dziś najtrudniejszy negatyw obok AM. Hipoteza (bez
+pomiaru): szum w wąskim filtrze daje nośnej obwiednię jak z kluczowania
+(zaniki do −10 dB, p5 11,6 dB nad tłem), a generator zna stałą nośną tylko
+OBOK tonu (60–200 Hz dalej) — nośnej NA tonie jako „brak telegrafii" sieć
+nie widziała. Wyniki: `out/halucynacje_zbocza_{5,6}_ic7300_nosna.txt`,
+`out/elementy/halucynacje_kaskada_ic7300_nosna.txt`; nagrania w banku
+(poza gitem, W:\nagrania_cw\negatywy\ic7300_nosna, opis w ZRODLO.txt).
