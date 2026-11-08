@@ -3781,6 +3781,12 @@ Po restarcie na nowym jądrze DPU by nie wstało.
 zgadza, w /lib/modules/6.8.0-1036-xilinx/updates + depmod; moduł dla 1015
 został. Do sprawdzenia po restarcie: loadapp i dpu_proba. Uwaga w
 `srodowisko/kv260/buduj_vart.sh`.
+**Sprawdzone 08.11 po restarcie operatora:** 6.8.0-1036, zocl załadowany;
+`xmutil loadapp` dawało „Load Error: -1", bo po starcie siedzi
+k26-starter-kits — najpierw `sudo xmutil unloadapp`, potem loadapp.
+dpu_proba zbocza_5: korelacja DPU~vai_q 0,9999977, logity równe. USB 2.0
+(połowa 2.0 huba USB5744) znowu nie wstało — szyna 1 sama, szyna 3.0
+z hubem jest.
 
 ### Kaskada w programie — przełącznik, nie zamiana (08.11)
 
