@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QEvent, QFile, QObject, Qt, QUrl, Signal
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QFileDialog, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QMenu, QSlider,
@@ -388,7 +388,15 @@ class Dekoder:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        # bez własnego AppUserModelID Windows grupuje okno pod python.exe
+        # i na pasku zadań pokazuje ikonę Pythona zamiast naszej
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("SQ2BVN.DekoderCW.Qt")
     app = QApplication(sys.argv)
+    from tools.aplikacja import _ikona          # ta sama ikona co 0.9.x i instalator
+    if (ik := _ikona()) is not None:
+        app.setWindowIcon(QIcon(ik))
     d = Dekoder()
     d.okno.show()
     if len(sys.argv) > 1:
