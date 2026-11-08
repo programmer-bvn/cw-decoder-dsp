@@ -271,6 +271,7 @@ def cfg_karty(nazwa: str, u) -> dict:
     """Ustawienia z zakładek -> cfg procesu dekodera (jak aplikacja 0.9.x)."""
     from tools.gui import analiza as A
     from tools.gui.ustawienia import karty, katalog
+    sz, se = A.sieci(u.value("aplikacja/kaskada", True, type=bool))
     ton =u.value("aplikacja/ton", "")
     try:
         ton = float(ton) if ton not in ("", None, "None") else None
@@ -283,7 +284,7 @@ def cfg_karty(nazwa: str, u) -> dict:
     numer = next((i for i, n in karty() if n == nazwa), None)
     return dict(device=numer if numer is not None else nazwa.split(" — ")[0], z_civ=u.value("aplikacja/civ", False, type=bool),
                 zapis=u.value("aplikacja/zapis", True, type=bool),
-                model_npz=str(Path(A.SIEC).resolve()),
+                model_npz=str(sz.resolve()), model_elementow_npz=str(se.resolve()) if se else None,
                 civ_port=u.value("aplikacja/port", "") or None,
                 civ_baud=int(u.value("aplikacja/baud", 115200)), ton_reczny=ton,
                 sesje=str(katalog() / "sesje"), zrodlo=f"karta {nazwa} (okno Qt)")

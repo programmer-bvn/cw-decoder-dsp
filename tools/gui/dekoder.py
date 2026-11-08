@@ -137,7 +137,8 @@ class Dekoder:
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(k))))
         zap = lambda klucz: (lambda v: u.setValue(f"aplikacja/{klucz}", v))   # noqa: E731
         for nazwa, klucz, dom in (("chkCiv", "civ", False), ("chkZapis", "zapis", True),
-                                  ("chkAktualizacje", "aktualizacje", True)):
+                                  ("chkAktualizacje", "aktualizacje", True),
+                                  ("chkKaskada", "kaskada", True)):
             c = o.findChild(QAbstractButton, nazwa)
             c.setChecked(u.value(f"aplikacja/{klucz}", dom, type=bool))
             c.toggled.connect(zap(klucz))
@@ -343,11 +344,12 @@ class Dekoder:
         def licz():
             t = time.perf_counter()
             try:
-                from dsp.siec_numpy import SiecNumpy
+                from dsp.siec_numpy import SiecElementowNumpy, SiecNumpy
                 from tools.gui import analiza
-                if self.siec is None:
-                    self.siec = SiecNumpy(analiza.SIEC)
-                r = analiza.analizuj(sciezka, self.siec)
+                sz, se = analiza.sieci(ustawienia().value("aplikacja/kaskada", True, type=bool))
+                if self.siec is None or self.siec[0] != (sz, se):     # przełącznik w Ustawieniach
+                    self.siec = ((sz, se), SiecNumpy(sz), SiecElementowNumpy(se) if se else None)
+                r = analiza.analizuj(sciezka, self.siec[1], siec_e=self.siec[2])
             except Exception as e:                      # awaria ma sama mówić, co się stało
                 r = e
             self.most.gotowe.emit(sciezka, r, time.perf_counter() - t)

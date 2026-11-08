@@ -46,7 +46,8 @@ def p_elementow(model, audio, u, ton):
     X, _, _ = E.wycinki(db, np.zeros(t.size, np.uint8), np.zeros(t.size, np.float32), krok=1)
     if not len(X):
         return np.zeros((0, 3)), np.zeros(0)
-    P = _przewiduj(model, X)
+    # sieć w numpy (dsp/siec_numpy, okno Qt bez TensorFlow) albo Keras
+    P = model.przewiduj(X) if hasattr(model, "przewiduj") else _przewiduj(model, X)
     start = t[E.K:E.K + len(P)] - u / E.K / 2
     return P, start
 

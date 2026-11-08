@@ -46,6 +46,11 @@ if "aie_parser.h" not in s:
     open(p, "w").write(s)
 EOF
 # sterownik
+# zocl jest budowany pod JEDNO jądro. 08.11 unattended-upgrades samo
+# zainstalowało 6.8.0-1036 (było 1015) — po restarcie DPU by nie wstało.
+# Aktualizacje automatyczne wyłączone; po ręcznej zmianie jądra zbudować
+# pod nowe: make clean; make KERNEL_SRC=/lib/modules/<wersja>/build,
+# kopia do /lib/modules/<wersja>/updates, depmod <wersja>.
 cd core/edge/drm/zocl && make -j4
 sudo mkdir -p /lib/modules/$(uname -r)/updates
 sudo cp zocl.ko /lib/modules/$(uname -r)/updates/ && sudo depmod

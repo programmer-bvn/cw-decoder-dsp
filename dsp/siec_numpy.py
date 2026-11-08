@@ -76,14 +76,81 @@ class SiecNumpy:
         return x[..., 0, 0]
 
 
+# --------------------------------------------------------------------------
+# Sieć przegródek (dsp/elementy, etap A, elementy_2) — 08.11, operator:
+# „przełącz program na kaskadę". Kaskada zbocza_6 + elementy_2 na nośnej
+# z IC-7300: 6,3 zn./min zamiast 18,5 (zbocza_5) — a program liczy bez
+# TensorFlow, więc i ta sieć w numpy. Budowa (tools/elementy_trening):
+# 2x splot, pooling 2x1, 2x splot, pooling 2x2, splot, średnia, 64, 3.
+# --------------------------------------------------------------------------
+SPLOTY_E = [f"conv2d{'' if i == 0 else f'_{i}'}" for i in range(5)]
+POOL_E = {1: (2, 1), 3: (2, 2)}          # po którym splocie jaki pooling
+
+
+def z_keras_elementow(sciezka: Path) -> dict:
+    from tensorflow import keras
+    m = keras.models.load_model(sciezka)
+    w = {l.name: l for l in m.layers}
+    out = {}
+    for i, n in enumerate(SPLOTY_E):
+        bn = w[f"batch_normalization{'' if i == 0 else f'_{i}'}"]
+        ww = w[n].get_weights()                   # splot bez biasu (przed normalizacją)
+        W, b = ww[0].astype(np.float64), (ww[1].astype(np.float64) if len(ww) > 1 else 0.0)
+        g, be, mu, var = (x.astype(np.float64) for x in bn.get_weights())
+        sk = g / np.sqrt(var + bn.epsilon)
+        out[n + "_W"] = (W * sk).astype(np.float32)
+        out[n + "_b"] = ((b - mu) * sk + be).astype(np.float32)
+    for n in ("dense", "dense_1"):
+        W, b = w[n].get_weights()
+        out[n + "_W"], out[n + "_b"] = W.astype(np.float32), b.astype(np.float32)
+    return out
+
+
+class SiecElementowNumpy:
+    """Zamiennik modelu Keras sieci przegródek: przewiduj(X) -> softmax [n, 3]."""
+
+    def __init__(self, sciezka: Path):
+        z = np.load(sciezka)
+        self.w = {k: z[k] for k in z.files}
+
+    def przewiduj(self, X: np.ndarray, wsad: int = 512) -> np.ndarray:
+        """X [n, WIERSZE, KOLUMNY] (float po normalizuj albo uint8 jak w treningu)."""
+        out = []
+        for i in range(0, len(X), wsad):
+            x = X[i:i + wsad]
+            x = (x.astype(np.float32) / 255.0 * 1.25 - 0.25 if x.dtype == np.uint8
+                 else x.astype(np.float32))[..., None]
+            for j, n in enumerate(SPLOTY_E):
+                x = np.maximum(_splot(x, self.w[n + "_W"], self.w[n + "_b"]), 0)
+                if j in POOL_E:
+                    ph, pw = POOL_E[j]
+                    B, H, W_, C_ = x.shape
+                    x = x[:, :H // ph * ph, :W_ // pw * pw].reshape(B, H // ph, ph, W_ // pw, pw, C_).max((2, 4))
+            x = x.mean((1, 2))
+            x = np.maximum(x @ self.w["dense_W"] + self.w["dense_b"], 0)
+            x = x @ self.w["dense_1_W"] + self.w["dense_1_b"]
+            x = np.exp(x - x.max(1, keepdims=True))
+            out.append(x / x.sum(1, keepdims=True))
+        return np.concatenate(out) if out else np.zeros((0, 3), np.float32)
+
+
 def main() -> None:
-    """best.keras -> .npz i sprawdzenie zgodności z TensorFlow na losowych oknach."""
+    """best.keras -> .npz i sprawdzenie zgodności z TensorFlow na losowych oknach.
+    Sieć przegródek rozpoznana po nazwie modelu (elementy_a)."""
     zrodlo, cel = Path(sys.argv[1]), Path(sys.argv[2])
-    np.savez(cel, **z_keras(zrodlo))
     from tensorflow import keras
     m = keras.models.load_model(zrodlo)
-    s = SiecNumpy(cel)
     rng = np.random.default_rng(0)
+    if m.name == "elementy_a":
+        np.savez(cel, **z_keras_elementow(zrodlo))
+        import tensorflow as tf
+        x = rng.uniform(-0.25, 1.0, (64, 24, 12)).astype(np.float32)
+        a = tf.nn.softmax(m(x[..., None], training=False)).numpy()
+        b = SiecElementowNumpy(cel).przewiduj(x)
+        print(f"{cel}: maks. różnica P numpy - TensorFlow {np.abs(a - b).max():.2e}")
+        return
+    np.savez(cel, **z_keras(zrodlo))
+    s = SiecNumpy(cel)
     x = [rng.random((4, 512, 32, 1), np.float32) for _ in range(2)]
     a, b = m.predict(x, verbose=0), s.przod(x)
     print(f"{cel}: maks. różnica logitów numpy - TensorFlow {np.abs(a - b).max():.2e} "

@@ -9,7 +9,7 @@ ale zachowuje wszystko, co pokazuje widok sygnału, kolumna co 5 ms:
     regenerat    czysty prostokąt z nut, z odchyłkami zboczy P od niego
 oraz nakładki: zęby grzebienia i zbocza regeneratu (nuty z grzebienia).
 
-Sieć: dsp.siec_numpy (runs/zbocza_5/siec.npz) — bez TensorFlow, start okna
+Sieć: dsp.siec_numpy (kaskada runs/zbocza_6 + runs/elementy_2, siec.npz) — bez TensorFlow, start okna
 w sekundę zamiast kilkunastu (import TF), a wynik ten sam co Keras
 (HISTORIA, „KV260: odczyt na samym ARM").
 """
@@ -22,7 +22,23 @@ import numpy as np
 
 from dsp import config as C, frontend, grzebien, melref, viterbi as V, zbocza as Z
 
-SIEC = Path("runs/zbocza_5/siec.npz")
+# Kaskada zbocza_6 + elementy_2 (08.11, operator po pomiarze halucynacji na
+# stałej nośnej z IC-7300: 6,3 zn./min zamiast 18,5 na zbocza_5). Cena przy
+# pomiarze 07.11: 44-96 słów mniej w teście 1659. Te same pliki bierze
+# odbiór na żywo (tools/gui/odbior.cfg_karty).
+# Tego samego dnia: zbocza_6 (podstawa kaskady) nie czyta OK1FPS z pasma,
+# który zbocza_5 czyta — stąd przełącznik w Ustawieniach (aplikacja/kaskada),
+# wyłączony = zbocza_5 jak w 0.9.x.
+SIEC = Path("runs/zbocza_6/siec.npz")
+SIEC_ELEMENTOW = Path("runs/elementy_2/siec.npz")
+SIEC_BEZ_KASKADY = Path("runs/zbocza_5/siec.npz")
+
+
+def sieci(kaskada: bool) -> tuple[Path, Path | None]:
+    """(sieć zboczy, sieć przegródek albo None) — wspólne dla pliku i odbioru."""
+    if kaskada and SIEC.exists() and SIEC_ELEMENTOW.exists():
+        return SIEC, SIEC_ELEMENTOW
+    return SIEC_BEZ_KASKADY, None
 N_FFT_WEJ = 512                       # 64 ms, prążek 15,6 Hz
 HZ_OD, HZ_DO = 300.0, 1200.0
 # Ten sam odcień dla tego samego tonu co w obrazie sieci: korekta zmierzona
@@ -138,17 +154,22 @@ def odchylki(pz: np.ndarray, zbocza: np.ndarray, u: float) -> dict:
     return wynik
 
 
-def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None) -> dict:
-    from dsp.siec_numpy import SiecNumpy
+def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None, siec_e=None) -> dict:
+    """siec / siec_e — gotowe sieci numpy; bez nich: kaskada (sieci(True))."""
+    from dsp.siec_numpy import SiecElementowNumpy, SiecNumpy
     from tools import odczyt
     if siec is None:
-        siec = SiecNumpy(SIEC)
+        sz, se = sieci(True)
+        siec = SiecNumpy(sz)
+        siec_e = SiecElementowNumpy(se) if se is not None else None
     if ton_cw is None:
         from tools.radio import civ
         ton_cw = civ.ton_z_opisu(Path(sciezka).with_suffix(".txt"))
     surowe = frontend.load_audio(sciezka)
     a, ton = odczyt.przygotuj(surowe, ton_cw=ton_cw)
-    pz = Z.przebieg_sieci(a, siec)
+    # jak tools.odczyt.odczytaj(laczenie="kaskada") — ta sama droga co pomiar halucynacji
+    pz = (odczyt.przebieg_laczony(a, siec, siec_e, "kaskada") if siec_e is not None
+          else Z.przebieg_sieci(a, siec))
     u_c, _ = V.jednostka_cepstrum(pz)
     u_g = odczyt.jednostka_grzebienia(pz)
     tekst, u, _ = V.dekoduj_najlepiej(pz, [u_c, u_g])

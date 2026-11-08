@@ -3766,3 +3766,55 @@ OBOK tonu (60–200 Hz dalej) — nośnej NA tonie jako „brak telegrafii" sie�
 nie widziała. Wyniki: `out/halucynacje_zbocza_{5,6}_ic7300_nosna.txt`,
 `out/elementy/halucynacje_kaskada_ic7300_nosna.txt`; nagrania w banku
 (poza gitem, W:\nagrania_cw\negatywy\ic7300_nosna, opis w ZRODLO.txt).
+
+### KV260: jądro zmienione przez automatyczne aktualizacje (08.11)
+
+**Objaw.** Po ponownym włożeniu karty płytka sama instalowała paczki
+(unattended-upgrades, ~140 paczek, 09:25–11:57 na karcie SD), w tym jądro
+6.8.0-1036 — a zocl (sterownik DPU, budowany ze źródeł) był tylko pod 1015.
+Po restarcie na nowym jądrze DPU by nie wstało.
+
+**Co zrobione (za zgodą operatora).** Automatyczne aktualizacje wyłączone
+(usługa unattended-upgrades, timery apt-daily i apt-daily-upgrade,
+/etc/apt/apt.conf.d/20auto-upgrades = 0). zocl zbudowany pod 1036
+(`make KERNEL_SRC=/lib/modules/6.8.0-1036-xilinx/build`), vermagic się
+zgadza, w /lib/modules/6.8.0-1036-xilinx/updates + depmod; moduł dla 1015
+został. Do sprawdzenia po restarcie: loadapp i dpu_proba. Uwaga w
+`srodowisko/kv260/buduj_vart.sh`.
+
+### Kaskada w programie — przełącznik, nie zamiana (08.11)
+
+**Prośba operatora.** „Przełącz program na kaskadę" — po pomiarze
+halucynacji na stałej nośnej z IC-7300.
+
+**Co wyszło przy przełączaniu.** Pomiar 07.11 porównywał kaskadę z zbocza_6;
+program liczył na zbocza_5. Wobec programu: test słów 1520 -> 1402 (−118,
+prawie 8%). Na OK1FPS z pasma (probki) zbocza_6 — podstawa kaskady —
+nie czyta prawie nic, a zbocza_5 czyta (sprawdzone w TensorFlow i numpy,
+tekst identyczny: to sieć, nie przeniesienie). Iloczyn 0,5 na nośnej:
+10,4 zn./min — prawie jak sama zbocza_6 (11,0), więc nie zastępuje kaskady.
+
+**Jak teraz.** Ustawienia -> „Tłumienie fałszywych znaków" (aplikacja/kaskada,
+domyślnie włączone — prośba operatora); wyłączone = zbocza_5 jak w 0.9.x.
+Dotyczy i odbioru na żywo, i „Otwórz plik". Sieć przegródek w numpy
+(`dsp/siec_numpy.SiecElementowNumpy`, zgodność z TF 1,5e-6; zbocza_6 w
+numpy 8,6e-6). Na żywo przegródki liczone przyrostowo
+(`tools/na_zywo.PrzegrodkiNaZywo`): cały odcinek 4 s co krok to 135 ms,
+przyrost ~24 wycinki = 12 ms; siatka kolumn stała w czasie, od nowa przy
+zmianie u > 6%; normalizacja mediana odcinka kroku (w pliku — całego
+nagrania; różnica niezmierzona).
+
+**Test na żywo (proces dekodera, tempo 4×).**
+
+| nagranie | zbocza_5 | kaskada |
+|---|---|---|
+| qso1 kluczownik | tekst pełny | ten sam tekst |
+| nośna IC-7300, 1 min | 33 znaki | 1 znak |
+| LA3WAA, 180 s | 183 znaki (śmieci w przerwach) | 108 znaków |
+
+Krok śr. 0,14 s (qso1), 0,25 s (LA3WAA; zbocza_5 0,21 s) — przy 4×
+proces analizy konkuruje z dekoderem; przy 1× na radiu nie zmierzone.
+Obserwacja operatora tego samego dnia: na nośnej „jest zbocze i zaliczono
+to jako E, ale impuls się nie kończy" — P faluje wokół 0,5 od szumu
+w filtrze; kaskada wetuje takie odcinki, bo przegródki nie widzą w nich
+kluczowania.

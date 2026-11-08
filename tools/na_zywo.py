@@ -123,10 +123,71 @@ def _analiza(x: np.ndarray, n0: int, ton_cw: float | None, hist: np.ndarray,
     return f_n, obce, (wav2net.TARGET_PEAK_DB - szczyt if ok.any() else None, szczyt), kand, w_pasmie
 
 
+ZMIANA_U_PRZEGRODEK = 0.06    # siatka przegródek od nowa dopiero przy takiej zmianie u (trening: u ±10 %)
+
+
+class PrzegrodkiNaZywo:
+    """P(ton) sieci przegródek (dsp/elementy, etap A) na żywo — do kaskady
+    z siecią zboczy (08.11, operator: „przełącz program na kaskadę").
+
+    Przegródki całego odcinka co krok to 135 ms (256 wycinków, numpy,
+    zmierzone 08.11) — za dużo przy kroku 0,25 s. Kolumny leżą więc na
+    STAŁEJ siatce czasu (co u/K od początku nagrania) i każda przegródka
+    liczona jest raz, gdy ma pełny kontekst (K kolumn z lewej, 2K z prawej);
+    przyrost z kroku to ~24 wycinki = 12 ms. Siatka od nowa tylko przy
+    zmianie u o ZMIANA_U_PRZEGRODEK. Normalizacja: mediana odcinka z kroku
+    (4 s), nie całego nagrania jak w odczycie pliku — liczone raz kolumny
+    zostają z medianą swojego kroku (przybliżenie, różnica do zmierzenia)."""
+
+    def __init__(self, model, sr: int = C.SR):
+        self.m, self.sr = model, sr
+        self.u: float | None = None
+        self.P: dict[int, float] = {}
+
+    def licz(self, y: np.ndarray, s0: int, u: float) -> tuple[int, np.ndarray] | None:
+        """y — sygnał przygotowany (ton na TONE_CENTER) od próbki s0 ->
+        (pierwsza ramka 5 ms, P(ton) na ramkach) dla odcinka y albo None."""
+        from dsp import elementy as E
+        if not np.isfinite(u) or u <= 0:
+            return None
+        u = float(np.clip(u, 1.2 / 60, 1.2 / 8))
+        if self.u is None or abs(u - self.u) > ZMIANA_U_PRZEGRODEK * self.u:
+            self.u, self.P = u, {}
+        u = self.u
+        hop, pol = u / E.K, E.okno(u) / 2
+        t0, t1 = s0 / self.sr, (s0 + y.size) / self.sr
+        j_lo, j_hi = int(np.ceil((t0 + pol) / hop)), int(np.floor((t1 - pol) / hop))
+        oc = np.arange(j_lo + E.K, j_hi - 2 * E.K + 2)          # przegródki z pełnym kontekstem
+        if oc.size == 0:
+            return None
+        nowe = [j for j in oc.tolist() if j not in self.P]
+        if nowe:
+            j = np.arange(j_lo, j_hi + 1)
+            x = E.normalizuj(E.wodospad(y, C.TONE_CENTER, u, j * hop - t0, self.sr))
+            X = np.stack([x[:, i - E.K - j_lo:i - E.K - j_lo + E.KOLUMNY] for i in nowe])
+            for i, p in zip(nowe, self.m.przewiduj(X)[:, E.TON]):
+                self.P[i] = float(p)
+        stare = (t0 - 2 * HISTORIA_S) / hop
+        for k in [k for k in self.P if k < stare]:
+            del self.P[k]
+        ks = np.array(sorted(k for k in self.P if oc[0] <= k <= oc[-1]))
+        c = ks * hop - hop / 2 + u / 2                         # środki przegródek (jak przebieg_przegrodek)
+        f_lo, f_hi = int(np.ceil(c[0] / V.DT)), int(np.floor(c[-1] / V.DT))
+        if f_hi < f_lo:
+            return None
+        ram = np.arange(f_lo, f_hi + 1)
+        return f_lo, np.interp(ram * V.DT, c, [self.P[k] for k in ks]).astype(np.float32)
+
+
 class OdczytNaZywo:
     def __init__(self, model, ton_cw: float | None = None, krok_s: float = KROK_S,
-                 opoznienie_s: float = OPOZNIENIE_S, sr: int = C.SR, watek: bool = True):
+                 opoznienie_s: float = OPOZNIENIE_S, sr: int = C.SR, watek: bool = True,
+                 model_elementow=None):
         self.model, self.ton_cw, self.sr = model, ton_cw, sr
+        # kaskada (dsp/elementy.polacz_kaskada): bez sieci przegródek — sama sieć zboczy
+        self.przeg = PrzegrodkiNaZywo(model_elementow, sr) if model_elementow is not None else None
+        self.hist_e = np.zeros(0, np.float32)  # P(ton) przegródek, siatka hist (brak: kopia P zboczy)
+        self.hist_k = np.zeros(0, np.float32)  # P do Viterbiego: kaskada albo hist
         self.krok, self.opozn = krok_s, opoznienie_s
         self.dwa_wejscia = len(model.inputs) == 2
         self.raw = np.zeros(0, np.float32)
@@ -285,6 +346,25 @@ class OdczytNaZywo:
         logit = Z._logit(self.model, okna if self.dwa_wejscia else okna[0])[0]
         return (1.0 / (1.0 + np.exp(-logit)))[R - min(n, R):].astype(np.float32)
 
+    def _kaskada(self, y: np.ndarray, s0: int) -> None:
+        """hist_e w ślad za hist (ta sama siatka), nowe przegródki, hist_k."""
+        if self.przeg is None:
+            self.hist_k = self.hist
+            return
+        from dsp import elementy as E
+        st, st0 = self.hist_e, getattr(self, "_he0", self.h0)
+        st = st[max(0, self.h0 - st0):][:self.hist.size]
+        # ramki jeszcze bez przegródek: P zboczy — kaskada zostawia je bez zmian
+        self.hist_e = np.concatenate([st, self.hist[st.size:]])
+        self._he0 = self.h0
+        r = self.przeg.licz(y, s0, self.u)
+        if r is not None:
+            f0, pe = r
+            a, b = max(f0, self.h0), min(f0 + pe.size, self.h0 + self.hist.size)
+            if b > a:
+                self.hist_e[a - self.h0:b - self.h0] = pe[a - f0:b - f0]
+        self.hist_k = E.polacz_kaskada(self.hist, self.hist_e)
+
     def _do_historii(self, p: np.ndarray, a0: int, poz: np.ndarray) -> None:
         """P okna od ramki a0. Starsze od środka okna zostają zamrożone."""
         self._wpisz(p, a0, a0 + Z.RAMKI_ZBOCZA // 2, poz)
@@ -342,11 +422,12 @@ class OdczytNaZywo:
                 n_ramek = (self.n - s0) // hop + 1
                 self._do_historii(p, s0 // hop + n_ramek - p.size, B.poziom_tonu(y)[-p.size:] - wzm)
             self.ost_y, self.ost_y0 = y, s0           # do wodospadu „do sieci” (okno)
+            self._kaskada(y, s0)
             kand, self.kand = self.kand + [self.u], []
             if not any(np.isfinite(k) and k > 0 for k in kand):     # początek: jeszcze nic
                 kand = [V.jednostka_cepstrum(self.hist)[0], jednostka_grzebienia(self.hist)]
             n_v = int(VITERBI_S / V.DT)
-            pv = self.hist[-n_v:]
+            pv = self.hist_k[-n_v:]
             v0 = self.h0 + self.hist.size - pv.size
             pod = B.podloga(self.hist_poz)
             self.nad_szumem_db = float(np.max(self.hist_poz[-int(self.krok / V.DT):] - pod[-int(self.krok / V.DT):]))
@@ -365,7 +446,7 @@ class OdczytNaZywo:
                 self.u = u
                 # R: pewność sieci wzdłuż ścieżki (ton: p, przerwa: 1 − p) — bez
                 # blokady szumów, która zeruje p w przerwach i zawyżałaby pewność
-                ps = self.hist[-n_v:]
+                ps = self.hist_k[-n_v:]
                 ton_sc = np.zeros(ps.size, bool)
                 elementy = []
                 for nazwa, a, b in odc:
@@ -793,9 +874,12 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
             st = {**st, "ton_cw": cfg["ton_reczny"], "skad_ton": "wpisany ręcznie"}
         ton = st.get("ton_cw")
         q.put(("info", "laduje", {"ton": ton}))
+        me = None
         if cfg.get("model_npz"):
-            from dsp.siec_numpy import SiecNumpy
+            from dsp.siec_numpy import SiecElementowNumpy, SiecNumpy
             model = SiecNumpy(Path(cfg["model_npz"]))
+            if cfg.get("model_elementow_npz"):
+                me = SiecElementowNumpy(Path(cfg["model_elementow_npz"]))
         else:
             from tensorflow import keras
             from tools.odczyt import MODEL_ZBOCZY
@@ -803,7 +887,7 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
         czas("sieć wczytana")
         rozgrzej(model)
         czas("rozgrzewka")
-        d = OdczytNaZywo(model, ton_cw=ton)
+        d = OdczytNaZywo(model, ton_cw=ton, model_elementow=me)
         s = Sesja(C.SR, ton, st.get("pasmo"), cfg.get("zrodlo", f"karta {cfg['device']} (Windows, okno)"),
                   st.get("skad_ton", "CI-V 0x14 0x09")) if cfg["zapis"] else None
         gen = (_strumien_wav(Path(cfg["wav"]), cfg.get("tempo", 1.0)) if cfg.get("wav")

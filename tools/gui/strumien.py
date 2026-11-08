@@ -26,6 +26,12 @@ def _u8(x: np.ndarray) -> np.ndarray:
     return (np.clip(x, 0, 1) * 255).astype(np.uint8)
 
 
+def _p_dekodera(d) -> np.ndarray:
+    """P, które widzi Viterbi: po kaskadzie z przegródkami (08.11), gdy jest."""
+    hk = getattr(d, "hist_k", None)
+    return hk if hk is not None and hk.size == d.hist.size else d.hist
+
+
 class NadawcaWidoku:
     def __init__(self):
         self.j = None              # pierwsza jeszcze niewysłana kolumna
@@ -61,7 +67,7 @@ class NadawcaWidoku:
             self.j = j1
         if d.hist.size:
             k = min(d.hist.size, int(7.0 / Z.HOP_ZBOCZA * C.SR))   # PRZELICZ_S dekodera
-            out["p"] = (d.h0 + d.hist.size - k, d.hist[-k:].copy())
+            out["p"] = (d.h0 + d.hist.size - k, _p_dekodera(d)[-k:].copy())
         self.kroki += 1
         if self.kroki % NAKLADKI_CO == 0 and d.hist.size and np.isfinite(d.u):
             out["nakladki"] = self._nakladki(d)
@@ -71,7 +77,7 @@ class NadawcaWidoku:
         dt = Z.HOP_ZBOCZA / C.SR
         k = min(d.hist.size, int(ZAKLADKA_S / dt))
         h = d.h0 + d.hist.size - k
-        pz = d.hist[-k:]
+        pz = _p_dekodera(d)[-k:]
         nk = A.nakladki(pz, d.u)
         t0 = h * dt
         od = t0 + (PEWNE_OD_S if k * dt > 2 * PEWNE_OD_S else 0.0)
