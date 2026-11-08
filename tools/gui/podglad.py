@@ -2,7 +2,7 @@
 
 Operator układa okno w Qt Designerze (tools/gui/designer.bat), zapisuje,
 uruchamia ten podgląd i widzi, jak to wygląda „w ruchu": wodospady
-przewijają się, S-metr i miernik tonu chodzą, tekst przybywa. Dane są
+przewijają się (jeden widok sygnału z lupą i nakładkami), S-metr i miernik tonu chodzą, tekst przybywa. Dane są
 sztuczne — to podgląd wyglądu, nie dekoder. Styl (kolory, czcionki) można
 też dać w Designerze (styleSheet) — kod go nie nadpisuje.
 
@@ -17,37 +17,13 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QFile, QTimer, Qt
-from PySide6.QtGui import QColor, QImage, QPainter, QPen
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QFrame, QVBoxLayout, QWidget
 
+from tools.gui.widok_sygnalu import KOLUMNA_S, WidokSygnalu  # noqa: E402
+
 UI = Path(__file__).with_name("okno.ui")
-
-
-def _jet(x: np.ndarray) -> np.ndarray:
-    """0..1 -> RGB jak wodospady obecnej aplikacji (jet)."""
-    r = np.clip(1.5 - np.abs(4 * x - 3), 0, 1)
-    g = np.clip(1.5 - np.abs(4 * x - 2), 0, 1)
-    b = np.clip(1.5 - np.abs(4 * x - 1), 0, 1)
-    return (np.stack([r, g, b], -1) * 255).astype(np.uint8)
-
-
-class Wodospad(QWidget):
-    """Przewijany obraz: nowa kolumna z prawej (czas w poziomie, częstotliwość w pionie)."""
-
-    def __init__(self, wierszy: int):
-        super().__init__()
-        self.obraz = np.zeros((wierszy, 600, 3), np.uint8)
-
-    def dodaj(self, kolumna: np.ndarray) -> None:
-        self.obraz = np.roll(self.obraz, -1, axis=1)
-        self.obraz[:, -1] = _jet(np.clip(kolumna, 0, 1))[::-1]
-        self.update()
-
-    def paintEvent(self, _):
-        h, w, _c = self.obraz.shape
-        img = QImage(np.ascontiguousarray(self.obraz).data, w, h, 3 * w, QImage.Format_RGB888)
-        QPainter(self).drawImage(self.rect(), img)
 
 
 class Pasek(QWidget):
@@ -70,25 +46,27 @@ class Pasek(QWidget):
         p.fillRect(0, 0, int(self.width() * self.v), self.height(), self.kolor)
 
 
-class Przebieg(QWidget):
-    """P(klucz) co 5 ms — linia nad progiem 0,5."""
+def polacz_lupe(okno, widok: WidokSygnalu) -> None:
+    """Suwak lupy w skali log (0,25 s ... pamięć), przełączniki nakładek, „na żywo"."""
+    from PySide6.QtWidgets import QAbstractButton, QLabel, QSlider
+    sld, lbl = okno.findChild(QSlider, "sldLupa"), okno.findChild(QLabel, "lblLupaWartosc")
+    zyw = okno.findChild(QAbstractButton, "btnNaZywo")
+    lo, hi = np.log(0.25), np.log(widok.pamiec_s)
 
-    def __init__(self):
-        super().__init__()
-        self.p = np.zeros(600)
+    def na_s(v): return float(np.exp(lo + (hi - lo) * v / 100))
+    def z_s(s): return int(round(100 * (np.log(s) - lo) / (hi - lo)))
+    def opis(s): lbl.setText(f"{s * 1000:.0f} ms" if s < 1 else f"{s:.1f} s")
 
-    def dodaj(self, v: float) -> None:
-        self.p = np.roll(self.p, -1); self.p[-1] = v; self.update()
-
-    def paintEvent(self, _):
-        q = QPainter(self)
-        q.fillRect(self.rect(), QColor("#111417"))
-        w, h = self.width(), self.height()
-        q.setPen(QPen(QColor("#3a4048"), 1, Qt.DashLine)); q.drawLine(0, h // 2, w, h // 2)
-        q.setPen(QPen(QColor("#e0b050"), 1.5))
-        xs = np.linspace(0, w - 1, self.p.size); ys = (1 - self.p) * (h - 2) + 1
-        for i in range(1, self.p.size):
-            q.drawLine(int(xs[i - 1]), int(ys[i - 1]), int(xs[i]), int(ys[i]))
+    sld.setValue(z_s(widok.widok_s)); opis(widok.widok_s)
+    sld.valueChanged.connect(lambda v: widok.ustaw_lupe(na_s(v)))
+    widok.lupa_zmieniona.connect(lambda s: (sld.blockSignals(True), sld.setValue(z_s(s)),
+                                            sld.blockSignals(False), opis(s)))
+    for nazwa, pole in (("chkZbocza", "pokaz_zbocza"), ("chkGrzebien", "pokaz_grzebien")):
+        okno.findChild(QAbstractButton, nazwa).toggled.connect(
+            lambda v, pole=pole: (setattr(widok, pole, v), widok.update()))
+    zyw.toggled.connect(widok.ustaw_na_zywo)
+    widok.na_zywo_zmienione.connect(lambda v: (zyw.blockSignals(True), zyw.setChecked(v),
+                                               zyw.blockSignals(False)))
 
 
 def wstaw(okno, nazwa: str, widzet: QWidget) -> QWidget:
@@ -101,6 +79,30 @@ def wstaw(okno, nazwa: str, widzet: QWidget) -> QWidget:
     return widzet
 
 
+def atrapa_kluczowania(tekst: str, u: float):
+    """Kolumny 5 ms kluczowania tekstu w idealnym takcie u, zbocza (s) i zęby
+    grzebienia (s): od początku każdego znaku co u do jego końca."""
+    from dsp import config as C
+    klucz, zbocza, zeby, t = [], [], [], 0.0
+
+    def dodaj(stan, d):
+        nonlocal t
+        klucz.extend([stan] * int(round(d / KOLUMNA_S)))
+        t += d
+
+    for slowo in tekst.split():
+        for z in slowo:
+            start = t
+            for i, e in enumerate(C.MORSE_DICT[z]):
+                if i:
+                    dodaj(False, u)
+                zbocza.append(t); dodaj(True, u if e == "." else 3 * u); zbocza.append(t)
+            zeby.extend(start + k * u for k in range(int(round((t - start) / u)) + 1))
+            dodaj(False, 3 * u)
+        dodaj(False, 4 * u)
+    return np.array(klucz), np.array(zbocza), np.array(zeby), t
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ui", type=Path, default=UI)
@@ -110,31 +112,45 @@ def main() -> None:
     app = QApplication(sys.argv)
     f = QFile(str(a.ui)); f.open(QFile.ReadOnly)
     okno = QUiLoader().load(f); f.close()
-    wej, dos, sie = (wstaw(okno, n, Wodospad(k)) for n, k in
-                     (("ramkaWodWejscie", 120), ("ramkaWodDoSieci", 120), ("ramkaWodSiec", 32)))
+    widok = wstaw(okno, "ramkaWidokSygnalu", WidokSygnalu([
+        ("wejście", "obraz", 120, 3), ("po obróbce", "obraz", 120, 3),
+        ("oczami sieci", "obraz", 32, 2), ("P(klucz)", "przebieg", 0, 1)]))
+    widok.opis = "atrapa · u 60 ms · 20 WPM"
     ton = wstaw(okno, "ramkaMiernikTonu", Pasek("#4caf50"))
     sm = wstaw(okno, "ramkaSmetr", Pasek("#e0b050"))
-    pp = wstaw(okno, "ramkaPrzebiegP", Przebieg())
     tekst = okno.findChild(QWidget, "txtOdczyt")
+    polacz_lupe(okno, widok)
     rng = np.random.default_rng(0)
-    morse = "--.-. -.-.  --.-  -.. .  ... --.- ..--- -... ...- -.  .--. ...- -..- ..--- "  # rytm atrapy
-    stan = {"t": 0}
-    zdanie = "CQ CQ DE SQ2BVN SQ2BVN PSE K   "
+    zdanie = "CQ CQ DE SQ2BVN SQ2BVN PSE K"
+    klucz, zbocza, zeby, okres = atrapa_kluczowania(zdanie, 0.06)
+    stan = {"j": 0}
+    KOL = 4                                   # 20 ms tik = 4 kolumny po 5 ms
 
     def tik():
-        t = stan["t"] = stan["t"] + 1
-        klucz = morse[(t // 6) % len(morse)] != " "
-        szum = rng.random(120) * 0.35
-        kol = szum.copy(); kol[58:62] += 0.6 if klucz else 0
-        wej.dodaj(kol + (rng.random(120) > 0.97) * 0.5)        # obce sygnały
-        dos.dodaj(np.where(np.arange(120) // 10 == 5, kol, szum * 0.5))
-        m = rng.random(32) * 0.25; m[14:18] += 0.7 if klucz else 0
-        sie.dodaj(m)
-        pp.dodaj((0.92 if klucz else 0.06) + rng.normal(0, 0.03))
+        j0 = stan["j"]; stan["j"] += KOL
+        idx = np.arange(j0, j0 + KOL)
+        k = klucz[idx % klucz.size].astype(np.float32)
+        szum = rng.random((KOL, 120)) * 0.35
+        wej = szum.copy(); wej[:, 58:62] += 0.6 * k[:, None]
+        wej += (rng.random((KOL, 120)) > 0.97) * 0.5          # obce sygnały
+        dos = szum * 0.4; dos[:, 58:62] = wej[:, 58:62]
+        m = rng.random((KOL, 32)) * 0.25; m[:, 14:18] += 0.7 * k[:, None]
+        widok.dodaj("wejście", wej); widok.dodaj("po obróbce", dos)
+        widok.dodaj("oczami sieci", m)
+        widok.dodaj("P(klucz)", np.clip(0.06 + 0.86 * k + rng.normal(0, 0.03, KOL), 0, 1))
+        t0, t1 = j0 * KOLUMNA_S, (j0 + KOL) * KOLUMNA_S
+        n0 = int(t0 // okres)
+        for zb, ze in ((zbocza, widok.dodaj_zbocza), (zeby, widok.dodaj_zeby)):
+            tt = zb + n0 * okres
+            tt = np.r_[tt, tt + okres]
+            ze(tt[(tt >= t0) & (tt < t1)])
+        t = j0 // KOL
         ton.ustaw(0.55 + 0.25 * np.sin(t / 40)); sm.ustaw(0.5 + 0.2 * np.sin(t / 70))
         ton.krok(); sm.krok()
         if t % 25 == 0:
-            tekst.insertPlainText(zdanie[(t // 25) % len(zdanie)])
+            tekst.insertPlainText((zdanie + "   ")[(t // 25) % (len(zdanie) + 3)])
+        if widok.na_zywo:
+            widok.update()
 
     timer = QTimer(); timer.timeout.connect(tik); timer.start(20)
     if a.zrzut:

@@ -4,8 +4,10 @@
   Układ i wygląd ustawia operator w Qt Designerze (tools\gui\designer.bat).
   Kod szuka elementów PO NAZWIE (objectName) — nazw nie zmieniać; wolno
   przesuwać, zmieniać rozmiary, kolory, czcionki, kolejność w układach.
-  Ramki „ramka*" to miejsca na rysowane elementy (wodospady, S-metr,
-  miernik tonu, przebieg P): kod wstawia w nie swój widżet na całą ramkę.
+  Ramki „ramka*" to miejsca na rysowane elementy (S-metr, miernik tonu,
+  widok sygnału): kod wstawia w nie swój widżet na całą ramkę.
+  ramkaWidokSygnalu (od 08.11) — jeden komponent zamiast trzech wodospadów
+  i paska P: rośnie razem z oknem (verstretch 3 : 1 względem tekstu).
 -->
 <ui version="4.0">
  <class>OknoDekodera</class>
@@ -93,39 +95,40 @@
      </layout>
     </item>
 
-    <!-- wodospady: wejście, to co idzie do sieci (dźwięk), oczami sieci (obraz) -->
-    <item><widget class="QLabel" name="lblWodWejscie"><property name="text"><string>wejście (karta dźwiękowa)</string></property></widget></item>
+    <!-- widok sygnału: lupa i nakładki analizy -->
     <item>
-     <widget class="QFrame" name="ramkaWodWejscie">
-      <property name="minimumSize"><size><width>600</width><height>90</height></size></property>
-      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
-     </widget>
+     <layout class="QHBoxLayout" name="ukladLupa">
+      <item><widget class="QLabel" name="lblLupa"><property name="text"><string>lupa</string></property></widget></item>
+      <item>
+       <widget class="QSlider" name="sldLupa">
+        <property name="toolTip"><string>Ile czasu mieści się na ekranie (też kółko myszy na wykresie)</string></property>
+        <property name="minimum"><number>0</number></property>
+        <property name="maximum"><number>100</number></property>
+        <property name="orientation"><enum>Qt::Horizontal</enum></property>
+       </widget>
+      </item>
+      <item><widget class="QLabel" name="lblLupaWartosc"><property name="text"><string>4 s</string></property></widget></item>
+      <item><widget class="QCheckBox" name="chkZbocza"><property name="text"><string>zbocza po regeneracji</string></property><property name="checked"><bool>true</bool></property></widget></item>
+      <item><widget class="QCheckBox" name="chkGrzebien"><property name="text"><string>grzebień</string></property><property name="checked"><bool>true</bool></property></widget></item>
+      <item><spacer name="odstepLupa"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+      <item><widget class="QPushButton" name="btnNaZywo"><property name="text"><string>na żywo</string></property><property name="checkable"><bool>true</bool></property><property name="checked"><bool>true</bool></property></widget></item>
+     </layout>
     </item>
-    <item><widget class="QLabel" name="lblWodDoSieci"><property name="text"><string>po obróbce (pętla tonu, kasowanie obcych)</string></property></widget></item>
+
+    <!-- jeden komponent: wejście, po obróbce, oczami sieci, P(klucz) na wspólnej osi czasu -->
     <item>
-     <widget class="QFrame" name="ramkaWodDoSieci">
-      <property name="minimumSize"><size><width>600</width><height>90</height></size></property>
+     <widget class="QFrame" name="ramkaWidokSygnalu">
+      <property name="minimumSize"><size><width>600</width><height>240</height></size></property>
       <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
-     </widget>
-    </item>
-    <item><widget class="QLabel" name="lblWodSiec"><property name="text"><string>oczami sieci (pasma mel co 5 ms)</string></property></widget></item>
-    <item>
-     <widget class="QFrame" name="ramkaWodSiec">
-      <property name="minimumSize"><size><width>600</width><height>64</height></size></property>
-      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QFrame" name="ramkaPrzebiegP">
-      <property name="minimumSize"><size><width>600</width><height>24</height></size></property>
-      <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+      <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>3</verstretch></sizepolicy></property>
      </widget>
     </item>
 
-    <!-- odczytany tekst -->
+    <!-- odczytany tekst: zaznaczanie i kopiowanie (Ctrl+C) działa, pisać się nie da -->
     <item>
      <widget class="QTextEdit" name="txtOdczyt">
       <property name="readOnly"><bool>true</bool></property>
+      <property name="textInteractionFlags"><set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set></property>
       <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Expanding"><horstretch>0</horstretch><verstretch>1</verstretch></sizepolicy></property>
      </widget>
     </item>

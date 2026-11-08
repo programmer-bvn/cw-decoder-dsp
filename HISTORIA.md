@@ -3634,3 +3634,19 @@ Słowa te same (kluczownik 7/7, cq 6/6, kkb 8/8, qso6 29/31); w 3 nagraniach
 tekst różni się poza oczekiwanymi słowami (int8 vs float). Sieć 16× szybsza;
 teraz 80% czasu to `przygotuj` — następne do przyspieszenia. Pierwsze
 nagranie zawiera rozgrzewkę numby (przygotuj 15,9 s na 26,9 s).
+
+### Okno Qt: jeden widok sygnału zamiast trzech wodospadów (08.11)
+
+Operator: trzy osobne wodospady to „partyzantka". `tools/gui/widok_sygnalu.py`
+— pasy (wejście, po obróbce, oczami sieci, P(klucz)) na wspólnej osi czasu,
+kolumna 5 ms jak sieć zboczy; lupa (kółko / suwak `sldLupa`, 0,25 s–120 s),
+przesuwanie, pomiar Δt prawym przyciskiem, skala w ms od prawego brzegu;
+nakładki: zęby grzebienia (białe) i zbocza po regeneracji (żółte) przez
+wszystkie pasy. W `okno.ui` jedna `ramkaWidokSygnalu` rośnie z oknem.
+
+Dwie rzeczy wyszły na zrzutach atrapy: (1) przy szerokim widoku kolumny
+łączone MAKSIMUM — tło szumu jasne, ton ginie; teraz średnia (kropka to
+≥ 8 kolumn przy 30 WPM). (2) przy 30 s linie nakładek zalewają obraz —
+gdy średni odstęp < 8 px, nakładka znika z napisem „przybliż lupą".
+Na razie tylko atrapa (`podglad.py`); prawdziwe dane po przeniesieniu
+logiki z tkintera.
