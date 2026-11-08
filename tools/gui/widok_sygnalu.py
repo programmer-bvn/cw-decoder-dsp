@@ -78,6 +78,22 @@ class _Pierscien:
         self.d[i + self.n] = blok
         self.licz += k
 
+    def ustaw(self, j0: int, blok: np.ndarray) -> None:
+        """Kolumny od j0 na ICH miejsce (na żywo: P przeliczane wstecz, pasy
+        startują w różnych chwilach). Luka przed j0 — zera; starsze niż
+        pamięć — pominięte."""
+        if j0 > self.licz:
+            self.dodaj(np.zeros((j0 - self.licz, *self.d.shape[1:]), self.d.dtype))
+        pocz = max(j0, self.licz - self.n)
+        blok = blok[pocz - j0:]
+        nadpis = min(len(blok), self.licz - pocz)
+        if nadpis > 0:
+            i = (pocz + np.arange(nadpis)) % self.n
+            self.d[i] = blok[:nadpis]
+            self.d[i + self.n] = blok[:nadpis]
+        if len(blok) > nadpis:
+            self.dodaj(blok[nadpis:])
+
     def wycinek(self, j0: int, j1: int) -> tuple[int, np.ndarray]:
         """Kolumny [j0, j1) przycięte do tego, co jest w pamięci: (j0', dane)."""
         j0, j1 = max(j0, self.licz - self.n, 0), min(j1, self.licz)
@@ -175,6 +191,27 @@ class WidokSygnalu(QWidget):
         else:
             b = np.atleast_1d(b)
         p.buf.dodaj(b)
+
+    def ustaw(self, nazwa: str, j0: int, blok: np.ndarray) -> None:
+        """Jak dodaj, ale od kolumny j0 (nadpisuje, co już jest)."""
+        p = self._po_nazwie[nazwa]
+        b = np.asarray(blok)
+        if p.rodzaj == "obraz" and b.dtype != np.uint8:
+            b = (np.clip(np.atleast_2d(b), 0, 1) * 255).astype(np.uint8)
+        elif p.rodzaj != "obraz":
+            b = np.atleast_1d(b).astype(np.float32)
+        p.buf.ustaw(int(j0), b)
+
+    def zastap_znaczniki(self, t_od: float, zeby, zbocza, pary) -> None:
+        """Na żywo grzebień liczony co ~1 s na ogonie P: od t_od nowe linie
+        zastępują stare (przeliczenie), starsze zostają."""
+        def z(stare, nowe):
+            nowe = np.asarray(nowe, float)
+            return self._przytnij(np.r_[stare[stare < t_od], nowe[nowe >= t_od]])
+        self.zeby, self.zbocza = z(self.zeby, zeby), z(self.zbocza, zbocza)
+        pary = np.asarray(pary, float).reshape(-1, 2)
+        st = self.odchylki
+        self.odchylki = np.r_[st[st[:, 0] < t_od], pary[pary[:, 0] >= t_od]]
 
     def dodaj_zbocza(self, t: np.ndarray) -> None:
         self.zbocza = self._przytnij(np.r_[self.zbocza, np.asarray(t, float)])

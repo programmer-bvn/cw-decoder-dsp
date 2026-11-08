@@ -33,7 +33,7 @@
       <item><spacer name="odstepGora"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
       <item><widget class="QLabel" name="lblWersja"><property name="text"><string>nowa wersja</string></property></widget></item>
       <item><widget class="QPushButton" name="btnOtworz"><property name="text"><string>Otwórz plik…</string></property></widget></item>
-      <item><widget class="QPushButton" name="btnRadio"><property name="text"><string>Wróć do radia</string></property></widget></item>
+      <item><widget class="QPushButton" name="btnRadio"><property name="text"><string>Słuchaj</string></property><property name="checkable"><bool>true</bool></property><property name="toolTip"><string>Odbiór na żywo ze źródła wybranego w zakładce „Źródło”</string></property></widget></item>
       <item><widget class="QLabel" name="lblTempo"><property name="text"><string>tempo</string></property></widget></item>
       <item>
        <widget class="QComboBox" name="cmbTempo">
@@ -167,6 +167,25 @@
     </item>
    </layout>
       </widget>
+      <widget class="QWidget" name="zakZrodlo">
+       <attribute name="title"><string>Źródło</string></attribute>
+       <layout class="QVBoxLayout" name="ukladZrodlo">
+        <item><widget class="QLabel" name="lblZrodlaTytul"><property name="text"><string>Skąd dekodować — jedno źródło naraz:</string></property></widget></item>
+        <item>
+         <widget class="QListWidget" name="lstZrodla">
+          <property name="toolTip"><string>Wejścia dźwiękowe komputera (radio przez USB to zwykle „USB Audio”) i nagranie odtwarzane jak z radia</string></property>
+         </widget>
+        </item>
+        <item><widget class="QLabel" name="lblZrodloOpis"><property name="wordWrap"><bool>true</bool></property><property name="text"><string/></property></widget></item>
+        <item>
+         <layout class="QHBoxLayout" name="ukladZrodloPrzyciski">
+          <item><widget class="QPushButton" name="btnOdswiezZrodla"><property name="text"><string>Odśwież listę</string></property><property name="toolTip"><string>Po podłączeniu radia albo karty USB</string></property></widget></item>
+          <item><spacer name="odstepZrodlo"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+          <item><widget class="QPushButton" name="btnSluchaj"><property name="text"><string>Słuchaj</string></property><property name="checkable"><bool>true</bool></property><property name="minimumSize"><size><width>140</width><height>32</height></size></property></widget></item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="zakUstawienia">
        <attribute name="title"><string>Ustawienia</string></attribute>
        <layout class="QVBoxLayout" name="ukladUstawienia">
@@ -183,10 +202,8 @@
          <widget class="QGroupBox" name="grpOdbior">
           <property name="title"><string>Odbiór</string></property>
           <layout class="QFormLayout" name="ukladOdbior">
-           <item row="0" column="0"><widget class="QLabel" name="lblKarta"><property name="text"><string>Karta dźwiękowa</string></property></widget></item>
-           <item row="0" column="1"><widget class="QComboBox" name="cmbKarta"/></item>
-           <item row="1" column="0"><widget class="QCheckBox" name="chkCiv"><property name="text"><string>CI-V (Icom)</string></property><property name="toolTip"><string>Częstotliwość, tryb i ton CW z radia — tylko odczyt, program nic do radia nie wysyła</string></property></widget></item>
-           <item row="1" column="1">
+           <item row="0" column="0"><widget class="QCheckBox" name="chkCiv"><property name="text"><string>CI-V (Icom)</string></property><property name="toolTip"><string>Częstotliwość, tryb i ton CW z radia — tylko odczyt, program nic do radia nie wysyła</string></property></widget></item>
+           <item row="0" column="1">
             <layout class="QHBoxLayout" name="ukladCiv">
              <item><widget class="QLabel" name="lblPort"><property name="text"><string>port</string></property></widget></item>
              <item><widget class="QComboBox" name="cmbPort"><property name="editable"><bool>true</bool></property></widget></item>
@@ -201,8 +218,8 @@
              <item><spacer name="odstepCiv"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
             </layout>
            </item>
-           <item row="2" column="0"><widget class="QLabel" name="lblTon"><property name="text"><string>Ton CW ręcznie [Hz]</string></property></widget></item>
-           <item row="2" column="1"><widget class="QLineEdit" name="edtTon"><property name="placeholderText"><string>puste = szukaj sam (albo z CI-V)</string></property><property name="maximumSize"><size><width>220</width><height>16777215</height></size></property></widget></item>
+           <item row="1" column="0"><widget class="QLabel" name="lblTon"><property name="text"><string>Ton CW ręcznie [Hz]</string></property></widget></item>
+           <item row="1" column="1"><widget class="QLineEdit" name="edtTon"><property name="placeholderText"><string>puste = szukaj sam (albo z CI-V)</string></property><property name="maximumSize"><size><width>220</width><height>16777215</height></size></property></widget></item>
           </layout>
          </widget>
         </item>

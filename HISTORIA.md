@@ -3700,3 +3700,23 @@ Zapamiętane: pola ustawień (od razu po zmianie), położenie i rozmiar okna,
 lupa, nakładki, pasy, czcionka, ostatni folder plików. Test w osobnym
 folderze (DEKODER_KATALOG): drugi start wraca z tymi samymi wartościami.
 Język — jeszcze nie: przyjdzie z tłumaczeniami Qt (.ts / Linguist).
+
+Odbiór na żywo w oknie Qt (08.11, operator: „na początek na kartonie…
+user wybierał z listy źródło"). Zakładka „Źródło": lista wejść
+dźwiękowych + „nagranie odtwarzane jak z radia" — jedno źródło naraz
+(lista z checkboxami nie ma sensu: dekoder słucha jednego wejścia), karta
+zapamiętana NAZWĄ (Windows przenumerowuje po przepięciu USB). Dekoder ten
+sam co w 0.9.x: `na_zywo._praca_okna` w osobnym procesie; jedyna zmiana
+w nim — przy cfg["widok"] dokłada do kolejki kolumny 5 ms dla widoku
+sygnału (`tools/gui/strumien.py`, bez Qt). Kolumny strumienia sprawdzone:
+identyczne z analizą całego pliku. Pasy przychodzą z różnym opóźnieniem
+(obróbka i sieć dopiero po pierwszej analizie), więc widok zapisuje je
+POZYCYJNIE (`ustaw(j0, blok)`), nie doklejaniem — wcześniej pasy były
+przesunięte względem siebie. Nakładki (grzebień, zbocza, regenerat,
+odchyłki) co 4 kroki, podmieniane od t_od. `tools/gui/odbior.py`: tekst
+(zatwierdzony, słownik na zielono, wstępny szary, zamrażanie jak w 0.9.x),
+miernik tonu z progiem blokady, raport RST, S-metr przez CI-V (tylko odczyt).
+Test bez okna, przez prawdziwy proces: qso1 w tempie 2× -> „AN CQ CQ CQ DE
+SQ2BVN SQ2BVN PSE K" (jak z pliku), 87 kroków, krok śr. 0,10 s, maks.
+0,39 s; rozrzut zboczy od regeneratu 1,6 ms = 0,02 u. NIE sprawdzone:
+prawdziwa karta z radia i S-metr przez CI-V — wymaga operatora przy IC-7300.

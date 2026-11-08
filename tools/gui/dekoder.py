@@ -1,10 +1,11 @@
-"""DEKODER CW — okno Qt z prawdziwym odczytem pliku WAV (08.11).
+"""DEKODER CW — okno Qt (08.11): odbiór na żywo i odczyt plików.
 
-Pierwszy krok przenosin z tkintera: „Otwórz plik…" -> cały łańcuch odczytu
-(tools/gui/analiza.py) w tle -> widok sygnału (wejście, po obróbce, oczami
-sieci, P(klucz), grzebień, zbocza regeneratu) i tekst do zaznaczenia
-i skopiowania (dla SN2HQ: WAV z zawodów -> tekst). Radio na żywo — jeszcze
-w starej aplikacji (tools/aplikacja.py).
+Zakładki: „Odbiór" (widok sygnału, tekst), „Źródło" (skąd dekodować — jedno
+naraz: wejście dźwiękowe albo nagranie odtwarzane jak z radia), „Ustawienia"
+(CI-V, ton, zapis sesji). „Słuchaj" — dekoder na żywo (tools/gui/odbior.py,
+ten sam co w aplikacji 0.9.x, w osobnym procesie). „Otwórz plik…" — cały
+plik naraz (tools/gui/analiza.py): widok od początku, tekst do skopiowania
+(dla SN2HQ: WAV z zawodów -> tekst).
 
     python -m tools.gui.dekoder [PLIK.wav]
 """
@@ -21,11 +22,12 @@ from PySide6.QtCore import QEvent, QFile, QObject, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QFileDialog, QLabel,
-                               QLineEdit, QMenu, QStatusBar, QTabWidget, QTextEdit,
-                               QToolButton)
+                               QLineEdit, QListWidget, QListWidgetItem, QMenu, QSlider,
+                               QStatusBar, QTabWidget, QTextEdit, QToolButton)
 
 from dsp import config as C
 from tools.gui.analiza import _prazki, hz_mel
+from tools.gui.odbior import MiernikTonu, Odbior, SMetrWidok, cfg_karty
 from tools.gui.podglad import UI, polacz_lupe, wstaw
 from tools.gui.ustawienia import katalog, karty, porty_com, ustawienia
 from tools.gui.widok_sygnalu import WidokSygnalu
@@ -56,16 +58,20 @@ class Dekoder:
         self.pasek = self.okno.findChild(QStatusBar, "pasekStanu")
         self.btn = self.okno.findChild(QAbstractButton, "btnOtworz")
         self.btn.clicked.connect(self.wybierz)
+        self.miernik = wstaw(self.okno, "ramkaMiernikTonu", MiernikTonu())
+        self.smetr = wstaw(self.okno, "ramkaSmetr", SMetrWidok())
+        self.odbior = Odbior(self)
         self._pasek_tekstu()
         self._zakladka_ustawien()
+        self._zakladka_zrodla()
+        self._prog_blokady()
         self._pamiec_okna()
-        for n in ("btnRadio", "btnZglos", "btnNaZywo"):     # jeszcze nie w tej wersji
-            self.okno.findChild(QAbstractButton, n).setEnabled(False)
+        self.okno.findChild(QAbstractButton, "btnZglos").setEnabled(False)   # jeszcze nie w tej wersji
         self.most = _Most()
         self.most.gotowe.connect(self.pokaz)
         self.siec = None
         self.zrodlo = None                       # ostatni plik: podpowiedź nazwy przy zapisie
-        self.stan.setText("Otwórz plik WAV")
+        self.stan.setText("Słuchaj — odbiór na żywo; Otwórz plik — cały plik naraz")
 
     def _pasek_tekstu(self):
         """Pasek obok tekstu (operator 08.11): czcionka +/-, wyczyść, kopiuj,
@@ -83,7 +89,7 @@ class Dekoder:
         b = lambda n: self.okno.findChild(QAbstractButton, n)    # noqa: E731
         b("btnCzcionkaWieksza").clicked.connect(lambda: czcionka(t.font().pointSizeF() * 1.15))
         b("btnCzcionkaMniejsza").clicked.connect(lambda: czcionka(t.font().pointSizeF() / 1.15))
-        b("btnWyczysc").clicked.connect(t.clear)
+        b("btnWyczysc").clicked.connect(lambda: self.odbior.wyczysc_tekst())
         b("btnKopiuj").clicked.connect(self.kopiuj)
         b("btnZapisz").clicked.connect(self.zapisz)
 
@@ -130,13 +136,6 @@ class Dekoder:
         o.findChild(QAbstractButton, "btnKatalogOtworz").clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(k))))
         zap = lambda klucz: (lambda v: u.setValue(f"aplikacja/{klucz}", v))   # noqa: E731
-        ck = o.findChild(QComboBox, "cmbKarta")
-        nazwy = [n for _, n in karty()]
-        ck.addItems(nazwy)
-        pam = u.value("aplikacja/karta", "")
-        dom = next((n for n in nazwy if "USB Audio" in n and "WASAPI" in n), nazwy[0] if nazwy else "")
-        ck.setCurrentText(pam if pam in nazwy else dom)
-        ck.currentTextChanged.connect(zap("karta"))
         for nazwa, klucz, dom in (("chkCiv", "civ", False), ("chkZapis", "zapis", True),
                                   ("chkAktualizacje", "aktualizacje", True)):
             c = o.findChild(QAbstractButton, nazwa)
@@ -161,9 +160,125 @@ class Dekoder:
                 v = None
             u.setValue("aplikacja/ton", v if v else "")
         et.editingFinished.connect(ton_zmiana)
-        if not u.contains("aplikacja/karta"):      # pierwszy start: najpierw ustawienia
+
+    PLIK_JAK_RADIO = "__plik__"
+
+    def _zakladka_zrodla(self):
+        """Źródło do wyboru z listy (operator 08.11) — jedno naraz. Karta
+        zapamiętana NAZWĄ z API, nie numerem: Windows przenumerowuje karty
+        po przepięciu USB (23.10: 15 -> 18 -> 20)."""
+        u, o = ustawienia(), self.okno
+        self.lista = o.findChild(QListWidget, "lstZrodla")
+        opis = o.findChild(QLabel, "lblZrodloOpis")
+
+        def wypelnij():
+            self.lista.clear()
+            nazwy = [n for _, n in karty()]
+            for n in nazwy:
+                it = QListWidgetItem(("📻  " if "USB Audio" in n else "🎤  ") + n)
+                it.setData(Qt.UserRole, n)
+                self.lista.addItem(it)
+            it = QListWidgetItem("📼  Nagranie odtwarzane jak z radia (tempo na zakładce Odbiór)…")
+            it.setData(Qt.UserRole, self.PLIK_JAK_RADIO)
+            self.lista.addItem(it)
+            pam = u.value("aplikacja/karta", "")
+            dom = next((n for n in nazwy if "USB Audio" in n and "WASAPI" in n), nazwy[0] if nazwy else "")
+            cel = pam if pam in nazwy + [self.PLIK_JAK_RADIO] else dom
+            for i in range(self.lista.count()):
+                if self.lista.item(i).data(Qt.UserRole) == cel:
+                    self.lista.setCurrentRow(i)
+
+        def zmiana():
+            it = self.lista.currentItem()
+            if it is None:
+                return
+            n = it.data(Qt.UserRole)
+            u.setValue("aplikacja/karta", n)
+            if n == self.PLIK_JAK_RADIO:
+                opis.setText("Przy „Słuchaj” program zapyta o plik; nagranie idzie przez dekoder "
+                             "na żywo jak dźwięk z radia.")
+            else:
+                opis.setText(f"Wejście: {n}. Radio przez USB to zwykle „USB Audio … WASAPI”. "
+                             "Program tylko słucha — nic do radia nie wysyła.")
+
+        self.lista.currentItemChanged.connect(lambda *_: zmiana())
+        wypelnij()
+        zmiana()
+        o.findChild(QAbstractButton, "btnOdswiezZrodla").clicked.connect(wypelnij)
+        self.przyciski_sluchaj = [o.findChild(QAbstractButton, n) for n in ("btnSluchaj", "btnRadio")]
+        for b in self.przyciski_sluchaj:
+            b.clicked.connect(self.sluchaj)
+        if not u.contains("okno/geometria"):     # pierwszy start: najpierw wybór źródła
             o.findChild(QTabWidget, "zakladki").setCurrentIndex(1)
-            u.setValue("aplikacja/karta", ck.currentText())
+
+    def _prog_blokady(self):
+        """Suwak blokady szumów -> wspólna wartość z procesem dekodera; zapamiętany."""
+        u, o = ustawienia(), self.okno
+        sld, lbl = o.findChild(QSlider, "sldProg"), o.findChild(QLabel, "lblProgWartosc")
+
+        def zmiana(v):
+            self.odbior.prog.value = float(v)
+            lbl.setText(f"{v} dB")
+            u.setValue("okno/prog_blokady", v)
+            self.miernik.prog = float(v)
+            self.miernik.update()
+        sld.valueChanged.connect(zmiana)
+        sld.setValue(int(u.value("okno/prog_blokady", 0)))
+        zmiana(sld.value())
+
+    def _przyciski(self, tak: bool):
+        for b in self.przyciski_sluchaj:
+            b.blockSignals(True)
+            b.setChecked(tak)
+            b.setText("Zatrzymaj" if tak else "Słuchaj")
+            b.blockSignals(False)
+
+    def sluchaj(self, plik: str | None = None):
+        """Start / stop odbioru na żywo ze źródła z zakładki „Źródło".
+        plik — nagranie bez pytania (testy)."""
+        if self.odbior.dziala:
+            self.odbior.stop()
+            self._przyciski(False)
+            self.stan.setText("Zatrzymane")
+            return
+        it = self.lista.currentItem()
+        if it is None:
+            self.okno.findChild(QTabWidget, "zakladki").setCurrentIndex(1)
+            self._przyciski(False)
+            return
+        n, u = it.data(Qt.UserRole), ustawienia()
+        if n == self.PLIK_JAK_RADIO or isinstance(plik, str):
+            p = plik if isinstance(plik, str) else QFileDialog.getOpenFileName(
+                self.okno, "Nagranie odtwarzane jak z radia",
+                u.value("okno/folder_plikow", str(katalog() / "sesje")),
+                "Dźwięk (*.wav *.flac);;Wszystkie (*)")[0]
+            if not p:
+                self._przyciski(False)
+                return
+            u.setValue("okno/folder_plikow", str(Path(p).parent))
+            from tools.radio import civ
+            tempo = {"1×": 1.0, "2×": 2.0, "4×": 4.0, "max": 0.0}.get(
+                self.okno.findChild(QComboBox, "cmbTempo").currentText(), 1.0)
+            baza = cfg_karty("plik", u)
+            cfg = {**baza, "wav": p, "tempo": tempo, "zapis": False, "z_civ": False,
+                   "ton_reczny": civ.ton_z_opisu(Path(p).with_suffix(".txt")) or baza["ton_reczny"]}
+            self.zrodlo = Path(p)
+        else:
+            cfg = cfg_karty(n, u)
+            self.zrodlo = None
+        w = self.widok
+        w.ustaw_pamiec(120.0)
+        w.opis = ""
+        for p_ in w.pasma:
+            p_.opis = "(ton przestrojony na 750 Hz)" if p_.nazwa == "po obróbce" else ""
+        w.ustaw_odchylki(np.zeros((0, 2)))
+        w.ustaw_na_zywo(True)
+        self.odbior.start(cfg)
+        self._przyciski(True)
+        self.okno.findChild(QTabWidget, "zakladki").setCurrentIndex(0)
+
+    def koniec_odbioru(self):
+        self._przyciski(False)
 
     def _pamiec_okna(self):
         """Położenie i rozmiar okna, lupa, przełączniki nakładek, zakładka —
@@ -180,6 +295,7 @@ class Dekoder:
         class _Zamkniecie(QObject):
             def eventFilter(s, obj, ev):
                 if ev.type() == QEvent.Close:
+                    self.odbior.stop()
                     u.setValue("okno/geometria", o.saveGeometry())
                     for n in ("chkZbocza", "chkGrzebien", "chkPrzyciagaj"):
                         u.setValue(f"okno/{n}", o.findChild(QAbstractButton, n).isChecked())
@@ -216,6 +332,9 @@ class Dekoder:
             self.otworz(Path(p))
 
     def otworz(self, sciezka: Path):
+        if self.odbior.dziala:                   # plik zamiast radia: odbiór na żywo stop
+            self.odbior.stop()
+            self._przyciski(False)
         self.btn.setEnabled(False)
         self.stan.setText(f"Liczę: {sciezka.name}…")
         self.tekst.clear()

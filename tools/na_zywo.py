@@ -809,6 +809,12 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
         gen = (_strumien_wav(Path(cfg["wav"]), cfg.get("tempo", 1.0)) if cfg.get("wav")
                else _strumien_karty(cfg["device"]))
         wod = Wodospad()
+        # okno Qt (tools/gui/dekoder.py, 08.11): kolumny 5 ms do widoku sygnału;
+        # okienko tkinter tego nie prosi i nie dostaje
+        wid = None
+        if cfg.get("widok"):
+            from tools.gui.strumien import NadawcaWidoku
+            wid = NadawcaWidoku()
         q.put(("info", "nasluch", {"ton": ton}))
         czas("karta otwarta, nasłuch")
         p_ost = None
@@ -839,6 +845,8 @@ def _praca_okna(q, stop, prog, cfg: dict) -> None:
                            d.wstepny, d.stan, d.nad_szumem_db, d.u,
                            wod.widmo(d.raw, d.raw0, c, *PASMO_WEJ), wod.widmo(d.ost_y, d.ost_y0, c, *PASMO_SYG),
                            d.raport.wynik()))
+                    if wid is not None:
+                        q.put(("widok", wid.krok(d)))
                     braki = 0                     # tylko po kroku: kawałki bez kroku nie liczą się
             except (MemoryError, BrokenProcessPool) as e:
                 # SQ2MMX 26.10 (laptop 7,7 GB): „Unable to allocate 2.00 MiB” —
