@@ -227,7 +227,7 @@
          <widget class="QGroupBox" name="grpInne">
           <property name="title"><string>Inne</string></property>
           <layout class="QVBoxLayout" name="ukladInne">
-           <item><widget class="QCheckBox" name="chkKaskada"><property name="text"><string>Tłumienie fałszywych znaków (kaskada: sieć zboczy + sieć przegródek)</string></property><property name="toolTip"><string>Włączone: mniej znaków wymyślanych z szumu, nośnej, mowy (nośna z IC-7300: 7 zamiast 18 znaków/min, pokój: 2 zamiast 30). Cena: słabe i zakłócone stacje czytane gorzej (test 1659 słów: 1402 zamiast 1520). Wyłączone: sieć zboczy_5 jak w wersji 0.9.x.</string></property></widget></item>
+           <item><widget class="QCheckBox" name="chkTakt"><property name="text"><string>Tłumienie fałszywych znaków (bramka taktu: znaki tylko tam, gdzie jest rytm telegrafii)</string></property><property name="toolTip"><string>Włączone: dekoder pisze tylko tam, gdzie cepstrum pokazuje takt (dołki przy u i 3u) — stała nośna, szum, mowa, AM nie mają taktu (nośna z IC-7300: 0,2 zamiast 17 znaków/min, AM: 2 zamiast 36). Cena: ok. 2 % słów, najsłabsze stacje. Wyłączone: jak w wersji 0.9.x.</string></property></widget></item>
            <item><widget class="QCheckBox" name="chkZapis"><property name="text"><string>Zapisuj sesje (WAV i tekst) w podfolderze „sesje”</string></property></widget></item>
            <item><widget class="QCheckBox" name="chkAktualizacje"><property name="text"><string>Przy starcie sprawdzaj, czy jest nowsza wersja</string></property></widget></item>
            <item><widget class="QLabel" name="lblSlownik"><property name="text"><string>Słownik osobisty: slownik_osobisty.txt w folderze nagrań</string></property></widget></item>

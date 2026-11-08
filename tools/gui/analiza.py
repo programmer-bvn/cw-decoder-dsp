@@ -9,7 +9,7 @@ ale zachowuje wszystko, co pokazuje widok sygnału, kolumna co 5 ms:
     regenerat    czysty prostokąt z nut, z odchyłkami zboczy P od niego
 oraz nakładki: zęby grzebienia i zbocza regeneratu (nuty z grzebienia).
 
-Sieć: dsp.siec_numpy (kaskada runs/zbocza_6 + runs/elementy_2, siec.npz) — bez TensorFlow, start okna
+Sieć: dsp.siec_numpy (runs/zbocza_5/siec.npz) + bramka taktu (dsp/takt) — bez TensorFlow, start okna
 w sekundę zamiast kilkunastu (import TF), a wynik ten sam co Keras
 (HISTORIA, „KV260: odczyt na samym ARM").
 """
@@ -22,23 +22,26 @@ import numpy as np
 
 from dsp import config as C, frontend, grzebien, melref, viterbi as V, zbocza as Z
 
-# Kaskada zbocza_6 + elementy_2 (08.11, operator po pomiarze halucynacji na
-# stałej nośnej z IC-7300: 6,3 zn./min zamiast 18,5 na zbocza_5). Cena przy
-# pomiarze 07.11: 44-96 słów mniej w teście 1659. Te same pliki bierze
-# odbiór na żywo (tools/gui/odbior.cfg_karty).
-# Tego samego dnia: zbocza_6 (podstawa kaskady) nie czyta OK1FPS z pasma,
-# który zbocza_5 czyta — stąd przełącznik w Ustawieniach (aplikacja/kaskada),
-# wyłączony = zbocza_5 jak w 0.9.x.
-SIEC = Path("runs/zbocza_6/siec.npz")
-SIEC_ELEMENTOW = Path("runs/elementy_2/siec.npz")
-SIEC_BEZ_KASKADY = Path("runs/zbocza_5/siec.npz")
+# Sieć zbocza_5 + bramka taktu z cepstrum (dsp/takt, 08.11). Tego dnia była
+# też kaskada zbocza_6 + przegródki — przegrała w obu liczbach: zbocza_5 +
+# takt z >= 4 to 1447 słów z 1675 (kaskada ~1402), nośna z IC-7300 0,2 zn./min
+# (kaskada 6,7), AM 1,9 (7,6); zbocza_6 nie czyta OK1FPS z pasma.
+SIEC = Path("runs/zbocza_5/siec.npz")
 
 
-def sieci(kaskada: bool) -> tuple[Path, Path | None]:
-    """(sieć zboczy, sieć przegródek albo None) — wspólne dla pliku i odbioru."""
-    if kaskada and SIEC.exists() and SIEC_ELEMENTOW.exists():
-        return SIEC, SIEC_ELEMENTOW
-    return SIEC_BEZ_KASKADY, None
+def bramka_taktu(pz: np.ndarray, prog: float | None = None) -> np.ndarray:
+    """P tylko pod oknami 8 s z wyraźnym taktem (dsp/takt), reszta jak cisza."""
+    from dsp import takt
+    from tools.na_zywo import TAKT_PROG_Z
+    prog = TAKT_PROG_Z if prog is None else prog
+    n8 = int(takt.OKNO_S / V.DT)
+    m = np.zeros(pz.size, bool)
+    for o in takt.okna(pz):
+        if np.isfinite(o["z"]) and o["z"] >= prog:
+            s = int(round(o["t"] / V.DT)); m[s:s + n8] = True
+    return np.where(m, pz, 0.0).astype(np.float32)
+
+
 N_FFT_WEJ = 512                       # 64 ms, prążek 15,6 Hz
 HZ_OD, HZ_DO = 300.0, 1200.0
 # Ten sam odcień dla tego samego tonu co w obrazie sieci: korekta zmierzona
@@ -154,28 +157,27 @@ def odchylki(pz: np.ndarray, zbocza: np.ndarray, u: float) -> dict:
     return wynik
 
 
-def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None, siec_e=None) -> dict:
-    """siec / siec_e — gotowe sieci numpy; bez nich: kaskada (sieci(True))."""
-    from dsp.siec_numpy import SiecElementowNumpy, SiecNumpy
+def analizuj(sciezka: Path, siec=None, ton_cw: float | None = None, takt: bool = True) -> dict:
+    """siec — gotowa sieć numpy; takt — bramka taktu przed Viterbim.
+    'p' w wyniku to surowe P sieci (pas P(klucz)); grzebień, regenerat
+    i tekst — z P po bramce."""
+    from dsp.siec_numpy import SiecNumpy
     from tools import odczyt
     if siec is None:
-        sz, se = sieci(True)
-        siec = SiecNumpy(sz)
-        siec_e = SiecElementowNumpy(se) if se is not None else None
+        siec = SiecNumpy(SIEC)
     if ton_cw is None:
         from tools.radio import civ
         ton_cw = civ.ton_z_opisu(Path(sciezka).with_suffix(".txt"))
     surowe = frontend.load_audio(sciezka)
     a, ton = odczyt.przygotuj(surowe, ton_cw=ton_cw)
-    # jak tools.odczyt.odczytaj(laczenie="kaskada") — ta sama droga co pomiar halucynacji
-    pz = (odczyt.przebieg_laczony(a, siec, siec_e, "kaskada") if siec_e is not None
-          else Z.przebieg_sieci(a, siec))
+    p_siec = Z.przebieg_sieci(a, siec)
+    pz = bramka_taktu(p_siec) if takt else p_siec
     u_c, _ = V.jednostka_cepstrum(pz)
     u_g = odczyt.jednostka_grzebienia(pz)
     tekst, u, _ = V.dekoduj_najlepiej(pz, [u_c, u_g])
     wej, hz = widmo(surowe)
     dos, _ = widmo(a)
     nk = nakladki(pz, u)
-    return dict(wej=wej, dos=dos, siec=Z.obraz_zboczy(a), p=pz, hz=hz, hz_mel=hz_mel(),
+    return dict(wej=wej, dos=dos, siec=Z.obraz_zboczy(a), p=p_siec, hz=hz, hz_mel=hz_mel(),
                 tekst=tekst, u=u, ton=ton, dl_s=surowe.size / C.SR, **nk,
                 regen=regenerat(nk["zbocza"], pz.size), odchylki=odchylki(pz, nk["zbocza"], u))

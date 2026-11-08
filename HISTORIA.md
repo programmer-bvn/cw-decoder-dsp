@@ -3867,3 +3867,36 @@ dał (zbocza_6: 1425 / 1406 przy progach 3 / 4) — usunięty, nie wszedł do ko
 10–20x mniej na wszystkich negatywach — lepiej niż kaskada w obu liczbach
 naraz i bez utraty OK1FPS (zbocza_5). Pomiar na całych plikach (okna 8 s);
 w dekoderze na żywo jeszcze nie ma.
+
+### Bramka taktu w programie zamiast kaskady (08.11)
+
+**Prośba operatora.** „Wepnij bramkę taktu w program zamiast kaskady" — po
+pomiarze z wpisu wyżej (zbocza_5 + takt z >= 4 lepsze od kaskady w słowach
+i w halucynacjach naraz).
+
+**Co zmieniono.** Kaskada (zbocza_6 + przegródki) wyszła z programu całkiem:
+`PrzegrodkiNaZywo` usunięte z `tools/na_zywo.py`, przełącznik w Ustawieniach
+to teraz „Tłumienie fałszywych znaków (bramka taktu)" (`aplikacja/takt`,
+domyślnie włączony). Sieć zawsze zbocza_5 (`analiza.SIEC`).
+- Na żywo (`OdczytNaZywo._bramka`): co 2 s dźwięku okno taktu z ostatnich
+  8 s P (`dsp/takt.okno`, ~30 ms), pierwsze już przy 4 s historii; Viterbi
+  dostaje P tylko pod oknami z z >= `TAKT_PROG_Z` (4), reszta jak cisza.
+  Bez taktu w stanie: „— WPM (brak taktu)".
+- Plik (`analiza.bramka_taktu`): te same okna 8 s co 4 s na całym P.
+- Pas P(klucz) w widoku pokazuje surowe P sieci (widać, co sieć widzi na
+  nośnej); grzebień i regenerat — z P po bramce, jak tekst.
+
+**Sprawdzone** (kopia ustawień w `DEKODER_KATALOG`, tempo 4×, plik jak na
+żywo):
+
+| | bez bramki | z bramką |
+|---|---|---|
+| nośna IC-7300 (60 s), na żywo | 21 znaków „E EE N…" | 0 |
+| nośna, plik | „* EE ME E E E U…" | pusto |
+| Nagrywanie (6), na żywo | „F5OHS ETT N E E ET SE E" | „F5OHS" |
+| LA3WAA, plik | „…F5*YJ ID LA3WAA…" | „…FH ID LA3WAA…" |
+| OK1FPS, plik | „…TEST CQ OC OK1FPS…" | gubi część „TEST CQ" |
+
+Krok na żywo bez zmian (średnio 0,11 s przy obu). OK1FPS to ta cena
+z pomiaru (−2,4 % słów): słaba stacja z pasma, część okien 8 s poniżej
+z = 4. Przy słabych sygnałach przełącznik można wyłączyć.

@@ -27,7 +27,7 @@ def _u8(x: np.ndarray) -> np.ndarray:
 
 
 def _p_dekodera(d) -> np.ndarray:
-    """P, które widzi Viterbi: po kaskadzie z przegródkami (08.11), gdy jest."""
+    """P, które widzi Viterbi: po bramce taktu (08.11), gdy włączona — do grzebienia i regeneratu."""
     hk = getattr(d, "hist_k", None)
     return hk if hk is not None and hk.size == d.hist.size else d.hist
 
@@ -67,7 +67,7 @@ class NadawcaWidoku:
             self.j = j1
         if d.hist.size:
             k = min(d.hist.size, int(7.0 / Z.HOP_ZBOCZA * C.SR))   # PRZELICZ_S dekodera
-            out["p"] = (d.h0 + d.hist.size - k, _p_dekodera(d)[-k:].copy())
+            out["p"] = (d.h0 + d.hist.size - k, d.hist[-k:].copy())     # surowe P sieci
         self.kroki += 1
         if self.kroki % NAKLADKI_CO == 0 and d.hist.size and np.isfinite(d.u):
             out["nakladki"] = self._nakladki(d)
