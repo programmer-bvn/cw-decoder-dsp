@@ -393,8 +393,11 @@ class WidokSygnalu(QWidget):
         opisy = []
         for k, (ku, kol) in enumerate(zip(p.kursory, kolory)):
             x = self._x(ku["t"], lewy)
-            # Ciągła 2 px: przerywana 1 px ginęła w szumie wodospadu (zrzut 08.11)
-            q.setPen(QPen(kol, 2))
+            # Ciągła 4 px z ciemnym obrysem: przerywana 1 px ginęła w szumie
+            # wodospadu, operator 08.11: „2 razy grubsze, żeby było widać"
+            q.setPen(QPen(QColor(0, 0, 0, 170), 6))
+            q.drawLine(QPointF(x, r.top()), QPointF(x, r.bottom()))
+            q.setPen(QPen(kol, 4))
             q.drawLine(QPointF(x, r.top()), QPointF(x, r.bottom()))
             lit = "AB"[k]
             if p.rodzaj != "obraz":
