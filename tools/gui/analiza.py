@@ -39,7 +39,7 @@ def bramka_taktu(pz: np.ndarray, prog: float | None = None) -> np.ndarray:
     m = np.zeros(pz.size, bool)
     ost = -np.inf
     for o in takt.okna(pz):
-        if np.isfinite(o["z"]) and o["z"] >= prog:
+        if takt.ma_takt(o, prog):
             ost = o["t"]
         if o["t"] - ost <= TAKT_TRZYMAJ_S:
             s = int(round(o["t"] / V.DT)); m[s:s + n8] = True

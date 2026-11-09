@@ -141,7 +141,8 @@ class OdczytNaZywo:
         # Bramka taktu (dsp/takt, 08.11): na stałej nośnej z IC-7300 dekoder
         # pisał „E E E" przy 33 WPM — taktu tam nie ma, cepstrum P to szum.
         # Ramki P przechodzą do Viterbiego tylko pod oknem 8 s z wyraźnym
-        # taktem (dołki przy u i 3u, z >= TAKT_PROG_Z); reszta jak cisza.
+        # taktem (dołki przy u i 3u, z >= TAKT_PROG_Z, albo — ręka, 09.11 —
+        # dwie grupy długości, dsp/takt.dwie_grupy); reszta jak cisza.
         self.takt = takt
         self.okna_taktu: list[tuple[int, int, float, float, bool]] = []   # (ramka od, do, z, u, otwarte)
         self._takt_ost = None                  # ramka startu ostatniego okna z z >= próg
@@ -318,7 +319,7 @@ class OdczytNaZywo:
             o = TK.okno(self.hist[-n8:])
             k = self.h0 + self.hist.size
             a = k - min(n8, self.hist.size)
-            if np.isfinite(o["z"]) and o["z"] >= TAKT_PROG_Z:
+            if TK.ma_takt(o, TAKT_PROG_Z):
                 self._takt_ost = a
             otw = self._takt_ost is not None and (a - self._takt_ost) * V.DT <= TAKT_TRZYMAJ_S
             self.okna_taktu.append((a, k, o["z"], o["u"], otw))

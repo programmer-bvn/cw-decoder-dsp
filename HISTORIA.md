@@ -3962,3 +3962,46 @@ nośna z IC-7300 nadal 0 znaków. W probki/ (62 słowa) −3 przy podtrzymaniu
 
 **Gdzie mieszka.** `tools/na_zywo.py`: `TAKT_TRZYMAJ_S = 12`, okno taktu
 ma znacznik „otwarte"; `tools/gui/analiza.bramka_taktu` — to samo dla pliku.
+
+### Bramka taktu wycinała rękę — dwie grupy długości (zgłoszenie SQ2MMX, 09.11)
+
+**Wersja:** 0.9.5 (po instalatorze z 03.11 — jeszcze nie w exe)
+
+**Objaw.** Dwa zgłoszenia SQ2MMX z 09.11 (0.9.5, 14 MHz, 14,5 i 10 min).
+Wydana 0.9.5 nie ma bramki taktu, więc u zgłaszającego czytało jak dotąd:
+treść plus 26–38 % pojedynczych E/T w przerwach. Odczyt kodem z bramką
+(08.11) pokazał błąd, zanim trafił do wydania: z raportu 2 (FTDX10,
+QSO R6UA–YU0X i EA4BB–DM6 „DR LUTZ TNX FER NICE RPRT… WX HR IS RAINY")
+zostawało 47 słów z 354, całe QSO EA4BB wycięte.
+
+**Przyczyna.** EA4BB nadaje ręką albo bugiem: kropki 20–60 ms, kreski
+100–160 ms, kreska ~2,5 kropki. Bramka z cepstrum szuka dołków dokładnie
+przy u i 3u (±6 %) — tu okna z >= 4 to 5 %. Sieć czyta to dobrze,
+gubiła dopiero bramka.
+
+**Sprawdzone i odrzucone.** Szersze okienko przy 3u (±12/20/30 %):
+raport 2 tylko 36/79/94 słowa, a negatywy AM 13–16 zn./min.
+Same dwie grupy (bez cepstrum): negatywy 0,0–0,2 zn./min, ale 1419 słów
+z 1675 (gubią część klucza elektronicznego: probki 46, kluczownik 338).
+
+**Co pomogło.** Druga miara taktu w oknie 8 s: długości znaków i osobno
+przerw (do 0,6 s) dzielą się na dwie grupy w stosunku 2–4,5 (log,
+najlepszy podział, eta = wariancja międzygrupowa / całkowita, mniejsza
+z dwóch). Okno ma takt, gdy z >= 4 ALBO eta >= 0,8:
+
+| | słowa /1675 | nośna | pokój | AM | SSB (zn./min) | raport 1 | raport 2 |
+|---|---|---|---|---|---|---|---|
+| bez bramki | 1483 | 17,4 | 17,2 | 35,7 | 29,9 | 329 | 354 |
+| z >= 4 + 12 s (08.11) | 1458 | 0,4 | 1,3 | 4,4 | 2,0 | 143 | 47 |
+| eta 0,7 lub z | 1461 | 1,0 | 3,9 | 8,3 | 6,0 | 257 | 220 |
+| **eta 0,8 lub z** | **1459** | 0,4 | 1,3 | 4,7 | 2,0 | 251 | 202 |
+
+Raport 2 z bramką: 21 % pojedynczych E/T (bez bramki 32 %). Na żywo
+(program, nagranie 4×): 210 słów, „DR LUTZ" i „RAINY" są. Sesje z 08.11:
+16:30 dalej „2YN OK2YN", 17:08 (nieczytelna dla sieci) dalej pusta.
+
+**Gdzie mieszka.** `dsp/takt.py`: `dwie_grupy()`, `ma_takt()`,
+`GRUPY_ETA = 0.8`, `GRUPY_STOSUNEK`, `okno()` zwraca też 'eta';
+`tools/na_zywo._bramka` i `tools/gui/analiza.bramka_taktu` pytają `ma_takt`.
+Nagrania: `zgloszenia/20261109_181713_SQ2MMX`, `…_182144_SQ2MMX` (poza
+gitem, bez znanej treści).
