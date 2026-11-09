@@ -3965,7 +3965,7 @@ ma znacznik „otwarte"; `tools/gui/analiza.bramka_taktu` — to samo dla pliku.
 
 ### Bramka taktu wycinała rękę — dwie grupy długości (zgłoszenie SQ2MMX, 09.11)
 
-**Wersja:** 0.9.5 (po instalatorze z 03.11 — jeszcze nie w exe)
+**Wersja:** 0.9.6
 
 **Objaw.** Dwa zgłoszenia SQ2MMX z 09.11 (0.9.5, 14 MHz, 14,5 i 10 min).
 Wydana 0.9.5 nie ma bramki taktu, więc u zgłaszającego czytało jak dotąd:
@@ -4003,5 +4003,8 @@ Raport 2 z bramką: 21 % pojedynczych E/T (bez bramki 32 %). Na żywo
 **Gdzie mieszka.** `dsp/takt.py`: `dwie_grupy()`, `ma_takt()`,
 `GRUPY_ETA = 0.8`, `GRUPY_STOSUNEK`, `okno()` zwraca też 'eta';
 `tools/na_zywo._bramka` i `tools/gui/analiza.bramka_taktu` pytają `ma_takt`.
+W exe od 0.9.6: `tools/aplikacja.py` -> `na_zywo.okno(takt=True)` (wcześniej
+bramkę miało tylko okno Qt). Próba exe ze źródeł: nośna IC-7300 60 s —
+pusto (bez bramki „E E E…"); raport 2, 90 s — „…DR TOMO TNX FER CALL ME 73".
 Nagrania: `zgloszenia/20261109_181713_SQ2MMX`, `…_182144_SQ2MMX` (poza
 gitem, bez znanej treści).

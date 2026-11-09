@@ -25,7 +25,7 @@ from pathlib import Path
 
 T_START = time.time()                        # dziennik: czas startu (25.10: 20-30 s)
 
-WERSJA_APLIKACJI = "0.9.5"
+WERSJA_APLIKACJI = "0.9.6"
 NAZWA = "Dekoder CW SQ2BVN"
 REPO = "programmer-bvn/cw-decoder-dsp"
 # Skrzynka projektu na raporty (konto założył operator 25.10; w Thunderbirdzie na
@@ -576,7 +576,10 @@ def main() -> None:
             geometria=ust.get("geometria"), prog_start=ust.get("prog"),
             na_zamkniecie=lambda g, p: ust_zapisz({"geometria": g, "prog": p}),
             raport_fn=lambda s, root, st: okno_raportu(s, root, opis_ust, st),
-            sprawdz_wersje=sprawdz_wersje if u.get("aktualizacje") else None, ikona=_ikona())
+            sprawdz_wersje=sprawdz_wersje if u.get("aktualizacje") else None, ikona=_ikona(),
+            # bramka taktu (0.9.6): fałszywe znaki w szumie, nośnej, mowie 17-36 -> 0,4-4,7
+            # zn./min, ręka czytana (zgłoszenie SQ2MMX 09.11; HISTORIA)
+            takt=True)
 
 
 if __name__ == "__main__":

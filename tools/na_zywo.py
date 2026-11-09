@@ -945,7 +945,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
          civ_port: str | None = None, civ_baud: int | None = None, ton_reczny: float | None = None,
          tytul: str = "Dekoder CW — na żywo", wav: str | None = None, dziennik: str | None = None,
          geometria: str | None = None, prog_start: float | None = None, na_zamkniecie=None,
-         raport_fn=None, sprawdz_wersje=None, ikona: str | None = None) -> None:
+         raport_fn=None, sprawdz_wersje=None, ikona: str | None = None, takt: bool = False) -> None:
     """Na żywo w okienku (23.10, prośba operatora): tekst zatwierdzony (jasny)
     i wstępny (szary), słowa ze słownika zielone, dwa wodospady, wskaźnik tonu
     nad szumem z kreską progu, suwak blokady szumów. Dekoder w osobnym procesie
@@ -954,7 +954,8 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     radio innego operatora; wav — nagranie zamiast karty (próba).
     Aplikacja (tools/aplikacja.py): geometria/prog_start/na_zamkniecie(geometria,
     prog) — zapamiętanie w rejestrze; raport_fn(sesja, root, stan_okna) — przycisk „Zgłoś
-    problem”; sprawdz_wersje() -> (wersja, adres) | None — w tle przy starcie."""
+    problem”; sprawdz_wersje() -> (wersja, adres) | None — w tle przy starcie.
+    takt — bramka taktu (dsp/takt) przed Viterbim; aplikacja włącza od 0.9.6."""
     from tools.teksty import T
     import multiprocessing as mp
     import queue
@@ -966,7 +967,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
     prog = ctx.Value("d", float(PROG_BLOKADY_DB if prog_start is None else prog_start))
     cfg = dict(device=device, z_civ=z_civ, zapis=zapis, model_npz=model_npz, civ_port=civ_port,
                civ_baud=civ_baud, ton_reczny=ton_reczny, wav=wav, dziennik=dziennik,
-               sesje=str(SESJE), wersja=WERSJA, t0=time.time())
+               sesje=str(SESJE), wersja=WERSJA, t0=time.time(), takt=takt)
 
     root = tk.Tk()
     root.title(tytul)
@@ -1222,7 +1223,7 @@ def okno(device: int | str, z_civ: bool, zapis: bool = True, model_npz: str | No
         if na_dole:
             tekst.see("end")
         sm = smetr["m"].stan if smetr["m"] is not None else None
-        stan.config(text=st)
+        stan.config(text=st.replace("(brak taktu)", T("brak_taktu")))
         rysuj_raport(rst, sm)
         if smetr["m"] is None:
             rysuj_smetr(None, T("smetr_brak"))

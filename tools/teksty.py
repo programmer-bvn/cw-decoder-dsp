@@ -9,6 +9,7 @@ JEZYK = "pl"
 TEKSTY: dict[str, dict[str, str]] = {
     # okienko na żywo
     "start": {"pl": "start...", "en": "starting..."},
+    "brak_taktu": {"pl": "(brak taktu)", "en": "(no keying rhythm)"},
     "laduje": {"pl": "ton CW: {ton} Hz; ładuję... (pierwsze uruchomienie po włączeniu komputera: do kilkunastu s)",
                "en": "CW pitch: {ton} Hz; loading... (first start after switching the computer on: up to ~15 s)"},
     "nasluch": {"pl": "ton CW: {ton} Hz; nasłuch", "en": "CW pitch: {ton} Hz; listening"},
