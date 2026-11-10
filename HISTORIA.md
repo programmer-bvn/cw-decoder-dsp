@@ -4008,3 +4008,35 @@ bramkę miało tylko okno Qt). Próba exe ze źródeł: nośna IC-7300 60 s —
 pusto (bez bramki „E E E…"); raport 2, 90 s — „…DR TOMO TNX FER CALL ME 73".
 Nagrania: `zgloszenia/20261109_181713_SQ2MMX`, `…_182144_SQ2MMX` (poza
 gitem, bez znanej treści).
+
+### Test na beaconie SA6RR — znana treść z pasma, znak po znaku (nagranie SQ2MMX, 10.11)
+
+**Wersja:** —
+
+**Skąd.** Zgłoszenie SQ2MMX z 10.11 (0.9.6, FTDX10): beacon SA6RR z wpisem
+„BEACON 30MHz" w polu „nadane". Nagrań z pasma ze znaną treścią jest mało,
+a beacon powtarza ten sam komunikat co ~61 s — wiadomo dokładnie, co
+powinno wyjść, także w zanikach.
+
+**Treść.** Z elementów (kropki/kreski) trzech cykli plus opis SK6RUD/SA6RR
+jako beaconów „QRPP" (dxzone.com): `VVV QRPP BEACON DE SA6RR = QTH JO67KI =
+PSE RPRT TO WWW.RADIORUD.SE =`, potem trzy długie tony ~2 s. W nagraniu
+3 pełne cykle (starty 18,7 / 79,5 / 140,4 s); od ~205 s inne stacje.
+
+**Narzędzie.** `python -m tools.test_beacon` — łańcuch jak w programie
+(sieć numpy, bramka taktu z nią i bez), słowa jak w testerach i CER
+(odległość edycyjna od najlepiej pasującego fragmentu) na każdy cykl.
+Pierwszy wynik (zbocza_5, 10.11):
+
+| | słowa /39 | CER | cykl 1 | cykl 2 | cykl 3 |
+|---|---|---|---|---|---|
+| z bramką | 23 | 31,5 % | 25 % | 59 % | 11 % |
+| bez bramki | 24 | 27,4 % | 23 % | 46 % | 12 % |
+
+Cykl 2 leży w zaniku („VVVE7MAIP BEACOD…"); bramka wycina tam ~20 s
+poszarpanego tekstu, w którym były strzępy treści („…TD.SE"). Czysty cykl 3:
+„VVV *PP BEACON LE SA6RR = QTH JO67KI = PSI RPRT TO WWW.RADIORUD.I".
+
+**Gdzie mieszka.** `tools/test_beacon.py`; nagranie i opis
+(`komunikat:`, `cykle:`, `od_s:`, `do_s:`) w `W:\nagrania_cw\beacony\` —
+poza `probki/`, bo nagrania zgłaszających są do użytku wewnętrznego, nie CC0.
