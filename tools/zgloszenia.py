@@ -439,13 +439,14 @@ def _wydane(wersja: str) -> bool:
         return False
 
 
+# Gałąź na GitHubie, z której idą wydania (push: `git push origin <lokalna>:na_zywo_strumien`).
+# Do 17.11 link brał nazwę gałęzi LOKALNEJ — „elementy", której na GitHubie nie było:
+# odpowiedzi z 10.11 i 17.11 do SQ2MMX miały link 404.
+GALAZ_GH = "na_zywo_strumien"
+
+
 def _galaz() -> str:
-    import subprocess
-    try:
-        return subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=KORZEN,
-                              capture_output=True, text=True, timeout=30).stdout.strip() or "main"
-    except (OSError, subprocess.TimeoutExpired):
-        return "main"
+    return GALAZ_GH
 
 
 def gdzie_zmiana(tytul: str, tresc: str, jez: str) -> str:
