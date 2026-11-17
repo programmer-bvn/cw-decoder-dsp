@@ -4043,7 +4043,7 @@ poza `probki/`, bo nagrania zgłaszających są do użytku wewnętrznego, nie CC
 
 ### Słownik rozdziela śmielej — LA8IG bez odstępów między słowami (zgłoszenie SQ2MMX, 17.11)
 
-**Wersja:** 0.9.7 (jeszcze nie w exe)
+**Wersja:** 0.9.7
 
 **Objaw.** Zgłoszenia SQ2MMX z 16.11 (0.9.6, FTDX10). QSO LA8IG–M0ISZ:
 litery prawie bez błędu, słowa zlane — „=GM=TNXFER”, „MYNAMEISKNUT”,
