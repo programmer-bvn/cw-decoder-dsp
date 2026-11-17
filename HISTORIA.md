@@ -4040,3 +4040,37 @@ poszarpanego tekstu, w którym były strzępy treści („…TD.SE"). Czysty cyk
 **Gdzie mieszka.** `tools/test_beacon.py`; nagranie i opis
 (`komunikat:`, `cykle:`, `od_s:`, `do_s:`) w `W:\nagrania_cw\beacony\` —
 poza `probki/`, bo nagrania zgłaszających są do użytku wewnętrznego, nie CC0.
+
+### Słownik rozdziela śmielej — LA8IG bez odstępów między słowami (zgłoszenie SQ2MMX, 17.11)
+
+**Wersja:** 0.9.7 (jeszcze nie w exe)
+
+**Objaw.** Zgłoszenia SQ2MMX z 16.11 (0.9.6, FTDX10). QSO LA8IG–M0ISZ:
+litery prawie bez błędu, słowa zlane — „=GM=TNXFER”, „MYNAMEISKNUT”,
+„TNXFERPOPPINGIN”. R3PJN odwrotnie: „R3 P J N”, „V LA D”.
+
+**Przyczyna — zmierzona.** LA8IG: odstęp między słowami 2,4–3,5 u, tyle co
+między literami („DE LA8IG”: po E 3,5 u; „TNX FER”: 2,4 u). R3PJN: przerwy
+liter 4–5,3 u, słów 5,4–7,7 u. Z samego czasu granic nie ma — rozstrzyga
+słownik (wpis 24.10). Ten w oknie już sklejał „R3PJN”, „SQ2MMX DE”,
+„RST 599”, ale rozdzielał dopiero od 3,0 u, więc „TNX FER” zostawało razem.
+
+**Co pomogło.** `ROZDZIEL_U` 3,0 -> 2,2. Całe słowa (słowo osobno, ze
+spacjami jak w oknie), bramka taktu + Viterbi + słownik, 106 nagrań, P z sieci
+zbocza_5 numpy (`out/p_cache/cw.npz`, liczone na nowo — cache z 08.11 zniknął
+ze scratchpadu):
+
+| | bez słownika | 3,0 | 2,5 | **2,2** | 2,0 |
+|---|---|---|---|---|---|
+| razem /1675 | 1263 | 1375 | 1383 | **1384** | 1384 |
+| kluczownik /369 | 301 | 327 | 329 | 330 | 330 |
+| zaszumione_real /456 | 386 | 396 | 402 | 402 | 402 |
+
+Pozostałe grupy (próbki, QRM, ręka, sesje, zaszumione) bez zmian; strat
+nigdzie — bezpiecznik z 24.10 (rozdzielać tylko między znanymi) trzyma.
+Przy 2,0 czas przestaje cokolwiek wnosić (przerwa liter w Viterbim ma min. 2,0 u).
+LA8IG po zmianie: „DE LA8IG = GM = TNX FER CALL = UR RST 559… = MY NAME IS
+KNUT”. Zostaje „ISKNUT”, „TNXFERPOPPINGIN” (imion i POPPING słownik nie zna)
+oraz „V LA D” (imię).
+
+**Gdzie mieszka.** `dsp/slownik.py`: `ROZDZIEL_U = 2.2`.

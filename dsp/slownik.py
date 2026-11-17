@@ -23,7 +23,12 @@ from pathlib import Path
 # Zmierzone 24.10 (114 nagrań p_zb5, całe słowa): rozdziel >= 3,0 / sklej <= 6,0 —
 # ręka 25 -> 38/45, pasmo + mikrofon 45 -> 51/62, kluczownik 362 -> 363/369,
 # zaszumione 470 + 434 i QRM 141 bez zmian; sklej <= 7: kluczownik 359 (-4).
-ROZDZIEL_U = 3.0
+# 17.11 (zgłoszenie SQ2MMX, LA8IG: odstęp słów 2,4–3,5 u jak liter —
+# „=GM=TNXFER”, „MYNAMEISKNUT”): rozdziel 3,0 -> 2,2. Całe słowa po bramce
+# taktu (106 nagrań, zbocza_5 numpy): 1375 -> 1384 z 1675 (kluczownik 327 -> 330,
+# zaszumione_real 396 -> 402), nigdzie strat; 2,5: 1383, 2,0: 1384 — ale przy
+# 2,0 czas przestaje cokolwiek wnosić (przerwa liter w Viterbim ma min. 2,0 u).
+ROZDZIEL_U = 2.2
 SKLEJ_U = 6.0
 KARA_ZMIANY = 0.3
 NAJDLUZSZE = 14
