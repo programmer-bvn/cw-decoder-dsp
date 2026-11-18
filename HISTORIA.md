@@ -4074,3 +4074,27 @@ KNUT”. Zostaje „ISKNUT”, „TNXFERPOPPINGIN” (imion i POPPING słownik n
 oraz „V LA D” (imię).
 
 **Gdzie mieszka.** `dsp/slownik.py`: `ROZDZIEL_U = 2.2`.
+
+### „GA5NNBK" brany za znak wywoławczy — kara dla samego wzoru znaku (zgłoszenie SQ2MMX, 18.11)
+
+**Wersja:** 0.9.8 (jeszcze nie w exe)
+
+**Objaw.** Zgłoszenie SQ2MMX z 18.11 (0.9.6, FTDX10): pile-up UE36DX — wołający
+czytani dobrze, ale wymiana DX-a za każdym razem sklejona: „DJ3GKC GA5NNBK”,
+„DL2YCK GA5NNBK”, 7 razy w 8 min. Słownik z 0.9.7 tego nie rozdzielał.
+
+**Przyczyna — zmierzona.** UE36DX nadaje „GA 5NN BK” z przerwami 2,4–4,2 u
+(jak między literami — rozdzielić wolno od 2,2 u). Ale cały ciąg „GA5NNBK”
+pasuje do wzoru znaku wywoławczego (2 litery, cyfra, do 4 liter), więc dla
+słownika był „znany”: zysk 7, tyle co GA + 5NN + BK, a każde rozdzielenie
+kosztuje 0,3 — wygrywał ciąg w całości.
+
+**Co pomogło.** Ciąg pasujący tylko do wzoru znaku (nie ze słownika, nie RST)
+zyskuje o `KARA_WZORU = 1,0` mniej. Raport: 7/7 „GA 5NN BK”, przy okazji
+„GD 5NN TU 73”. Całe słowa (106 nagrań, bramka + Viterbi + słownik): 1384
+z 1675 przed i po; przy karze 1,0 / 1,5 / 2,0 bez zmian w żadnej grupie.
+Zostaje „RM8GGA 5NN” (RM8G + GA): sam znak RM8G też jest tylko wzorem,
+a podział kosztowałby więcej niż zysk.
+
+**Gdzie mieszka.** `dsp/slownik.py`: `KARA_WZORU`, w `podziel()` przy zysku
+znanego słowa.

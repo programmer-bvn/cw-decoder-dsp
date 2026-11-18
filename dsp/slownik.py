@@ -31,6 +31,13 @@ from pathlib import Path
 ROZDZIEL_U = 2.2
 SKLEJ_U = 6.0
 KARA_ZMIANY = 0.3
+# Ciąg pasujący TYLKO do wzoru znaku wywoławczego (nie ze słownika) zyskuje
+# o tyle mniej (18.11, zgłoszenie SQ2MMX): UE36DX nadawał „GA 5NN BK” z przerwami
+# 2,4–4,2 u, a „GA5NNBK” pasuje do wzoru znaku i remisował z GA + 5NN + BK
+# (7 = 7, a każde rozdzielenie kosztuje KARA_ZMIANY) — 7 razy w 8 min zostawało
+# sklejone. Kara 1,0: 7/7 rozdzielone („GD 5NN TU 73” też); całe słowa na 106
+# nagraniach bez zmian przy 1,0 / 1,5 / 2,0 w każdej grupie.
+KARA_WZORU = 1.0
 NAJDLUZSZE = 14
 DLUGIE = 4                  # znane słowo „długie”: może samo uzasadnić rozdzielenie
 # K, R — same w sobie słowem (koniec nadania, potwierdzenie): „PSEK” -> „PSE K”
@@ -206,7 +213,10 @@ def podziel(litery: list[str], spacja: list[bool], przerwa_u: list[float],
                 k = przed(i, zp, zc)
                 if k is None:
                     continue
-                wyn = f[i][zp] + (len(w) if len(w) >= 2 else ZYSK_POJEDYNCZEJ) - wew - k
+                zysk = len(w) if len(w) >= 2 else ZYSK_POJEDYNCZEJ
+                if w not in SLOWA and ZNAK.match(w) and not RST.match(w):
+                    zysk -= KARA_WZORU
+                wyn = f[i][zp] + zysk - wew - k
                 if wyn > f[j][zc]:
                     f[j][zc] = wyn
                     skad[j][zc] = (i, zp, True)
